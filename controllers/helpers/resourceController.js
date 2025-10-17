@@ -146,6 +146,37 @@ function convertToUTC(datetime, timezone) {
   return localToUTC(datetime, timezone);
 }
 
+/**
+ * Geocode location with airport code fallback (for flights)
+ * @param {string} location - Location string (could be airport code or address)
+ * @param {Object} airportService - Airport service for code lookup
+ * @param {string} currentTimezone - Current timezone (will be updated if airport found)
+ * @returns {Promise<Object>} - {coords: {lat, lng}, timezone: string, formattedLocation: string}
+ */
+async function geocodeWithAirportFallback(location, airportService, currentTimezone = null) {
+  if (!location) return { coords: null, timezone: currentTimezone, formattedLocation: location };
+
+  // Check if location is a 3-letter airport code
+  if (location.length === 3 && /^[A-Z]{3}$/i.test(location.trim())) {
+    const airportData = airportService.getAirportByCode(location);
+    if (airportData) {
+      return {
+        coords: { lat: airportData.lat, lng: airportData.lng },
+        timezone: airportData.timezone || currentTimezone,
+        formattedLocation: `${airportData.iata} - ${airportData.city}, ${airportData.country}`
+      };
+    }
+  }
+
+  // Fallback to regular geocoding
+  const coords = await geocodingService.geocodeLocation(location);
+  return {
+    coords: coords,
+    timezone: currentTimezone,
+    formattedLocation: location
+  };
+}
+
 module.exports = {
   verifyTripOwnership,
   geocodeIfChanged,
@@ -154,5 +185,6 @@ module.exports = {
   redirectAfterError,
   verifyResourceOwnership,
   verifyResourceOwnershipViaTrip,
-  convertToUTC
+  convertToUTC,
+  geocodeWithAirportFallback
 };

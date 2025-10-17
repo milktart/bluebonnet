@@ -1,7 +1,13 @@
 const { Flight, Trip } = require('../models');
 const airportService = require('../services/airportService');
-const geocodingService = require('../services/geocodingService');
-const { localToUTC } = require('../utils/timezoneHelper');
+const {
+  verifyTripOwnership,
+  redirectAfterSuccess,
+  redirectAfterError,
+  verifyResourceOwnership,
+  convertToUTC,
+  geocodeWithAirportFallback
+} = require('./helpers/resourceController');
 
 exports.searchAirports = async (req, res) => {
   try {
@@ -86,15 +92,11 @@ exports.createFlight = async (req, res) => {
       seat
     } = req.body;
 
-    // If tripId is provided, verify the trip exists and belongs to user
+    // Verify trip ownership if tripId provided
     if (tripId) {
-      const trip = await Trip.findOne({
-        where: { id: tripId, userId: req.user.id }
-      });
-
+      const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
       if (!trip) {
-        req.flash('error_msg', 'Trip not found');
-        return res.redirect('/trips');
+        return redirectAfterError(res, req, null, 'Trip not found');
       }
     }
 
@@ -106,80 +108,39 @@ exports.createFlight = async (req, res) => {
       }
     }
 
-    // Try to get airport details from codes
-    let originData = null;
-    let destData = null;
-    let originCoords = null;
-    let destCoords = null;
+    // Geocode origin and destination with airport fallback
+    const originResult = await geocodeWithAirportFallback(origin, airportService, originTimezone);
+    const destResult = await geocodeWithAirportFallback(destination, airportService, destinationTimezone);
 
-    // Check if origin is an airport code (3 letters)
-    if (origin && origin.length === 3 && /^[A-Z]{3}$/i.test(origin.trim())) {
-      originData = airportService.getAirportByCode(origin);
-      if (originData) {
-        originCoords = { lat: originData.lat, lng: originData.lng };
-        if (!originTimezone) originTimezone = originData.timezone;
-        // Keep the city name for better display
-        origin = `${originData.iata} - ${originData.city}, ${originData.country}`;
-      }
-    }
-
-    // Check if destination is an airport code
-    if (destination && destination.length === 3 && /^[A-Z]{3}$/i.test(destination.trim())) {
-      destData = airportService.getAirportByCode(destination);
-      if (destData) {
-        destCoords = { lat: destData.lat, lng: destData.lng };
-        if (!destinationTimezone) destinationTimezone = destData.timezone;
-        destination = `${destData.iata} - ${destData.city}, ${destData.country}`;
-      }
-    }
-
-    // Fallback to geocoding if airport lookup didn't work
-    if (!originCoords && origin) {
-      originCoords = await geocodingService.geocodeLocation(origin);
-    }
-    if (!destCoords && destination) {
-      destCoords = await geocodingService.geocodeLocation(destination);
-    }
-
-    // Convert datetime-local inputs to UTC using proper timezone
-    const departureUTC = localToUTC(departureDateTime, originTimezone);
-    const arrivalUTC = localToUTC(arrivalDateTime, destinationTimezone);
+    // Update locations and timezones if airport data was found
+    origin = originResult.formattedLocation;
+    destination = destResult.formattedLocation;
+    if (!originTimezone) originTimezone = originResult.timezone;
+    if (!destinationTimezone) destinationTimezone = destResult.timezone;
 
     await Flight.create({
       userId: req.user.id,
       tripId: tripId || null,
       airline,
       flightNumber: flightNumber?.toUpperCase(),
-      departureDateTime: departureUTC,
-      arrivalDateTime: arrivalUTC,
+      departureDateTime: convertToUTC(departureDateTime, originTimezone),
+      arrivalDateTime: convertToUTC(arrivalDateTime, destinationTimezone),
       origin,
       originTimezone,
-      originLat: originCoords?.lat,
-      originLng: originCoords?.lng,
+      originLat: originResult.coords?.lat,
+      originLng: originResult.coords?.lng,
       destination,
       destinationTimezone,
-      destinationLat: destCoords?.lat,
-      destinationLng: destCoords?.lng,
+      destinationLat: destResult.coords?.lat,
+      destinationLng: destResult.coords?.lng,
       pnr,
       seat
     });
 
-    req.flash('success_msg', 'Flight added successfully');
-
-    // Redirect to trip if attached, otherwise to trips list
-    if (tripId) {
-      res.redirect(`/trips/${tripId}?tab=flights`);
-    } else {
-      res.redirect('/trips');
-    }
+    redirectAfterSuccess(res, req, tripId, 'flights', 'Flight added successfully');
   } catch (error) {
     console.error(error);
-    req.flash('error_msg', 'Error adding flight');
-    if (req.params.tripId) {
-      res.redirect(`/trips/${req.params.tripId}`);
-    } else {
-      res.redirect('/trips');
-    }
+    redirectAfterError(res, req, req.params.tripId, 'Error adding flight');
   }
 };
 
@@ -198,24 +159,14 @@ exports.updateFlight = async (req, res) => {
       seat
     } = req.body;
 
+    // Find flight with trip
     const flight = await Flight.findByPk(req.params.id, {
       include: [{ model: Trip, as: 'trip', required: false }]
     });
 
-    if (!flight) {
-      console.error(`Flight not found with ID: ${req.params.id}`);
-      req.flash('error_msg', 'Flight not found');
-      return res.redirect('/trips');
-    }
-
-    // Convert both IDs to strings for comparison to avoid type mismatches
-    const flightUserId = String(flight.userId || '');
-    const currentUserId = String(req.user.id || '');
-
-    if (flightUserId !== currentUserId) {
-      console.error(`User ID mismatch: flight.userId=${flight.userId}, req.user.id=${req.user.id}`);
-      req.flash('error_msg', 'Flight not found');
-      return res.redirect('/trips');
+    // Verify ownership
+    if (!verifyResourceOwnership(flight, req.user.id)) {
+      return redirectAfterError(res, req, null, 'Flight not found');
     }
 
     // Auto-populate airline from flight number if not provided
@@ -227,74 +178,50 @@ exports.updateFlight = async (req, res) => {
     }
 
     // Geocode origin and destination if they changed
-    let originCoords = null;
-    let destCoords = null;
+    let originResult, destResult;
 
     if (origin !== flight.origin) {
-      // Check if origin is an airport code
-      if (origin && origin.length === 3 && /^[A-Z]{3}$/i.test(origin.trim())) {
-        const originData = airportService.getAirportByCode(origin);
-        if (originData) {
-          originCoords = { lat: originData.lat, lng: originData.lng };
-          if (!originTimezone) originTimezone = originData.timezone;
-          origin = `${originData.iata} - ${originData.city}, ${originData.country}`;
-        }
-      }
-      // Fallback to geocoding
-      if (!originCoords) {
-        originCoords = await geocodingService.geocodeLocation(origin);
-      }
+      originResult = await geocodeWithAirportFallback(origin, airportService, originTimezone);
+      origin = originResult.formattedLocation;
+      if (!originTimezone) originTimezone = originResult.timezone;
     } else {
-      originCoords = { lat: flight.originLat, lng: flight.originLng };
+      originResult = {
+        coords: { lat: flight.originLat, lng: flight.originLng },
+        timezone: flight.originTimezone,
+        formattedLocation: flight.origin
+      };
     }
 
     if (destination !== flight.destination) {
-      // Check if destination is an airport code
-      if (destination && destination.length === 3 && /^[A-Z]{3}$/i.test(destination.trim())) {
-        const destData = airportService.getAirportByCode(destination);
-        if (destData) {
-          destCoords = { lat: destData.lat, lng: destData.lng };
-          if (!destinationTimezone) destinationTimezone = destData.timezone;
-          destination = `${destData.iata} - ${destData.city}, ${destData.country}`;
-        }
-      }
-      // Fallback to geocoding
-      if (!destCoords) {
-        destCoords = await geocodingService.geocodeLocation(destination);
-      }
+      destResult = await geocodeWithAirportFallback(destination, airportService, destinationTimezone);
+      destination = destResult.formattedLocation;
+      if (!destinationTimezone) destinationTimezone = destResult.timezone;
     } else {
-      destCoords = { lat: flight.destinationLat, lng: flight.destinationLng };
+      destResult = {
+        coords: { lat: flight.destinationLat, lng: flight.destinationLng },
+        timezone: flight.destinationTimezone,
+        formattedLocation: flight.destination
+      };
     }
-
-    // Convert datetime-local inputs to UTC using proper timezone
-    const departureUTC = localToUTC(departureDateTime, originTimezone);
-    const arrivalUTC = localToUTC(arrivalDateTime, destinationTimezone);
 
     await flight.update({
       airline,
       flightNumber: flightNumber?.toUpperCase(),
-      departureDateTime: departureUTC,
-      arrivalDateTime: arrivalUTC,
+      departureDateTime: convertToUTC(departureDateTime, originTimezone),
+      arrivalDateTime: convertToUTC(arrivalDateTime, destinationTimezone),
       origin,
       originTimezone,
-      originLat: originCoords?.lat,
-      originLng: originCoords?.lng,
+      originLat: originResult.coords?.lat,
+      originLng: originResult.coords?.lng,
       destination,
       destinationTimezone,
-      destinationLat: destCoords?.lat,
-      destinationLng: destCoords?.lng,
+      destinationLat: destResult.coords?.lat,
+      destinationLng: destResult.coords?.lng,
       pnr,
       seat
     });
 
-    req.flash('success_msg', 'Flight updated successfully');
-
-    // Redirect to trip if attached, otherwise to trips list
-    if (flight.tripId) {
-      res.redirect(`/trips/${flight.tripId}?tab=flights`);
-    } else {
-      res.redirect('/trips');
-    }
+    redirectAfterSuccess(res, req, flight.tripId, 'flights', 'Flight updated successfully');
   } catch (error) {
     console.error(error);
     req.flash('error_msg', 'Error updating flight');
@@ -304,26 +231,20 @@ exports.updateFlight = async (req, res) => {
 
 exports.deleteFlight = async (req, res) => {
   try {
+    // Find flight with trip
     const flight = await Flight.findByPk(req.params.id, {
       include: [{ model: Trip, as: 'trip', required: false }]
     });
 
-    if (!flight || flight.userId !== req.user.id) {
-      req.flash('error_msg', 'Flight not found');
-      return res.redirect('/trips');
+    // Verify ownership
+    if (!verifyResourceOwnership(flight, req.user.id)) {
+      return redirectAfterError(res, req, null, 'Flight not found');
     }
 
     const tripId = flight.tripId;
     await flight.destroy();
 
-    req.flash('success_msg', 'Flight deleted successfully');
-
-    // Redirect to trip if attached, otherwise to trips list
-    if (tripId) {
-      res.redirect(`/trips/${tripId}?tab=flights`);
-    } else {
-      res.redirect('/trips');
-    }
+    redirectAfterSuccess(res, req, tripId, 'flights', 'Flight deleted successfully');
   } catch (error) {
     console.error(error);
     req.flash('error_msg', 'Error deleting flight');
