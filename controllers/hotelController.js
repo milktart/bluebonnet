@@ -1,6 +1,12 @@
-const { localToUTC } = require('../utils/timezoneHelper');
 const { Hotel, Trip } = require('../models');
-const geocodingService = require('../services/geocodingService');
+const {
+  verifyTripOwnership,
+  geocodeIfChanged,
+  redirectAfterSuccess,
+  redirectAfterError,
+  verifyResourceOwnershipViaTrip,
+  convertToUTC
+} = require('./helpers/resourceController');
 
 exports.createHotel = async (req, res) => {
   try {
@@ -16,25 +22,22 @@ exports.createHotel = async (req, res) => {
       roomNumber
     } = req.body;
 
-    const trip = await Trip.findOne({
-      where: { id: tripId, userId: req.user.id }
-    });
-
+    // Verify trip ownership
+    const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
     if (!trip) {
-      req.flash('error_msg', 'Trip not found');
-      return res.redirect('/trips');
+      return redirectAfterError(res, req, null, 'Trip not found');
     }
 
     // Geocode address
-    const coords = await geocodingService.geocodeLocation(address);
+    const coords = await geocodeIfChanged(address);
 
     await Hotel.create({
       tripId,
       hotelName,
       address,
       phone,
-      checkInDateTime: localToUTC(checkInDateTime, timezone),
-      checkOutDateTime: localToUTC(checkOutDateTime, timezone),
+      checkInDateTime: convertToUTC(checkInDateTime, timezone),
+      checkOutDateTime: convertToUTC(checkOutDateTime, timezone),
       timezone,
       lat: coords?.lat,
       lng: coords?.lng,
@@ -42,12 +45,10 @@ exports.createHotel = async (req, res) => {
       roomNumber
     });
 
-    req.flash('success_msg', 'Hotel added successfully');
-    res.redirect(`/trips/${tripId}?tab=hotels`);
+    redirectAfterSuccess(res, req, tripId, 'hotels', 'Hotel added successfully');
   } catch (error) {
     console.error(error);
-    req.flash('error_msg', 'Error adding hotel');
-    res.redirect(`/trips/${req.params.tripId}`);
+    redirectAfterError(res, req, req.params.tripId, 'Error adding hotel');
   }
 };
 
@@ -64,26 +65,29 @@ exports.updateHotel = async (req, res) => {
       roomNumber
     } = req.body;
 
+    // Find hotel with trip
     const hotel = await Hotel.findByPk(req.params.id, {
       include: [{ model: Trip, as: 'trip' }]
     });
 
-    if (!hotel || hotel.trip.userId !== req.user.id) {
-      req.flash('error_msg', 'Hotel not found');
-      return res.redirect('/trips');
+    // Verify ownership
+    if (!verifyResourceOwnershipViaTrip(hotel, req.user.id)) {
+      return redirectAfterError(res, req, null, 'Hotel not found');
     }
 
-    // Geocode address if it changed
-    const coords = address !== hotel.address
-      ? await geocodingService.geocodeLocation(address)
-      : { lat: hotel.lat, lng: hotel.lng };
+    // Geocode address if changed
+    const coords = await geocodeIfChanged(
+      address,
+      hotel.address,
+      { lat: hotel.lat, lng: hotel.lng }
+    );
 
     await hotel.update({
       hotelName,
       address,
       phone,
-      checkInDateTime: localToUTC(checkInDateTime, timezone),
-      checkOutDateTime: localToUTC(checkOutDateTime, timezone),
+      checkInDateTime: convertToUTC(checkInDateTime, timezone),
+      checkOutDateTime: convertToUTC(checkOutDateTime, timezone),
       timezone,
       lat: coords?.lat,
       lng: coords?.lng,
@@ -91,8 +95,7 @@ exports.updateHotel = async (req, res) => {
       roomNumber
     });
 
-    req.flash('success_msg', 'Hotel updated successfully');
-    res.redirect(`/trips/${hotel.tripId}?tab=hotels`);
+    redirectAfterSuccess(res, req, hotel.tripId, 'hotels', 'Hotel updated successfully');
   } catch (error) {
     console.error(error);
     req.flash('error_msg', 'Error updating hotel');
@@ -102,20 +105,20 @@ exports.updateHotel = async (req, res) => {
 
 exports.deleteHotel = async (req, res) => {
   try {
+    // Find hotel with trip
     const hotel = await Hotel.findByPk(req.params.id, {
       include: [{ model: Trip, as: 'trip' }]
     });
 
-    if (!hotel || hotel.trip.userId !== req.user.id) {
-      req.flash('error_msg', 'Hotel not found');
-      return res.redirect('/trips');
+    // Verify ownership
+    if (!verifyResourceOwnershipViaTrip(hotel, req.user.id)) {
+      return redirectAfterError(res, req, null, 'Hotel not found');
     }
 
     const tripId = hotel.tripId;
     await hotel.destroy();
 
-    req.flash('success_msg', 'Hotel deleted successfully');
-    res.redirect(`/trips/${tripId}?tab=hotels`);
+    redirectAfterSuccess(res, req, tripId, 'hotels', 'Hotel deleted successfully');
   } catch (error) {
     console.error(error);
     req.flash('error_msg', 'Error deleting hotel');

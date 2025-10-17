@@ -1,6 +1,12 @@
 const { Transportation, Trip } = require('../models');
-const geocodingService = require('../services/geocodingService');
-const { localToUTC } = require('../utils/timezoneHelper');
+const {
+  verifyTripOwnership,
+  geocodeOriginDestination,
+  redirectAfterSuccess,
+  redirectAfterError,
+  verifyResourceOwnership,
+  convertToUTC
+} = require('./helpers/resourceController');
 
 exports.createTransportation = async (req, res) => {
   try {
@@ -18,25 +24,19 @@ exports.createTransportation = async (req, res) => {
       seat
     } = req.body;
 
-    // If tripId is provided, verify the trip exists and belongs to user
+    // Verify trip ownership if tripId provided
     if (tripId) {
-      const trip = await Trip.findOne({
-        where: { id: tripId, userId: req.user.id }
-      });
-
+      const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
       if (!trip) {
-        req.flash('error_msg', 'Trip not found');
-        return res.redirect('/trips');
+        return redirectAfterError(res, req, null, 'Trip not found');
       }
     }
 
     // Geocode origin and destination
-    const originCoords = await geocodingService.geocodeLocation(origin);
-    const destCoords = await geocodingService.geocodeLocation(destination);
-
-    // Convert datetime-local inputs to UTC using proper timezone
-    const departureUTC = localToUTC(departureDateTime, originTimezone);
-    const arrivalUTC = localToUTC(arrivalDateTime, destinationTimezone);
+    const { originCoords, destCoords } = await geocodeOriginDestination({
+      originNew: origin,
+      destNew: destination
+    });
 
     await Transportation.create({
       userId: req.user.id,
@@ -51,28 +51,16 @@ exports.createTransportation = async (req, res) => {
       destinationTimezone,
       destinationLat: destCoords?.lat,
       destinationLng: destCoords?.lng,
-      departureDateTime: departureUTC,
-      arrivalDateTime: arrivalUTC,
+      departureDateTime: convertToUTC(departureDateTime, originTimezone),
+      arrivalDateTime: convertToUTC(arrivalDateTime, destinationTimezone),
       confirmationNumber,
       seat
     });
 
-    req.flash('success_msg', 'Transportation added successfully');
-
-    // Redirect to trip if attached, otherwise to trips list
-    if (tripId) {
-      res.redirect(`/trips/${tripId}?tab=transportation`);
-    } else {
-      res.redirect('/trips');
-    }
+    redirectAfterSuccess(res, req, tripId, 'transportation', 'Transportation added successfully');
   } catch (error) {
     console.error(error);
-    req.flash('error_msg', 'Error adding transportation');
-    if (req.params.tripId) {
-      res.redirect(`/trips/${req.params.tripId}`);
-    } else {
-      res.redirect('/trips');
-    }
+    redirectAfterError(res, req, req.params.tripId, 'Error adding transportation');
   }
 };
 
@@ -91,26 +79,25 @@ exports.updateTransportation = async (req, res) => {
       seat
     } = req.body;
 
+    // Find transportation with trip
     const transportation = await Transportation.findByPk(req.params.id, {
       include: [{ model: Trip, as: 'trip', required: false }]
     });
 
-    if (!transportation || transportation.userId !== req.user.id) {
-      req.flash('error_msg', 'Transportation not found');
-      return res.redirect('/trips');
+    // Verify ownership
+    if (!verifyResourceOwnership(transportation, req.user.id)) {
+      return redirectAfterError(res, req, null, 'Transportation not found');
     }
 
     // Geocode origin and destination if they changed
-    const originCoords = origin !== transportation.origin
-      ? await geocodingService.geocodeLocation(origin)
-      : { lat: transportation.originLat, lng: transportation.originLng };
-    const destCoords = destination !== transportation.destination
-      ? await geocodingService.geocodeLocation(destination)
-      : { lat: transportation.destinationLat, lng: transportation.destinationLng };
-
-    // Convert datetime-local inputs to UTC using proper timezone
-    const departureUTC = localToUTC(departureDateTime, originTimezone);
-    const arrivalUTC = localToUTC(arrivalDateTime, destinationTimezone);
+    const { originCoords, destCoords } = await geocodeOriginDestination({
+      originNew: origin,
+      originOld: transportation.origin,
+      originCoordsOld: { lat: transportation.originLat, lng: transportation.originLng },
+      destNew: destination,
+      destOld: transportation.destination,
+      destCoordsOld: { lat: transportation.destinationLat, lng: transportation.destinationLng }
+    });
 
     await transportation.update({
       method,
@@ -123,20 +110,13 @@ exports.updateTransportation = async (req, res) => {
       destinationTimezone,
       destinationLat: destCoords?.lat,
       destinationLng: destCoords?.lng,
-      departureDateTime: departureUTC,
-      arrivalDateTime: arrivalUTC,
+      departureDateTime: convertToUTC(departureDateTime, originTimezone),
+      arrivalDateTime: convertToUTC(arrivalDateTime, destinationTimezone),
       confirmationNumber,
       seat
     });
 
-    req.flash('success_msg', 'Transportation updated successfully');
-
-    // Redirect to trip if attached, otherwise to trips list
-    if (transportation.tripId) {
-      res.redirect(`/trips/${transportation.tripId}?tab=transportation`);
-    } else {
-      res.redirect('/trips');
-    }
+    redirectAfterSuccess(res, req, transportation.tripId, 'transportation', 'Transportation updated successfully');
   } catch (error) {
     console.error(error);
     req.flash('error_msg', 'Error updating transportation');
@@ -146,26 +126,20 @@ exports.updateTransportation = async (req, res) => {
 
 exports.deleteTransportation = async (req, res) => {
   try {
+    // Find transportation with trip
     const transportation = await Transportation.findByPk(req.params.id, {
       include: [{ model: Trip, as: 'trip', required: false }]
     });
 
-    if (!transportation || transportation.userId !== req.user.id) {
-      req.flash('error_msg', 'Transportation not found');
-      return res.redirect('/trips');
+    // Verify ownership
+    if (!verifyResourceOwnership(transportation, req.user.id)) {
+      return redirectAfterError(res, req, null, 'Transportation not found');
     }
 
     const tripId = transportation.tripId;
     await transportation.destroy();
 
-    req.flash('success_msg', 'Transportation deleted successfully');
-
-    // Redirect to trip if attached, otherwise to trips list
-    if (tripId) {
-      res.redirect(`/trips/${tripId}?tab=transportation`);
-    } else {
-      res.redirect('/trips');
-    }
+    redirectAfterSuccess(res, req, tripId, 'transportation', 'Transportation deleted successfully');
   } catch (error) {
     console.error(error);
     req.flash('error_msg', 'Error deleting transportation');

@@ -1,6 +1,12 @@
-const { localToUTC } = require('../utils/timezoneHelper');
 const { CarRental, Trip } = require('../models');
-const geocodingService = require('../services/geocodingService');
+const {
+  verifyTripOwnership,
+  geocodeOriginDestination,
+  redirectAfterSuccess,
+  redirectAfterError,
+  verifyResourceOwnershipViaTrip,
+  convertToUTC
+} = require('./helpers/resourceController');
 
 exports.createCarRental = async (req, res) => {
   try {
@@ -16,22 +22,17 @@ exports.createCarRental = async (req, res) => {
       confirmationNumber
     } = req.body;
 
-    const trip = await Trip.findOne({
-      where: { id: tripId, userId: req.user.id }
-    });
-
+    // Verify trip ownership
+    const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
     if (!trip) {
-      req.flash('error_msg', 'Trip not found');
-      return res.redirect('/trips');
+      return redirectAfterError(res, req, null, 'Trip not found');
     }
 
     // Geocode pickup and dropoff locations
-    const pickupCoords = await geocodingService.geocodeLocation(pickupLocation);
-    const dropoffCoords = await geocodingService.geocodeLocation(dropoffLocation);
-
-    // Convert datetime-local inputs to UTC using proper timezone
-    const pickupUTC = localToUTC(pickupDateTime, pickupTimezone);
-    const dropoffUTC = localToUTC(dropoffDateTime, dropoffTimezone);
+    const { originCoords: pickupCoords, destCoords: dropoffCoords } = await geocodeOriginDestination({
+      originNew: pickupLocation,
+      destNew: dropoffLocation
+    });
 
     await CarRental.create({
       tripId,
@@ -44,17 +45,15 @@ exports.createCarRental = async (req, res) => {
       dropoffTimezone,
       dropoffLat: dropoffCoords?.lat,
       dropoffLng: dropoffCoords?.lng,
-      pickupDateTime: pickupUTC,
-      dropoffDateTime: dropoffUTC,
+      pickupDateTime: convertToUTC(pickupDateTime, pickupTimezone),
+      dropoffDateTime: convertToUTC(dropoffDateTime, dropoffTimezone),
       confirmationNumber
     });
 
-    req.flash('success_msg', 'Car rental added successfully');
-    res.redirect(`/trips/${tripId}?tab=carRentals`);
+    redirectAfterSuccess(res, req, tripId, 'carRentals', 'Car rental added successfully');
   } catch (error) {
     console.error(error);
-    req.flash('error_msg', 'Error adding car rental');
-    res.redirect(`/trips/${req.params.tripId}`);
+    redirectAfterError(res, req, req.params.tripId, 'Error adding car rental');
   }
 };
 
@@ -71,26 +70,25 @@ exports.updateCarRental = async (req, res) => {
       confirmationNumber
     } = req.body;
 
+    // Find car rental with trip
     const carRental = await CarRental.findByPk(req.params.id, {
       include: [{ model: Trip, as: 'trip' }]
     });
 
-    if (!carRental || carRental.trip.userId !== req.user.id) {
-      req.flash('error_msg', 'Car rental not found');
-      return res.redirect('/trips');
+    // Verify ownership
+    if (!verifyResourceOwnershipViaTrip(carRental, req.user.id)) {
+      return redirectAfterError(res, req, null, 'Car rental not found');
     }
 
     // Geocode locations if they changed
-    const pickupCoords = pickupLocation !== carRental.pickupLocation
-      ? await geocodingService.geocodeLocation(pickupLocation)
-      : { lat: carRental.pickupLat, lng: carRental.pickupLng };
-    const dropoffCoords = dropoffLocation !== carRental.dropoffLocation
-      ? await geocodingService.geocodeLocation(dropoffLocation)
-      : { lat: carRental.dropoffLat, lng: carRental.dropoffLng };
-
-    // Convert datetime-local inputs to UTC using proper timezone
-    const pickupUTC = localToUTC(pickupDateTime, pickupTimezone);
-    const dropoffUTC = localToUTC(dropoffDateTime, dropoffTimezone);
+    const { originCoords: pickupCoords, destCoords: dropoffCoords } = await geocodeOriginDestination({
+      originNew: pickupLocation,
+      originOld: carRental.pickupLocation,
+      originCoordsOld: { lat: carRental.pickupLat, lng: carRental.pickupLng },
+      destNew: dropoffLocation,
+      destOld: carRental.dropoffLocation,
+      destCoordsOld: { lat: carRental.dropoffLat, lng: carRental.dropoffLng }
+    });
 
     await carRental.update({
       company,
@@ -102,13 +100,12 @@ exports.updateCarRental = async (req, res) => {
       dropoffTimezone,
       dropoffLat: dropoffCoords?.lat,
       dropoffLng: dropoffCoords?.lng,
-      pickupDateTime: pickupUTC,
-      dropoffDateTime: dropoffUTC,
+      pickupDateTime: convertToUTC(pickupDateTime, pickupTimezone),
+      dropoffDateTime: convertToUTC(dropoffDateTime, dropoffTimezone),
       confirmationNumber
     });
 
-    req.flash('success_msg', 'Car rental updated successfully');
-    res.redirect(`/trips/${carRental.tripId}?tab=carRentals`);
+    redirectAfterSuccess(res, req, carRental.tripId, 'carRentals', 'Car rental updated successfully');
   } catch (error) {
     console.error(error);
     req.flash('error_msg', 'Error updating car rental');
@@ -118,20 +115,20 @@ exports.updateCarRental = async (req, res) => {
 
 exports.deleteCarRental = async (req, res) => {
   try {
+    // Find car rental with trip
     const carRental = await CarRental.findByPk(req.params.id, {
       include: [{ model: Trip, as: 'trip' }]
     });
 
-    if (!carRental || carRental.trip.userId !== req.user.id) {
-      req.flash('error_msg', 'Car rental not found');
-      return res.redirect('/trips');
+    // Verify ownership
+    if (!verifyResourceOwnershipViaTrip(carRental, req.user.id)) {
+      return redirectAfterError(res, req, null, 'Car rental not found');
     }
 
     const tripId = carRental.tripId;
     await carRental.destroy();
 
-    req.flash('success_msg', 'Car rental deleted successfully');
-    res.redirect(`/trips/${tripId}?tab=carRentals`);
+    redirectAfterSuccess(res, req, tripId, 'carRentals', 'Car rental deleted successfully');
   } catch (error) {
     console.error(error);
     req.flash('error_msg', 'Error deleting car rental');

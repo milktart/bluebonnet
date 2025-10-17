@@ -8,8 +8,7 @@
     "dev": "nodemon server.js",
     "build-css": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css --watch",
     "build-css-prod": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css --minify",
-    "migrate": "node -e \"require('./models').sequelize.sync({alter: true})\"",
-    "migrate:userids": "node scripts/migrate-user-ids.js"
+    "migrate": "node -e \"require('./models').sequelize.sync({alter: true})\""
   },
   "keywords": [
     "travel",

@@ -1,6 +1,12 @@
-const { localToUTC } = require('../utils/timezoneHelper');
 const { Event, Trip } = require('../models');
-const geocodingService = require('../services/geocodingService');
+const {
+  verifyTripOwnership,
+  geocodeIfChanged,
+  redirectAfterSuccess,
+  redirectAfterError,
+  verifyResourceOwnership,
+  convertToUTC
+} = require('./helpers/resourceController');
 
 exports.createEvent = async (req, res) => {
   try {
@@ -15,31 +21,23 @@ exports.createEvent = async (req, res) => {
       contactEmail
     } = req.body;
 
-    // If tripId is provided, verify the trip exists and belongs to user
+    // Verify trip ownership if tripId provided
     if (tripId) {
-      const trip = await Trip.findOne({
-        where: { id: tripId, userId: req.user.id }
-      });
-
+      const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
       if (!trip) {
-        req.flash('error_msg', 'Trip not found');
-        return res.redirect('/trips');
+        return redirectAfterError(res, req, null, 'Trip not found');
       }
     }
 
     // Geocode location if provided
-    const coords = location ? await geocodingService.geocodeLocation(location) : null;
-
-    // Convert datetime-local inputs to UTC using proper timezone
-    const startUTC = localToUTC(startDateTime, timezone);
-    const endUTC = localToUTC(endDateTime, timezone);
+    const coords = location ? await geocodeIfChanged(location) : null;
 
     await Event.create({
       userId: req.user.id,
       tripId: tripId || null,
       name,
-      startDateTime: startUTC,
-      endDateTime: endUTC,
+      startDateTime: convertToUTC(startDateTime, timezone),
+      endDateTime: convertToUTC(endDateTime, timezone),
       location,
       timezone,
       lat: coords?.lat,
@@ -48,22 +46,10 @@ exports.createEvent = async (req, res) => {
       contactEmail
     });
 
-    req.flash('success_msg', 'Event added successfully');
-
-    // Redirect to trip if attached, otherwise to trips list
-    if (tripId) {
-      res.redirect(`/trips/${tripId}?tab=events`);
-    } else {
-      res.redirect('/trips');
-    }
+    redirectAfterSuccess(res, req, tripId, 'events', 'Event added successfully');
   } catch (error) {
     console.error(error);
-    req.flash('error_msg', 'Error adding event');
-    if (req.params.tripId) {
-      res.redirect(`/trips/${req.params.tripId}`);
-    } else {
-      res.redirect('/trips');
-    }
+    redirectAfterError(res, req, req.params.tripId, 'Error adding event');
   }
 };
 
@@ -79,33 +65,27 @@ exports.updateEvent = async (req, res) => {
       contactEmail
     } = req.body;
 
+    // Find event with trip
     const event = await Event.findByPk(req.params.id, {
       include: [{ model: Trip, as: 'trip', required: false }]
     });
 
-    if (!event || event.userId !== req.user.id) {
-      req.flash('error_msg', 'Event not found');
-      return res.redirect('/trips');
+    // Verify ownership
+    if (!verifyResourceOwnership(event, req.user.id)) {
+      return redirectAfterError(res, req, null, 'Event not found');
     }
 
-    // Geocode location if it changed or was provided
-    let coords;
-    if (location && location !== event.location) {
-      coords = await geocodingService.geocodeLocation(location);
-    } else if (!location) {
-      coords = null;
-    } else {
-      coords = { lat: event.lat, lng: event.lng };
-    }
-
-    // Convert datetime-local inputs to UTC using proper timezone
-    const startUTC = localToUTC(startDateTime, timezone);
-    const endUTC = localToUTC(endDateTime, timezone);
+    // Geocode location if changed
+    const coords = await geocodeIfChanged(
+      location,
+      event.location,
+      location ? { lat: event.lat, lng: event.lng } : null
+    );
 
     await event.update({
       name,
-      startDateTime: startUTC,
-      endDateTime: endUTC,
+      startDateTime: convertToUTC(startDateTime, timezone),
+      endDateTime: convertToUTC(endDateTime, timezone),
       location,
       timezone,
       lat: coords?.lat,
@@ -114,14 +94,7 @@ exports.updateEvent = async (req, res) => {
       contactEmail
     });
 
-    req.flash('success_msg', 'Event updated successfully');
-
-    // Redirect to trip if attached, otherwise to trips list
-    if (event.tripId) {
-      res.redirect(`/trips/${event.tripId}?tab=events`);
-    } else {
-      res.redirect('/trips');
-    }
+    redirectAfterSuccess(res, req, event.tripId, 'events', 'Event updated successfully');
   } catch (error) {
     console.error(error);
     req.flash('error_msg', 'Error updating event');
@@ -131,26 +104,20 @@ exports.updateEvent = async (req, res) => {
 
 exports.deleteEvent = async (req, res) => {
   try {
+    // Find event with trip
     const event = await Event.findByPk(req.params.id, {
       include: [{ model: Trip, as: 'trip', required: false }]
     });
 
-    if (!event || event.userId !== req.user.id) {
-      req.flash('error_msg', 'Event not found');
-      return res.redirect('/trips');
+    // Verify ownership
+    if (!verifyResourceOwnership(event, req.user.id)) {
+      return redirectAfterError(res, req, null, 'Event not found');
     }
 
     const tripId = event.tripId;
     await event.destroy();
 
-    req.flash('success_msg', 'Event deleted successfully');
-
-    // Redirect to trip if attached, otherwise to trips list
-    if (tripId) {
-      res.redirect(`/trips/${tripId}?tab=events`);
-    } else {
-      res.redirect('/trips');
-    }
+    redirectAfterSuccess(res, req, tripId, 'events', 'Event deleted successfully');
   } catch (error) {
     console.error(error);
     req.flash('error_msg', 'Error deleting event');

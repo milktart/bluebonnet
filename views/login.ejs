@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="https://preline.co/assets/css/main.min.css">
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col">
-  <%- include('partials/nav-new') %>
+  <%- include('partials/nav') %>
 
   <main class="flex flex-col justify-center flex-1 py-6 sm:px-6 lg:px-8">
     <div class="sm:mx-auto sm:w-full sm:max-w-md">
@@ -30,7 +30,7 @@
     </div>
 
     <div class="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
-      <%- include('partials/flash-new') %>
+      <%- include('partials/flash') %>
 
       <div class="bg-white py-6 px-4 shadow-xl ring-1 ring-gray-900/5 sm:rounded-xl sm:px-10">
         <form action="/auth/login" method="POST" class="space-y-6">
@@ -106,7 +106,7 @@
     </div>
   </main>
 
-  <%- include('partials/footer-new') %>
+  <%- include('partials/footer') %>
 
   <!-- Preline JS -->
   <script src="/js/preline.js"></script>
