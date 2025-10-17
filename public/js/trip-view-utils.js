@@ -1,0 +1,245 @@
+/**
+ * Trip View - Utilities
+ * Date/time formatting, airport search, and helper functions
+ */
+
+function formatDateForInput(dateString) {
+  const date = new Date(dateString);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function formatTimeForInput(dateString) {
+  const date = new Date(dateString);
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
+
+function lookupAirline(flightNumber, airlineFieldId = null) {
+  // Find the airline field - try the provided ID first, then look for any airline field
+  let airlineField = airlineFieldId ? document.getElementById(airlineFieldId) :
+                     document.getElementById('airline') || document.getElementById('editAirline');
+
+  if (!airlineField) return;
+
+  if (!flightNumber) {
+    airlineField.value = '';
+    return;
+  }
+
+  const airlineCodeMatch = flightNumber.match(/^([A-Z]{1,3})/);
+  if (!airlineCodeMatch) {
+    airlineField.value = '';
+    return;
+  }
+
+  const airlineCode = airlineCodeMatch[1];
+  const airline = airlineData.find(a => a.iata === airlineCode);
+
+  if (airline) {
+    airlineField.value = airline.name;
+  } else {
+    airlineField.value = '';
+  }
+}
+
+// Note: airportsData is declared globally in view.ejs
+
+function formatAirportDisplay(code, airport) {
+  return `${code} - ${airport.airport_name}, ${airport.city_name}, ${airport.country_name}`;
+}
+
+function searchAirports(query) {
+  if (!query || query.length < 2) return [];
+
+  const lowerQuery = query.toLowerCase();
+  const results = [];
+
+  Object.entries(airportsData).forEach(([code, airport]) => {
+    const searchText = `${code} ${airport.airport_name} ${airport.city_name} ${airport.country_name}`.toLowerCase();
+
+    if (searchText.includes(lowerQuery)) {
+      results.push({
+        code: code,
+        airport: airport,
+        display: formatAirportDisplay(code, airport),
+        relevance: calculateRelevance(lowerQuery, code, airport)
+      });
+    }
+  });
+
+  results.sort((a, b) => b.relevance - a.relevance);
+  return results.slice(0, 10);
+}
+
+function calculateRelevance(query, code, airport) {
+  let score = 0;
+  const lowerCode = code.toLowerCase();
+  const lowerAirportName = airport.airport_name.toLowerCase();
+  const lowerCityName = airport.city_name.toLowerCase();
+  const lowerCountryName = airport.country_name.toLowerCase();
+
+  if (lowerCode === query) {
+    score += 1000;
+  } else if (lowerCode.startsWith(query)) {
+    score += 900;
+  } else if (lowerCityName === query) {
+    score += 800;
+  } else if (lowerCityName.startsWith(query)) {
+    score += 700;
+  } else if (lowerAirportName.startsWith(query)) {
+    score += 600;
+  } else if (lowerCityName.includes(query)) {
+    score += 500;
+  } else if (lowerAirportName.includes(query)) {
+    score += 400;
+  } else if (lowerCountryName.includes(query)) {
+    score += 300;
+  }
+
+  if (lowerCode === query) score += 500;
+  if (lowerCityName === query) score += 400;
+  if (lowerAirportName === query) score += 300;
+
+  return score;
+}
+
+function formatTimeInput(input) {
+  if (input && input.value) {
+    let timeValue = input.value.replace(/[^\d]/g, '');
+
+    if (timeValue.length === 3) {
+      input.value = '0' + timeValue[0] + ':' + timeValue.slice(1);
+    } else if (timeValue.length === 4) {
+      input.value = timeValue.slice(0, 2) + ':' + timeValue.slice(2);
+    }
+  }
+}
+
+function initFlightDateTimePickers() {
+  const departureTimeInput = document.getElementById('flightDepartureTime');
+  const arrivalTimeInput = document.getElementById('flightArrivalTime');
+
+  if (departureTimeInput) {
+    departureTimeInput.addEventListener('blur', function(e) {
+      formatTimeInput(this);
+    });
+
+    departureTimeInput.addEventListener('keydown', function(e) {
+      if (e.key !== 'Backspace' && e.key !== 'Delete' && this.value.length === 2 && !this.value.includes(':')) {
+        this.value = this.value + ':';
+      }
+    });
+  }
+
+  if (arrivalTimeInput) {
+    arrivalTimeInput.addEventListener('blur', function(e) {
+      formatTimeInput(this);
+    });
+
+    arrivalTimeInput.addEventListener('keydown', function(e) {
+      if (e.key !== 'Backspace' && e.key !== 'Delete' && this.value.length === 2 && !this.value.includes(':')) {
+        this.value = this.value + ':';
+      }
+    });
+  }
+}
+
+function initAirportSearch() {
+  initCustomCombobox('origin-search');
+  initCustomCombobox('destination-search');
+  initCustomCombobox('edit-origin-search');
+  initCustomCombobox('edit-destination-search');
+}
+
+function initCustomCombobox(inputId) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+
+  const container = input.closest('[data-hs-combobox]');
+  const dropdown = container.querySelector('[data-hs-combobox-output]');
+  const itemsWrapper = dropdown.querySelector('[data-hs-combobox-output-items-wrapper]');
+
+  input.addEventListener('input', function() {
+    const query = this.value;
+
+    if (query.length < 2) {
+      dropdown.classList.add('hidden');
+      return;
+    }
+
+    const results = searchAirports(query);
+    itemsWrapper.innerHTML = '';
+
+    if (results.length === 0) {
+      itemsWrapper.innerHTML = '<div class="py-2 px-4 text-sm text-gray-500">No airports found</div>';
+    } else {
+      results.forEach(result => {
+        const item = document.createElement('div');
+        item.className = 'cursor-pointer py-2 px-4 w-full text-sm text-gray-800 hover:bg-gray-100 rounded-lg focus:outline-none focus:bg-gray-100';
+        item.setAttribute('data-hs-combobox-output-item', '');
+        item.setAttribute('tabindex', '0');
+
+        item.innerHTML = `
+          <div class="flex justify-between items-center w-full">
+            <div>
+              <div class="font-medium">${result.code}</div>
+              <div class="text-xs text-gray-500">${result.airport.airport_name}</div>
+              <div class="text-xs text-gray-400">${result.airport.city_name}, ${result.airport.country_name}</div>
+            </div>
+          </div>
+        `;
+
+        item.addEventListener('click', function() {
+          input.value = result.display;
+          dropdown.classList.add('hidden');
+          const event = new Event('change', { bubbles: true });
+          input.dispatchEvent(event);
+        });
+
+        itemsWrapper.appendChild(item);
+      });
+    }
+
+    dropdown.classList.remove('hidden');
+  });
+
+  input.addEventListener('focus', function() {
+    if (this.value.length >= 2) {
+      dropdown.classList.remove('hidden');
+    }
+  });
+
+  input.addEventListener('blur', function() {
+    setTimeout(() => {
+      dropdown.classList.add('hidden');
+    }, 200);
+  });
+
+  input.addEventListener('keydown', function(e) {
+    const items = dropdown.querySelectorAll('[data-hs-combobox-output-item]');
+    const activeItem = dropdown.querySelector('[data-hs-combobox-output-item].bg-gray-100');
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      let nextItem = activeItem ? activeItem.nextElementSibling : items[0];
+      if (!nextItem) nextItem = items[0];
+      items.forEach(item => item.classList.remove('bg-gray-100'));
+      if (nextItem) nextItem.classList.add('bg-gray-100');
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      let prevItem = activeItem ? activeItem.previousElementSibling : items[items.length - 1];
+      if (!prevItem) prevItem = items[items.length - 1];
+      items.forEach(item => item.classList.remove('bg-gray-100'));
+      if (prevItem) prevItem.classList.add('bg-gray-100');
+    } else if (e.key === 'Enter' && activeItem) {
+      e.preventDefault();
+      activeItem.click();
+    } else if (e.key === 'Escape') {
+      dropdown.classList.add('hidden');
+    }
+  });
+}

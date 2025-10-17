@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%- title %></title>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Google Material Symbols -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <!-- Tailwind CSS -->
+  <link href="https://unpkg.com/tailwindcss@^2.0/dist/tailwind.min.css" rel="stylesheet">
+  <!-- Trip View Styles -->
+  <link href="/css/trip-view.css" rel="stylesheet">
+</head>
+<body class="overflow-hidden">
+  <!-- Navigation hidden on this full-screen map view -->
+  <div class="hide-nav">
+    <%- include('../partials/nav') %>
+  </div>
+
+  <!-- Full-screen map -->
+  <div id="tripMap"></div>
+
+  <!-- Secondary Sidebar - for editing forms -->
+  <div id="secondary-sidebar" class="secondary-sidebar">
+    <div class="p-6">
+      <div id="secondary-sidebar-content">
+        <!-- Dynamic edit content will be inserted here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Primary Sidebar -->
+  <div class="primary-sidebar">
+    <!-- Fixed Header -->
+    <div class="sidebar-header p-6">
+      <!-- Header -->
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center">
+          <a href="/trips" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+          </a>
+          <%
+            // Determine icon based on trip purpose
+            let tripIcon = 'flight'; // default
+            let iconClass = 'text-blue-600';
+            let bgClass = 'bg-blue-100';
+
+            if (trip.purpose === 'business') {
+              tripIcon = 'badge';
+              iconClass = 'text-purple-600';
+              bgClass = 'bg-purple-100';
+            } else if (trip.purpose === 'leisure' || trip.purpose === 'family' || trip.purpose === 'romantic') {
+              tripIcon = 'hotel';
+              iconClass = 'text-green-600';
+              bgClass = 'bg-green-100';
+            }
+          %>
+          <div class="w-8 h-8 <%= bgClass %> rounded-lg flex items-center justify-center mr-3 ml-0 mr-1">
+            <span class="material-symbols-outlined <%= iconClass %>" style="font-size: 16px;"><%= tripIcon %></span>
+          </div>
+          <div>
+            <h1 class="text-xl font-bold text-gray-900"><%- trip.name %></h1>
+            <p class="text-xs text-gray-500"><%- formatDate(trip.departureDate) %> - <%- formatDate(trip.returnDate) %></p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2">
+          <% if (isOwner) { %>
+            <button onclick="loadSidebarContent('/trips/<%- trip.id %>/edit/sidebar')" class="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md shadow-sm hover:bg-blue-100">
+              <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+              Edit
+            </button>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Flash messages -->
+      <% if (typeof success_msg !== 'undefined' && success_msg && success_msg.length > 0) { %>
+        <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded-md text-green-800 text-sm">
+          <%= success_msg %>
+        </div>
+      <% } %>
+      <% if (typeof error_msg !== 'undefined' && error_msg && error_msg.length > 0) { %>
+        <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-800 text-sm">
+          <%= error_msg %>
+        </div>
+      <% } %>
+      <% if (typeof error !== 'undefined' && error && error.length > 0) { %>
+        <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-800 text-sm">
+          <%= error %>
+        </div>
+      <% } %>
+
+      <!-- Add buttons for new items -->
+      <div class="grid grid-cols-2 gap-2 mb-6">
+        <button onclick="showAddItemMenu()" class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          Add Item
+        </button>
+        <a href="/trips/<%- trip.id %>/calendar" class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+          Calendar
+        </a>
+      </div>
+    </div>
+
+    <!-- Scrollable Content -->
+    <div class="sidebar-content">
+      <!-- Trip Timeline -->
+      <div class="p-6">
+        <%
+          // Server-side formatting functions (must match datetime-formatter.js)
+          function formatDate(date) {
+            const d = new Date(date);
+            const day = String(d.getDate()).padStart(2, '0');
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const month = months[d.getMonth()];
+            const year = d.getFullYear();
+            return `${day} ${month} ${year}`;
+          }
+
+          const allItems = [];
+
+          // Helper function to extract flight number without airline code
+          function getFlightNum(flightNumber) {
+            const match = flightNumber.match(/(\d+)$/);
+            return match ? match[1] : flightNumber;
+          }
+
+          // Helper function to extract city name from location string
+          function getCityName(location) {
+            if (location.includes(' - ')) {
+              const parts = location.split(' - ')[1];
+              if (parts && parts.includes(',')) {
+                return parts.split(',')[0].trim();
+              }
+              return parts;
+            }
+            return location.split(' - ')[0] || location;
+          }
+
+          // Collect all items
+          trip.flights.forEach(f => {
+            const flightNum = getFlightNum(f.flightNumber);
+            const airlineCode = f.flightNumber.replace(/\d+$/, '');
+            const originCity = getCityName(f.origin);
+            const destinationCity = getCityName(f.destination);
+            allItems.push({
+              type: 'flight',
+              time: new Date(f.departureDateTime),
+              data: f,
+              display: `${airlineCode}${flightNum}: ${originCity} → ${destinationCity}`,
+              hasSegment: true,
+              marker: null,
+              id: f.id
+            });
+          });
+
+          trip.hotels.forEach(h => {
+            allItems.push({
+              type: 'hotel',
+              time: new Date(h.checkInDateTime),
+              data: h,
+              display: h.hotelName,
+              hasSegment: false,
+              marker: null,
+              id: h.id
+            });
+          });
+
+          trip.transportation.forEach(t => {
+            const originCity = getCityName(t.origin);
+            const destinationCity = getCityName(t.destination);
+            allItems.push({
+              type: 'transportation',
+              time: new Date(t.departureDateTime),
+              data: t,
+              display: `${t.method}: ${originCity} → ${destinationCity}`,
+              hasSegment: true,
+              marker: null,
+              id: t.id
+            });
+          });
+
+          trip.carRentals.forEach(c => {
+            allItems.push({
+              type: 'carRental',
+              time: new Date(c.pickupDateTime),
+              data: c,
+              display: `${c.company}`,
+              hasSegment: false,
+              marker: null,
+              id: c.id
+            });
+          });
+
+          trip.events.forEach(e => {
+            allItems.push({
+              type: 'event',
+              time: new Date(e.startDateTime),
+              data: e,
+              display: e.name,
+              hasSegment: false,
+              marker: null,
+              id: e.id
+            });
+          });
+
+          // Sort by time FIRST
+          allItems.sort((a, b) => a.time - b.time);
+
+          // Now assign markers in chronological order to items with segments
+          let mapMarkerCounter = 0;
+          allItems.forEach(item => {
+            if (item.hasSegment) {
+              mapMarkerCounter++;
+              item.marker = mapMarkerCounter;
+            }
+          });
+
+          const itemsByDate = {};
+          allItems.forEach(item => {
+            const dateKey = item.time.toISOString().split('T')[0];
+            if (!itemsByDate[dateKey]) itemsByDate[dateKey] = [];
+            itemsByDate[dateKey].push(item);
+          });
+        %>
+
+        <% if (allItems.length === 0) { %>
+          <div class="text-center py-12">
+            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+              </svg>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No items yet</h3>
+            <p class="text-gray-500 mb-6">Add flights, hotels, or activities to see them here</p>
+            <button onclick="showAddItemMenu()" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+              Add first item
+            </button>
+          </div>
+        <% } else { %>
+          <div class="space-y-4">
+            <% Object.keys(itemsByDate).forEach(dateKey => { %>
+              <div class="border-l-2 border-blue-200 pl-4 ml-2">
+                <div class="mb-3">
+                  <div class="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
+                    <%- formatDate(dateKey) %>
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <% itemsByDate[dateKey].forEach(item => {
+                    const hours = String(item.time.getHours()).padStart(2, '0');
+                    const minutes = String(item.time.getMinutes()).padStart(2, '0');
+                    const typeClass = `marker-${item.type}`;
+                  %>
+                    <div class="timeline-item flex items-start space-x-3 p-3 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors cursor-pointer"
+                         data-item-id="<%= item.id %>"
+                         data-item-type="<%= item.type %>"
+                         data-marker="<%= item.marker || '' %>"
+                         onmouseover="highlightMapMarker('<%= item.marker || '' %>', '<%= item.type %>')"
+                         onmouseout="unhighlightMapMarker('<%= item.marker || '' %>')"
+                         onclick="editItem('<%= item.type %>', '<%= item.id %>')">
+
+
+                      <% if (item.type === 'flight') { %>
+                        <span class="material-symbols-outlined text-blue-600 text-sm">flight</span>
+                      <% } else if (item.type === 'hotel') { %>
+                        <span class="material-symbols-outlined text-green-600 text-sm">hotel</span>
+                      <% } else if (item.type === 'transportation') { %>
+                        <span class="material-symbols-outlined text-amber-600 text-sm">train</span>
+                      <% } else if (item.type === 'carRental') { %>
+                        <span class="material-symbols-outlined text-gray-600 text-sm">directions_car</span>
+                      <% } else if (item.type === 'event') { %>
+                        <span class="material-symbols-outlined text-red-600 text-sm">event</span>
+                      <% } %>
+
+                        
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center space-x-2 mb-1">
+                          <span class="text-xs font-medium text-gray-900"><%= hours %>:<%= minutes %></span>
+                        </div>
+                        <p class="text-sm text-gray-600"><%= item.display %></p>
+                      </div>
+                      <div class="flex-shrink-0">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                      </div>
+                    </div>
+                  <% }) %>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/js/datetime-formatter.js"></script>
+  <script src="/js/map.js"></script>
+  <script src="/js/trip-utils.js"></script>
+  <script src="/js/trip-map.js"></script>
+  <!-- Lodash - required for Advanced Datepicker -->
+  <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+  <!-- Vanilla Calendar Pro JS - must load BEFORE preline -->
+  <script src="https://cdn.jsdelivr.net/npm/vanilla-calendar-pro@2.9.0/build/vanilla-calendar.min.js"></script>
+  <script>
+    if (window.VanillaCalendar && !window.VanillaCalendarPro) {
+      window.VanillaCalendarPro = window.VanillaCalendar;
+    }
+  </script>
+  <script src="/js/preline.js"></script>
+  <!-- Trip View Scripts -->
+  <script src="/js/trip-view-map.js"></script>
+  <script src="/js/trip-view-sidebar.js"></script>
+  <script src="/js/sidebar-loader.js"></script>
+  <script src="/js/trip-view-utils.js"></script>
+  <script src="/js/companion-selector.js"></script>
+
+  <script>
+    // Trip data for map
+    const tripData = {
+      departureDate: '<%- trip.departureDate %>',
+      returnDate: '<%- trip.returnDate %>',
+      flights: <%- JSON.stringify(trip.flights) %>,
+      hotels: <%- JSON.stringify(trip.hotels) %>,
+      transportation: <%- JSON.stringify(trip.transportation) %>,
+      carRentals: <%- JSON.stringify(trip.carRentals) %>,
+      events: <%- JSON.stringify(trip.events) %>
+    };
+
+    // Initialize map and hover effects
+    let mapInitialized = false;
+    let currentMap = null;
+    const activeAnimations = {};
+
+
+    // Initialize when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Trip data:', tripData);
+
+      if (typeof L === 'undefined') {
+        console.error('Leaflet not loaded');
+        const mapEl = document.getElementById('tripMap');
+        if (mapEl) {
+          mapEl.innerHTML = '<div class="bg-red-50 border border-red-200 rounded-md p-4 text-red-700">Map library not loaded. Please refresh the page.</div>';
+        }
+        return;
+      }
+
+      // Initialize map immediately
+      setTimeout(() => {
+        if (!mapInitialized) {
+          initOverviewMap(tripData, 'tripMap')
+            .then((map) => {
+              mapInitialized = true;
+              currentMap = map;
+              setupTimelineHoverEffects(map);
+              console.log('Map initialized successfully');
+
+              // Map sizing is now handled by trip-map.js
+            })
+            .catch(error => {
+              console.error('Map initialization error:', error);
+              const mapEl = document.getElementById('tripMap');
+              if (mapEl) {
+                mapEl.innerHTML = '<div class="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-yellow-700">Map failed to load: ' + error.message + '</div>';
+              }
+            });
+        }
+      }, 500);
+    });
+
+    // Show add item menu
+    function showAddItemMenu() {
+      const container = document.getElementById('secondary-sidebar-content');
+      const content = `
+        <div class="space-y-3">
+          <button onclick="showAddForm('flight')" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors">
+            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <span class="material-symbols-outlined text-blue-600" style="font-size: 16px;">flight</span>
+            </div>
+            <div class="flex-1 text-left">
+              <h3 class="text-sm font-medium text-gray-900">Add Flight</h3>
+              <p class="text-xs text-gray-500">Add a flight to your trip</p>
+            </div>
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </button>
+
+          <button onclick="showAddForm('hotel')" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors">
+            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+              <span class="material-symbols-outlined text-green-600" style="font-size: 16px;">hotel</span>
+            </div>
+            <div class="flex-1 text-left">
+              <h3 class="text-sm font-medium text-gray-900">Add Hotel</h3>
+              <p class="text-xs text-gray-500">Add accommodation to your trip</p>
+            </div>
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </button>
+
+          <button onclick="showAddForm('transportation')" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors">
+            <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+              <span class="material-symbols-outlined text-amber-600" style="font-size: 16px;">train</span>
+            </div>
+            <div class="flex-1 text-left">
+              <h3 class="text-sm font-medium text-gray-900">Add Transportation</h3>
+              <p class="text-xs text-gray-500">Add train, bus, or other transport</p>
+            </div>
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </button>
+
+          <button onclick="showAddForm('carRental')" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors">
+            <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+              <span class="material-symbols-outlined text-gray-600" style="font-size: 16px;">directions_car</span>
+            </div>
+            <div class="flex-1 text-left">
+              <h3 class="text-sm font-medium text-gray-900">Add Car Rental</h3>
+              <p class="text-xs text-gray-500">Add rental car details</p>
+            </div>
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </button>
+
+          <button onclick="showAddForm('event')" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors">
+            <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+              <span class="material-symbols-outlined text-red-600" style="font-size: 16px;">event</span>
+            </div>
+            <div class="flex-1 text-left">
+              <h3 class="text-sm font-medium text-gray-900">Add Event</h3>
+              <p class="text-xs text-gray-500">Add activity or event</p>
+            </div>
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </button>
+        </div>
+      `;
+
+      if (container) container.innerHTML = content;
+      openSecondarySidebar();
+    }
+
+
+    // Create edit forms for each type
+    function createFlightEditForm(flight) {
+      return `
+        <div class="flex items-start justify-between mb-6">
+          <div class="flex items-center">
+            <button onclick="showAddItemMenu()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <h2 class="text-lg font-bold text-gray-900">Edit Flight</h2>
+          </div>
+          <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-blue-600" style="font-size: 16px;">flight</span>
+          </div>
+        </div>
+        <form action="/flights/${flight.id}?_method=PUT" method="POST" class="space-y-4">
+          <div class="grid grid-cols-3 gap-3">
+            <div class="col-span-1">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Flight Number</label>
+              <input type="text" name="flightNumber" id="editFlightNumber" value="${flight.flightNumber || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="lookupAirline(this.value)">
+            </div>
+            <div class="col-span-2">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Airline</label>
+              <input type="text" name="airline" id="editAirline" value="${flight.airline || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" readonly>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Origin</label>
+              <div class="relative" data-hs-combobox='{"groupingType": "default", "preventSelection": false, "isOpenOnFocus": true}'>
+                <div class="relative">
+                  <input class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9" type="text" name="origin" id="edit-origin-search" placeholder="Search airports..." value="${flight.origin || ''}" data-hs-combobox-input autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+                  <div class="absolute right-2 top-2.5 pointer-events-none">
+                    <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                  </div>
+                </div>
+                <div class="absolute z-50 w-full max-h-72 p-1 bg-white border border-gray-200 rounded-lg shadow-md hidden" data-hs-combobox-output>
+                  <div data-hs-combobox-output-items-wrapper>
+                    <div class="cursor-pointer py-2 px-4 w-full text-sm text-gray-800 hover:bg-gray-100 rounded-lg focus:outline-none focus:bg-gray-100" data-hs-combobox-output-item tabindex="0">
+                      <div class="flex justify-between items-center w-full">
+                        <span data-hs-combobox-search-text></span>
+                        <span class="hidden hs-combobox-selected:block">
+                          <svg class="flex-shrink-0 w-3.5 h-3.5 text-blue-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20,6 9,17 4,12"></polyline>
+                          </svg>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Destination</label>
+              <div class="relative" data-hs-combobox='{"groupingType": "default", "preventSelection": false, "isOpenOnFocus": true}'>
+                <div class="relative">
+                  <input class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9" type="text" name="destination" id="edit-destination-search" placeholder="Search airports..." value="${flight.destination || ''}" data-hs-combobox-input autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+                  <div class="absolute right-2 top-2.5 pointer-events-none">
+                    <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                  </div>
+                </div>
+                <div class="absolute z-50 w-full max-h-72 p-1 bg-white border border-gray-200 rounded-lg shadow-md hidden" data-hs-combobox-output>
+                  <div data-hs-combobox-output-items-wrapper>
+                    <div class="cursor-pointer py-2 px-4 w-full text-sm text-gray-800 hover:bg-gray-100 rounded-lg focus:outline-none focus:bg-gray-100" data-hs-combobox-output-item tabindex="0">
+                      <div class="flex justify-between items-center w-full">
+                        <span data-hs-combobox-search-text></span>
+                        <span class="hidden hs-combobox-selected:block">
+                          <svg class="flex-shrink-0 w-3.5 h-3.5 text-blue-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20,6 9,17 4,12"></polyline>
+                          </svg>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Departure Date</label>
+              <input type="date" id="editFlightDepartureDate" name="departureDate" value="${formatDateForInput(flight.departureDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Departure Time</label>
+              <input type="text" id="editFlightDepartureTime" name="departureTime" value="${formatTimeForInput(flight.departureDateTime)}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="HH:MM">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Arrival Date</label>
+              <input type="date" id="editFlightArrivalDate" name="arrivalDate" value="${formatDateForInput(flight.arrivalDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Arrival Time</label>
+              <input type="text" id="editFlightArrivalTime" name="arrivalTime" value="${formatTimeForInput(flight.arrivalDateTime)}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="HH:MM">
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-3">
+            <div class="col-span-2">
+              <label class="block text-sm font-medium text-gray-700 mb-1">PNR</label>
+              <input type="text" name="pnr" value="${flight.pnr || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="col-span-1">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Seat</label>
+              <input type="text" name="seat" value="${flight.seat || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <input type="hidden" name="tripId" value="<%- trip.id %>">
+          <div class="flex space-x-3 pt-4">
+            <button type="submit" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              Update Flight
+            </button>
+            <button type="button" onclick="closeSecondarySidebar()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+              Cancel
+            </button>
+          </div>
+        </form>
+      `;
+    }
+
+    function createHotelEditForm(hotel) {
+      return `
+        <div class="flex items-start justify-between mb-6">
+          <div class="flex items-center">
+            <button onclick="showAddItemMenu()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <h2 class="text-lg font-bold text-gray-900">Edit Hotel</h2>
+          </div>
+          <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-green-600" style="font-size: 16px;">hotel</span>
+          </div>
+        </div>
+        <form action="/hotels/${hotel.id}?_method=PUT" method="POST" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Hotel Name</label>
+            <input type="text" name="hotelName" value="${hotel.hotelName || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+            <input type="text" name="address" value="${hotel.address || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+            <input type="text" name="phone" value="${hotel.phone || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Check-in Date</label>
+              <input type="date" name="checkInDate" value="${formatDateForInput(hotel.checkInDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Check-in Time</label>
+              <input type="time" name="checkInTime" value="${formatTimeForInput(hotel.checkInDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Check-out Date</label>
+              <input type="date" name="checkOutDate" value="${formatDateForInput(hotel.checkOutDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Check-out Time</label>
+              <input type="time" name="checkOutTime" value="${formatTimeForInput(hotel.checkOutDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Confirmation Number</label>
+            <input type="text" name="confirmationNumber" value="${hotel.confirmationNumber || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
+            <input type="text" name="roomNumber" value="${hotel.roomNumber || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <input type="hidden" name="tripId" value="<%- trip.id %>">
+          <div class="flex space-x-3 pt-4">
+            <button type="submit" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              Update Hotel
+            </button>
+            <button type="button" onclick="closeSecondarySidebar()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+              Cancel
+            </button>
+          </div>
+        </form>
+      `;
+    }
+
+    function createTransportationEditForm(transport) {
+      return `
+        <div class="flex items-start justify-between mb-6">
+          <div class="flex items-center">
+            <button onclick="showAddItemMenu()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <h2 class="text-lg font-bold text-gray-900">Edit Transportation</h2>
+          </div>
+          <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-amber-600" style="font-size: 16px;">train</span>
+          </div>
+        </div>
+        <form action="/transportation/${transport.id}?_method=PUT" method="POST" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Method</label>
+            <select name="method" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white">
+              <option value="Train" ${transport.method === 'Train' ? 'selected' : ''}>Train</option>
+              <option value="Bus" ${transport.method === 'Bus' ? 'selected' : ''}>Bus</option>
+              <option value="Ferry" ${transport.method === 'Ferry' ? 'selected' : ''}>Ferry</option>
+              <option value="Taxi" ${transport.method === 'Taxi' ? 'selected' : ''}>Taxi</option>
+              <option value="Other" ${transport.method === 'Other' ? 'selected' : ''}>Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Journey Number</label>
+            <input type="text" name="journeyNumber" value="${transport.journeyNumber || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Origin</label>
+            <input type="text" name="origin" value="${transport.origin || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Destination</label>
+            <input type="text" name="destination" value="${transport.destination || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Departure Date</label>
+              <input type="date" name="departureDate" value="${formatDateForInput(transport.departureDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Departure Time</label>
+              <input type="time" name="departureTime" value="${formatTimeForInput(transport.departureDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Arrival Date</label>
+              <input type="date" name="arrivalDate" value="${formatDateForInput(transport.arrivalDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Arrival Time</label>
+              <input type="time" name="arrivalTime" value="${formatTimeForInput(transport.arrivalDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Confirmation Number</label>
+            <input type="text" name="confirmationNumber" value="${transport.confirmationNumber || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Seat</label>
+            <input type="text" name="seat" value="${transport.seat || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <input type="hidden" name="tripId" value="<%- trip.id %>">
+          <div class="flex space-x-3 pt-4">
+            <button type="submit" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              Update Transportation
+            </button>
+            <button type="button" onclick="closeSecondarySidebar()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+              Cancel
+            </button>
+          </div>
+        </form>
+      `;
+    }
+
+    function createCarRentalEditForm(rental) {
+      return `
+        <div class="flex items-start justify-between mb-6">
+          <div class="flex items-center">
+            <button onclick="showAddItemMenu()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <h2 class="text-lg font-bold text-gray-900">Edit Car Rental</h2>
+          </div>
+          <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-gray-600" style="font-size: 16px;">directions_car</span>
+          </div>
+        </div>
+        <form action="/car-rentals/${rental.id}?_method=PUT" method="POST" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Company</label>
+            <input type="text" name="company" value="${rental.company || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Pickup Location</label>
+            <input type="text" name="pickupLocation" value="${rental.pickupLocation || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Dropoff Location</label>
+            <input type="text" name="dropoffLocation" value="${rental.dropoffLocation || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Pickup Date</label>
+              <input type="date" name="pickupDate" value="${formatDateForInput(rental.pickupDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Pickup Time</label>
+              <input type="time" name="pickupTime" value="${formatTimeForInput(rental.pickupDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Dropoff Date</label>
+              <input type="date" name="dropoffDate" value="${formatDateForInput(rental.dropoffDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Dropoff Time</label>
+              <input type="time" name="dropoffTime" value="${formatTimeForInput(rental.dropoffDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Confirmation Number</label>
+            <input type="text" name="confirmationNumber" value="${rental.confirmationNumber || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <input type="hidden" name="tripId" value="<%- trip.id %>">
+          <div class="flex space-x-3 pt-4">
+            <button type="submit" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              Update Car Rental
+            </button>
+            <button type="button" onclick="closeSecondarySidebar()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+              Cancel
+            </button>
+          </div>
+        </form>
+      `;
+    }
+
+    function createEventEditForm(event) {
+      return `
+        <div class="flex items-start justify-between mb-6">
+          <div class="flex items-center">
+            <button onclick="showAddItemMenu()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <h2 class="text-lg font-bold text-gray-900">Edit Event</h2>
+          </div>
+          <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-red-600" style="font-size: 16px;">event</span>
+          </div>
+        </div>
+        <form action="/events/${event.id}?_method=PUT" method="POST" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Event Name</label>
+            <input type="text" name="name" value="${event.name || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+            <input type="text" name="location" value="${event.location || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+              <input type="date" name="startDate" value="${formatDateForInput(event.startDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+              <input type="time" name="startTime" value="${formatTimeForInput(event.startDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+              <input type="date" name="endDate" value="${formatDateForInput(event.endDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+              <input type="time" name="endTime" value="${formatTimeForInput(event.endDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Contact Phone</label>
+            <input type="text" name="contactPhone" value="${event.contactPhone || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Contact Email</label>
+            <input type="email" name="contactEmail" value="${event.contactEmail || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <input type="hidden" name="tripId" value="<%- trip.id %>">
+          <div class="flex space-x-3 pt-4">
+            <button type="submit" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              Update Event
+            </button>
+            <button type="button" onclick="closeSecondarySidebar()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+              Cancel
+            </button>
+          </div>
+        </form>
+      `;
+    }
+
+
+    // Create add forms for each type
+    function createFlightAddForm() {
+      return `
+        <div class="flex items-start justify-between mb-6">
+          <div class="flex items-center">
+            <button onclick="showAddItemMenu()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <h2 class="text-lg font-bold text-gray-900">Add Flight</h2>
+          </div>
+          <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-blue-600" style="font-size: 16px;">flight</span>
+          </div>
+        </div>
+        <form action="/flights/trips/<%- trip.id %>/flights" method="POST" class="space-y-4">
+          <div class="grid grid-cols-3 gap-3">
+            <div class="col-span-1">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Flight Number</label>
+              <input type="text" name="flightNumber" id="flightNumber" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="lookupAirline(this.value)">
+            </div>
+            <div class="col-span-2">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Airline</label>
+              <input type="text" name="airline" id="airline" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" readonly>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Origin</label>
+              <div class="relative" data-hs-combobox='{"groupingType": "default", "preventSelection": false, "isOpenOnFocus": true}'>
+                <div class="relative">
+                  <input class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9" type="text" name="origin" id="origin-search" placeholder="Search airports..." data-hs-combobox-input autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+                  <div class="absolute right-2 top-2.5 pointer-events-none">
+                    <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                  </div>
+                </div>
+                <div class="absolute z-50 w-full max-h-72 p-1 bg-white border border-gray-200 rounded-lg shadow-md hidden" data-hs-combobox-output>
+                  <div data-hs-combobox-output-items-wrapper>
+                    <div class="cursor-pointer py-2 px-4 w-full text-sm text-gray-800 hover:bg-gray-100 rounded-lg focus:outline-none focus:bg-gray-100" data-hs-combobox-output-item tabindex="0">
+                      <div class="flex justify-between items-center w-full">
+                        <span data-hs-combobox-search-text></span>
+                        <span class="hidden hs-combobox-selected:block">
+                          <svg class="flex-shrink-0 w-3.5 h-3.5 text-blue-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20,6 9,17 4,12"></polyline>
+                          </svg>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Destination</label>
+              <div class="relative" data-hs-combobox='{"groupingType": "default", "preventSelection": false, "isOpenOnFocus": true}'>
+                <div class="relative">
+                  <input class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9" type="text" name="destination" id="destination-search" placeholder="Search airports..." data-hs-combobox-input autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+                  <div class="absolute right-2 top-2.5 pointer-events-none">
+                    <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                  </div>
+                </div>
+                <div class="absolute z-50 w-full max-h-72 p-1 bg-white border border-gray-200 rounded-lg shadow-md hidden" data-hs-combobox-output>
+                  <div data-hs-combobox-output-items-wrapper>
+                    <div class="cursor-pointer py-2 px-4 w-full text-sm text-gray-800 hover:bg-gray-100 rounded-lg focus:outline-none focus:bg-gray-100" data-hs-combobox-output-item tabindex="0">
+                      <div class="flex justify-between items-center w-full">
+                        <span data-hs-combobox-search-text></span>
+                        <span class="hidden hs-combobox-selected:block">
+                          <svg class="flex-shrink-0 w-3.5 h-3.5 text-blue-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20,6 9,17 4,12"></polyline>
+                          </svg>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Departure Date</label>
+              <input type="date" id="flightDepartureDate" name="departureDate" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Departure Time</label>
+              <input type="text" id="flightDepartureTime" name="departureTime" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="HH:MM">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Arrival Date</label>
+              <input type="date" id="flightArrivalDate" name="arrivalDate" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Arrival Time</label>
+              <input type="text" id="flightArrivalTime" name="arrivalTime" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="HH:MM">
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-3">
+            <div class="col-span-2">
+              <label class="block text-sm font-medium text-gray-700 mb-1">PNR</label>
+              <input type="text" name="pnr" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="col-span-1">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Seat</label>
+              <input type="text" name="seat" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <input type="hidden" name="tripId" value="<%- trip.id %>">
+          <div class="flex space-x-3 pt-4">
+            <button type="submit" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              Add Flight
+            </button>
+            <button type="button" onclick="closeSecondarySidebar()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+              Cancel
+            </button>
+          </div>
+        </form>
+      `;
+    }
+
+    function createHotelAddForm() {
+      // Parse dates in local timezone (avoiding UTC conversion issues)
+      const parseLocalDate = (dateStr) => {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        return new Date(year, month - 1, day);
+      };
+
+      // Calculate default check-in and check-out dates
+      const tripStartDate = parseLocalDate(tripData.departureDate);
+      const tripEndDate = parseLocalDate(tripData.returnDate);
+
+      let checkInDate = tripStartDate;
+
+      // If there are existing hotel reservations, use the latest checkout date
+      if (tripData.hotels && tripData.hotels.length > 0) {
+        let latestCheckOutDate = new Date(tripData.hotels[0].checkOutDateTime);
+        for (let i = 1; i < tripData.hotels.length; i++) {
+          const checkOutDate = new Date(tripData.hotels[i].checkOutDateTime);
+          if (checkOutDate > latestCheckOutDate) {
+            latestCheckOutDate = checkOutDate;
+          }
+        }
+        checkInDate = latestCheckOutDate;
+      }
+
+      const checkInDateStr = formatDateForInput(checkInDate);
+      const checkOutDateStr = formatDateForInput(tripEndDate);
+
+      return `
+        <div class="flex items-start justify-between mb-6">
+          <div class="flex items-center">
+            <button onclick="showAddItemMenu()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <h2 class="text-lg font-bold text-gray-900">Add Hotel</h2>
+          </div>
+          <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-green-600" style="font-size: 16px;">hotel</span>
+          </div>
+        </div>
+        <form action="/hotels/trips/<%- trip.id %>/hotels" method="POST" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Hotel Name</label>
+            <input type="text" name="hotelName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+            <textarea name="address" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+            <input type="text" name="phone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Check-in Date</label>
+              <input type="date" name="checkInDate" value="${checkInDateStr}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Check-in Time</label>
+              <input type="time" name="checkInTime" value="15:00" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Check-out Date</label>
+              <input type="date" name="checkOutDate" value="${checkOutDateStr}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Check-out Time</label>
+              <input type="time" name="checkOutTime" value="11:00" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Confirmation Number</label>
+            <input type="text" name="confirmationNumber" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
+            <input type="text" name="roomNumber" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <input type="hidden" name="tripId" value="<%- trip.id %>">
+          <div class="flex space-x-3 pt-4">
+            <button type="submit" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              Add Hotel
+            </button>
+            <button type="button" onclick="closeSecondarySidebar()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+              Cancel
+            </button>
+          </div>
+        </form>
+      `;
+    }
+
+    function createTransportationAddForm() {
+      return `
+        <div class="flex items-start justify-between mb-6">
+          <div class="flex items-center">
+            <button onclick="showAddItemMenu()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <h2 class="text-lg font-bold text-gray-900">Add Transportation</h2>
+          </div>
+          <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-amber-600" style="font-size: 16px;">train</span>
+          </div>
+        </div>
+        <form action="/transportation/trips/<%- trip.id %>/transportation" method="POST" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Method</label>
+            <select name="method" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white">
+              <option value="">Select transportation method</option>
+              <option value="Train">Train</option>
+              <option value="Bus">Bus</option>
+              <option value="Ferry">Ferry</option>
+              <option value="Taxi">Taxi</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Journey Number</label>
+            <input type="text" name="journeyNumber" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Origin</label>
+            <input type="text" name="origin" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Destination</label>
+            <input type="text" name="destination" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Departure Date</label>
+              <input type="date" name="departureDate" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Departure Time</label>
+              <input type="time" name="departureTime" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Arrival Date</label>
+              <input type="date" name="arrivalDate" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Arrival Time</label>
+              <input type="time" name="arrivalTime" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Confirmation Number</label>
+            <input type="text" name="confirmationNumber" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Seat</label>
+            <input type="text" name="seat" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <input type="hidden" name="tripId" value="<%- trip.id %>">
+          <div class="flex space-x-3 pt-4">
+            <button type="submit" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              Add Transportation
+            </button>
+            <button type="button" onclick="closeSecondarySidebar()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+              Cancel
+            </button>
+          </div>
+        </form>
+      `;
+    }
+
+    function createCarRentalAddForm() {
+      return `
+        <div class="flex items-start justify-between mb-6">
+          <div class="flex items-center">
+            <button onclick="showAddItemMenu()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <h2 class="text-lg font-bold text-gray-900">Add Car Rental</h2>
+          </div>
+          <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-gray-600" style="font-size: 16px;">directions_car</span>
+          </div>
+        </div>
+        <form action="/car-rentals/trips/<%- trip.id %>/car-rentals" method="POST" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Company</label>
+            <input type="text" name="company" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Pickup Location</label>
+            <input type="text" name="pickupLocation" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Dropoff Location</label>
+            <input type="text" name="dropoffLocation" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Pickup Date</label>
+              <input type="date" name="pickupDate" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Pickup Time</label>
+              <input type="time" name="pickupTime" value="09:00" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Dropoff Date</label>
+              <input type="date" name="dropoffDate" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Dropoff Time</label>
+              <input type="time" name="dropoffTime" value="18:00" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Confirmation Number</label>
+            <input type="text" name="confirmationNumber" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <input type="hidden" name="tripId" value="<%- trip.id %>">
+          <div class="flex space-x-3 pt-4">
+            <button type="submit" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              Add Car Rental
+            </button>
+            <button type="button" onclick="closeSecondarySidebar()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+              Cancel
+            </button>
+          </div>
+        </form>
+      `;
+    }
+
+    function createEventAddForm() {
+      return `
+        <div class="flex items-start justify-between mb-6">
+          <div class="flex items-center">
+            <button onclick="showAddItemMenu()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <h2 class="text-lg font-bold text-gray-900">Add Event</h2>
+          </div>
+          <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-red-600" style="font-size: 16px;">event</span>
+          </div>
+        </div>
+        <form action="/events/trips/<%- trip.id %>/events" method="POST" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Event Name</label>
+            <input type="text" name="name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+            <textarea name="location" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+              <input type="date" name="startDate" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+              <input type="time" name="startTime" value="09:00" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+              <input type="date" name="endDate" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+              <input type="time" name="endTime" value="17:00" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Contact Phone</label>
+            <input type="text" name="contactPhone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Contact Email</label>
+            <input type="email" name="contactEmail" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <input type="hidden" name="tripId" value="<%- trip.id %>">
+          <div class="flex space-x-3 pt-4">
+            <button type="submit" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              Add Event
+            </button>
+            <button type="button" onclick="closeSecondarySidebar()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+              Cancel
+            </button>
+          </div>
+        </form>
+      `;
+    }
+
+
+    // Helper function to combine date and time inputs into ISO datetime string
+    document.addEventListener('submit', function(e) {
+      if (e.target.tagName === 'FORM') {
+        const form = e.target;
+
+        // Handle various datetime field combinations
+        const dateTimeFields = [
+          {date: 'departureDate', time: 'departureTime', combined: 'departureDateTime'},
+          {date: 'arrivalDate', time: 'arrivalTime', combined: 'arrivalDateTime'},
+          {date: 'checkInDate', time: 'checkInTime', combined: 'checkInDateTime'},
+          {date: 'checkOutDate', time: 'checkOutTime', combined: 'checkOutDateTime'},
+          {date: 'pickupDate', time: 'pickupTime', combined: 'pickupDateTime'},
+          {date: 'dropoffDate', time: 'dropoffTime', combined: 'dropoffDateTime'},
+          {date: 'startDate', time: 'startTime', combined: 'startDateTime'},
+          {date: 'endDate', time: 'endTime', combined: 'endDateTime'}
+        ];
+
+        dateTimeFields.forEach(field => {
+          const dateInput = form.querySelector(`[name="${field.date}"]`);
+          const timeInput = form.querySelector(`[name="${field.time}"]`);
+
+          if (dateInput && timeInput && dateInput.value && timeInput.value) {
+            // Create hidden input for combined datetime
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = field.combined;
+            hiddenInput.value = `${dateInput.value}T${timeInput.value}:00.000Z`;
+            form.appendChild(hiddenInput);
+          }
+        });
+      }
+    });
+
+
+    // Airport search functionality
+    const airportsData = {
+      "AUS": {"airport_name": "Austin-Bergstrom International", "city_name": "Austin", "country_name": "United States"},
+      "JFK": {"airport_name": "John F Kennedy International", "city_name": "New York", "country_name": "United States"},
+      "LAX": {"airport_name": "Los Angeles International", "city_name": "Los Angeles", "country_name": "United States"},
+      "LHR": {"airport_name": "Heathrow", "city_name": "London", "country_name": "United Kingdom"},
+      "CDG": {"airport_name": "Charles de Gaulle", "city_name": "Paris", "country_name": "France"},
+      "FRA": {"airport_name": "Frankfurt", "city_name": "Frankfurt", "country_name": "Germany"},
+      "NRT": {"airport_name": "Narita International", "city_name": "Tokyo", "country_name": "Japan"},
+      "HND": {"airport_name": "Tokyo Haneda", "city_name": "Tokyo", "country_name": "Japan"},
+      "DXB": {"airport_name": "Dubai International", "city_name": "Dubai", "country_name": "United Arab Emirates"},
+      "SIN": {"airport_name": "Singapore Changi", "city_name": "Singapore", "country_name": "Singapore"},
+      "HKG": {"airport_name": "Hong Kong International", "city_name": "Hong Kong", "country_name": "Hong Kong SAR"},
+      "ICN": {"airport_name": "Incheon International", "city_name": "Seoul", "country_name": "South Korea"},
+      "PEK": {"airport_name": "Beijing Capital International", "city_name": "Beijing", "country_name": "China"},
+      "PVG": {"airport_name": "Shanghai Pudong International", "city_name": "Shanghai", "country_name": "China"},
+      "SYD": {"airport_name": "Kingsford Smith", "city_name": "Sydney", "country_name": "Australia"},
+      "MEL": {"airport_name": "Melbourne", "city_name": "Melbourne", "country_name": "Australia"},
+      "YYZ": {"airport_name": "Toronto Pearson International", "city_name": "Toronto", "country_name": "Canada"},
+      "YVR": {"airport_name": "Vancouver International", "city_name": "Vancouver", "country_name": "Canada"},
+      "ORD": {"airport_name": "O'Hare International", "city_name": "Chicago", "country_name": "United States"},
+      "ATL": {"airport_name": "Hartsfield-Jackson Atlanta International", "city_name": "Atlanta", "country_name": "United States"},
+      "DFW": {"airport_name": "Dallas/Fort Worth International", "city_name": "Dallas", "country_name": "United States"},
+      "DEN": {"airport_name": "Denver International", "city_name": "Denver", "country_name": "United States"},
+      "LAS": {"airport_name": "McCarran International", "city_name": "Las Vegas", "country_name": "United States"},
+      "SEA": {"airport_name": "Seattle-Tacoma International", "city_name": "Seattle", "country_name": "United States"},
+      "SFO": {"airport_name": "San Francisco International", "city_name": "San Francisco", "country_name": "United States"},
+      "MIA": {"airport_name": "Miami International", "city_name": "Miami", "country_name": "United States"},
+      "BOS": {"airport_name": "Logan International", "city_name": "Boston", "country_name": "United States"},
+      "EWR": {"airport_name": "Newark Liberty International", "city_name": "Newark", "country_name": "United States"},
+      "LGA": {"airport_name": "LaGuardia", "city_name": "New York", "country_name": "United States"},
+      "IAD": {"airport_name": "Washington Dulles International", "city_name": "Washington", "country_name": "United States"},
+      "DCA": {"airport_name": "Ronald Reagan Washington National", "city_name": "Washington", "country_name": "United States"},
+      "PHL": {"airport_name": "Philadelphia International", "city_name": "Philadelphia", "country_name": "United States"},
+      "CLT": {"airport_name": "Charlotte Douglas International", "city_name": "Charlotte", "country_name": "United States"},
+      "PHX": {"airport_name": "Phoenix Sky Harbor International", "city_name": "Phoenix", "country_name": "United States"},
+      "IAH": {"airport_name": "George Bush Intercontinental", "city_name": "Houston", "country_name": "United States"},
+      "MSP": {"airport_name": "Minneapolis-St Paul International", "city_name": "Minneapolis", "country_name": "United States"},
+      "DTW": {"airport_name": "Detroit Metropolitan Wayne County", "city_name": "Detroit", "country_name": "United States"},
+      "BWI": {"airport_name": "Baltimore/Washington International", "city_name": "Baltimore", "country_name": "United States"},
+      "SLC": {"airport_name": "Salt Lake City International", "city_name": "Salt Lake City", "country_name": "United States"},
+      "MDW": {"airport_name": "Midway International", "city_name": "Chicago", "country_name": "United States"},
+      "HOU": {"airport_name": "William P Hobby", "city_name": "Houston", "country_name": "United States"},
+      "OAK": {"airport_name": "Oakland International", "city_name": "Oakland", "country_name": "United States"},
+      "SJC": {"airport_name": "Norman Y. Mineta San Jose International", "city_name": "San Jose", "country_name": "United States"},
+      "BUR": {"airport_name": "Hollywood Burbank", "city_name": "Burbank", "country_name": "United States"},
+      "LGB": {"airport_name": "Long Beach", "city_name": "Long Beach", "country_name": "United States"},
+      "SNA": {"airport_name": "John Wayne", "city_name": "Orange County", "country_name": "United States"},
+      "RDU": {"airport_name": "Raleigh-Durham International", "city_name": "Raleigh", "country_name": "United States"},
+      "MCI": {"airport_name": "Kansas City International", "city_name": "Kansas City", "country_name": "United States"},
+      "IND": {"airport_name": "Indianapolis International", "city_name": "Indianapolis", "country_name": "United States"},
+      "CLE": {"airport_name": "Cleveland Hopkins International", "city_name": "Cleveland", "country_name": "United States"},
+      "STL": {"airport_name": "Lambert-St. Louis International", "city_name": "St. Louis", "country_name": "United States"},
+      "TPA": {"airport_name": "Tampa International", "city_name": "Tampa", "country_name": "United States"},
+      "MCO": {"airport_name": "Orlando International", "city_name": "Orlando", "country_name": "United States"},
+      "FLL": {"airport_name": "Fort Lauderdale-Hollywood International", "city_name": "Fort Lauderdale", "country_name": "United States"},
+      "PBI": {"airport_name": "Palm Beach International", "city_name": "West Palm Beach", "country_name": "United States"},
+      "JAX": {"airport_name": "Jacksonville International", "city_name": "Jacksonville", "country_name": "United States"},
+      "MKE": {"airport_name": "Milwaukee Mitchell International", "city_name": "Milwaukee", "country_name": "United States"},
+      "CHS": {"airport_name": "Charleston International", "city_name": "Charleston", "country_name": "United States"},
+      "SAV": {"airport_name": "Savannah/Hilton Head International", "city_name": "Savannah", "country_name": "United States"},
+      "BNA": {"airport_name": "Nashville International", "city_name": "Nashville", "country_name": "United States"},
+      "MEM": {"airport_name": "Memphis International", "city_name": "Memphis", "country_name": "United States"},
+      "MSY": {"airport_name": "Louis Armstrong New Orleans International", "city_name": "New Orleans", "country_name": "United States"},
+      "SAT": {"airport_name": "San Antonio International", "city_name": "San Antonio", "country_name": "United States"},
+      "OKC": {"airport_name": "Will Rogers World", "city_name": "Oklahoma City", "country_name": "United States"},
+      "TUL": {"airport_name": "Tulsa International", "city_name": "Tulsa", "country_name": "United States"},
+      "LIT": {"airport_name": "Bill and Hillary Clinton National", "city_name": "Little Rock", "country_name": "United States"},
+      "XNA": {"airport_name": "Northwest Arkansas Regional", "city_name": "Fayetteville", "country_name": "United States"},
+      "ABQ": {"airport_name": "Albuquerque International Sunport", "city_name": "Albuquerque", "country_name": "United States"},
+      "ELP": {"airport_name": "El Paso International", "city_name": "El Paso", "country_name": "United States"},
+      "ANC": {"airport_name": "Ted Stevens Anchorage International", "city_name": "Anchorage", "country_name": "United States"},
+      "HNL": {"airport_name": "Daniel K. Inouye International", "city_name": "Honolulu", "country_name": "United States"},
+      "PDX": {"airport_name": "Portland International", "city_name": "Portland", "country_name": "United States"},
+      "BOI": {"airport_name": "Boise Airport", "city_name": "Boise", "country_name": "United States"},
+      "BIL": {"airport_name": "Billings Logan International", "city_name": "Billings", "country_name": "United States"}
+    };
+
+  </script>
+
+</body>
+</html>

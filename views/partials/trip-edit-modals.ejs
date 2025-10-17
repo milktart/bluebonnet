@@ -1,0 +1,388 @@
+<!-- Edit Flight Modal -->
+<div class="modal fade" id="editFlightModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-pencil"></i> Edit Flight</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="editFlightForm" method="POST">
+        <input type="hidden" name="_method" value="PUT">
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Airline *</label>
+              <input type="text" class="form-control" name="airline" id="edit_flight_airline" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Flight Number *</label>
+              <input type="text" class="form-control" name="flightNumber" id="edit_flight_flightNumber" required>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Origin Airport *</label>
+              <div class="airport-search">
+                <input type="text" class="form-control" name="origin" id="edit_flight_origin" required placeholder="Type airport code or city" autocomplete="off">
+                <div id="editOriginResults" class="autocomplete-results"></div>
+              </div>
+              <input type="hidden" name="originTimezone" id="edit_flight_originTimezone">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Destination Airport *</label>
+              <div class="airport-search">
+                <input type="text" class="form-control" name="destination" id="edit_flight_destination" required placeholder="Type airport code or city" autocomplete="off">
+                <div id="editDestinationResults" class="autocomplete-results"></div>
+              </div>
+              <input type="hidden" name="destinationTimezone" id="edit_flight_destinationTimezone">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Departure Date/Time *</label>
+              <div class="row">
+                <div class="col-7">
+                  <input type="date" class="form-control" name="departureDate" id="edit_flight_departureDate" required>
+                </div>
+                <div class="col-5">
+                  <input type="time" class="form-control" name="departureTime" id="edit_flight_departureTime" required>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Arrival Date/Time *</label>
+              <div class="row">
+                <div class="col-7">
+                  <input type="date" class="form-control" name="arrivalDate" id="edit_flight_arrivalDate" required>
+                </div>
+                <div class="col-5">
+                  <input type="time" class="form-control" name="arrivalTime" id="edit_flight_arrivalTime" required>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">PNR</label>
+              <input type="text" class="form-control" name="pnr" id="edit_flight_pnr">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Seat</label>
+              <input type="text" class="form-control" name="seat" id="edit_flight_seat">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Flight</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Hotel Modal -->
+<div class="modal fade" id="editHotelModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-pencil"></i> Edit Hotel</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="editHotelForm" method="POST">
+        <input type="hidden" name="_method" value="PUT">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Hotel Name *</label>
+            <input type="text" class="form-control" name="hotelName" id="edit_hotel_hotelName" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Address *</label>
+            <textarea class="form-control" name="address" id="edit_hotel_address" rows="2" required></textarea>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Phone</label>
+              <input type="tel" class="form-control" name="phone" id="edit_hotel_phone">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Timezone</label>
+              <input type="text" class="form-control" name="timezone" id="edit_hotel_timezone">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Check-in Date/Time *</label>
+              <div class="row">
+                <div class="col-7">
+                  <input type="date" class="form-control" name="checkInDate" id="edit_hotel_checkInDate" required>
+                </div>
+                <div class="col-5">
+                  <input type="time" class="form-control" name="checkInTime" id="edit_hotel_checkInTime" required>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Check-out Date/Time *</label>
+              <div class="row">
+                <div class="col-7">
+                  <input type="date" class="form-control" name="checkOutDate" id="edit_hotel_checkOutDate" required>
+                </div>
+                <div class="col-5">
+                  <input type="time" class="form-control" name="checkOutTime" id="edit_hotel_checkOutTime" required>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Confirmation Number</label>
+              <input type="text" class="form-control" name="confirmationNumber" id="edit_hotel_confirmationNumber">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Room Number</label>
+              <input type="text" class="form-control" name="roomNumber" id="edit_hotel_roomNumber">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Hotel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Transportation Modal -->
+<div class="modal fade" id="editTransportationModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-pencil"></i> Edit Transportation</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="editTransportationForm" method="POST">
+        <input type="hidden" name="_method" value="PUT">
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Method *</label>
+              <select class="form-select" name="method" id="edit_transportation_method" required>
+                <option value="train">Train</option>
+                <option value="bus">Bus</option>
+                <option value="ferry">Ferry</option>
+                <option value="shuttle">Shuttle</option>
+                <option value="taxi">Taxi/Rideshare</option>
+                <option value="subway">Subway/Metro</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Journey Number</label>
+              <input type="text" class="form-control" name="journeyNumber" id="edit_transportation_journeyNumber">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Origin *</label>
+              <input type="text" class="form-control" name="origin" id="edit_transportation_origin" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Origin Timezone</label>
+              <input type="text" class="form-control" name="originTimezone" id="edit_transportation_originTimezone">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Destination *</label>
+              <input type="text" class="form-control" name="destination" id="edit_transportation_destination" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Destination Timezone</label>
+              <input type="text" class="form-control" name="destinationTimezone" id="edit_transportation_destinationTimezone">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Departure Date/Time *</label>
+              <div class="row">
+                <div class="col-7">
+                  <input type="date" class="form-control" name="departureDate" id="edit_transportation_departureDate" required>
+                </div>
+                <div class="col-5">
+                  <input type="time" class="form-control" name="departureTime" id="edit_transportation_departureTime" required>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Arrival Date/Time *</label>
+              <div class="row">
+                <div class="col-7">
+                  <input type="date" class="form-control" name="arrivalDate" id="edit_transportation_arrivalDate" required>
+                </div>
+                <div class="col-5">
+                  <input type="time" class="form-control" name="arrivalTime" id="edit_transportation_arrivalTime" required>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Confirmation Number</label>
+              <input type="text" class="form-control" name="confirmationNumber" id="edit_transportation_confirmationNumber">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Seat</label>
+              <input type="text" class="form-control" name="seat" id="edit_transportation_seat">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Transportation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Car Rental Modal -->
+<div class="modal fade" id="editCarRentalModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-pencil"></i> Edit Car Rental</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="editCarRentalForm" method="POST">
+        <input type="hidden" name="_method" value="PUT">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Company *</label>
+            <input type="text" class="form-control" name="company" id="edit_carRental_company" required>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Pick-up Location *</label>
+              <textarea class="form-control" name="pickupLocation" id="edit_carRental_pickupLocation" rows="2" required></textarea>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Pick-up Timezone</label>
+              <input type="text" class="form-control" name="pickupTimezone" id="edit_carRental_pickupTimezone">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Drop-off Location *</label>
+              <textarea class="form-control" name="dropoffLocation" id="edit_carRental_dropoffLocation" rows="2" required></textarea>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Drop-off Timezone</label>
+              <input type="text" class="form-control" name="dropoffTimezone" id="edit_carRental_dropoffTimezone">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Pick-up Date/Time *</label>
+              <div class="row">
+                <div class="col-7">
+                  <input type="date" class="form-control" name="pickupDate" id="edit_carRental_pickupDate" required>
+                </div>
+                <div class="col-5">
+                  <input type="time" class="form-control" name="pickupTime" id="edit_carRental_pickupTime" required>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Drop-off Date/Time *</label>
+              <div class="row">
+                <div class="col-7">
+                  <input type="date" class="form-control" name="dropoffDate" id="edit_carRental_dropoffDate" required>
+                </div>
+                <div class="col-5">
+                  <input type="time" class="form-control" name="dropoffTime" id="edit_carRental_dropoffTime" required>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Confirmation Number</label>
+            <input type="text" class="form-control" name="confirmationNumber" id="edit_carRental_confirmationNumber">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Car Rental</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Event Modal -->
+<div class="modal fade" id="editEventModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-pencil"></i> Edit Event</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="editEventForm" method="POST">
+        <input type="hidden" name="_method" value="PUT">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Event Name *</label>
+            <input type="text" class="form-control" name="name" id="edit_event_name" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Location</label>
+            <textarea class="form-control" name="location" id="edit_event_location" rows="2"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Timezone</label>
+            <input type="text" class="form-control" name="timezone" id="edit_event_timezone">
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Start Date/Time *</label>
+              <div class="row">
+                <div class="col-7">
+                  <input type="date" class="form-control" name="startDate" id="edit_event_startDate" required>
+                </div>
+                <div class="col-5">
+                  <input type="time" class="form-control" name="startTime" id="edit_event_startTime" required>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">End Date/Time *</label>
+              <div class="row">
+                <div class="col-7">
+                  <input type="date" class="form-control" name="endDate" id="edit_event_endDate" required>
+                </div>
+                <div class="col-5">
+                  <input type="time" class="form-control" name="endTime" id="edit_event_endTime" required>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Contact Phone</label>
+              <input type="tel" class="form-control" name="contactPhone" id="edit_event_contactPhone">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Contact Email</label>
+              <input type="email" class="form-control" name="contactEmail" id="edit_event_contactEmail">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Event</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
