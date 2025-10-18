@@ -82,9 +82,18 @@ function showCreateTripForm() {
   const content = document.getElementById('secondary-sidebar-content');
   const form = document.getElementById('create-trip-form');
   if (content && form) {
-    // Hide any previous content and show the form
+    // Clear any previous content from secondary-sidebar-content
     content.innerHTML = '';
-    form.style.display = 'block';
+    // Hide the form initially
+    form.style.display = 'none';
+    // Move form content into secondary-sidebar-content
+    const formContent = form.innerHTML;
+    content.innerHTML = formContent;
+    // Reset form fields
+    const formElement = content.querySelector('form');
+    if (formElement) {
+      formElement.reset();
+    }
     openSecondarySidebar();
   }
 }

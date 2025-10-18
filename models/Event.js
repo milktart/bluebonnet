@@ -31,11 +31,11 @@ module.exports = (sequelize, DataTypes) => {
     },
     endDateTime: {
       type: DataTypes.DATE,
-      allowNull: false
+      allowNull: true  // Optional - defaults to same as startDateTime if not provided
     },
     location: {
       type: DataTypes.TEXT,
-      allowNull: true
+      allowNull: false  // Location is required for events
     },
     timezone: {
       type: DataTypes.STRING,

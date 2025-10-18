@@ -3,6 +3,10 @@
  * Handles loading content into the secondary sidebar via AJAX
  */
 
+// Sidebar state management for back navigation
+let sidebarHistory = [];
+let sidebarHistoryIndex = -1;
+
 /**
  * Load content into the secondary sidebar
  * @param {string} url - The URL to fetch content from
@@ -35,6 +39,11 @@ async function loadSidebarContent(url) {
 
     // Insert the content into the sidebar
     container.innerHTML = html;
+
+    // Save to history (remove any forward history if we're going back then forward)
+    sidebarHistory = sidebarHistory.slice(0, sidebarHistoryIndex + 1);
+    sidebarHistory.push(html);
+    sidebarHistoryIndex++;
 
     // Open the sidebar
     openSecondarySidebar();
@@ -90,6 +99,26 @@ function initializeSidebarContent() {
 }
 
 /**
+ * Navigate back in sidebar history
+ */
+function goBackInSidebar() {
+  if (sidebarHistoryIndex > 0) {
+    sidebarHistoryIndex--;
+    const container = document.getElementById('secondary-sidebar-content');
+    if (container) {
+      container.innerHTML = sidebarHistory[sidebarHistoryIndex];
+      initializeSidebarContent();
+    }
+  } else {
+    // No history, close the sidebar
+    closeSecondarySidebar();
+    // Reset history when closing
+    sidebarHistory = [];
+    sidebarHistoryIndex = -1;
+  }
+}
+
+/**
  * Close the secondary sidebar
  */
 function closeSecondarySidebar() {
@@ -97,6 +126,9 @@ function closeSecondarySidebar() {
   if (sidebar) {
     sidebar.classList.remove('open');
   }
+  // Reset history when closing
+  sidebarHistory = [];
+  sidebarHistoryIndex = -1;
 }
 
 /**

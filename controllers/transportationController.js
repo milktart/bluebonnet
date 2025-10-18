@@ -28,6 +28,10 @@ exports.createTransportation = async (req, res) => {
     if (tripId) {
       const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
       if (!trip) {
+        const isAsync = req.headers['x-async-request'] === 'true';
+        if (isAsync) {
+          return res.status(403).json({ success: false, error: 'Trip not found' });
+        }
         return redirectAfterError(res, req, null, 'Trip not found');
       }
     }
@@ -57,9 +61,19 @@ exports.createTransportation = async (req, res) => {
       seat
     });
 
+    // Check if this is an async request
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.json({ success: true, message: 'Transportation added successfully' });
+    }
+
     redirectAfterSuccess(res, req, tripId, 'transportation', 'Transportation added successfully');
   } catch (error) {
     console.error(error);
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.status(500).json({ success: false, error: 'Error adding transportation' });
+    }
     redirectAfterError(res, req, req.params.tripId, 'Error adding transportation');
   }
 };
@@ -86,6 +100,10 @@ exports.updateTransportation = async (req, res) => {
 
     // Verify ownership
     if (!verifyResourceOwnership(transportation, req.user.id)) {
+      const isAsync = req.headers['x-async-request'] === 'true';
+      if (isAsync) {
+        return res.status(403).json({ success: false, error: 'Transportation not found' });
+      }
       return redirectAfterError(res, req, null, 'Transportation not found');
     }
 
@@ -116,9 +134,19 @@ exports.updateTransportation = async (req, res) => {
       seat
     });
 
+    // Check if this is an async request
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.json({ success: true, message: 'Transportation updated successfully' });
+    }
+
     redirectAfterSuccess(res, req, transportation.tripId, 'transportation', 'Transportation updated successfully');
   } catch (error) {
     console.error(error);
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.status(500).json({ success: false, error: 'Error updating transportation' });
+    }
     req.flash('error_msg', 'Error updating transportation');
     res.redirect('back');
   }
@@ -133,15 +161,29 @@ exports.deleteTransportation = async (req, res) => {
 
     // Verify ownership
     if (!verifyResourceOwnership(transportation, req.user.id)) {
+      const isAsync = req.headers['x-async-request'] === 'true';
+      if (isAsync) {
+        return res.status(403).json({ success: false, error: 'Transportation not found' });
+      }
       return redirectAfterError(res, req, null, 'Transportation not found');
     }
 
     const tripId = transportation.tripId;
     await transportation.destroy();
 
+    // Check if this is an async request
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.json({ success: true, message: 'Transportation deleted successfully' });
+    }
+
     redirectAfterSuccess(res, req, tripId, 'transportation', 'Transportation deleted successfully');
   } catch (error) {
     console.error(error);
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.status(500).json({ success: false, error: 'Error deleting transportation' });
+    }
     req.flash('error_msg', 'Error deleting transportation');
     res.redirect('back');
   }

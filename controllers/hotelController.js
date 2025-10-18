@@ -25,6 +25,10 @@ exports.createHotel = async (req, res) => {
     // Verify trip ownership
     const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
     if (!trip) {
+      const isAsync = req.headers['x-async-request'] === 'true';
+      if (isAsync) {
+        return res.status(403).json({ success: false, error: 'Trip not found' });
+      }
       return redirectAfterError(res, req, null, 'Trip not found');
     }
 
@@ -45,9 +49,19 @@ exports.createHotel = async (req, res) => {
       roomNumber
     });
 
+    // Check if this is an async request
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.json({ success: true, message: 'Hotel added successfully' });
+    }
+
     redirectAfterSuccess(res, req, tripId, 'hotels', 'Hotel added successfully');
   } catch (error) {
     console.error(error);
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.status(500).json({ success: false, error: 'Error adding hotel' });
+    }
     redirectAfterError(res, req, req.params.tripId, 'Error adding hotel');
   }
 };
@@ -72,6 +86,10 @@ exports.updateHotel = async (req, res) => {
 
     // Verify ownership
     if (!verifyResourceOwnershipViaTrip(hotel, req.user.id)) {
+      const isAsync = req.headers['x-async-request'] === 'true';
+      if (isAsync) {
+        return res.status(403).json({ success: false, error: 'Hotel not found' });
+      }
       return redirectAfterError(res, req, null, 'Hotel not found');
     }
 
@@ -95,9 +113,19 @@ exports.updateHotel = async (req, res) => {
       roomNumber
     });
 
+    // Check if this is an async request
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.json({ success: true, message: 'Hotel updated successfully' });
+    }
+
     redirectAfterSuccess(res, req, hotel.tripId, 'hotels', 'Hotel updated successfully');
   } catch (error) {
     console.error(error);
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.status(500).json({ success: false, error: 'Error updating hotel' });
+    }
     req.flash('error_msg', 'Error updating hotel');
     res.redirect('back');
   }
@@ -112,15 +140,29 @@ exports.deleteHotel = async (req, res) => {
 
     // Verify ownership
     if (!verifyResourceOwnershipViaTrip(hotel, req.user.id)) {
+      const isAsync = req.headers['x-async-request'] === 'true';
+      if (isAsync) {
+        return res.status(403).json({ success: false, error: 'Hotel not found' });
+      }
       return redirectAfterError(res, req, null, 'Hotel not found');
     }
 
     const tripId = hotel.tripId;
     await hotel.destroy();
 
+    // Check if this is an async request
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.json({ success: true, message: 'Hotel deleted successfully' });
+    }
+
     redirectAfterSuccess(res, req, tripId, 'hotels', 'Hotel deleted successfully');
   } catch (error) {
     console.error(error);
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.status(500).json({ success: false, error: 'Error deleting hotel' });
+    }
     req.flash('error_msg', 'Error deleting hotel');
     res.redirect('back');
   }

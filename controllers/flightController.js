@@ -96,6 +96,10 @@ exports.createFlight = async (req, res) => {
     if (tripId) {
       const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
       if (!trip) {
+        const isAsync = req.headers['x-async-request'] === 'true';
+        if (isAsync) {
+          return res.status(403).json({ success: false, error: 'Trip not found' });
+        }
         return redirectAfterError(res, req, null, 'Trip not found');
       }
     }
@@ -106,6 +110,14 @@ exports.createFlight = async (req, res) => {
       if (airlineName) {
         airline = airlineName;
       }
+    }
+
+    // Sanitize timezone inputs (handle "undefined" string from forms)
+    if (!originTimezone || originTimezone === 'undefined' || originTimezone.trim() === '') {
+      originTimezone = null;
+    }
+    if (!destinationTimezone || destinationTimezone === 'undefined' || destinationTimezone.trim() === '') {
+      destinationTimezone = null;
     }
 
     // Geocode origin and destination with airport fallback
@@ -137,9 +149,21 @@ exports.createFlight = async (req, res) => {
       seat
     });
 
+    // Check if this is an async request
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.json({ success: true, message: 'Flight added successfully' });
+    }
+
     redirectAfterSuccess(res, req, tripId, 'flights', 'Flight added successfully');
   } catch (error) {
-    console.error(error);
+    console.error('ERROR in createFlight:', error);
+    console.error('Request body:', req.body);
+    console.error('Request params:', req.params);
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.status(500).json({ success: false, error: error.message || 'Error adding flight' });
+    }
     redirectAfterError(res, req, req.params.tripId, 'Error adding flight');
   }
 };
@@ -166,6 +190,10 @@ exports.updateFlight = async (req, res) => {
 
     // Verify ownership
     if (!verifyResourceOwnership(flight, req.user.id)) {
+      const isAsync = req.headers['x-async-request'] === 'true';
+      if (isAsync) {
+        return res.status(403).json({ success: false, error: 'Flight not found' });
+      }
       return redirectAfterError(res, req, null, 'Flight not found');
     }
 
@@ -177,6 +205,14 @@ exports.updateFlight = async (req, res) => {
       }
     }
 
+    // Sanitize timezone inputs (handle "undefined" string from forms)
+    if (!originTimezone || originTimezone === 'undefined' || originTimezone.trim() === '') {
+      originTimezone = null;
+    }
+    if (!destinationTimezone || destinationTimezone === 'undefined' || destinationTimezone.trim() === '') {
+      destinationTimezone = null;
+    }
+
     // Geocode origin and destination if they changed
     let originResult, destResult;
 
@@ -185,9 +221,18 @@ exports.updateFlight = async (req, res) => {
       origin = originResult.formattedLocation;
       if (!originTimezone) originTimezone = originResult.timezone;
     } else {
+      // Origin unchanged, but we might need to detect timezone for old flights
+      if (!originTimezone && !flight.originTimezone) {
+        // Try to detect timezone from airport code in existing origin
+        originResult = await geocodeWithAirportFallback(origin, airportService, originTimezone);
+        originTimezone = originResult.timezone;
+      } else {
+        originTimezone = originTimezone || flight.originTimezone;
+      }
+
       originResult = {
         coords: { lat: flight.originLat, lng: flight.originLng },
-        timezone: flight.originTimezone,
+        timezone: originTimezone,
         formattedLocation: flight.origin
       };
     }
@@ -197,12 +242,29 @@ exports.updateFlight = async (req, res) => {
       destination = destResult.formattedLocation;
       if (!destinationTimezone) destinationTimezone = destResult.timezone;
     } else {
+      // Destination unchanged, but we might need to detect timezone for old flights
+      if (!destinationTimezone && !flight.destinationTimezone) {
+        // Try to detect timezone from airport code in existing destination
+        destResult = await geocodeWithAirportFallback(destination, airportService, destinationTimezone);
+        destinationTimezone = destResult.timezone;
+      } else {
+        destinationTimezone = destinationTimezone || flight.destinationTimezone;
+      }
+
       destResult = {
         coords: { lat: flight.destinationLat, lng: flight.destinationLng },
-        timezone: flight.destinationTimezone,
+        timezone: destinationTimezone,
         formattedLocation: flight.destination
       };
     }
+
+    // Debug logging
+    console.log('Update flight - timezones:', {
+      originTimezone,
+      destinationTimezone,
+      departureDateTime,
+      arrivalDateTime
+    });
 
     await flight.update({
       airline,
@@ -221,9 +283,21 @@ exports.updateFlight = async (req, res) => {
       seat
     });
 
+    // Check if this is an async request
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.json({ success: true, message: 'Flight updated successfully' });
+    }
+
     redirectAfterSuccess(res, req, flight.tripId, 'flights', 'Flight updated successfully');
   } catch (error) {
-    console.error(error);
+    console.error('ERROR in updateFlight:', error);
+    console.error('Request body:', req.body);
+    console.error('Request params:', req.params);
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.status(500).json({ success: false, error: error.message || 'Error updating flight' });
+    }
     req.flash('error_msg', 'Error updating flight');
     res.redirect('back');
   }
@@ -238,15 +312,29 @@ exports.deleteFlight = async (req, res) => {
 
     // Verify ownership
     if (!verifyResourceOwnership(flight, req.user.id)) {
+      const isAsync = req.headers['x-async-request'] === 'true';
+      if (isAsync) {
+        return res.status(403).json({ success: false, error: 'Flight not found' });
+      }
       return redirectAfterError(res, req, null, 'Flight not found');
     }
 
     const tripId = flight.tripId;
     await flight.destroy();
 
+    // Check if this is an async request
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.json({ success: true, message: 'Flight deleted successfully' });
+    }
+
     redirectAfterSuccess(res, req, tripId, 'flights', 'Flight deleted successfully');
   } catch (error) {
     console.error(error);
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.status(500).json({ success: false, error: 'Error deleting flight' });
+    }
     req.flash('error_msg', 'Error deleting flight');
     res.redirect('back');
   }

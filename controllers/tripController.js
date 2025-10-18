@@ -1,4 +1,5 @@
 const { Trip, Flight, Hotel, Transportation, CarRental, Event, TravelCompanion, TripCompanion, User } = require('../models');
+const airportService = require('../services/airportService');
 
 exports.listTrips = async (req, res) => {
   try {
@@ -199,11 +200,15 @@ exports.viewTrip = async (req, res) => {
     // Determine if user can edit this trip
     const canEdit = isOwner || (companionRecord && companionRecord.canEdit);
 
+    // Get airline data for form lookup
+    const airlines = airportService.getAllAirlines();
+
     res.render('trips/view', {
       title: trip.name,
       trip,
       isOwner,
-      canEdit
+      canEdit,
+      airlines
     });
   } catch (error) {
     console.error(error);

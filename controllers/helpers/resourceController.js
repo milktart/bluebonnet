@@ -156,9 +156,14 @@ function convertToUTC(datetime, timezone) {
 async function geocodeWithAirportFallback(location, airportService, currentTimezone = null) {
   if (!location) return { coords: null, timezone: currentTimezone, formattedLocation: location };
 
-  // Check if location is a 3-letter airport code
-  if (location.length === 3 && /^[A-Z]{3}$/i.test(location.trim())) {
-    const airportData = airportService.getAirportByCode(location);
+  // Check if location is or starts with a 3-letter airport code
+  // Handles both "AUS" and "AUS - Austin, United States"
+  const airportCodeMatch = location.trim().match(/^([A-Z]{3})(\s|$|-)/i);
+  const airportCode = airportCodeMatch ? airportCodeMatch[1].toUpperCase() :
+                      (location.length === 3 && /^[A-Z]{3}$/i.test(location.trim()) ? location.trim().toUpperCase() : null);
+
+  if (airportCode) {
+    const airportData = airportService.getAirportByCode(airportCode);
     if (airportData) {
       return {
         coords: { lat: airportData.lat, lng: airportData.lng },

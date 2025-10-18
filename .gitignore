@@ -23,6 +23,7 @@ Thumbs.db
 # Claude
 .claude
 CLAUDE.md
+CLEANUP_SUMMARY.md
 
 # Build files
 dist/

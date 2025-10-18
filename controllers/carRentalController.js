@@ -25,6 +25,10 @@ exports.createCarRental = async (req, res) => {
     // Verify trip ownership
     const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
     if (!trip) {
+      const isAsync = req.headers['x-async-request'] === 'true';
+      if (isAsync) {
+        return res.status(403).json({ success: false, error: 'Trip not found' });
+      }
       return redirectAfterError(res, req, null, 'Trip not found');
     }
 
@@ -50,9 +54,19 @@ exports.createCarRental = async (req, res) => {
       confirmationNumber
     });
 
+    // Check if this is an async request
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.json({ success: true, message: 'Car rental added successfully' });
+    }
+
     redirectAfterSuccess(res, req, tripId, 'carRentals', 'Car rental added successfully');
   } catch (error) {
     console.error(error);
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.status(500).json({ success: false, error: 'Error adding car rental' });
+    }
     redirectAfterError(res, req, req.params.tripId, 'Error adding car rental');
   }
 };
@@ -77,6 +91,10 @@ exports.updateCarRental = async (req, res) => {
 
     // Verify ownership
     if (!verifyResourceOwnershipViaTrip(carRental, req.user.id)) {
+      const isAsync = req.headers['x-async-request'] === 'true';
+      if (isAsync) {
+        return res.status(403).json({ success: false, error: 'Car rental not found' });
+      }
       return redirectAfterError(res, req, null, 'Car rental not found');
     }
 
@@ -105,9 +123,19 @@ exports.updateCarRental = async (req, res) => {
       confirmationNumber
     });
 
+    // Check if this is an async request
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.json({ success: true, message: 'Car rental updated successfully' });
+    }
+
     redirectAfterSuccess(res, req, carRental.tripId, 'carRentals', 'Car rental updated successfully');
   } catch (error) {
     console.error(error);
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.status(500).json({ success: false, error: 'Error updating car rental' });
+    }
     req.flash('error_msg', 'Error updating car rental');
     res.redirect('back');
   }
@@ -122,15 +150,29 @@ exports.deleteCarRental = async (req, res) => {
 
     // Verify ownership
     if (!verifyResourceOwnershipViaTrip(carRental, req.user.id)) {
+      const isAsync = req.headers['x-async-request'] === 'true';
+      if (isAsync) {
+        return res.status(403).json({ success: false, error: 'Car rental not found' });
+      }
       return redirectAfterError(res, req, null, 'Car rental not found');
     }
 
     const tripId = carRental.tripId;
     await carRental.destroy();
 
+    // Check if this is an async request
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.json({ success: true, message: 'Car rental deleted successfully' });
+    }
+
     redirectAfterSuccess(res, req, tripId, 'carRentals', 'Car rental deleted successfully');
   } catch (error) {
     console.error(error);
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.status(500).json({ success: false, error: 'Error deleting car rental' });
+    }
     req.flash('error_msg', 'Error deleting car rental');
     res.redirect('back');
   }

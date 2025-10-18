@@ -160,6 +160,9 @@ function initCustomCombobox(inputId) {
     const results = searchAirports(query);
     itemsWrapper.innerHTML = '';
 
+    // Ensure wrapper has proper overflow handling
+    itemsWrapper.className = 'overflow-y-auto max-h-64';
+
     if (results.length === 0) {
       itemsWrapper.innerHTML = '<div class="py-2 px-4 text-sm text-gray-500">No airports found</div>';
     } else {
@@ -170,11 +173,11 @@ function initCustomCombobox(inputId) {
         item.setAttribute('tabindex', '0');
 
         item.innerHTML = `
-          <div class="flex justify-between items-center w-full">
-            <div>
-              <div class="font-medium">${result.code}</div>
-              <div class="text-xs text-gray-500">${result.airport.airport_name}</div>
-              <div class="text-xs text-gray-400">${result.airport.city_name}, ${result.airport.country_name}</div>
+          <div class="flex justify-between items-center w-full min-w-0">
+            <div class="min-w-0 flex-1">
+              <div class="font-medium truncate">${result.code}</div>
+              <div class="text-xs text-gray-500 truncate">${result.airport.airport_name}</div>
+              <div class="text-xs text-gray-400 truncate">${result.airport.city_name}, ${result.airport.country_name}</div>
             </div>
           </div>
         `;

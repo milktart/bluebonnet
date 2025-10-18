@@ -3,7 +3,7 @@
   <!-- Header with Back Arrow -->
   <div class="flex items-center justify-between mb-6">
     <div class="flex items-center gap-2">
-      <button onclick="loadSidebarContent('/companions/sidebar')" class="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors">
+      <button onclick="goBackInSidebar()" class="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors" title="Go back">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
         </svg>
@@ -71,7 +71,7 @@
         <span class="material-symbols-outlined mr-2" style="font-size: 18px;">person_add</span>
         Add Companion
       </button>
-      <button type="button" onclick="loadSidebarContent('/companions/sidebar')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
+      <button type="button" onclick="goBackInSidebar()" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
         Cancel
       </button>
     </div>
