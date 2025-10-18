@@ -290,6 +290,7 @@
                     data: f,
                     tripId: null,
                     trip: null,
+                    icon: `<span class="material-symbols-outlined text-blue-600 inline-icon" style="font-size: 16px;">flight</span>`,
                     display: `<span class="material-symbols-outlined text-blue-600 inline-icon" style="font-size: 16px;">flight</span> ${airlineCode}${flightNum}: ${originCity} → ${destinationCity}`,
                     hasSegment: true,
                     marker: null
@@ -307,6 +308,7 @@
                     data: t,
                     tripId: null,
                     trip: null,
+                    icon: `<span class="material-symbols-outlined text-blue-600 inline-icon" style="font-size: 16px;">train</span>`,
                     display: `<span class="material-symbols-outlined text-amber-600 inline-icon" style="font-size: 16px;">train</span> ${t.method}: ${originCity} → ${destinationCity}`,
                     hasSegment: true,
                     marker: null
@@ -343,6 +345,7 @@
                       data: f,
                       tripId: trip.id,
                       trip: trip,
+                      icon: `<span class="material-symbols-outlined text-blue-600 inline-icon" style="font-size: 16px;">flight</span>`,
                       display: `<span class="material-symbols-outlined text-blue-600 inline-icon" style="font-size: 16px;">flight</span> ${airlineCode}${flightNum}: ${originCity} → ${destinationCity}`,
                       hasSegment: true,
                       marker: null
@@ -361,6 +364,7 @@
                       data: t,
                       tripId: trip.id,
                       trip: trip,
+                      icon: `<span class="material-symbols-outlined text-blue-600 inline-icon" style="font-size: 16px;">train</span>`,
                       display: `<span class="material-symbols-outlined text-amber-600 inline-icon" style="font-size: 16px;">train</span> ${t.method}: ${originCity} → ${destinationCity}`,
                       hasSegment: true,
                       marker: null
@@ -473,6 +477,31 @@
                             iconClass = 'text-green-600';
                             bgClass = 'bg-green-100';
                           }
+
+                          // Extract unique cities from all items in this trip (exclude events)
+                          const tripCities = new Set();
+                          tripData.items.forEach(item => {
+                            // Skip events - only extract from flights, hotels, transportation, and car rentals
+                            if (item.type === 'event') return;
+
+                            if (item.data.origin) {
+                              const originCity = getCityName(item.data.origin);
+                              if (originCity) tripCities.add(originCity);
+                            }
+                            if (item.data.destination) {
+                              const destCity = getCityName(item.data.destination);
+                              if (destCity) tripCities.add(destCity);
+                            }
+                            if (item.data.hotelName && item.data.address) {
+                              const hotelCity = getCityName(item.data.address);
+                              if (hotelCity) tripCities.add(hotelCity);
+                            }
+                            if (item.data.pickupLocation) {
+                              const pickupCity = getCityName(item.data.pickupLocation);
+                              if (pickupCity) tripCities.add(pickupCity);
+                            }
+                          });
+                          const citiesList = Array.from(tripCities).sort().join(', ');
                         %>
                         <div class="w-8 h-8 <%= bgClass %> rounded-lg flex items-center justify-center">
                           <span class="material-symbols-outlined <%= iconClass %>" style="font-size: 16px;"><%= tripIcon %></span>
@@ -480,6 +509,9 @@
                         <div onclick="window.location.href='/trips/<%= tripData.trip.id %>'; event.stopPropagation();" style="cursor: pointer;" class="flex-1 text-left">
                           <h3 class="text-sm font-medium text-gray-900 hover:text-blue-600"><%= tripData.trip.name %></h3>
                           <p class="text-xs text-gray-500"><%= formatDate(tripData.trip.departureDate) %> - <%= formatDate(tripData.trip.returnDate) %></p>
+                          <% if (citiesList) { %>
+                            <p class="text-xs text-gray-600 italic"><%= citiesList %></p>
+                          <% } %>
                         </div>
                       <% } %>
                     </div>
@@ -512,7 +544,7 @@
                                    onclick="window.location.href='/trips/<%= tripData.trip.id %>'"
                                  <% } %>>
                               <% if (item.marker) { %>
-                                <div class="timeline-marker <%= typeClass %> mt-1 flex-shrink-0"><%= item.marker %></div>
+                                <!-- <div class="timeline-marker <%= typeClass %> mt-1 flex-shrink-0"><%= item.marker %></div> -->
                               <% } %>
                               <div class="flex-1 min-w-0">
                                 <div class="flex items-center space-x-2 mb-1">

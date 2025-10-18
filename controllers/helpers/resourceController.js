@@ -148,6 +148,7 @@ function convertToUTC(datetime, timezone) {
 
 /**
  * Geocode location with airport code fallback (for flights)
+ * Uses timezone data from data/airports.json as the source of truth
  * @param {string} location - Location string (could be airport code or address)
  * @param {Object} airportService - Airport service for code lookup
  * @param {string} currentTimezone - Current timezone (will be updated if airport found)
@@ -165,9 +166,11 @@ async function geocodeWithAirportFallback(location, airportService, currentTimez
   if (airportCode) {
     const airportData = airportService.getAirportByCode(airportCode);
     if (airportData) {
+      // Use timezone from data/airports.json as source of truth
+      const timezone = airportData.timezone || currentTimezone;
       return {
         coords: { lat: airportData.lat, lng: airportData.lng },
-        timezone: airportData.timezone || currentTimezone,
+        timezone: timezone,
         formattedLocation: `${airportData.iata} - ${airportData.city}, ${airportData.country}`
       };
     }

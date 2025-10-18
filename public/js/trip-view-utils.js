@@ -294,4 +294,7 @@ if (typeof window !== 'undefined') {
   window.getCityName = getCityName;
   window.formatDateTimeLocal = formatDateTimeLocal;
   window.getLatestDate = getLatestDate;
+  window.initAirportSearch = initAirportSearch;
+  window.searchAirports = searchAirports;
+  window.lookupAirline = lookupAirline;
 }

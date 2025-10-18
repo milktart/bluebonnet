@@ -262,8 +262,23 @@
                 </div>
                 <div class="space-y-2">
                   <% itemsByDate[dateKey].forEach(item => {
-                    const hours = String(item.time.getHours()).padStart(2, '0');
-                    const minutes = String(item.time.getMinutes()).padStart(2, '0');
+                    // Get timezone for this item based on its type
+                    let timezone = null;
+                    if (item.type === 'flight' && item.data.originTimezone) {
+                      timezone = item.data.originTimezone;
+                    } else if (item.type === 'hotel' && item.data.timezone) {
+                      timezone = item.data.timezone;
+                    } else if (item.type === 'transportation' && item.data.originTimezone) {
+                      timezone = item.data.originTimezone;
+                    } else if (item.type === 'carRental' && item.data.pickupTimezone) {
+                      timezone = item.data.pickupTimezone;
+                    } else if (item.type === 'event' && item.data.timezone) {
+                      timezone = item.data.timezone;
+                    }
+
+                    // Format time in the appropriate timezone
+                    const timeStr = formatInTimezone(item.data.departureDateTime || item.data.checkInDateTime || item.data.pickupDateTime || item.data.startDateTime, timezone, 'HH:mm');
+                    const [hours, minutes] = timeStr.split(':');
                     const typeClass = `marker-${item.type}`;
                   %>
                     <div class="timeline-item flex items-start space-x-3 p-3 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors cursor-pointer"
@@ -287,7 +302,7 @@
                         <span class="material-symbols-outlined text-red-600 text-sm">event</span>
                       <% } %>
 
-                        
+
                       <div class="flex-1 min-w-0">
                         <div class="flex items-center space-x-2 mb-1">
                           <span class="text-xs font-medium text-gray-900"><%= hours %>:<%= minutes %></span>
@@ -469,10 +484,21 @@
 
     // Create edit forms for each type
     function createFlightEditForm(flight) {
+      console.log('[createFlightEditForm] flight data:', flight);
+      console.log('[createFlightEditForm] originTimezone:', flight.originTimezone);
+      console.log('[createFlightEditForm] destinationTimezone:', flight.destinationTimezone);
+      console.log('[createFlightEditForm] departureDateTime:', flight.departureDateTime);
+
+      // Test the formatting functions
+      const testDate = formatDateForInput(flight.departureDateTime);
+      const testTime = formatTimeForInput(flight.departureDateTime);
+      const testTimeWithTZ = formatTimeForInput(flight.departureDateTime, flight.originTimezone);
+      console.log('[createFlightEditForm] format tests - date:', testDate, 'time (no tz):', testTime, 'time (with tz):', testTimeWithTZ);
+
       return `
         <div class="flex items-start justify-between mb-6">
           <div class="flex items-center">
-            <button onclick="showAddItemMenu()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
+            <button onclick="closeSecondarySidebar()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
               </svg>
@@ -558,21 +584,21 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Departure Date</label>
-              <input type="date" id="editFlightDepartureDate" name="departureDate" value="${formatDateForInput(flight.departureDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="date" id="editFlightDepartureDate" name="departureDate" value="${formatDateForInput(flight.departureDateTime, flight.originTimezone)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="updateEditFlightArrivalDate()">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Departure Time</label>
-              <input type="text" id="editFlightDepartureTime" name="departureTime" value="${formatTimeForInput(flight.departureDateTime)}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="HH:MM">
+              <input type="text" id="editFlightDepartureTime" name="departureTime" value="${formatTimeForInput(flight.departureDateTime, flight.originTimezone)}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="HH:MM">
             </div>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Arrival Date</label>
-              <input type="date" id="editFlightArrivalDate" name="arrivalDate" value="${formatDateForInput(flight.arrivalDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="date" id="editFlightArrivalDate" name="arrivalDate" value="${formatDateForInput(flight.arrivalDateTime, flight.destinationTimezone)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Arrival Time</label>
-              <input type="text" id="editFlightArrivalTime" name="arrivalTime" value="${formatTimeForInput(flight.arrivalDateTime)}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="HH:MM">
+              <input type="text" id="editFlightArrivalTime" name="arrivalTime" value="${formatTimeForInput(flight.arrivalDateTime, flight.destinationTimezone)}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="HH:MM">
             </div>
           </div>
           <div class="grid grid-cols-3 gap-3">
@@ -608,7 +634,7 @@
       return `
         <div class="flex items-start justify-between mb-6">
           <div class="flex items-center">
-            <button onclick="showAddItemMenu()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
+            <button onclick="closeSecondarySidebar()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
               </svg>
@@ -635,21 +661,21 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Check-in Date</label>
-              <input type="date" name="checkInDate" value="${formatDateForInput(hotel.checkInDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="date" id="editHotelCheckInDate" name="checkInDate" value="${formatDateForInput(hotel.checkInDateTime, hotel.timezone)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="updateEditHotelCheckOutDate()">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Check-in Time</label>
-              <input type="time" name="checkInTime" value="${formatTimeForInput(hotel.checkInDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="time" name="checkInTime" value="${formatTimeForInput(hotel.checkInDateTime, hotel.timezone)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Check-out Date</label>
-              <input type="date" name="checkOutDate" value="${formatDateForInput(hotel.checkOutDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="date" id="editHotelCheckOutDate" name="checkOutDate" value="${formatDateForInput(hotel.checkOutDateTime, hotel.timezone)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Check-out Time</label>
-              <input type="time" name="checkOutTime" value="${formatTimeForInput(hotel.checkOutDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="time" name="checkOutTime" value="${formatTimeForInput(hotel.checkOutDateTime, hotel.timezone)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
           </div>
           <div>
@@ -677,7 +703,7 @@
       return `
         <div class="flex items-start justify-between mb-6">
           <div class="flex items-center">
-            <button onclick="showAddItemMenu()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
+            <button onclick="closeSecondarySidebar()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
               </svg>
@@ -714,21 +740,21 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Departure Date</label>
-              <input type="date" name="departureDate" value="${formatDateForInput(transport.departureDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="date" name="departureDate" value="${formatDateForInput(transport.departureDateTime, transport.originTimezone)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Departure Time</label>
-              <input type="time" name="departureTime" value="${formatTimeForInput(transport.departureDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="time" name="departureTime" value="${formatTimeForInput(transport.departureDateTime, transport.originTimezone)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Arrival Date</label>
-              <input type="date" name="arrivalDate" value="${formatDateForInput(transport.arrivalDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="date" name="arrivalDate" value="${formatDateForInput(transport.arrivalDateTime, transport.destinationTimezone)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Arrival Time</label>
-              <input type="time" name="arrivalTime" value="${formatTimeForInput(transport.arrivalDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="time" name="arrivalTime" value="${formatTimeForInput(transport.arrivalDateTime, transport.destinationTimezone)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
           </div>
           <div>
@@ -756,7 +782,7 @@
       return `
         <div class="flex items-start justify-between mb-6">
           <div class="flex items-center">
-            <button onclick="showAddItemMenu()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
+            <button onclick="closeSecondarySidebar()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
               </svg>
@@ -783,21 +809,21 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Pickup Date</label>
-              <input type="date" name="pickupDate" value="${formatDateForInput(rental.pickupDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="date" id="rentalPickupDate" name="pickupDate" value="${formatDateForInput(rental.pickupDateTime, rental.pickupTimezone)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="updateRentalDropoffDate()">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Pickup Time</label>
-              <input type="time" name="pickupTime" value="${formatTimeForInput(rental.pickupDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="time" name="pickupTime" value="${formatTimeForInput(rental.pickupDateTime, rental.pickupTimezone)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Dropoff Date</label>
-              <input type="date" name="dropoffDate" value="${formatDateForInput(rental.dropoffDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="date" id="rentalDropoffDate" name="dropoffDate" value="${formatDateForInput(rental.dropoffDateTime, rental.dropoffTimezone)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Dropoff Time</label>
-              <input type="time" name="dropoffTime" value="${formatTimeForInput(rental.dropoffDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="time" name="dropoffTime" value="${formatTimeForInput(rental.dropoffDateTime, rental.dropoffTimezone)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
           </div>
           <div>
@@ -824,7 +850,7 @@
       return `
         <div class="flex items-start justify-between mb-6">
           <div class="flex items-center">
-            <button onclick="showAddItemMenu()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
+            <button onclick="closeSecondarySidebar()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
               </svg>
@@ -854,21 +880,21 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Start Date <span class="text-red-500">*</span></label>
-              <input type="date" name="startDate" value="${formatDateForInput(event.startDateTime)}" required class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="date" name="startDate" value="${formatDateForInput(event.startDateTime, event.timezone)}" required class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div class="event-time-field-edit" ${isAllDay ? 'style="display:none"' : ''}>
               <label class="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-              <input type="time" name="startTime" value="${formatTimeForInput(event.startDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="time" name="startTime" value="${formatTimeForInput(event.startDateTime, event.timezone)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">End Date <span class="text-gray-400 text-xs">(optional)</span></label>
-              <input type="date" name="endDate" value="${formatDateForInput(event.endDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="date" name="endDate" value="${formatDateForInput(event.endDateTime, event.timezone)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div class="event-time-field-edit" ${isAllDay ? 'style="display:none"' : ''}>
               <label class="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-              <input type="time" name="endTime" value="${formatTimeForInput(event.endDateTime)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="time" name="endTime" value="${formatTimeForInput(event.endDateTime, event.timezone)}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
           </div>
 
@@ -905,6 +931,9 @@
 
     // Create add forms for each type
     function createFlightAddForm() {
+      // Get trip start date for default values
+      const tripStartDateStr = tripData.departureDate; // Format: YYYY-MM-DD
+
       return `
         <div class="flex items-start justify-between mb-6">
           <div class="flex items-center">
@@ -994,7 +1023,7 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Departure Date</label>
-              <input type="date" id="flightDepartureDate" name="departureDate" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="date" id="flightDepartureDate" name="departureDate" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="updateFlightArrivalDate()">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Departure Time</label>
@@ -1092,7 +1121,7 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Check-in Date</label>
-              <input type="date" name="checkInDate" value="${checkInDateStr}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="date" id="hotelCheckInDate" name="checkInDate" value="${checkInDateStr}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="updateHotelCheckOutDate()">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Check-in Time</label>
@@ -1102,7 +1131,7 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Check-out Date</label>
-              <input type="date" name="checkOutDate" value="${checkOutDateStr}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="date" id="hotelCheckOutDate" name="checkOutDate" value="${checkOutDateStr}" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Check-out Time</label>
@@ -1241,7 +1270,7 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Pickup Date</label>
-              <input type="date" name="pickupDate" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="date" id="addRentalPickupDate" name="pickupDate" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="updateAddRentalDropoffDate()">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Pickup Time</label>
@@ -1251,7 +1280,7 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Dropoff Date</label>
-              <input type="date" name="dropoffDate" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="date" id="addRentalDropoffDate" name="dropoffDate" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Dropoff Time</label>
@@ -1491,6 +1520,169 @@
       "BOI": {"airport_name": "Boise Airport", "city_name": "Boise", "country_name": "United States"},
       "BIL": {"airport_name": "Billings Logan International", "city_name": "Billings", "country_name": "United States"}
     };
+
+    // Flight date initialization and auto-update functions
+    function initializeFlightDates(tripStartDate) {
+      // Set departure and arrival dates to trip start date after form is rendered
+      setTimeout(() => {
+        const departureInput = document.getElementById('flightDepartureDate');
+        const arrivalInput = document.getElementById('flightArrivalDate');
+
+        if (departureInput && arrivalInput && !departureInput.value) {
+          departureInput.value = tripStartDate;
+          arrivalInput.value = tripStartDate;
+        }
+      }, 100);
+    }
+
+    function updateFlightArrivalDate() {
+      const departureInput = document.getElementById('flightDepartureDate');
+      const arrivalInput = document.getElementById('flightArrivalDate');
+
+      if (departureInput && arrivalInput && departureInput.value) {
+        // Update arrival date to match departure date
+        arrivalInput.value = departureInput.value;
+      }
+    }
+
+    function updateEditFlightArrivalDate() {
+      const departureInput = document.getElementById('editFlightDepartureDate');
+      const arrivalInput = document.getElementById('editFlightArrivalDate');
+
+      if (departureInput && arrivalInput && departureInput.value) {
+        // Update arrival date to match departure date
+        arrivalInput.value = departureInput.value;
+      }
+    }
+
+    // Hotel date auto-update functions
+    function updateHotelCheckOutDate() {
+      const checkInInput = document.getElementById('hotelCheckInDate');
+      const checkOutInput = document.getElementById('hotelCheckOutDate');
+
+      if (checkInInput && checkOutInput && checkInInput.value) {
+        // Calculate checkout date as one day after check-in
+        const checkInDate = new Date(checkInInput.value);
+        checkInDate.setDate(checkInDate.getDate() + 1);
+
+        // Format as YYYY-MM-DD for the date input
+        const year = checkInDate.getFullYear();
+        const month = String(checkInDate.getMonth() + 1).padStart(2, '0');
+        const day = String(checkInDate.getDate()).padStart(2, '0');
+        checkOutInput.value = `${year}-${month}-${day}`;
+      }
+    }
+
+    function updateEditHotelCheckOutDate() {
+      const checkInInput = document.getElementById('editHotelCheckInDate');
+      const checkOutInput = document.getElementById('editHotelCheckOutDate');
+
+      if (checkInInput && checkOutInput && checkInInput.value) {
+        // Calculate checkout date as one day after check-in
+        const checkInDate = new Date(checkInInput.value);
+        checkInDate.setDate(checkInDate.getDate() + 1);
+
+        // Format as YYYY-MM-DD for the date input
+        const year = checkInDate.getFullYear();
+        const month = String(checkInDate.getMonth() + 1).padStart(2, '0');
+        const day = String(checkInDate.getDate()).padStart(2, '0');
+        checkOutInput.value = `${year}-${month}-${day}`;
+      }
+    }
+
+    // Car rental date auto-update functions
+    function updateRentalDropoffDate() {
+      const pickupInput = document.getElementById('rentalPickupDate');
+      const dropoffInput = document.getElementById('rentalDropoffDate');
+
+      if (pickupInput && dropoffInput && pickupInput.value) {
+        // Calculate dropoff date as one day after pickup
+        const pickupDate = new Date(pickupInput.value);
+        pickupDate.setDate(pickupDate.getDate() + 1);
+
+        // Format as YYYY-MM-DD for the date input
+        const year = pickupDate.getFullYear();
+        const month = String(pickupDate.getMonth() + 1).padStart(2, '0');
+        const day = String(pickupDate.getDate()).padStart(2, '0');
+        dropoffInput.value = `${year}-${month}-${day}`;
+      }
+    }
+
+    function updateAddRentalDropoffDate() {
+      const pickupInput = document.getElementById('addRentalPickupDate');
+      const dropoffInput = document.getElementById('addRentalDropoffDate');
+
+      if (pickupInput && dropoffInput && pickupInput.value) {
+        // Calculate dropoff date as one day after pickup
+        const pickupDate = new Date(pickupInput.value);
+        pickupDate.setDate(pickupDate.getDate() + 1);
+
+        // Format as YYYY-MM-DD for the date input
+        const year = pickupDate.getFullYear();
+        const month = String(pickupDate.getMonth() + 1).padStart(2, '0');
+        const day = String(pickupDate.getDate()).padStart(2, '0');
+        dropoffInput.value = `${year}-${month}-${day}`;
+      }
+    }
+
+    // Show add form for a specific resource type
+    function showAddForm(type) {
+      const container = document.getElementById('secondary-sidebar-content');
+      let formHTML = '';
+
+      switch(type) {
+        case 'flight':
+          formHTML = createFlightAddForm();
+          break;
+        case 'hotel':
+          formHTML = createHotelAddForm();
+          break;
+        case 'transportation':
+          formHTML = createTransportationAddForm();
+          break;
+        case 'carRental':
+          formHTML = createCarRentalAddForm();
+          break;
+        case 'event':
+          formHTML = createEventAddForm();
+          break;
+      }
+
+      if (container && formHTML) {
+        container.innerHTML = formHTML;
+        // Store in history for refreshing
+        if (!window.sidebarHistory) {
+          window.sidebarHistory = [];
+          window.sidebarHistoryIndex = -1;
+        }
+        window.sidebarHistory.push(formHTML);
+        window.sidebarHistoryIndex = window.sidebarHistory.length - 1;
+
+        // Initialize date fields if flight form
+        if (type === 'flight') {
+          setTimeout(() => {
+            const tripStartDate = tripData.departureDate;
+            initializeFlightDates(tripStartDate);
+            // Initialize airport search for origin and destination
+            if (window.initAirportSearch) {
+              window.initAirportSearch();
+            }
+            // Reinitialize Preline combobox components
+            if (window.HSStaticMethods && window.HSStaticMethods.autoInit) {
+              window.HSStaticMethods.autoInit();
+            }
+          }, 50);
+        } else {
+          // Reinitialize Preline components for other form types
+          setTimeout(() => {
+            if (window.HSStaticMethods && window.HSStaticMethods.autoInit) {
+              window.HSStaticMethods.autoInit();
+            }
+          }, 50);
+        }
+      }
+      openSecondarySidebar();
+    }
 
   </script>
 

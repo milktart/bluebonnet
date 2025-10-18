@@ -25,6 +25,35 @@ function initOverviewMap(tripData, mapElementId = 'overviewMap') {
       return;
     }
 
+    // Destroy existing map if it exists and is stored globally
+    if (window.currentMap) {
+      console.log('Destroying existing map instance...');
+      try {
+        // Remove all layers and controls
+        if (typeof window.currentMap.remove === 'function') {
+          window.currentMap.remove();
+        }
+        // Force clear any remaining references
+        window.currentMap = null;
+      } catch (e) {
+        console.warn('Error destroying map:', e);
+        window.currentMap = null;
+      }
+    }
+
+    // Clear the map container completely
+    mapEl.innerHTML = '';
+
+    // Also clear any animation intervals that might be running
+    if (window.activeAnimations) {
+      Object.values(window.activeAnimations).forEach(animation => {
+        if (animation.interval) {
+          clearInterval(animation.interval);
+        }
+      });
+      window.activeAnimations = {};
+    }
+
     // Temporarily change ID for map.js compatibility
     const originalId = mapEl.id;
     mapEl.id = 'map';
@@ -33,6 +62,9 @@ function initOverviewMap(tripData, mapElementId = 'overviewMap') {
       initializeMap(tripData)
         .then((map) => {
           console.log('Map initialized successfully');
+
+          // Update the global currentMap reference
+          window.currentMap = map;
 
           // Single map size recalculation to fix tile rendering without disrupting bounds
           setTimeout(() => {

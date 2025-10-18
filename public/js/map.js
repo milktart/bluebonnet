@@ -16,6 +16,10 @@ async function initializeMap(tripData) {
       }
     }
 
+    // Ensure map element is clean and empty
+    mapEl._leaflet_id = null; // Clear any Leaflet ID
+    mapEl.innerHTML = '';
+
     // Show loading indicator
     const loadingDiv = document.createElement('div');
     loadingDiv.className = 'alert alert-info position-fixed top-50 start-50 translate-middle';
@@ -28,7 +32,7 @@ async function initializeMap(tripData) {
       center: [25, 0],
       zoom: 1,
       minZoom: 1,
-      zoomSnap: .25,
+      zoomSnap: .5,
       zoomControl: false, // Disable default zoom control
       scrollWheelZoom: true,
       attributionControl: false

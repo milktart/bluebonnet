@@ -1,5 +1,6 @@
 const { Trip, Flight, Hotel, Transportation, CarRental, Event, TravelCompanion, TripCompanion, User } = require('../models');
 const airportService = require('../services/airportService');
+const { formatInTimezone } = require('../utils/timezoneHelper');
 
 exports.listTrips = async (req, res) => {
   try {
@@ -208,7 +209,8 @@ exports.viewTrip = async (req, res) => {
       trip,
       isOwner,
       canEdit,
-      airlines
+      airlines,
+      formatInTimezone
     });
   } catch (error) {
     console.error(error);

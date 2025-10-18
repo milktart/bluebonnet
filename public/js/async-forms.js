@@ -254,6 +254,7 @@ function showAsyncMessage(message, type = 'success') {
 
 /**
  * Refresh the primary sidebar timeline with updated trip data
+ * Uses timezone-aware formatting to match server-side rendering
  * @param {Object} tripData - Updated trip data
  */
 function refreshPrimarySidebar(tripData) {
@@ -273,10 +274,10 @@ function refreshPrimarySidebar(tripData) {
   // Helper functions (matching server-side logic)
   function formatDate(date) {
     const d = new Date(date);
-    const day = String(d.getDate()).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const month = months[d.getMonth()];
-    const year = d.getFullYear();
+    const month = months[d.getUTCMonth()];
+    const year = d.getUTCFullYear();
     return `${day} ${month} ${year}`;
   }
 
@@ -306,24 +307,26 @@ function refreshPrimarySidebar(tripData) {
     const destinationCity = getCityName(f.destination);
     allItems.push({
       type: 'flight',
-      time: new Date(f.departureDateTime),
+      dateTime: f.departureDateTime,
       data: f,
       display: `${airlineCode}${flightNum}: ${originCity} → ${destinationCity}`,
       hasSegment: true,
       marker: null,
-      id: f.id
+      id: f.id,
+      timezone: f.originTimezone
     });
   });
 
   (tripData.hotels || []).forEach(h => {
     allItems.push({
       type: 'hotel',
-      time: new Date(h.checkInDateTime),
+      dateTime: h.checkInDateTime,
       data: h,
       display: h.hotelName,
       hasSegment: false,
       marker: null,
-      id: h.id
+      id: h.id,
+      timezone: h.timezone
     });
   });
 
@@ -332,41 +335,44 @@ function refreshPrimarySidebar(tripData) {
     const destinationCity = getCityName(t.destination);
     allItems.push({
       type: 'transportation',
-      time: new Date(t.departureDateTime),
+      dateTime: t.departureDateTime,
       data: t,
       display: `${t.method}: ${originCity} → ${destinationCity}`,
       hasSegment: true,
       marker: null,
-      id: t.id
+      id: t.id,
+      timezone: t.originTimezone
     });
   });
 
   (tripData.carRentals || []).forEach(c => {
     allItems.push({
       type: 'carRental',
-      time: new Date(c.pickupDateTime),
+      dateTime: c.pickupDateTime,
       data: c,
       display: `${c.company}`,
       hasSegment: false,
       marker: null,
-      id: c.id
+      id: c.id,
+      timezone: c.pickupTimezone
     });
   });
 
   (tripData.events || []).forEach(e => {
     allItems.push({
       type: 'event',
-      time: new Date(e.startDateTime),
+      dateTime: e.startDateTime,
       data: e,
       display: e.name,
       hasSegment: false,
       marker: null,
-      id: e.id
+      id: e.id,
+      timezone: e.timezone
     });
   });
 
-  // Sort by time
-  allItems.sort((a, b) => a.time - b.time);
+  // Sort by time (need to convert to Date for comparison)
+  allItems.sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
 
   // Assign markers to items with segments
   let mapMarkerCounter = 0;
@@ -377,10 +383,11 @@ function refreshPrimarySidebar(tripData) {
     }
   });
 
-  // Group by date
+  // Group by UTC date (consistent with how dates are stored)
   const itemsByDate = {};
   allItems.forEach(item => {
-    const dateKey = item.time.toISOString().split('T')[0];
+    // Always use UTC date for grouping (dates are stored in UTC)
+    const dateKey = item.dateTime.split('T')[0];
     if (!itemsByDate[dateKey]) itemsByDate[dateKey] = [];
     itemsByDate[dateKey].push(item);
   });
@@ -421,8 +428,30 @@ function refreshPrimarySidebar(tripData) {
       `;
 
       itemsByDate[dateKey].forEach(item => {
-        const hours = String(item.time.getHours()).padStart(2, '0');
-        const minutes = String(item.time.getMinutes()).padStart(2, '0');
+        // Format time using timezone-aware logic (matching server template)
+        let hours = '00';
+        let minutes = '00';
+
+        if (typeof window.formatTimeForInput === 'function' && item.timezone) {
+          // Use the datetime formatter with timezone awareness
+          try {
+            const timeStr = window.formatTimeForInput(item.dateTime, item.timezone);
+            if (timeStr && timeStr.includes(':')) {
+              [hours, minutes] = timeStr.split(':');
+            }
+          } catch (e) {
+            console.warn('Error formatting time with timezone:', e);
+            // Fallback to UTC time
+            const d = new Date(item.dateTime);
+            hours = String(d.getUTCHours()).padStart(2, '0');
+            minutes = String(d.getUTCMinutes()).padStart(2, '0');
+          }
+        } else {
+          // Fallback: use UTC time if no timezone available or formatter not available
+          const d = new Date(item.dateTime);
+          hours = String(d.getUTCHours()).padStart(2, '0');
+          minutes = String(d.getUTCMinutes()).padStart(2, '0');
+        }
 
         // Icon and color mapping to match server template exactly
         let iconHtml = '';
