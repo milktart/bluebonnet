@@ -5,6 +5,8 @@ const { ensureAuthenticated } = require('../middleware/auth');
 
 router.use(ensureAuthenticated);
 
+router.get('/trips/:tripId/form', eventController.getAddForm);
+router.get('/:id/form', eventController.getEditForm);
 router.get('/:id/sidebar', eventController.getEventSidebar);
 router.get('/:id/edit-form', eventController.getEventEditForm);
 router.post('/trips/:tripId/events', eventController.createEvent);

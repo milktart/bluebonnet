@@ -241,12 +241,12 @@
           </div>
           <h3 class="text-lg font-medium text-gray-900 mb-2">No trips yet</h3>
           <p class="text-gray-500 mb-6">Get started by creating your first trip</p>
-          <a href="/trips/create" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+          <button onclick="showCreateTripForm()" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
             Create first trip
-          </a>
+          </button>
         </div>
       <% } else { %>
 
@@ -271,42 +271,42 @@
 
           if (!isPast && trip.flights && trip.flights.length > 0) {
             const lastFlight = trip.flights.reduce((latest, f) => {
-              const arrivalDate = new Date(f.arrivalDateTime);
+              const arrivalDate = f.arrivalDateTime ? new Date(f.arrivalDateTime) : new Date(0);
               return arrivalDate > latest ? arrivalDate : latest;
             }, new Date(0));
-            if (lastFlight < now) isPast = true;
+            if (lastFlight > new Date(0) && lastFlight < now) isPast = true;
           }
 
           if (!isPast && trip.hotels && trip.hotels.length > 0) {
             const lastHotel = trip.hotels.reduce((latest, h) => {
-              const checkoutDate = new Date(h.checkOutDateTime);
+              const checkoutDate = h.checkOutDateTime ? new Date(h.checkOutDateTime) : new Date(0);
               return checkoutDate > latest ? checkoutDate : latest;
             }, new Date(0));
-            if (lastHotel < now) isPast = true;
+            if (lastHotel > new Date(0) && lastHotel < now) isPast = true;
           }
 
           if (!isPast && trip.transportation && trip.transportation.length > 0) {
             const lastTransport = trip.transportation.reduce((latest, t) => {
-              const arrivalDate = new Date(t.arrivalDateTime);
+              const arrivalDate = t.arrivalDateTime ? new Date(t.arrivalDateTime) : new Date(0);
               return arrivalDate > latest ? arrivalDate : latest;
             }, new Date(0));
-            if (lastTransport < now) isPast = true;
+            if (lastTransport > new Date(0) && lastTransport < now) isPast = true;
           }
 
           if (!isPast && trip.carRentals && trip.carRentals.length > 0) {
             const lastRental = trip.carRentals.reduce((latest, c) => {
-              const dropoffDate = new Date(c.dropoffDateTime);
+              const dropoffDate = c.dropoffDateTime ? new Date(c.dropoffDateTime) : new Date(0);
               return dropoffDate > latest ? dropoffDate : latest;
             }, new Date(0));
-            if (lastRental < now) isPast = true;
+            if (lastRental > new Date(0) && lastRental < now) isPast = true;
           }
 
           if (!isPast && trip.events && trip.events.length > 0) {
             const lastEvent = trip.events.reduce((latest, e) => {
-              const endDate = new Date(e.endDateTime);
+              const endDate = e.endDateTime ? new Date(e.endDateTime) : new Date(0);
               return endDate > latest ? endDate : latest;
             }, new Date(0));
-            if (lastEvent < now) isPast = true;
+            if (lastEvent > new Date(0) && lastEvent < now) isPast = true;
           }
 
           if (isPast) {
@@ -884,7 +884,6 @@
   <script src="/js/map.js"></script>
   <script src="/js/trip-view-utils.js"></script>
   <script src="/js/trip-map.js"></script>
-  <script src="/js/datepicker-advanced.js"></script>
   <script src="/js/sidebar-loader.js"></script>
   <script src="/js/companions-manager.js"></script>
   <script src="/js/trips-list.js"></script>

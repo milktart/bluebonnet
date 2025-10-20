@@ -1,4 +1,5 @@
 const { Transportation, Trip } = require('../models');
+const { utcToLocal } = require('../utils/timezoneHelper');
 const {
   verifyTripOwnership,
   geocodeOriginDestination,
@@ -186,5 +187,72 @@ exports.deleteTransportation = async (req, res) => {
     }
     req.flash('error_msg', 'Error deleting transportation');
     res.redirect('back');
+  }
+};
+
+// Get add transportation form (for sidebar)
+exports.getAddForm = async (req, res) => {
+  try {
+    const { tripId } = req.params;
+
+    // Verify trip ownership
+    const trip = await Trip.findByPk(tripId);
+    if (!trip || trip.userId !== req.user.id) {
+      return res.status(403).send('Unauthorized');
+    }
+
+    // Render form partial for sidebar (not modal)
+    res.render('partials/transportation-form', {
+      tripId: tripId,
+      isEditing: false,
+      data: null,
+      isModal: false  // This tells the partial to render for sidebar
+    });
+  } catch (error) {
+    console.error('Error fetching add form:', error);
+    res.status(500).send('Error loading form');
+  }
+};
+
+// Get edit transportation form (for sidebar)
+exports.getEditForm = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Fetch the transportation
+    const transportation = await Transportation.findByPk(id, {
+      include: [{ model: Trip, as: 'trip', required: false }]
+    });
+
+    // Verify ownership
+    if (!transportation || !verifyResourceOwnership(transportation, req.user.id)) {
+      return res.status(403).send('Unauthorized');
+    }
+
+    // Convert UTC times to local timezone for display
+    // utcToLocal returns "YYYY-MM-DDTHH:mm" format, so we split it into date and time
+    const departureDateTimeLocal = utcToLocal(transportation.departureDateTime, transportation.originTimezone || 'UTC');
+    const arrivalDateTimeLocal = utcToLocal(transportation.arrivalDateTime, transportation.destinationTimezone || 'UTC');
+
+    // Split the combined datetime into separate date and time fields for form input
+    const [departureDate, departureTime] = departureDateTimeLocal.split('T');
+    const [arrivalDate, arrivalTime] = arrivalDateTimeLocal.split('T');
+
+    // Render form partial for sidebar (not modal)
+    res.render('partials/transportation-form', {
+      tripId: transportation.tripId || '', // Use tripId if available, empty string otherwise
+      isEditing: true,
+      data: {
+        ...transportation.toJSON(),
+        departureDate,
+        departureTime,
+        arrivalDate,
+        arrivalTime
+      },
+      isModal: false  // This tells the partial to render for sidebar
+    });
+  } catch (error) {
+    console.error('Error fetching edit form:', error);
+    res.status(500).send('Error loading form');
   }
 };

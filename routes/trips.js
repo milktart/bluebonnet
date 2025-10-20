@@ -7,8 +7,9 @@ const { validateTrip } = require('../middleware/validation');
 router.use(ensureAuthenticated);
 
 router.get('/', tripController.listTrips);
-router.get('/create', tripController.getCreateTrip);
 router.post('/', validateTrip, tripController.createTrip);
+router.get('/:id/api', tripController.getTripDataJson);
+router.get('/:id/sidebar', tripController.getTripSidebarHtml);
 router.get('/:id', tripController.viewTrip);
 router.get('/:id/edit', tripController.getEditTrip);
 router.get('/:id/edit/sidebar', tripController.getEditTripSidebar);

@@ -1,188 +1,124 @@
-<!-- Unified Transportation Form - Used for both Add and Edit flows -->
+<!-- Transportation Form - Sidebar Only - Using Preline Components -->
 
 <%
   const isAddMode = !isEditing;
-  const modalId = isAddMode ? 'addTransportationModal' : 'editTransportationModal';
-  const formId = isAddMode ? 'addTransportationForm' : 'editTransportationForm';
-  const formAction = isAddMode
-    ? `/transportation/trips/${tripId}/transportation`
-    : `/transportation/${data?.id}`;
-  const formMethod = isAddMode ? 'POST' : 'POST';
   const submitButtonText = isAddMode ? 'Add Transportation' : 'Update Transportation';
-  const submitButtonIcon = isAddMode ? 'bi-plus-circle' : 'bi-check-circle';
+  const headerText = isAddMode ? 'Add Transportation' : 'Edit Transportation';
 %>
 
-<div class="modal fade" id="<%= modalId %>" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">
-          <i class="bi <%= isAddMode ? 'bi-train-front' : 'bi-pencil' %>"></i>
-          <%= isAddMode ? 'Add Transportation' : 'Edit Transportation' %>
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <form id="<%= formId %>" method="<%= formMethod %>" action="<%= formAction %>">
-        <% if (!isAddMode) { %>
-          <input type="hidden" name="_method" value="PUT">
-        <% } %>
-        <div class="modal-body">
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Method of Travel *</label>
-              <select
-                class="form-select"
-                name="method"
-                id="<%= isAddMode ? '' : 'edit_transportation_method' %>"
-                required>
-                <option value="">Select method...</option>
-                <option value="train" <%= data?.method === 'train' ? 'selected' : '' %>>Train</option>
-                <option value="bus" <%= data?.method === 'bus' ? 'selected' : '' %>>Bus</option>
-                <option value="ferry" <%= data?.method === 'ferry' ? 'selected' : '' %>>Ferry</option>
-                <option value="shuttle" <%= data?.method === 'shuttle' ? 'selected' : '' %>>Shuttle</option>
-                <option value="taxi" <%= data?.method === 'taxi' ? 'selected' : '' %>>Taxi/Rideshare</option>
-                <option value="subway" <%= data?.method === 'subway' ? 'selected' : '' %>>Subway/Metro</option>
-                <option value="tram" <%= data?.method === 'tram' ? 'selected' : '' %>>Tram</option>
-                <option value="other" <%= data?.method === 'other' ? 'selected' : '' %>>Other</option>
-              </select>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Journey Number</label>
-              <input
-                type="text"
-                class="form-control"
-                name="journeyNumber"
-                id="<%= isAddMode ? '' : 'edit_transportation_journeyNumber' %>"
-                value="<%= data?.journeyNumber || '' %>"
-                placeholder="e.g., Amtrak 123, Bus 456">
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Origin Station/Stop *</label>
-              <input
-                type="text"
-                class="form-control"
-                name="origin"
-                id="<%= isAddMode ? '' : 'edit_transportation_origin' %>"
-                value="<%= data?.origin || '' %>"
-                required
-                placeholder="e.g., Penn Station, New York">
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Origin Timezone</label>
-              <input
-                type="text"
-                class="form-control"
-                name="originTimezone"
-                id="<%= isAddMode ? '' : 'edit_transportation_originTimezone' %>"
-                value="<%= data?.originTimezone || '' %>"
-                placeholder="e.g., America/New_York">
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Destination Station/Stop *</label>
-              <input
-                type="text"
-                class="form-control"
-                name="destination"
-                id="<%= isAddMode ? '' : 'edit_transportation_destination' %>"
-                value="<%= data?.destination || '' %>"
-                required
-                placeholder="e.g., Union Station, Washington DC">
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Destination Timezone</label>
-              <input
-                type="text"
-                class="form-control"
-                name="destinationTimezone"
-                id="<%= isAddMode ? '' : 'edit_transportation_destinationTimezone' %>"
-                value="<%= data?.destinationTimezone || '' %>"
-                placeholder="e.g., America/New_York">
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Departure Date/Time *</label>
-              <div class="row">
-                <div class="col-7">
-                  <input
-                    type="date"
-                    class="form-control"
-                    name="departureDate"
-                    id="<%= isAddMode ? '' : 'edit_transportation_departureDate' %>"
-                    value="<%= data?.departureDate || '' %>"
-                    required>
-                </div>
-                <div class="col-5">
-                  <input
-                    type="time"
-                    class="form-control"
-                    name="departureTime"
-                    id="<%= isAddMode ? '' : 'edit_transportation_departureTime' %>"
-                    value="<%= data?.departureTime || '' %>"
-                    required>
-                </div>
-              </div>
-              <small class="form-text text-muted">Local departure time</small>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Arrival Date/Time *</label>
-              <div class="row">
-                <div class="col-7">
-                  <input
-                    type="date"
-                    class="form-control"
-                    name="arrivalDate"
-                    id="<%= isAddMode ? '' : 'edit_transportation_arrivalDate' %>"
-                    value="<%= data?.arrivalDate || '' %>"
-                    required>
-                </div>
-                <div class="col-5">
-                  <input
-                    type="time"
-                    class="form-control"
-                    name="arrivalTime"
-                    id="<%= isAddMode ? '' : 'edit_transportation_arrivalTime' %>"
-                    value="<%= data?.arrivalTime || '' %>"
-                    required>
-                </div>
-              </div>
-              <small class="form-text text-muted">Local arrival time</small>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Confirmation Number</label>
-              <input
-                type="text"
-                class="form-control"
-                name="confirmationNumber"
-                id="<%= isAddMode ? '' : 'edit_transportation_confirmationNumber' %>"
-                value="<%= data?.confirmationNumber || '' %>"
-                placeholder="Booking confirmation">
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Seat/Coach Number</label>
-              <input
-                type="text"
-                class="form-control"
-                name="seat"
-                id="<%= isAddMode ? '' : 'edit_transportation_seat' %>"
-                value="<%= data?.seat || '' %>"
-                placeholder="e.g., Coach 3, Seat 14">
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">
-            <i class="bi <%= submitButtonIcon %>"></i> <%= submitButtonText %>
-          </button>
-        </div>
-      </form>
+<div class="sidebar-form-container">
+  <div class="flex items-start justify-between mb-6">
+    <div class="flex items-center">
+      <button onclick="closeSecondarySidebar()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <h2 class="text-lg font-bold text-gray-900"><%= headerText %></h2>
+    </div>
+    <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+      <span class="material-symbols-outlined text-amber-600" style="font-size: 16px;">train</span>
     </div>
   </div>
+
+  <form id="<%= isAddMode ? 'addTransportationForm' : 'editTransportationForm' %>" action="<%= isAddMode ? `/transportation/trips/${tripId}/transportation` : `/transportation/${data?.id}` %>" method="POST" class="space-y-4">
+    <% if (!isAddMode) { %>
+      <input type="hidden" name="_method" value="PUT">
+    <% } %>
+    <input type="hidden" name="tripId" value="<%= tripId %>">
+
+    <!-- Method & Journey Number -->
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Method of Travel</label>
+        <select name="method" id="<%= isAddMode ? '' : 'edit_transportation_method' %>" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500" required>
+          <option value="">Select method...</option>
+          <option value="train" <%= data?.method === 'train' ? 'selected' : '' %>>Train</option>
+          <option value="bus" <%= data?.method === 'bus' ? 'selected' : '' %>>Bus</option>
+          <option value="ferry" <%= data?.method === 'ferry' ? 'selected' : '' %>>Ferry</option>
+          <option value="shuttle" <%= data?.method === 'shuttle' ? 'selected' : '' %>>Shuttle</option>
+          <option value="taxi" <%= data?.method === 'taxi' ? 'selected' : '' %>>Taxi/Rideshare</option>
+          <option value="subway" <%= data?.method === 'subway' ? 'selected' : '' %>>Subway/Metro</option>
+          <option value="tram" <%= data?.method === 'tram' ? 'selected' : '' %>>Tram</option>
+          <option value="other" <%= data?.method === 'other' ? 'selected' : '' %>>Other</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Journey Number</label>
+        <input type="text" name="journeyNumber" id="<%= isAddMode ? '' : 'edit_transportation_journeyNumber' %>" value="<%= data?.journeyNumber || '' %>" placeholder="e.g., Amtrak 123" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500">
+      </div>
+    </div>
+
+    <!-- Origin Station/Stop -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Origin Station/Stop</label>
+      <input type="text" name="origin" id="<%= isAddMode ? '' : 'edit_transportation_origin' %>" placeholder="e.g., Penn Station, New York" value="<%= data?.origin || '' %>" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500" required>
+      <input type="hidden" name="originTimezone" id="<%= isAddMode ? 'transportationOriginTimezone' : 'edit_transportation_originTimezone' %>" value="<%= data?.originTimezone || '' %>">
+    </div>
+
+    <!-- Destination Station/Stop -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Destination Station/Stop</label>
+      <input type="text" name="destination" id="<%= isAddMode ? '' : 'edit_transportation_destination' %>" placeholder="e.g., Union Station, Washington DC" value="<%= data?.destination || '' %>" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500" required>
+      <input type="hidden" name="destinationTimezone" id="<%= isAddMode ? 'transportationDestinationTimezone' : 'edit_transportation_destinationTimezone' %>" value="<%= data?.destinationTimezone || '' %>">
+    </div>
+
+    <!-- Departure Date & Time -->
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Departure Date</label>
+        <input type="date" name="departureDate" id="<%= isAddMode ? '' : 'edit_transportation_departureDate' %>" value="<%= data?.departureDate || '' %>" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500" required>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Departure Time</label>
+        <input type="time" name="departureTime" id="<%= isAddMode ? '' : 'edit_transportation_departureTime' %>" value="<%= data?.departureTime || '' %>" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500" required>
+        <small class="text-sm text-gray-500 mt-1">Local departure time</small>
+      </div>
+    </div>
+
+    <!-- Arrival Date & Time -->
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Arrival Date</label>
+        <input type="date" name="arrivalDate" id="<%= isAddMode ? '' : 'edit_transportation_arrivalDate' %>" value="<%= data?.arrivalDate || '' %>" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500" required>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Arrival Time</label>
+        <input type="time" name="arrivalTime" id="<%= isAddMode ? '' : 'edit_transportation_arrivalTime' %>" value="<%= data?.arrivalTime || '' %>" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500" required>
+        <small class="text-sm text-gray-500 mt-1">Local arrival time</small>
+      </div>
+    </div>
+
+    <!-- Confirmation & Seat Number -->
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Confirmation Number</label>
+        <input type="text" name="confirmationNumber" id="<%= isAddMode ? '' : 'edit_transportation_confirmationNumber' %>" value="<%= data?.confirmationNumber || '' %>" placeholder="Booking confirmation" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Seat/Coach Number</label>
+        <input type="text" name="seat" id="<%= isAddMode ? '' : 'edit_transportation_seat' %>" value="<%= data?.seat || '' %>" placeholder="e.g., Coach 3, Seat 14" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500">
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="flex space-x-3 pt-4">
+      <button type="submit" class="flex-1 <%= isAddMode ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500' : 'bg-green-600 hover:bg-green-700 focus:ring-green-500' %> text-white py-2 px-4 rounded-md focus:outline-none focus:ring-2 transition-colors">
+        <%= submitButtonText %>
+      </button>
+      <button type="button" onclick="closeSecondarySidebar()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors">
+        Cancel
+      </button>
+    </div>
+  </form>
+
+  <% if (!isAddMode) { %>
+    <form action="/transportation/<%= data?.id %>?_method=DELETE" method="POST" class="mt-4 pt-4 border-t border-gray-200">
+      <input type="hidden" name="tripId" value="<%= tripId %>">
+      <button type="submit" class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors" onclick="return confirm('Are you sure you want to delete this transportation?')">
+        Delete Transportation
+      </button>
+    </form>
+  <% } %>
 </div>
+

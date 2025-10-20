@@ -23,7 +23,6 @@ const TAB_CONFIG = {
 // Update map with new trip data
 function updateMapData(newData, isPast = false) {
   if (!currentMap || !mapInitialized) {
-    console.warn('Map not initialized, skipping map update');
     return;
   }
 
@@ -35,10 +34,9 @@ function updateMapData(newData, isPast = false) {
     initOverviewMap(newData, 'overviewMap', isPast)
       .then((map) => {
         currentMap = map;
-        console.log('Map updated with new data');
       })
       .catch(error => {
-        console.error('Failed to update map:', error);
+        // Map update failed silently
       });
   }
 }
@@ -527,10 +525,7 @@ function stopTripAnimation() {
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function () {
-  console.log('Initializing trips list page');
-
   if (typeof L === 'undefined') {
-    console.error('Leaflet not loaded');
     const mapEl = document.getElementById('overviewMap');
     if (mapEl) {
       mapEl.innerHTML = '<div class="bg-red-50 border border-red-200 rounded-md p-4 text-red-700">Map library not loaded.</div>';
@@ -545,7 +540,6 @@ document.addEventListener('DOMContentLoaded', function () {
         .then((map) => {
           mapInitialized = true;
           currentMap = map;
-          console.log('Map initialized successfully');
 
           // Setup accordion hover handlers
           const accordionButtons = document.querySelectorAll('.w-full.py-4.px-5');
@@ -578,7 +572,6 @@ document.addEventListener('DOMContentLoaded', function () {
           });
         })
         .catch(error => {
-          console.error('Map initialization error:', error);
           const mapEl = document.getElementById('overviewMap');
           if (mapEl) {
             mapEl.innerHTML = '<div class="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-yellow-700">Map failed to load: ' + error.message + '</div>';
@@ -586,6 +579,4 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
   }, 500);
-
-  initAdvancedDatepickers();
 });

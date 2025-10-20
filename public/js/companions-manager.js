@@ -24,8 +24,6 @@ function attachCompanionsFormHandler() {
       // Convert FormData to object
       const data = Object.fromEntries(formData);
 
-      console.log('Updating companion with data:', data);
-
       // Send as POST with JSON (the form handles method override with _method=PUT)
       fetch(action, {
         method: 'POST',
@@ -36,14 +34,12 @@ function attachCompanionsFormHandler() {
         body: JSON.stringify(data)
       })
       .then(response => {
-        console.log('Response status:', response.status);
         if (!response.ok && response.status !== 400) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         return response.json();
       })
       .then(data => {
-        console.log('Response data:', data);
         if (data.success) {
           // Success - reload the companions list
           loadSidebarContent('/companions/sidebar');
@@ -52,7 +48,6 @@ function attachCompanionsFormHandler() {
         }
       })
       .catch(error => {
-        console.error('Error updating companion:', error);
         alert('Error updating companion. Please try again.');
       });
     }
@@ -67,8 +62,6 @@ function attachCompanionsFormHandler() {
       // Convert FormData to object
       const data = Object.fromEntries(formData);
 
-      console.log('Creating companion with data:', data);
-
       // Send as POST with JSON
       fetch(action, {
         method: 'POST',
@@ -79,14 +72,12 @@ function attachCompanionsFormHandler() {
         body: JSON.stringify(data)
       })
       .then(response => {
-        console.log('Response status:', response.status);
         if (!response.ok && response.status !== 400) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         return response.json();
       })
       .then(data => {
-        console.log('Response data:', data);
         if (data.success) {
           // Success - reload the companions list
           loadSidebarContent('/companions/sidebar');
@@ -95,7 +86,6 @@ function attachCompanionsFormHandler() {
         }
       })
       .catch(error => {
-        console.error('Error adding companion:', error);
         alert('Error adding companion: ' + error.message);
       });
     }
@@ -199,7 +189,6 @@ async function performDeleteCompanion(companionId) {
       alert(data.error || 'Failed to delete companion');
     }
   } catch (error) {
-    console.error('Error deleting companion:', error);
     alert('Error deleting companion: ' + error.message);
   }
 }
@@ -227,7 +216,6 @@ async function performUnlinkCompanion(companionId) {
       alert(data.error || 'Failed to unlink companion');
     }
   } catch (error) {
-    console.error('Error unlinking companion:', error);
     alert('Error unlinking companion: ' + error.message);
   }
 }
@@ -268,7 +256,6 @@ async function toggleCompanionPermission(companionId, canBeAddedByOthers) {
       loadSidebarContent('/companions/sidebar');
     }
   } catch (error) {
-    console.error('Error updating companion permissions:', error);
     alert('Error updating companion permissions: ' + error.message);
     // Reload to revert the checkbox
     loadSidebarContent('/companions/sidebar');

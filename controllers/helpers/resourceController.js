@@ -133,7 +133,11 @@ function verifyResourceOwnership(resource, currentUserId) {
 function verifyResourceOwnershipViaTrip(resource, currentUserId) {
   if (!resource || !resource.trip) return false;
 
-  return resource.trip.userId === currentUserId;
+  // Convert both to strings for comparison (UUIDs can be objects or strings)
+  const tripUserId = String(resource.trip.userId || '');
+  const userId = String(currentUserId || '');
+
+  return tripUserId === userId;
 }
 
 /**

@@ -296,10 +296,4 @@ function initializeFlightForm() {
 console.log('About to call initializeFlightForm');
 initializeFlightForm();
 console.log('initializeFlightForm completed');
-
-// Set up async form submission
-const formId = '<%= isAddMode ? 'addFlightForm' : 'editFlightForm' %>';
-if (typeof setupAsyncFormSubmission === 'function') {
-  setupAsyncFormSubmission(formId);
-}
 </script>

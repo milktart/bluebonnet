@@ -7,6 +7,7 @@ const {
   verifyResourceOwnershipViaTrip,
   convertToUTC
 } = require('./helpers/resourceController');
+const { utcToLocal } = require('../utils/timezoneHelper');
 
 exports.createCarRental = async (req, res) => {
   try {
@@ -175,5 +176,94 @@ exports.deleteCarRental = async (req, res) => {
     }
     req.flash('error_msg', 'Error deleting car rental');
     res.redirect('back');
+  }
+};
+
+exports.getAddForm = async (req, res) => {
+  try {
+    const { tripId } = req.params;
+
+    // Verify trip ownership
+    const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
+    if (!trip) {
+      return res.status(403).send('Trip not found');
+    }
+
+    res.render('partials/car-rental-form', {
+      tripId,
+      isEditing: false,
+      data: null
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error loading form');
+  }
+};
+
+exports.getEditForm = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find car rental with trip
+    const carRental = await CarRental.findByPk(id, {
+      include: [{ model: Trip, as: 'trip' }]
+    });
+
+    // Verify car rental exists
+    if (!carRental) {
+      return res.status(404).send('Car rental not found');
+    }
+
+    // Verify ownership
+    if (!verifyResourceOwnershipViaTrip(carRental, req.user.id)) {
+      return res.status(403).send('Car rental not found');
+    }
+
+    // Format data for display
+    const pickupTimezone = carRental.pickupTimezone || 'UTC';
+    const dropoffTimezone = carRental.dropoffTimezone || 'UTC';
+
+    // Convert UTC times to local timezone for display
+    let pickupDate = '';
+    let pickupTime = '';
+    let dropoffDate = '';
+    let dropoffTime = '';
+
+    if (carRental.pickupDateTime) {
+      const pickupDateTimeLocal = utcToLocal(carRental.pickupDateTime, pickupTimezone);
+      const parts = pickupDateTimeLocal.split('T');
+      pickupDate = parts[0] || '';
+      pickupTime = parts[1] || '';
+    }
+
+    if (carRental.dropoffDateTime) {
+      const dropoffDateTimeLocal = utcToLocal(carRental.dropoffDateTime, dropoffTimezone);
+      const parts = dropoffDateTimeLocal.split('T');
+      dropoffDate = parts[0] || '';
+      dropoffTime = parts[1] || '';
+    }
+
+    const formattedData = {
+      id: carRental.id,
+      company: carRental.company,
+      pickupLocation: carRental.pickupLocation,
+      pickupTimezone: pickupTimezone,
+      pickupDate,
+      pickupTime,
+      dropoffLocation: carRental.dropoffLocation,
+      dropoffTimezone: dropoffTimezone,
+      dropoffDate,
+      dropoffTime,
+      confirmationNumber: carRental.confirmationNumber
+    };
+
+    res.render('partials/car-rental-form', {
+      tripId: carRental.tripId,
+      isEditing: true,
+      data: formattedData
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error loading form');
   }
 };

@@ -1,5 +1,6 @@
 const { Flight, Trip } = require('../models');
 const airportService = require('../services/airportService');
+const { utcToLocal } = require('../utils/timezoneHelper');
 const {
   verifyTripOwnership,
   redirectAfterSuccess,
@@ -84,6 +85,10 @@ exports.createFlight = async (req, res) => {
       flightNumber,
       departureDateTime,
       arrivalDateTime,
+      departureDate,
+      departureTime,
+      arrivalDate,
+      arrivalTime,
       origin,
       originTimezone,
       destination,
@@ -91,6 +96,14 @@ exports.createFlight = async (req, res) => {
       pnr,
       seat
     } = req.body;
+
+    // Handle both combined and separate date/time fields
+    if (!departureDateTime && departureDate && departureTime) {
+      departureDateTime = `${departureDate}T${departureTime}`;
+    }
+    if (!arrivalDateTime && arrivalDate && arrivalTime) {
+      arrivalDateTime = `${arrivalDate}T${arrivalTime}`;
+    }
 
     // Verify trip ownership if tripId provided
     if (tripId) {
@@ -113,10 +126,10 @@ exports.createFlight = async (req, res) => {
     }
 
     // Sanitize timezone inputs (handle "undefined" string from forms)
-    if (!originTimezone || originTimezone === 'undefined' || originTimezone.trim() === '') {
+    if (!originTimezone || originTimezone === 'undefined' || (typeof originTimezone === 'string' && originTimezone.trim() === '')) {
       originTimezone = null;
     }
-    if (!destinationTimezone || destinationTimezone === 'undefined' || destinationTimezone.trim() === '') {
+    if (!destinationTimezone || destinationTimezone === 'undefined' || (typeof destinationTimezone === 'string' && destinationTimezone.trim() === '')) {
       destinationTimezone = null;
     }
 
@@ -175,6 +188,10 @@ exports.updateFlight = async (req, res) => {
       flightNumber,
       departureDateTime,
       arrivalDateTime,
+      departureDate,
+      departureTime,
+      arrivalDate,
+      arrivalTime,
       origin,
       originTimezone,
       destination,
@@ -182,6 +199,14 @@ exports.updateFlight = async (req, res) => {
       pnr,
       seat
     } = req.body;
+
+    // Handle both combined and separate date/time fields
+    if (!departureDateTime && departureDate && departureTime) {
+      departureDateTime = `${departureDate}T${departureTime}`;
+    }
+    if (!arrivalDateTime && arrivalDate && arrivalTime) {
+      arrivalDateTime = `${arrivalDate}T${arrivalTime}`;
+    }
 
     // Find flight with trip
     const flight = await Flight.findByPk(req.params.id, {
@@ -206,10 +231,10 @@ exports.updateFlight = async (req, res) => {
     }
 
     // Sanitize timezone inputs (handle "undefined" string from forms)
-    if (!originTimezone || originTimezone === 'undefined' || originTimezone.trim() === '') {
+    if (!originTimezone || originTimezone === 'undefined' || (typeof originTimezone === 'string' && originTimezone.trim() === '')) {
       originTimezone = null;
     }
-    if (!destinationTimezone || destinationTimezone === 'undefined' || destinationTimezone.trim() === '') {
+    if (!destinationTimezone || destinationTimezone === 'undefined' || (typeof destinationTimezone === 'string' && destinationTimezone.trim() === '')) {
       destinationTimezone = null;
     }
 
@@ -259,11 +284,23 @@ exports.updateFlight = async (req, res) => {
     }
 
     // Debug logging
-    console.log('Update flight - timezones:', {
-      originTimezone,
-      destinationTimezone,
+    console.log('Update flight - input data:', {
+      flightId: req.params.id,
+      airline,
+      flightNumber,
+      origin,
+      destination,
       departureDateTime,
-      arrivalDateTime
+      arrivalDateTime,
+      originTimezone,
+      destinationTimezone
+    });
+
+    console.log('Update flight - converted data:', {
+      departureDateTime: convertToUTC(departureDateTime, originTimezone),
+      arrivalDateTime: convertToUTC(arrivalDateTime, destinationTimezone),
+      originResult: { coords: originResult.coords, timezone: originResult.timezone },
+      destResult: { coords: destResult.coords, timezone: destResult.timezone }
     });
 
     await flight.update({
@@ -283,6 +320,8 @@ exports.updateFlight = async (req, res) => {
       seat
     });
 
+    console.log('Flight updated successfully:', { flightId: req.params.id });
+
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
@@ -291,12 +330,18 @@ exports.updateFlight = async (req, res) => {
 
     redirectAfterSuccess(res, req, flight.tripId, 'flights', 'Flight updated successfully');
   } catch (error) {
-    console.error('ERROR in updateFlight:', error);
-    console.error('Request body:', req.body);
-    console.error('Request params:', req.params);
+    console.error('ERROR in updateFlight:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      flightId: req.params.id,
+      requestBody: req.body
+    });
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
-      return res.status(500).json({ success: false, error: error.message || 'Error updating flight' });
+      const errorMessage = error.message || 'Error updating flight';
+      console.error('Returning error response:', errorMessage);
+      return res.status(500).json({ success: false, error: errorMessage });
     }
     req.flash('error_msg', 'Error updating flight');
     res.redirect('back');
@@ -337,5 +382,90 @@ exports.deleteFlight = async (req, res) => {
     }
     req.flash('error_msg', 'Error deleting flight');
     res.redirect('back');
+  }
+};
+
+// Get add flight form (for sidebar)
+exports.getAddForm = async (req, res) => {
+  try {
+    const { tripId } = req.params;
+
+    // Verify trip ownership
+    const trip = await Trip.findByPk(tripId);
+    if (!trip || trip.userId !== req.user.id) {
+      return res.status(403).send('Unauthorized');
+    }
+
+    // Get all airlines and airports for autocomplete
+    const airlines = airportService.getAllAirlines();
+    const airports = require('../data/airports.json');
+
+    // Render form partial for sidebar (not modal)
+    res.render('partials/flight-form', {
+      tripId: tripId,
+      isEditing: false,
+      data: null,
+      isModal: false,  // This tells the partial to render for sidebar
+      airlines: airlines,
+      airports: airports
+    });
+  } catch (error) {
+    console.error('Error fetching add form:', error);
+    res.status(500).send('Error loading form');
+  }
+};
+
+// Get edit flight form (for sidebar)
+exports.getEditForm = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Fetch the flight
+    const flight = await Flight.findByPk(id, {
+      include: [{ model: Trip, as: 'trip', required: false }]
+    });
+
+    // Verify ownership
+    if (!flight || flight.userId !== req.user.id) {
+      return res.status(403).send('Unauthorized');
+    }
+
+    // Convert UTC times to local timezone for display
+    // utcToLocal returns "YYYY-MM-DDTHH:mm" format, so we split it into date and time
+    const departureDateTimeLocal = utcToLocal(flight.departureDateTime, flight.originTimezone);
+    const arrivalDateTimeLocal = utcToLocal(flight.arrivalDateTime, flight.destinationTimezone);
+
+    // Split the combined datetime into separate date and time fields for form input
+    const departureDateTime = departureDateTimeLocal.split('T');
+    const arrivalDateTime = arrivalDateTimeLocal.split('T');
+
+    const departureDate = departureDateTime[0] || '';
+    const departureTime = departureDateTime[1] || '';
+    const arrivalDate = arrivalDateTime[0] || '';
+    const arrivalTime = arrivalDateTime[1] || '';
+
+    // Get all airlines and airports for autocomplete
+    const airlines = airportService.getAllAirlines();
+    const airports = require('../data/airports.json');
+
+    // Render form partial for sidebar (not modal)
+    res.render('partials/flight-form', {
+      tripId: flight.tripId || '', // Use tripId if available, empty string otherwise
+      isEditing: true,
+      data: {
+        ...flight.toJSON(),
+        departureDate,
+        departureTime,
+        arrivalDate,
+        arrivalTime
+      },
+      isModal: false,  // This tells the partial to render for sidebar
+      airlines: airlines,
+      airports: airports
+    });
+  } catch (error) {
+    console.error('Error fetching edit form:', error);
+    console.error('Stack:', error.stack);
+    res.status(500).send(`Error loading form: ${error.message}`);
   }
 };

@@ -1,159 +1,104 @@
-<!-- Unified Car Rental Form - Used for both Add and Edit flows -->
+<!-- Car Rental Form - Sidebar Only - Using Preline Components -->
 
 <%
   const isAddMode = !isEditing;
-  const modalId = isAddMode ? 'addCarRentalModal' : 'editCarRentalModal';
-  const formId = isAddMode ? 'addCarRentalForm' : 'editCarRentalForm';
-  const formAction = isAddMode
-    ? `/car-rentals/trips/${tripId}/car-rentals`
-    : `/car-rentals/${data?.id}`;
-  const formMethod = isAddMode ? 'POST' : 'POST';
   const submitButtonText = isAddMode ? 'Add Car Rental' : 'Update Car Rental';
-  const submitButtonIcon = isAddMode ? 'bi-plus-circle' : 'bi-check-circle';
+  const headerText = isAddMode ? 'Add Car Rental' : 'Edit Car Rental';
 %>
 
-<div class="modal fade" id="<%= modalId %>" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">
-          <i class="bi <%= isAddMode ? 'bi-car-front' : 'bi-pencil' %>"></i>
-          <%= isAddMode ? 'Add Car Rental' : 'Edit Car Rental' %>
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <form id="<%= formId %>" method="<%= formMethod %>" action="<%= formAction %>">
-        <% if (!isAddMode) { %>
-          <input type="hidden" name="_method" value="PUT">
-        <% } %>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label">Rental Company *</label>
-            <input
-              type="text"
-              class="form-control"
-              name="company"
-              id="<%= isAddMode ? '' : 'edit_carRental_company' %>"
-              value="<%= data?.company || '' %>"
-              required
-              placeholder="e.g., Hertz, Enterprise, Avis">
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Pick-up Location *</label>
-              <textarea
-                class="form-control"
-                name="pickupLocation"
-                id="<%= isAddMode ? '' : 'edit_carRental_pickupLocation' %>"
-                rows="2"
-                required
-                placeholder="Full pick-up address with city"><%= data?.pickupLocation || '' %></textarea>
-              <small class="form-text text-muted">Be specific for accurate map placement</small>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Pick-up Timezone</label>
-              <input
-                type="text"
-                class="form-control"
-                name="pickupTimezone"
-                id="<%= isAddMode ? '' : 'edit_carRental_pickupTimezone' %>"
-                value="<%= data?.pickupTimezone || '' %>"
-                placeholder="e.g., America/New_York">
-              <small class="form-text text-muted">For accurate local time</small>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Drop-off Location *</label>
-              <textarea
-                class="form-control"
-                name="dropoffLocation"
-                id="<%= isAddMode ? '' : 'edit_carRental_dropoffLocation' %>"
-                rows="2"
-                required
-                placeholder="Full drop-off address with city"><%= data?.dropoffLocation || '' %></textarea>
-              <small class="form-text text-muted">Can be different from pick-up</small>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Drop-off Timezone</label>
-              <input
-                type="text"
-                class="form-control"
-                name="dropoffTimezone"
-                id="<%= isAddMode ? '' : 'edit_carRental_dropoffTimezone' %>"
-                value="<%= data?.dropoffTimezone || '' %>"
-                placeholder="e.g., America/Los_Angeles">
-              <small class="form-text text-muted">For accurate local time</small>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Pick-up Date/Time *</label>
-              <div class="row">
-                <div class="col-7">
-                  <input
-                    type="date"
-                    class="form-control"
-                    name="pickupDate"
-                    id="<%= isAddMode ? '' : 'edit_carRental_pickupDate' %>"
-                    value="<%= data?.pickupDate || '' %>"
-                    required>
-                </div>
-                <div class="col-5">
-                  <input
-                    type="time"
-                    class="form-control"
-                    name="pickupTime"
-                    id="<%= isAddMode ? '' : 'edit_carRental_pickupTime' %>"
-                    value="<%= data?.pickupTime || '' %>"
-                    required>
-                </div>
-              </div>
-              <small class="form-text text-muted">Local pick-up time</small>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Drop-off Date/Time *</label>
-              <div class="row">
-                <div class="col-7">
-                  <input
-                    type="date"
-                    class="form-control"
-                    name="dropoffDate"
-                    id="<%= isAddMode ? '' : 'edit_carRental_dropoffDate' %>"
-                    value="<%= data?.dropoffDate || '' %>"
-                    required>
-                </div>
-                <div class="col-5">
-                  <input
-                    type="time"
-                    class="form-control"
-                    name="dropoffTime"
-                    id="<%= isAddMode ? '' : 'edit_carRental_dropoffTime' %>"
-                    value="<%= data?.dropoffTime || '' %>"
-                    required>
-                </div>
-              </div>
-              <small class="form-text text-muted">Local drop-off time</small>
-            </div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Confirmation Number</label>
-            <input
-              type="text"
-              class="form-control"
-              name="confirmationNumber"
-              id="<%= isAddMode ? '' : 'edit_carRental_confirmationNumber' %>"
-              value="<%= data?.confirmationNumber || '' %>"
-              placeholder="Reservation confirmation number">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">
-            <i class="bi <%= submitButtonIcon %>"></i> <%= submitButtonText %>
-          </button>
-        </div>
-      </form>
+<div class="sidebar-form-container">
+  <div class="flex items-start justify-between mb-6">
+    <div class="flex items-center">
+      <button onclick="closeSecondarySidebar()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <h2 class="text-lg font-bold text-gray-900"><%= headerText %></h2>
+    </div>
+    <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+      <span class="material-symbols-outlined text-purple-600" style="font-size: 16px;">directions_car</span>
     </div>
   </div>
+
+  <form id="<%= isAddMode ? 'addCarRentalForm' : 'editCarRentalForm' %>" action="<%= isAddMode ? `/car-rentals/trips/${tripId}/car-rentals` : `/car-rentals/${data?.id}` %>" method="POST" class="space-y-4">
+    <% if (!isAddMode) { %>
+      <input type="hidden" name="_method" value="PUT">
+    <% } %>
+    <input type="hidden" name="tripId" value="<%= tripId %>">
+
+    <!-- Rental Company -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Rental Company</label>
+      <input type="text" name="company" id="<%= isAddMode ? '' : 'edit_carRental_company' %>" value="<%= data?.company || '' %>" placeholder="e.g., Hertz, Enterprise, Avis" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+    </div>
+
+    <!-- Pick-up Location -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Pick-up Location</label>
+      <textarea name="pickupLocation" id="<%= isAddMode ? '' : 'edit_carRental_pickupLocation' %>" rows="2" placeholder="Full pick-up address with city" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required><%= data?.pickupLocation || '' %></textarea>
+      <small class="text-sm text-gray-500 mt-1">Be specific for accurate map placement</small>
+      <input type="hidden" name="pickupTimezone" id="<%= isAddMode ? '' : 'edit_carRental_pickupTimezone' %>" value="<%= data?.pickupTimezone || '' %>">
+    </div>
+
+    <!-- Drop-off Location -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Drop-off Location</label>
+      <textarea name="dropoffLocation" id="<%= isAddMode ? '' : 'edit_carRental_dropoffLocation' %>" rows="2" placeholder="Full drop-off address with city" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required><%= data?.dropoffLocation || '' %></textarea>
+      <small class="text-sm text-gray-500 mt-1">Can be different from pick-up</small>
+      <input type="hidden" name="dropoffTimezone" id="<%= isAddMode ? '' : 'edit_carRental_dropoffTimezone' %>" value="<%= data?.dropoffTimezone || '' %>">
+    </div>
+
+    <!-- Pick-up Date & Time -->
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Pick-up Date</label>
+        <input type="date" name="pickupDate" id="<%= isAddMode ? '' : 'edit_carRental_pickupDate' %>" value="<%= data?.pickupDate || '' %>" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Pick-up Time</label>
+        <input type="time" name="pickupTime" id="<%= isAddMode ? '' : 'edit_carRental_pickupTime' %>" value="<%= data?.pickupTime || '' %>" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+        <small class="text-sm text-gray-500 mt-1">Local pick-up time</small>
+      </div>
+    </div>
+
+    <!-- Drop-off Date & Time -->
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Drop-off Date</label>
+        <input type="date" name="dropoffDate" id="<%= isAddMode ? '' : 'edit_carRental_dropoffDate' %>" value="<%= data?.dropoffDate || '' %>" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Drop-off Time</label>
+        <input type="time" name="dropoffTime" id="<%= isAddMode ? '' : 'edit_carRental_dropoffTime' %>" value="<%= data?.dropoffTime || '' %>" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+        <small class="text-sm text-gray-500 mt-1">Local drop-off time</small>
+      </div>
+    </div>
+
+    <!-- Confirmation Number -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Confirmation Number</label>
+      <input type="text" name="confirmationNumber" id="<%= isAddMode ? '' : 'edit_carRental_confirmationNumber' %>" value="<%= data?.confirmationNumber || '' %>" placeholder="Reservation confirmation number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+    </div>
+
+    <!-- Buttons -->
+    <div class="flex space-x-3 pt-4">
+      <button type="submit" class="flex-1 <%= isAddMode ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500' : 'bg-green-600 hover:bg-green-700 focus:ring-green-500' %> text-white py-2 px-4 rounded-md focus:outline-none focus:ring-2 transition-colors">
+        <%= submitButtonText %>
+      </button>
+      <button type="button" onclick="closeSecondarySidebar()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors">
+        Cancel
+      </button>
+    </div>
+  </form>
+
+  <% if (!isAddMode) { %>
+    <form action="/car-rentals/<%= data?.id %>?_method=DELETE" method="POST" class="mt-4 pt-4 border-t border-gray-200">
+      <input type="hidden" name="tripId" value="<%= tripId %>">
+      <button type="submit" class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors" onclick="return confirm('Are you sure you want to delete this car rental?')">
+        Delete Car Rental
+      </button>
+    </form>
+  <% } %>
 </div>
+

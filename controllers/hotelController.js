@@ -1,4 +1,5 @@
 const { Hotel, Trip } = require('../models');
+const { utcToLocal } = require('../utils/timezoneHelper');
 const {
   verifyTripOwnership,
   geocodeIfChanged,
@@ -40,9 +41,9 @@ exports.createHotel = async (req, res) => {
       hotelName,
       address,
       phone,
-      checkInDateTime: convertToUTC(checkInDateTime, timezone),
-      checkOutDateTime: convertToUTC(checkOutDateTime, timezone),
-      timezone,
+      checkInDateTime: convertToUTC(checkInDateTime, timezone || 'UTC'),
+      checkOutDateTime: convertToUTC(checkOutDateTime, timezone || 'UTC'),
+      timezone: timezone || null,
       lat: coords?.lat,
       lng: coords?.lng,
       confirmationNumber,
@@ -104,9 +105,9 @@ exports.updateHotel = async (req, res) => {
       hotelName,
       address,
       phone,
-      checkInDateTime: convertToUTC(checkInDateTime, timezone),
-      checkOutDateTime: convertToUTC(checkOutDateTime, timezone),
-      timezone,
+      checkInDateTime: convertToUTC(checkInDateTime, timezone || 'UTC'),
+      checkOutDateTime: convertToUTC(checkOutDateTime, timezone || 'UTC'),
+      timezone: timezone || null,
       lat: coords?.lat,
       lng: coords?.lng,
       confirmationNumber,
@@ -165,5 +166,73 @@ exports.deleteHotel = async (req, res) => {
     }
     req.flash('error_msg', 'Error deleting hotel');
     res.redirect('back');
+  }
+};
+
+// Get add hotel form (for sidebar)
+exports.getAddForm = async (req, res) => {
+  try {
+    const { tripId } = req.params;
+
+    // Verify trip ownership
+    const trip = await Trip.findByPk(tripId);
+    if (!trip || trip.userId !== req.user.id) {
+      return res.status(403).send('Unauthorized');
+    }
+
+    // Render form partial for sidebar (not modal)
+    res.render('partials/hotel-form', {
+      tripId: tripId,
+      isEditing: false,
+      data: null,
+      isModal: false  // This tells the partial to render for sidebar
+    });
+  } catch (error) {
+    console.error('Error fetching add form:', error);
+    res.status(500).send('Error loading form');
+  }
+};
+
+// Get edit hotel form (for sidebar)
+exports.getEditForm = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Fetch the hotel
+    const hotel = await Hotel.findByPk(id, {
+      include: [{ model: Trip, as: 'trip', required: false }]
+    });
+
+    // Verify ownership
+    if (!hotel || !verifyResourceOwnershipViaTrip(hotel, req.user.id)) {
+      return res.status(403).send('Unauthorized');
+    }
+
+    // Convert UTC times to local timezone for display
+    // utcToLocal returns "YYYY-MM-DDTHH:mm" format, so we split it into date and time
+    // If no timezone is stored, display in UTC
+    const checkInDateTimeLocal = utcToLocal(hotel.checkInDateTime, hotel.timezone || 'UTC');
+    const checkOutDateTimeLocal = utcToLocal(hotel.checkOutDateTime, hotel.timezone || 'UTC');
+
+    // Split the combined datetime into separate date and time fields for form input
+    const [checkInDate, checkInTime] = checkInDateTimeLocal.split('T');
+    const [checkOutDate, checkOutTime] = checkOutDateTimeLocal.split('T');
+
+    // Render form partial for sidebar (not modal)
+    res.render('partials/hotel-form', {
+      tripId: hotel.tripId || '', // Use tripId if available, empty string otherwise
+      isEditing: true,
+      data: {
+        ...hotel.toJSON(),
+        checkInDate,
+        checkInTime,
+        checkOutDate,
+        checkOutTime
+      },
+      isModal: false  // This tells the partial to render for sidebar
+    });
+  } catch (error) {
+    console.error('Error fetching edit form:', error);
+    res.status(500).send('Error loading form');
   }
 };

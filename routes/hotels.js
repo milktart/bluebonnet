@@ -5,6 +5,8 @@ const { ensureAuthenticated } = require('../middleware/auth');
 
 router.use(ensureAuthenticated);
 
+router.get('/trips/:tripId/form', hotelController.getAddForm);
+router.get('/:id/form', hotelController.getEditForm);
 router.post('/trips/:tripId/hotels', hotelController.createHotel);
 router.put('/:id', hotelController.updateHotel);
 router.delete('/:id', hotelController.deleteHotel);

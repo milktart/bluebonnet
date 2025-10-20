@@ -7,6 +7,7 @@ const {
   verifyResourceOwnership,
   convertToUTC
 } = require('./helpers/resourceController');
+const { utcToLocal } = require('../utils/timezoneHelper');
 
 exports.createEvent = async (req, res) => {
   try {
@@ -329,5 +330,74 @@ exports.getEventEditForm = async (req, res) => {
   } catch (error) {
     console.error('ERROR fetching event edit form:', error);
     res.status(500).send('<p class="text-red-600">Error loading edit form</p>');
+  }
+};
+
+exports.getAddForm = async (req, res) => {
+  try {
+    const { tripId } = req.params;
+
+    // Verify trip ownership
+    const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
+    if (!trip) {
+      return res.status(403).send('Trip not found');
+    }
+
+    res.render('partials/event-form', {
+      tripId,
+      isEditing: false,
+      data: null
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error loading form');
+  }
+};
+
+exports.getEditForm = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find event with trip
+    const event = await Event.findByPk(id, {
+      include: [{ model: Trip, as: 'trip', required: false }]
+    });
+
+    // Verify ownership
+    if (!event || event.userId !== req.user.id) {
+      return res.status(403).send('Event not found');
+    }
+
+    // Format data for display
+    const eventTimezone = event.timezone || 'UTC';
+
+    // Convert UTC times to local timezone for display
+    const startDateTimeLocal = utcToLocal(event.startDateTime, eventTimezone);
+    const [startDate, startTime] = startDateTimeLocal.split('T');
+
+    const endDateTimeLocal = utcToLocal(event.endDateTime, eventTimezone);
+    const [endDate, endTime] = endDateTimeLocal.split('T');
+
+    const formattedData = {
+      id: event.id,
+      name: event.name,
+      location: event.location,
+      timezone: eventTimezone,
+      startDate,
+      startTime,
+      endDate,
+      endTime,
+      contactPhone: event.contactPhone,
+      contactEmail: event.contactEmail
+    };
+
+    res.render('partials/event-form', {
+      tripId: event.tripId,
+      isEditing: true,
+      data: formattedData
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error loading form');
   }
 };

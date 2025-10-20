@@ -101,9 +101,6 @@ exports.listTrips = async (req, res) => {
   }
 };
 
-exports.getCreateTrip = (req, res) => {
-  res.render('trips/create', { title: 'Create Trip' });
-};
 
 exports.createTrip = async (req, res) => {
   try {
@@ -148,7 +145,7 @@ exports.createTrip = async (req, res) => {
   } catch (error) {
     console.error(error);
     req.flash('error_msg', 'Error creating trip');
-    res.redirect('/trips/create');
+    res.redirect('/trips');
   }
 };
 
@@ -433,5 +430,113 @@ exports.removeSelfFromTrip = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to remove from trip' });
+  }
+};
+
+exports.getTripDataJson = async (req, res) => {
+  try {
+    const trip = await Trip.findOne({
+      where: { id: req.params.id },
+      include: [
+        { model: Flight, as: 'flights', order: [['departureDateTime', 'ASC']] },
+        { model: Hotel, as: 'hotels', order: [['checkInDateTime', 'ASC']] },
+        { model: Transportation, as: 'transportation', order: [['departureDateTime', 'ASC']] },
+        { model: CarRental, as: 'carRentals', order: [['pickupDateTime', 'ASC']] },
+        { model: Event, as: 'events', order: [['startDateTime', 'ASC']] }
+      ]
+    });
+
+    if (!trip) {
+      return res.status(404).json({ error: 'Trip not found' });
+    }
+
+    // Check if user has permission to view this trip
+    const isOwner = trip.userId === req.user.id;
+
+    if (!isOwner) {
+      // Check if user is a companion
+      const tripWithCompanions = await Trip.findOne({
+        where: { id: req.params.id },
+        include: [{
+          model: TripCompanion,
+          as: 'tripCompanions',
+          include: [{
+            model: TravelCompanion,
+            as: 'companion',
+            where: { userId: req.user.id }
+          }]
+        }]
+      });
+
+      if (!tripWithCompanions?.tripCompanions?.length) {
+        return res.status(403).json({ error: 'Not authorized' });
+      }
+    }
+
+    res.json({
+      id: trip.id,
+      name: trip.name,
+      departureDate: trip.departureDate,
+      returnDate: trip.returnDate,
+      flights: trip.flights,
+      hotels: trip.hotels,
+      transportation: trip.transportation,
+      carRentals: trip.carRentals,
+      events: trip.events
+    });
+  } catch (error) {
+    console.error('Error fetching trip data:', error);
+    res.status(500).json({ error: 'Failed to fetch trip data' });
+  }
+};
+
+exports.getTripSidebarHtml = async (req, res) => {
+  try {
+    const trip = await Trip.findOne({
+      where: { id: req.params.id },
+      include: [
+        { model: Flight, as: 'flights', order: [['departureDateTime', 'ASC']] },
+        { model: Hotel, as: 'hotels', order: [['checkInDateTime', 'ASC']] },
+        { model: Transportation, as: 'transportation', order: [['departureDateTime', 'ASC']] },
+        { model: CarRental, as: 'carRentals', order: [['pickupDateTime', 'ASC']] },
+        { model: Event, as: 'events', order: [['startDateTime', 'ASC']] }
+      ]
+    });
+
+    if (!trip) {
+      return res.status(404).send('<p class="text-red-600">Trip not found</p>');
+    }
+
+    // Check if user has permission to view this trip
+    const isOwner = trip.userId === req.user.id;
+
+    if (!isOwner) {
+      // Check if user is a companion
+      const tripWithCompanions = await Trip.findOne({
+        where: { id: req.params.id },
+        include: [{
+          model: TripCompanion,
+          as: 'tripCompanions',
+          include: [{
+            model: TravelCompanion,
+            as: 'companion',
+            where: { userId: req.user.id }
+          }]
+        }]
+      });
+
+      if (!tripWithCompanions?.tripCompanions?.length) {
+        return res.status(403).send('<p class="text-red-600">Not authorized</p>');
+      }
+    }
+
+    // Render just the sidebar content partial
+    res.render('partials/trip-sidebar-content', {
+      trip,
+      formatInTimezone
+    });
+  } catch (error) {
+    console.error('Error fetching sidebar HTML:', error);
+    res.status(500).send('<p class="text-red-600">Error loading sidebar</p>');
   }
 };

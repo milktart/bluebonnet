@@ -38,40 +38,100 @@ function editItem(type, id) {
 
   switch (type) {
     case 'flight':
-      const flight = tripData.flights.find(f => f.id === id);
-      if (flight) {
-        formContainer.innerHTML = createFlightEditForm(flight);
-        initFlightDateTimePickers();
-        initAirportSearch();
-      }
+      // Fetch form via AJAX
+      fetch(`/flights/${id}/form`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.text();
+        })
+        .then(html => {
+          formContainer.innerHTML = html;
+          // Call form initialization functions directly instead of executing scripts
+          if (typeof initializeFlightForm === 'function') {
+            initializeFlightForm();
+          }
+          if (typeof setupAsyncFormSubmission === 'function') {
+            setupAsyncFormSubmission('editFlightForm');
+          }
+          initFlightDateTimePickers();
+          initAirportSearch();
+        })
+        .catch(error => {
+          console.error('Error loading flight form:', error);
+          formContainer.innerHTML = `<p class="text-red-600">Error loading form: ${error.message}</p>`;
+        });
       break;
     case 'hotel':
-      const hotel = tripData.hotels.find(h => h.id === id);
-      if (hotel) {
-        formContainer.innerHTML = createHotelEditForm(hotel);
-        initFlightDateTimePickers();
-      }
+      // Fetch form via AJAX
+      fetch(`/hotels/${id}/form`)
+        .then(response => response.text())
+        .then(html => {
+          formContainer.innerHTML = html;
+          // Call form initialization directly
+          if (typeof setupAsyncFormSubmission === 'function') {
+            setupAsyncFormSubmission('editHotelForm');
+          }
+          initFlightDateTimePickers();
+        })
+        .catch(error => console.error('Error loading hotel form:', error));
       break;
     case 'transportation':
-      const transport = tripData.transportation.find(t => t.id === id);
-      if (transport) {
-        formContainer.innerHTML = createTransportationEditForm(transport);
-        initFlightDateTimePickers();
-      }
+      // Fetch form via AJAX
+      fetch(`/transportation/${id}/form`)
+        .then(response => response.text())
+        .then(html => {
+          formContainer.innerHTML = html;
+          // Call form initialization directly
+          if (typeof setupAsyncFormSubmission === 'function') {
+            setupAsyncFormSubmission('editTransportationForm');
+          }
+          initFlightDateTimePickers();
+        })
+        .catch(error => console.error('Error loading transportation form:', error));
       break;
+    case 'carRental':
     case 'car-rental':
-      const rental = tripData.carRentals.find(c => c.id === id);
-      if (rental) {
-        formContainer.innerHTML = createCarRentalEditForm(rental);
-        initFlightDateTimePickers();
-      }
+      // Fetch form via AJAX
+      fetch(`/car-rentals/${id}/form`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.text();
+        })
+        .then(html => {
+          if (!html || html.trim().length === 0) {
+            console.error('Car rental form response is empty');
+            formContainer.innerHTML = '<p class="text-red-600">Error loading form: empty response</p>';
+          } else {
+            formContainer.innerHTML = html;
+            // Call form initialization directly
+            if (typeof setupAsyncFormSubmission === 'function') {
+              setupAsyncFormSubmission('editCarRentalForm');
+            }
+            initFlightDateTimePickers();
+          }
+        })
+        .catch(error => {
+          console.error('Error loading car rental form:', error);
+          formContainer.innerHTML = `<p class="text-red-600">Error loading form: ${error.message}</p>`;
+        });
       break;
     case 'event':
-      const event = tripData.events.find(e => e.id === id);
-      if (event) {
-        formContainer.innerHTML = createEventEditForm(event);
-        initFlightDateTimePickers();
-      }
+      // Fetch form via AJAX
+      fetch(`/events/${id}/form`)
+        .then(response => response.text())
+        .then(html => {
+          formContainer.innerHTML = html;
+          // Call form initialization directly
+          if (typeof setupAsyncFormSubmission === 'function') {
+            setupAsyncFormSubmission('editEventForm');
+          }
+          initFlightDateTimePickers();
+        })
+        .catch(error => console.error('Error loading event form:', error));
       break;
   }
 }
@@ -85,27 +145,79 @@ function showAddForm(type) {
 
   switch (type) {
     case 'flight':
-      formContainer.innerHTML = createFlightAddForm();
-      initFlightDateTimePickers();
-      initAirportSearch();
+      // Fetch form via AJAX
+      fetch(`/flights/trips/${tripId}/form`)
+        .then(response => response.text())
+        .then(html => {
+          formContainer.innerHTML = html;
+          // Call form initialization directly
+          if (typeof initializeFlightForm === 'function') {
+            initializeFlightForm();
+          }
+          if (typeof setupAsyncFormSubmission === 'function') {
+            setupAsyncFormSubmission('addFlightForm');
+          }
+          initFlightDateTimePickers();
+          initAirportSearch();
+        })
+        .catch(error => console.error('Error loading flight form:', error));
       break;
     case 'hotel':
-      formContainer.innerHTML = createHotelAddForm();
-      initFlightDateTimePickers();
+      // Fetch form via AJAX
+      fetch(`/hotels/trips/${tripId}/form`)
+        .then(response => response.text())
+        .then(html => {
+          formContainer.innerHTML = html;
+          // Call form initialization directly
+          if (typeof setupAsyncFormSubmission === 'function') {
+            setupAsyncFormSubmission('addHotelForm');
+          }
+          initFlightDateTimePickers();
+        })
+        .catch(error => console.error('Error loading hotel form:', error));
       break;
     case 'transportation':
-      formContainer.innerHTML = createTransportationAddForm();
-      initFlightDateTimePickers();
-      initAirportSearch();
+      // Fetch form via AJAX
+      fetch(`/transportation/trips/${tripId}/form`)
+        .then(response => response.text())
+        .then(html => {
+          formContainer.innerHTML = html;
+          // Call form initialization directly
+          if (typeof setupAsyncFormSubmission === 'function') {
+            setupAsyncFormSubmission('addTransportationForm');
+          }
+          initFlightDateTimePickers();
+        })
+        .catch(error => console.error('Error loading transportation form:', error));
       break;
     case 'carRental':
     case 'car-rental':
-      formContainer.innerHTML = createCarRentalAddForm();
-      initFlightDateTimePickers();
+      // Fetch form via AJAX
+      fetch(`/car-rentals/trips/${tripId}/form`)
+        .then(response => response.text())
+        .then(html => {
+          formContainer.innerHTML = html;
+          // Call form initialization directly
+          if (typeof setupAsyncFormSubmission === 'function') {
+            setupAsyncFormSubmission('addCarRentalForm');
+          }
+          initFlightDateTimePickers();
+        })
+        .catch(error => console.error('Error loading car rental form:', error));
       break;
     case 'event':
-      formContainer.innerHTML = createEventAddForm();
-      initFlightDateTimePickers();
+      // Fetch form via AJAX
+      fetch(`/events/trips/${tripId}/form`)
+        .then(response => response.text())
+        .then(html => {
+          formContainer.innerHTML = html;
+          // Call form initialization directly
+          if (typeof setupAsyncFormSubmission === 'function') {
+            setupAsyncFormSubmission('addEventForm');
+          }
+          initFlightDateTimePickers();
+        })
+        .catch(error => console.error('Error loading event form:', error));
       break;
   }
 }

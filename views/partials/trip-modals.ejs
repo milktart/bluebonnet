@@ -1,54 +1,9 @@
 <!-- Add Modals - Using unified form partials -->
-
-<%- include('flight-form', { tripId: trip.id, isEditing: false, data: null }) %>
-<%- include('hotel-form', { tripId: trip.id, isEditing: false, data: null }) %>
-<%- include('transportation-form', { tripId: trip.id, isEditing: false, data: null }) %>
-<%- include('car-rental-form', { tripId: trip.id, isEditing: false, data: null }) %>
-<%- include('event-form', { tripId: trip.id, isEditing: false, data: null }) %>
+<!-- Note: All forms now load via sidebar only -->
 
 <script>
 // Form validation and enhancements
 document.addEventListener('DOMContentLoaded', function() {
-  // Validate check-in/check-out dates for hotels
-  const hotelModal = document.getElementById('addHotelModal');
-  if (hotelModal) {
-    const checkIn = hotelModal.querySelector('[name="checkInDate"]');
-    const checkOut = hotelModal.querySelector('[name="checkOutDate"]');
-
-    if (checkIn && checkOut) {
-      checkIn.addEventListener('change', function() {
-        checkOut.min = this.value;
-      });
-
-      checkOut.addEventListener('change', function() {
-        if (this.value && checkIn.value && this.value < checkIn.value) {
-          alert('Check-out date must be after check-in date');
-          this.value = '';
-        }
-      });
-    }
-  }
-
-  // Validate departure/arrival for transportation
-  const transModal = document.getElementById('addTransportationModal');
-  if (transModal) {
-    const depDate = transModal.querySelector('[name="departureDate"]');
-    const arrDate = transModal.querySelector('[name="arrivalDate"]');
-
-    if (depDate && arrDate) {
-      depDate.addEventListener('change', function() {
-        arrDate.min = this.value;
-      });
-
-      arrDate.addEventListener('change', function() {
-        if (this.value && depDate.value && this.value < depDate.value) {
-          alert('Arrival date must be after departure date');
-          this.value = '';
-        }
-      });
-    }
-  }
-
   // Validate pick-up/drop-off for car rentals
   const carModal = document.getElementById('addCarRentalModal');
   if (carModal) {

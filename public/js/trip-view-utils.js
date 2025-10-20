@@ -44,8 +44,16 @@ function searchAirports(query) {
   const lowerQuery = query.toLowerCase();
   const results = [];
 
-  Object.entries(airportsData).forEach(([code, airport]) => {
-    const searchText = `${code} ${airport.airport_name} ${airport.city_name} ${airport.country_name}`.toLowerCase();
+  // Use flight form airports if available (full dataset), otherwise use limited airportsData
+  const airportSource = (typeof window !== 'undefined' && window.flightFormAirports) ? window.flightFormAirports : airportsData;
+
+  console.log('Using airport source with', Object.keys(airportSource).length, 'airports');
+
+  Object.entries(airportSource).forEach(([code, airport]) => {
+    const airportName = airport.airport_name || '';
+    const cityName = airport.city_name || '';
+    const countryName = airport.country_name || '';
+    const searchText = `${code} ${airportName} ${cityName} ${countryName}`.toLowerCase();
 
     if (searchText.includes(lowerQuery)) {
       results.push({
@@ -135,10 +143,41 @@ function initFlightDateTimePickers() {
 }
 
 function initAirportSearch() {
-  initCustomCombobox('origin-search');
-  initCustomCombobox('destination-search');
-  initCustomCombobox('edit-origin-search');
-  initCustomCombobox('edit-destination-search');
+  // Find all inputs with name="origin" or name="destination" and initialize them
+  const originInputs = document.querySelectorAll('input[name="origin"]');
+  const destinationInputs = document.querySelectorAll('input[name="destination"]');
+
+  console.log('Found ' + originInputs.length + ' origin inputs');
+  console.log('Found ' + destinationInputs.length + ' destination inputs');
+
+  originInputs.forEach(input => {
+    const container = input.closest('[data-hs-combobox]');
+    if (container) {
+      initCustomComboboxByInput(input);
+    }
+  });
+
+  destinationInputs.forEach(input => {
+    const container = input.closest('[data-hs-combobox]');
+    if (container) {
+      initCustomComboboxByInput(input);
+    }
+  });
+}
+
+function initCustomComboboxByInput(input) {
+  if (!input) return;
+
+  const container = input.closest('[data-hs-combobox]');
+  if (!container) return;
+
+  const dropdown = container.querySelector('[data-hs-combobox-output]');
+  if (!dropdown) return;
+
+  const itemsWrapper = dropdown.querySelector('[data-hs-combobox-output-items-wrapper]');
+  if (!itemsWrapper) return;
+
+  attachAirportSearchListeners(input, dropdown, itemsWrapper);
 }
 
 function initCustomCombobox(inputId) {
@@ -146,11 +185,22 @@ function initCustomCombobox(inputId) {
   if (!input) return;
 
   const container = input.closest('[data-hs-combobox]');
+  if (!container) return;
+
   const dropdown = container.querySelector('[data-hs-combobox-output]');
+  if (!dropdown) return;
+
   const itemsWrapper = dropdown.querySelector('[data-hs-combobox-output-items-wrapper]');
+  if (!itemsWrapper) return;
+
+  attachAirportSearchListeners(input, dropdown, itemsWrapper);
+}
+
+function attachAirportSearchListeners(input, dropdown, itemsWrapper) {
 
   input.addEventListener('input', function() {
     const query = this.value;
+    console.log('Airport search query:', query);
 
     if (query.length < 2) {
       dropdown.classList.add('hidden');
@@ -158,6 +208,7 @@ function initCustomCombobox(inputId) {
     }
 
     const results = searchAirports(query);
+    console.log('Airport search results:', results.length);
     itemsWrapper.innerHTML = '';
 
     // Ensure wrapper has proper overflow handling
