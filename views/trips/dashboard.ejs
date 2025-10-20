@@ -520,22 +520,41 @@
                       const item = tripData.items[0];
                       const hours = String(item.time.getHours()).padStart(2, '0');
                       const minutes = String(item.time.getMinutes()).padStart(2, '0');
-                      let standaloneIcon, standaloneColor, standaloneLabel;
+                      let standaloneIcon, standaloneColor, standaloneLabel, displayName, startDateTime, endDateTime, location;
 
                       if (item.type === 'event') {
                         standaloneIcon = 'event';
                         standaloneColor = 'red';
-                        standaloneLabel = item.data.name;
+                        displayName = item.data.name;
+                        const startHours = String(item.time.getHours()).padStart(2, '0');
+                        const startMinutes = String(item.time.getMinutes()).padStart(2, '0');
+                        startDateTime = `${formatDate(item.time)} ${startHours}:${startMinutes}`;
+
+                        if (item.data.endDateTime && item.data.endDateTime !== item.data.startDateTime) {
+                          const endTime = new Date(item.data.endDateTime);
+                          const endHours = String(endTime.getHours()).padStart(2, '0');
+                          const endMinutes = String(endTime.getMinutes()).padStart(2, '0');
+                          startDateTime += ` - ${formatDate(endTime)} ${endHours}:${endMinutes}`;
+                        }
+                        location = item.data.location || '';
                       } else if (item.type === 'flight') {
                         standaloneIcon = 'flights';
                         standaloneColor = 'blue';
                         const flightNum = item.data.flightNumber.match(/(\d+)$/)?.[1] || '';
                         const airlineCode = item.data.flightNumber.replace(/\d+$/, '');
-                        standaloneLabel = `${airlineCode}${flightNum}`;
+                        displayName = `${airlineCode}${flightNum}`;
+                        const originCity = getCityName(item.data.origin);
+                        const destCity = getCityName(item.data.destination);
+                        startDateTime = `${formatDate(item.time)} ${hours}:${minutes}`;
+                        location = `${originCity} → ${destCity}`;
                       } else if (item.type === 'transportation') {
                         standaloneIcon = 'train';
                         standaloneColor = 'amber';
-                        standaloneLabel = item.data.method;
+                        displayName = item.data.method;
+                        const originCity = getCityName(item.data.origin);
+                        const destCity = getCityName(item.data.destination);
+                        startDateTime = `${formatDate(item.time)} ${hours}:${minutes}`;
+                        location = `${originCity} → ${destCity}`;
                       }
                     %>
                     <div class="flex items-start space-x-3">
@@ -543,9 +562,11 @@
                         <span class="material-symbols-outlined text-<%= standaloneColor %>-600" style="font-size: 16px;"><%= standaloneIcon %></span>
                       </div>
                       <div class="flex-1 min-w-0">
-                        <h3 class="text-sm font-medium text-gray-900"><%= standaloneLabel %></h3>
-                        <p class="text-xs text-gray-500 mt-1"><%= formatDate(item.time) %> <%= hours %>:<%= minutes %></p>
-                        <p class="text-sm text-gray-600 mt-2"><%- item.display %></p>
+                        <p class="text-sm font-medium text-gray-900"><%= displayName %></p>
+                        <p class="text-xs text-gray-500 mt-1"><%= startDateTime %></p>
+                        <% if (location) { %>
+                          <p class="text-xs text-gray-600 mt-1"><%= location %></p>
+                        <% } %>
                       </div>
                     </div>
                   </div>
