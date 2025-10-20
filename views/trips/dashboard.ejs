@@ -477,7 +477,8 @@
                   trip: null,
                   items: [item],
                   isStandalone: true,
-                  standaloneType: item.type
+                  standaloneType: item.type,
+                  sortTime: item.time
                 });
               });
 
@@ -488,20 +489,13 @@
                 tripItems.push({
                   trip: trip,
                   items: items,
-                  isStandalone: false
+                  isStandalone: false,
+                  sortTime: items.length > 0 ? items[0].time : new Date(trip.departureDate)
                 });
               });
 
-              // Sort trips by earliest item time (standalone items first if they exist)
-              tripItems.sort((a, b) => {
-                // Standalone items should come first
-                if (a.isStandalone && !b.isStandalone) return -1;
-                if (!a.isStandalone && b.isStandalone) return 1;
-
-                const aTime = a.items.length > 0 ? a.items[0].time : (a.trip ? new Date(a.trip.departureDate) : new Date());
-                const bTime = b.items.length > 0 ? b.items[0].time : (b.trip ? new Date(b.trip.departureDate) : new Date());
-                return aTime - bTime;
-              });
+              // Sort all items (trips and standalone events) chronologically
+              tripItems.sort((a, b) => a.sortTime - b.sortTime);
             %>
 
         <!-- Upcoming Trips Content -->
