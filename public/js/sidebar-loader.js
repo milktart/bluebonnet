@@ -16,7 +16,6 @@ async function loadSidebarContent(url) {
     // Show loading state
     const container = document.getElementById('secondary-sidebar-content');
     if (!container) {
-      console.error('Secondary sidebar content container not found');
       return;
     }
 
@@ -40,6 +39,20 @@ async function loadSidebarContent(url) {
     // Insert the content into the sidebar
     container.innerHTML = html;
 
+    // Execute any scripts in the loaded content
+    const scripts = container.querySelectorAll('script');
+    console.log('Found ' + scripts.length + ' scripts in sidebar content');
+    scripts.forEach((script, index) => {
+      console.log('Executing script ' + index);
+      const newScript = document.createElement('script');
+      if (script.src) {
+        newScript.src = script.src;
+      } else {
+        newScript.textContent = script.textContent;
+      }
+      document.head.appendChild(newScript);
+    });
+
     // Save to history (remove any forward history if we're going back then forward)
     sidebarHistory = sidebarHistory.slice(0, sidebarHistoryIndex + 1);
     sidebarHistory.push(html);
@@ -53,7 +66,6 @@ async function loadSidebarContent(url) {
 
     // Scripts in the loaded partials handle their own interactions via global listeners or inline handlers
   } catch (error) {
-    console.error('Error loading sidebar content:', error);
     const container = document.getElementById('secondary-sidebar-content');
     if (container) {
       container.innerHTML = '<div class="p-4"><p class="text-red-600">Error loading content. Please try again.</p></div>';
@@ -65,14 +77,8 @@ async function loadSidebarContent(url) {
  * Initialize event listeners and interactions for loaded content
  */
 function initializeSidebarContent() {
-  // Handle form submissions to stay in sidebar or reload page
-  const forms = document.querySelectorAll('#secondary-sidebar-content form');
-  forms.forEach(form => {
-    form.addEventListener('submit', function(e) {
-      // Let the form submit naturally, but it will redirect
-      // For now, we'll let the server handle redirects as normal
-    });
-  });
+  // Forms in trip view are handled by their embedded scripts in trip-view-sidebar.js
+  // This function is mainly for non-trip pages that use loadSidebarContent()
 
   // Handle delete/modal confirmations
   const deleteButtons = document.querySelectorAll('#secondary-sidebar-content [data-action="delete"]');
@@ -132,33 +138,12 @@ function goBackInSidebar() {
     }
   } else {
     // No history, close the sidebar
-    closeSecondarySidebar();
+    if (typeof closeSecondarySidebar === 'function') {
+      closeSecondarySidebar();
+    }
     // Reset history when closing
     sidebarHistory = [];
     sidebarHistoryIndex = -1;
-  }
-}
-
-/**
- * Close the secondary sidebar
- */
-function closeSecondarySidebar() {
-  const sidebar = document.getElementById('secondary-sidebar');
-  if (sidebar) {
-    sidebar.classList.remove('open');
-  }
-  // Reset history when closing
-  sidebarHistory = [];
-  sidebarHistoryIndex = -1;
-}
-
-/**
- * Open the secondary sidebar
- */
-function openSecondarySidebar() {
-  const sidebar = document.getElementById('secondary-sidebar');
-  if (sidebar) {
-    sidebar.classList.add('open');
   }
 }
 

@@ -7,17 +7,22 @@ function setupAsyncFormSubmission(formId) {
   const form = document.getElementById(formId);
 
   if (!form) {
+    console.warn('[setupAsyncFormSubmission] Form not found:', formId);
     return;
   }
 
+  console.log('[setupAsyncFormSubmission] Setting up form:', formId);
+
   form.addEventListener('submit', async function(e) {
     e.preventDefault();
+    console.log('[Form Submit] Form submitted:', formId);
 
     // Convert FormData to object
     const formData = new FormData(form);
     const data = Object.fromEntries(formData);
     const action = form.action;
     const isUpdate = formData.get('_method') === 'PUT' || form.method.toUpperCase() === 'PUT';
+    console.log('[Form Submit] Is update:', isUpdate, 'Action:', action);
 
     try {
       const response = await fetch(action, {
