@@ -515,57 +515,57 @@
               <% tripItems.forEach((tripData, tripIndex) => { %>
                 <% if (tripData.isStandalone) { %>
                   <!-- Standalone item - single card with no accordion -->
-                  <div class="border border-gray-200 rounded-lg bg-white shadow-sm p-5">
-                    <%
-                      const item = tripData.items[0];
-                      const hours = String(item.time.getHours()).padStart(2, '0');
-                      const minutes = String(item.time.getMinutes()).padStart(2, '0');
-                      let standaloneIcon, standaloneColor, standaloneLabel, displayName, startDateTime, endDateTime, location;
+                  <div class="border border-gray-200 rounded-lg bg-white shadow-sm">
+                    <div class="py-4 px-5 inline-flex items-center gap-x-3 w-full">
+                      <%
+                        const item = tripData.items[0];
+                        const hours = String(item.time.getHours()).padStart(2, '0');
+                        const minutes = String(item.time.getMinutes()).padStart(2, '0');
+                        let standaloneIcon, standaloneColor, standaloneLabel, displayName, startDateTime, endDateTime, location;
 
-                      if (item.type === 'event') {
-                        standaloneIcon = 'event';
-                        standaloneColor = 'red';
-                        displayName = item.data.name;
-                        const startHours = String(item.time.getHours()).padStart(2, '0');
-                        const startMinutes = String(item.time.getMinutes()).padStart(2, '0');
-                        startDateTime = `${formatDate(item.time)} ${startHours}:${startMinutes}`;
+                        if (item.type === 'event') {
+                          standaloneIcon = 'event';
+                          standaloneColor = 'red';
+                          displayName = item.data.name;
+                          const startHours = String(item.time.getHours()).padStart(2, '0');
+                          const startMinutes = String(item.time.getMinutes()).padStart(2, '0');
+                          startDateTime = `${formatDate(item.time)} ${startHours}:${startMinutes}`;
 
-                        if (item.data.endDateTime && item.data.endDateTime !== item.data.startDateTime) {
-                          const endTime = new Date(item.data.endDateTime);
-                          const endHours = String(endTime.getHours()).padStart(2, '0');
-                          const endMinutes = String(endTime.getMinutes()).padStart(2, '0');
-                          startDateTime += ` - ${formatDate(endTime)} ${endHours}:${endMinutes}`;
+                          if (item.data.endDateTime && item.data.endDateTime !== item.data.startDateTime) {
+                            const endTime = new Date(item.data.endDateTime);
+                            const endHours = String(endTime.getHours()).padStart(2, '0');
+                            const endMinutes = String(endTime.getMinutes()).padStart(2, '0');
+                            startDateTime += ` - ${formatDate(endTime)} ${endHours}:${endMinutes}`;
+                          }
+                          location = item.data.location || '';
+                        } else if (item.type === 'flight') {
+                          standaloneIcon = 'flights';
+                          standaloneColor = 'blue';
+                          const flightNum = item.data.flightNumber.match(/(\d+)$/)?.[1] || '';
+                          const airlineCode = item.data.flightNumber.replace(/\d+$/, '');
+                          displayName = `${airlineCode}${flightNum}`;
+                          const originCity = getCityName(item.data.origin);
+                          const destCity = getCityName(item.data.destination);
+                          startDateTime = `${formatDate(item.time)} ${hours}:${minutes}`;
+                          location = `${originCity} → ${destCity}`;
+                        } else if (item.type === 'transportation') {
+                          standaloneIcon = 'train';
+                          standaloneColor = 'amber';
+                          displayName = item.data.method;
+                          const originCity = getCityName(item.data.origin);
+                          const destCity = getCityName(item.data.destination);
+                          startDateTime = `${formatDate(item.time)} ${hours}:${minutes}`;
+                          location = `${originCity} → ${destCity}`;
                         }
-                        location = item.data.location || '';
-                      } else if (item.type === 'flight') {
-                        standaloneIcon = 'flights';
-                        standaloneColor = 'blue';
-                        const flightNum = item.data.flightNumber.match(/(\d+)$/)?.[1] || '';
-                        const airlineCode = item.data.flightNumber.replace(/\d+$/, '');
-                        displayName = `${airlineCode}${flightNum}`;
-                        const originCity = getCityName(item.data.origin);
-                        const destCity = getCityName(item.data.destination);
-                        startDateTime = `${formatDate(item.time)} ${hours}:${minutes}`;
-                        location = `${originCity} → ${destCity}`;
-                      } else if (item.type === 'transportation') {
-                        standaloneIcon = 'train';
-                        standaloneColor = 'amber';
-                        displayName = item.data.method;
-                        const originCity = getCityName(item.data.origin);
-                        const destCity = getCityName(item.data.destination);
-                        startDateTime = `${formatDate(item.time)} ${hours}:${minutes}`;
-                        location = `${originCity} → ${destCity}`;
-                      }
-                    %>
-                    <div class="flex items-start space-x-3">
+                      %>
                       <div class="w-8 h-8 bg-<%= standaloneColor %>-100 rounded-lg flex items-center justify-center flex-shrink-0">
                         <span class="material-symbols-outlined text-<%= standaloneColor %>-600" style="font-size: 16px;"><%= standaloneIcon %></span>
                       </div>
                       <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-gray-900"><%= displayName %></p>
-                        <p class="text-xs text-gray-500 mt-1"><%= startDateTime %></p>
+                        <h3 class="text-sm font-medium text-gray-900"><%= displayName %></h3>
+                        <p class="text-xs text-gray-500"><%= startDateTime %></p>
                         <% if (location) { %>
-                          <p class="text-xs text-gray-600 mt-1"><%= location %></p>
+                          <p class="text-xs text-gray-600 italic"><%= location %></p>
                         <% } %>
                       </div>
                     </div>
