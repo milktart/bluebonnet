@@ -516,7 +516,7 @@
                 <% if (tripData.isStandalone) { %>
                   <!-- Standalone item - single card with no accordion -->
                   <div class="border border-gray-200 rounded-lg bg-white shadow-sm">
-                    <div class="py-4 px-5 inline-flex items-center gap-x-3 w-full">
+                    <div class="py-4 px-5 inline-flex items-center gap-x-3 w-full font-medium"> <!-- font-semibold -->
                       <%
                         const item = tripData.items[0];
                         const hours = String(item.time.getHours()).padStart(2, '0');
@@ -529,13 +529,21 @@
                           displayName = item.data.name;
                           const startHours = String(item.time.getHours()).padStart(2, '0');
                           const startMinutes = String(item.time.getMinutes()).padStart(2, '0');
-                          startDateTime = `${formatDate(item.time)} ${startHours}:${startMinutes}`;
+                          const startDateStr = formatDate(item.time);
+                          startDateTime = `${startDateStr} ${startHours}:${startMinutes}`;
 
                           if (item.data.endDateTime && item.data.endDateTime !== item.data.startDateTime) {
                             const endTime = new Date(item.data.endDateTime);
+                            const endDateStr = formatDate(endTime);
                             const endHours = String(endTime.getHours()).padStart(2, '0');
                             const endMinutes = String(endTime.getMinutes()).padStart(2, '0');
-                            startDateTime += ` - ${formatDate(endTime)} ${endHours}:${endMinutes}`;
+
+                            // If same date, only show time range. If different dates, show both
+                            if (startDateStr === endDateStr) {
+                              startDateTime = `${startDateStr} ${startHours}:${startMinutes} - ${endHours}:${endMinutes}`;
+                            } else {
+                              startDateTime += ` - ${endDateStr} ${endHours}:${endMinutes}`;
+                            }
                           }
                           location = item.data.location || '';
                         } else if (item.type === 'flight') {
@@ -565,7 +573,7 @@
                         <h3 class="text-sm font-medium text-gray-900"><%= displayName %></h3>
                         <p class="text-xs text-gray-500"><%= startDateTime %></p>
                         <% if (location) { %>
-                          <p class="text-xs text-gray-600"><%= location %></p>
+                          <p class="text-xs text-gray-600 italic"><%= location %></p>
                         <% } %>
                       </div>
                     </div>
@@ -573,8 +581,8 @@
                 <% } else { %>
                   <!-- Trip card with accordion -->
                   <div class="border border-gray-200 rounded-lg bg-white shadow-sm">
-                    <button class="w-full py-4 px-5 inline-flex items-center justify-between gap-x-3 font-semibold text-start text-gray-800 hover:bg-gray-50 rounded-lg transition-colors"
-                            onclick="toggleAccordion('upcoming-<%= tripIndex %>')">
+                    <button class="w-full py-4 px-5 inline-flex items-center justify-between gap-x-3 font-medium text-start text-gray-800 hover:bg-gray-50 rounded-lg transition-colors"
+                            onclick="toggleAccordion('upcoming-<%= tripIndex %>')"> <!-- font-semibold -->
                       <div class="flex items-center space-x-3">
                         <%
                           // Determine icon based on trip purpose
@@ -763,8 +771,8 @@
               <% pastTripItemsGrouped.forEach((tripData, tripIndex) => { %>
                 <div class="border border-gray-200 rounded-lg bg-white shadow-sm">
                   <!-- Accordion Header -->
-                  <button class="w-full py-4 px-5 inline-flex items-center justify-between gap-x-3 font-semibold text-start text-gray-800 hover:bg-gray-50 rounded-lg transition-colors"
-                          onclick="toggleAccordion('past-<%= tripIndex %>')">
+                  <button class="w-full py-4 px-5 inline-flex items-center justify-between gap-x-3 font-medium text-start text-gray-800 hover:bg-gray-50 rounded-lg transition-colors"
+                          onclick="toggleAccordion('past-<%= tripIndex %>')"> <!-- font-semibold -->
                     <div class="flex items-center space-x-3">
                       <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
                         <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
