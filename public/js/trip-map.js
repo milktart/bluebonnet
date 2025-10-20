@@ -5,9 +5,10 @@
  * Initialize overview map with trip data
  * @param {Object} tripData - Trip data object containing flights, hotels, etc.
  * @param {string} mapElementId - ID of the map container element (default: 'overviewMap')
+ * @param {boolean} isPast - Whether this is a past trips view (applies darker colors)
  * @returns {Promise<Object>} - Promise resolving to initialized map instance
  */
-function initOverviewMap(tripData, mapElementId = 'overviewMap') {
+function initOverviewMap(tripData, mapElementId = 'overviewMap', isPast = false) {
   return new Promise((resolve, reject) => {
     const mapEl = document.getElementById(mapElementId);
     if (!mapEl) {
@@ -59,7 +60,7 @@ function initOverviewMap(tripData, mapElementId = 'overviewMap') {
     mapEl.id = 'map';
 
     try {
-      initializeMap(tripData)
+      initializeMap(tripData, isPast)
         .then((map) => {
           console.log('Map initialized successfully');
 

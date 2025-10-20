@@ -20,6 +20,29 @@ const TAB_CONFIG = {
   settings: { tab: 'settings-tab', content: 'settings-content' }
 };
 
+// Update map with new trip data
+function updateMapData(newData, isPast = false) {
+  if (!currentMap || !mapInitialized) {
+    console.warn('Map not initialized, skipping map update');
+    return;
+  }
+
+  // Stop any ongoing animations
+  stopTripAnimation();
+
+  // Reinitialize the map with new data
+  if (typeof initOverviewMap !== 'undefined') {
+    initOverviewMap(newData, 'overviewMap', isPast)
+      .then((map) => {
+        currentMap = map;
+        console.log('Map updated with new data');
+      })
+      .catch(error => {
+        console.error('Failed to update map:', error);
+      });
+  }
+}
+
 function switchTab(activeTab) {
   Object.keys(TAB_CONFIG).forEach(tab => {
     const { tab: tabId, content: contentId } = TAB_CONFIG[tab];
@@ -38,10 +61,18 @@ function switchTab(activeTab) {
 
 function showUpcomingTrips() {
   switchTab('upcoming');
+  // Update map to show upcoming trips data (flights and events)
+  if (typeof upcomingTripsData !== 'undefined') {
+    updateMapData(upcomingTripsData);
+  }
 }
 
 function showPastTrips() {
   switchTab('past');
+  // Update map to show past trips data (flights only) with darker colors
+  if (typeof pastTripsData !== 'undefined') {
+    updateMapData(pastTripsData, true);
+  }
 }
 
 function showSettings() {
@@ -81,6 +112,27 @@ function closeSecondarySidebar() {
 function showCreateTripForm() {
   const content = document.getElementById('secondary-sidebar-content');
   const form = document.getElementById('create-trip-form');
+  if (content && form) {
+    // Clear any previous content from secondary-sidebar-content
+    content.innerHTML = '';
+    // Hide the form initially
+    form.style.display = 'none';
+    // Move form content into secondary-sidebar-content
+    const formContent = form.innerHTML;
+    content.innerHTML = formContent;
+    // Reset form fields
+    const formElement = content.querySelector('form');
+    if (formElement) {
+      formElement.reset();
+    }
+    openSecondarySidebar();
+  }
+}
+
+// Show create event form in secondary sidebar
+function showCreateEventForm() {
+  const content = document.getElementById('secondary-sidebar-content');
+  const form = document.getElementById('create-event-form');
   if (content && form) {
     // Clear any previous content from secondary-sidebar-content
     content.innerHTML = '';
@@ -216,32 +268,63 @@ function unhighlightMapMarker(markerId) {
 }
 
 // Get trip bounds from visible items
-function getTripBounds(tripIndex) {
-  const accordionContent = document.getElementById(`upcoming-${tripIndex}`);
+function getTripBounds(tripIndex, prefix = 'upcoming') {
+  const accordionContent = document.getElementById(`${prefix}-${tripIndex}`);
   if (!accordionContent) return null;
 
   const tripItems = accordionContent.querySelectorAll('.trip-item');
   const allCoords = [];
 
+  if (!currentMap || !currentMap.segmentLayers || currentMap.segmentLayers.length === 0) {
+    return null;
+  }
+
+  // Get all markers that belong to this trip (have data-marker attribute)
+  const tripMarkers = [];
   tripItems.forEach(item => {
-    const markerId = item.getAttribute('data-marker');
-    if (markerId) {
-      const segment = currentMap.segmentLayers.find(s => s.index === parseInt(markerId));
-      if (segment) {
+    const marker = item.getAttribute('data-marker');
+    if (marker) {
+      tripMarkers.push(parseInt(marker));
+    }
+  });
+
+  if (tripMarkers.length === 0) return null;
+
+  // Find segments by their index matching the markers
+  // But account for potential reindexing by checking segment count
+  tripMarkers.forEach(markerNum => {
+    // Segments are indexed starting from 1, find segment with matching index
+    const segment = currentMap.segmentLayers.find(s => s.index === markerNum);
+
+    if (segment && segment.polyline) {
+      const coords = segment.polyline.getLatLngs();
+      coords.forEach(coord => {
+        allCoords.push([coord.lat, coord.lng]);
+      });
+    }
+  });
+
+  // If we couldn't find by marker index, collect from first N segments
+  if (allCoords.length === 0 && tripMarkers.length > 0) {
+    const minMarker = Math.min(...tripMarkers);
+    const maxMarker = Math.max(...tripMarkers);
+
+    currentMap.segmentLayers.forEach(segment => {
+      if (segment.index >= minMarker && segment.index <= maxMarker && segment.polyline) {
         const coords = segment.polyline.getLatLngs();
         coords.forEach(coord => {
           allCoords.push([coord.lat, coord.lng]);
         });
       }
-    }
-  });
+    });
+  }
 
   if (allCoords.length === 0) return null;
   return L.latLngBounds(allCoords);
 }
 
 // Zoom to trip bounds
-function zoomToTripBounds(tripIndex) {
+function zoomToTripBounds(tripIndex, prefix = 'upcoming') {
   if (!currentMap) return;
 
   if (!originalMapBounds && !originalMapZoom) {
@@ -249,7 +332,7 @@ function zoomToTripBounds(tripIndex) {
     originalMapZoom = currentMap.getZoom();
   }
 
-  const bounds = getTripBounds(tripIndex);
+  const bounds = getTripBounds(tripIndex, prefix);
   if (!bounds) return;
 
   // Calculate the span to determine appropriate maxZoom for this trip
@@ -300,7 +383,7 @@ function restoreOriginalZoom() {
 }
 
 // Animate trip segments sequentially
-function animateTripSegments(tripIndex) {
+function animateTripSegments(tripIndex, prefix = 'upcoming') {
   if (!currentMap) return;
 
   if (activeTripAnimation) {
@@ -308,7 +391,7 @@ function animateTripSegments(tripIndex) {
     activeTripAnimation = null;
   }
 
-  const accordionContent = document.getElementById(`upcoming-${tripIndex}`);
+  const accordionContent = document.getElementById(`${prefix}-${tripIndex}`);
   if (!accordionContent) return;
 
   const tripItems = accordionContent.querySelectorAll('.trip-item');
@@ -457,7 +540,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   setTimeout(() => {
     if (!mapInitialized && typeof initOverviewMap !== 'undefined') {
-      initOverviewMap(allTripsData)
+      // Initialize with upcoming trips data since the upcoming tab is shown by default
+      initOverviewMap(upcomingTripsData)
         .then((map) => {
           mapInitialized = true;
           currentMap = map;
@@ -468,16 +552,28 @@ document.addEventListener('DOMContentLoaded', function () {
           accordionButtons.forEach((button, index) => {
             const accordionContent = button.nextElementSibling;
             if (accordionContent && accordionContent.id) {
-              const tripIndex = accordionContent.id.replace('upcoming-', '');
+              // Extract prefix (upcoming or past) and trip index
+              let tripIndex = '';
+              let prefix = 'upcoming';
 
-              button.addEventListener('mouseenter', () => {
-                zoomToTripBounds(tripIndex);
-                animateTripSegments(tripIndex);
-              });
+              if (accordionContent.id.startsWith('upcoming-')) {
+                tripIndex = accordionContent.id.replace('upcoming-', '');
+                prefix = 'upcoming';
+              } else if (accordionContent.id.startsWith('past-')) {
+                tripIndex = accordionContent.id.replace('past-', '');
+                prefix = 'past';
+              }
 
-              button.addEventListener('mouseleave', () => {
-                stopTripAnimation();
-              });
+              if (tripIndex) {
+                button.addEventListener('mouseenter', () => {
+                  zoomToTripBounds(tripIndex, prefix);
+                  animateTripSegments(tripIndex, prefix);
+                });
+
+                button.addEventListener('mouseleave', () => {
+                  stopTripAnimation();
+                });
+              }
             }
           });
         })

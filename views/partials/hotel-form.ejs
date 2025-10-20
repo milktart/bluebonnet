@@ -1,0 +1,157 @@
+<!-- Unified Hotel Form - Used for both Add and Edit flows -->
+
+<%
+  const isAddMode = !isEditing;
+  const modalId = isAddMode ? 'addHotelModal' : 'editHotelModal';
+  const formId = isAddMode ? 'addHotelForm' : 'editHotelForm';
+  const formAction = isAddMode
+    ? `/hotels/trips/${tripId}/hotels`
+    : `/hotels/${data?.id}`;
+  const formMethod = isAddMode ? 'POST' : 'POST';
+  const submitButtonText = isAddMode ? 'Add Hotel' : 'Update Hotel';
+  const submitButtonIcon = isAddMode ? 'bi-plus-circle' : 'bi-check-circle';
+%>
+
+<div class="modal fade" id="<%= modalId %>" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi <%= isAddMode ? 'bi-building' : 'bi-pencil' %>"></i>
+          <%= isAddMode ? 'Add Hotel' : 'Edit Hotel' %>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="<%= formId %>" method="<%= formMethod %>" action="<%= formAction %>">
+        <% if (!isAddMode) { %>
+          <input type="hidden" name="_method" value="PUT">
+        <% } %>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Hotel Name *</label>
+            <input
+              type="text"
+              class="form-control"
+              name="hotelName"
+              id="<%= isAddMode ? '' : 'edit_hotel_hotelName' %>"
+              value="<%= data?.hotelName || '' %>"
+              required
+              placeholder="e.g., Marriott Downtown">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Address *</label>
+            <textarea
+              class="form-control"
+              name="address"
+              id="<%= isAddMode ? '' : 'edit_hotel_address' %>"
+              rows="2"
+              required
+              placeholder="Full hotel address with city and country"><%= data?.address || '' %></textarea>
+            <small class="form-text text-muted">Be specific for accurate map placement</small>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Phone Number</label>
+              <input
+                type="tel"
+                class="form-control"
+                name="phone"
+                id="<%= isAddMode ? '' : 'edit_hotel_phone' %>"
+                value="<%= data?.phone || '' %>"
+                placeholder="e.g., +1-555-0123">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Timezone</label>
+              <input
+                type="text"
+                class="form-control"
+                name="timezone"
+                id="<%= isAddMode ? '' : 'edit_hotel_timezone' %>"
+                value="<%= data?.timezone || '' %>"
+                placeholder="e.g., America/New_York">
+              <small class="form-text text-muted">For accurate local time</small>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Check-in Date/Time *</label>
+              <div class="row">
+                <div class="col-7">
+                  <input
+                    type="date"
+                    class="form-control"
+                    name="checkInDate"
+                    id="<%= isAddMode ? '' : 'edit_hotel_checkInDate' %>"
+                    value="<%= data?.checkInDate || '' %>"
+                    required>
+                </div>
+                <div class="col-5">
+                  <input
+                    type="time"
+                    class="form-control"
+                    name="checkInTime"
+                    id="<%= isAddMode ? '' : 'edit_hotel_checkInTime' %>"
+                    value="<%= data?.checkInTime || '' %>"
+                    required>
+                </div>
+              </div>
+              <small class="form-text text-muted">Local check-in time</small>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Check-out Date/Time *</label>
+              <div class="row">
+                <div class="col-7">
+                  <input
+                    type="date"
+                    class="form-control"
+                    name="checkOutDate"
+                    id="<%= isAddMode ? '' : 'edit_hotel_checkOutDate' %>"
+                    value="<%= data?.checkOutDate || '' %>"
+                    required>
+                </div>
+                <div class="col-5">
+                  <input
+                    type="time"
+                    class="form-control"
+                    name="checkOutTime"
+                    id="<%= isAddMode ? '' : 'edit_hotel_checkOutTime' %>"
+                    value="<%= data?.checkOutTime || '' %>"
+                    required>
+                </div>
+              </div>
+              <small class="form-text text-muted">Local check-out time</small>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Confirmation Number</label>
+              <input
+                type="text"
+                class="form-control"
+                name="confirmationNumber"
+                id="<%= isAddMode ? '' : 'edit_hotel_confirmationNumber' %>"
+                value="<%= data?.confirmationNumber || '' %>"
+                placeholder="Booking confirmation number">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Room Number</label>
+              <input
+                type="text"
+                class="form-control"
+                name="roomNumber"
+                id="<%= isAddMode ? '' : 'edit_hotel_roomNumber' %>"
+                value="<%= data?.roomNumber || '' %>"
+                placeholder="e.g., 1205">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi <%= submitButtonIcon %>"></i> <%= submitButtonText %>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

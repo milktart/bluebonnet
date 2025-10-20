@@ -25,13 +25,23 @@ function getPointAtDistance(from, to, percent) {
 function highlightMapMarker(markerId, type) {
   if (!currentMap) return;
 
+  // Verify the map is still valid and in the DOM
+  if (!currentMap._container || !currentMap._container.offsetParent) {
+    console.warn('Map is not available or not in DOM');
+    return;
+  }
+
   if (markerId && currentMap.segmentLayers) {
     const segment = currentMap.segmentLayers.find(s => s.index === parseInt(markerId));
     if (segment) {
       if (activeAnimations[markerId]) {
         clearInterval(activeAnimations[markerId].interval);
         if (activeAnimations[markerId].marker) {
-          currentMap.removeLayer(activeAnimations[markerId].marker);
+          try {
+            currentMap.removeLayer(activeAnimations[markerId].marker);
+          } catch (e) {
+            console.warn('Error removing marker:', e);
+          }
         }
       }
 
@@ -49,44 +59,48 @@ function highlightMapMarker(markerId, type) {
       const frameTime = 50;
       const animationSpeed = frameTime / durationMs;
 
-      const movingMarker = L.marker(startPoint, {
-        icon: L.divIcon({
-          className: 'moving-dot-marker',
-          html: `<div style="
-            width: 12px;
-            height: 12px;
-            background: ${segment.originalColor};
-            border-radius: 50%;
-            box-shadow: 0 0 10px ${segment.originalColor}, 0 0 20px ${segment.originalColor}, inset 0 0 5px rgba(255,255,255,0.5);
-            border: 2px solid white;
-          "></div>`,
-          iconSize: [16, 16],
-          iconAnchor: [8, 8]
-        })
-      }).addTo(currentMap);
+      try {
+        const movingMarker = L.marker(startPoint, {
+          icon: L.divIcon({
+            className: 'moving-dot-marker',
+            html: `<div style="
+              width: 12px;
+              height: 12px;
+              background: ${segment.originalColor};
+              border-radius: 50%;
+              box-shadow: 0 0 10px ${segment.originalColor}, 0 0 20px ${segment.originalColor}, inset 0 0 5px rgba(255,255,255,0.5);
+              border: 2px solid white;
+            "></div>`,
+            iconSize: [16, 16],
+            iconAnchor: [8, 8]
+          })
+        }).addTo(currentMap);
 
-      let progress = 0;
+        let progress = 0;
 
-      const animationInterval = setInterval(() => {
-        progress += animationSpeed;
+        const animationInterval = setInterval(() => {
+          progress += animationSpeed;
 
-        if (progress >= 1) {
-          progress = 0;
-        }
+          if (progress >= 1) {
+            progress = 0;
+          }
 
-        const newPos = getPointAtDistance(
-          [startPoint.lat, startPoint.lng],
-          [endPoint.lat, endPoint.lng],
-          progress
-        );
+          const newPos = getPointAtDistance(
+            [startPoint.lat, startPoint.lng],
+            [endPoint.lat, endPoint.lng],
+            progress
+          );
 
-        movingMarker.setLatLng(L.latLng(newPos[0], newPos[1]));
-      }, frameTime);
+          movingMarker.setLatLng(L.latLng(newPos[0], newPos[1]));
+        }, frameTime);
 
-      activeAnimations[markerId] = {
-        marker: movingMarker,
-        interval: animationInterval
-      };
+        activeAnimations[markerId] = {
+          marker: movingMarker,
+          interval: animationInterval
+        };
+      } catch (e) {
+        console.warn('Error creating marker animation:', e);
+      }
     }
   }
 }
@@ -94,10 +108,19 @@ function highlightMapMarker(markerId, type) {
 function unhighlightMapMarker(markerId) {
   if (!currentMap) return;
 
+  // Verify the map is still valid
+  if (!currentMap._container || !currentMap._container.offsetParent) {
+    return;
+  }
+
   if (activeAnimations[markerId]) {
     clearInterval(activeAnimations[markerId].interval);
     if (activeAnimations[markerId].marker) {
-      currentMap.removeLayer(activeAnimations[markerId].marker);
+      try {
+        currentMap.removeLayer(activeAnimations[markerId].marker);
+      } catch (e) {
+        console.warn('Error removing marker:', e);
+      }
     }
     delete activeAnimations[markerId];
   }

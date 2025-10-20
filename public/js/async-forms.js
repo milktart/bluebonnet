@@ -281,6 +281,34 @@ function refreshPrimarySidebar(tripData) {
     return `${day} ${month} ${year}`;
   }
 
+  // Format date in a specific timezone (matching server-side formatInTimezone behavior)
+  function formatDateInTimezone(datetime, timezone, format = 'DD MMM YYYY') {
+    if (!datetime || !timezone) {
+      // Fallback to UTC if no timezone
+      return formatDate(datetime);
+    }
+
+    try {
+      const d = new Date(datetime);
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        timeZone: timezone
+      });
+      const parts = formatter.formatToParts(d);
+      const year = parts.find(p => p.type === 'year').value;
+      const month = parseInt(parts.find(p => p.type === 'month').value) - 1;
+      const day = parts.find(p => p.type === 'day').value;
+
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${day} ${months[month]} ${year}`;
+    } catch (e) {
+      console.warn('Error formatting date in timezone:', e);
+      return formatDate(datetime);
+    }
+  }
+
   function getFlightNum(flightNumber) {
     const match = flightNumber.match(/(\d+)$/);
     return match ? match[1] : flightNumber;
@@ -383,11 +411,29 @@ function refreshPrimarySidebar(tripData) {
     }
   });
 
-  // Group by UTC date (consistent with how dates are stored)
+  // Group by local date in each item's timezone (not UTC)
   const itemsByDate = {};
   allItems.forEach(item => {
-    // Always use UTC date for grouping (dates are stored in UTC)
-    const dateKey = item.dateTime.split('T')[0];
+    // Extract date in the item's timezone (not UTC)
+    let dateKey;
+    if (item.timezone) {
+      try {
+        const formatter = new Intl.DateTimeFormat('en-CA', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          timeZone: item.timezone
+        });
+        dateKey = formatter.format(new Date(item.dateTime));
+      } catch (e) {
+        // Fallback to UTC if timezone is invalid
+        dateKey = item.dateTime.split('T')[0];
+      }
+    } else {
+      // Fallback to UTC if no timezone
+      dateKey = item.dateTime.split('T')[0];
+    }
+
     if (!itemsByDate[dateKey]) itemsByDate[dateKey] = [];
     itemsByDate[dateKey].push(item);
   });

@@ -59,6 +59,14 @@ module.exports = (sequelize, DataTypes) => {
       validate: {
         isEmail: true
       }
+    },
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    eventUrl: {
+      type: DataTypes.STRING,
+      allowNull: true
     }
   }, {
     tableName: 'events',

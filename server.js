@@ -80,7 +80,19 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3000;
 
 // Sync database and start server
-db.sequelize.sync({ alter: true }).then(() => {
+db.sequelize.sync({ alter: true }).then(async () => {
+  // Alter events table to make tripId nullable for standalone events
+  try {
+    await db.sequelize.query(`
+      ALTER TABLE "events"
+      ALTER COLUMN "tripId" DROP NOT NULL;
+    `);
+    console.log('Events table constraint updated');
+  } catch (err) {
+    // Constraint might not exist yet or already be nullable, that's fine
+    console.log('Constraint update skipped (may not exist yet)');
+  }
+
   console.log('Database synced');
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

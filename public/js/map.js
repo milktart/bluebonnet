@@ -2,7 +2,7 @@
 // Coordinates are now stored in the database, so no geocoding needed
 // Note: formatDateTime is defined in datetime-formatter.js
 
-async function initializeMap(tripData) {
+async function initializeMap(tripData, isPast = false) {
   try {
     // Find map element
     const mapEl = document.getElementById('map');
@@ -220,8 +220,25 @@ async function initializeMap(tripData) {
     // Sort travel segments by time
     travelSegments.sort((a, b) => a.time - b.time);
 
-    // Define marker colors
-    const colorMap = {
+    // Apply darker colors to travel segments if isPast
+    if (isPast) {
+      travelSegments.forEach(segment => {
+        if (segment.type === 'flight') {
+          segment.color = '#084298';
+        } else if (segment.type === 'transportation') {
+          segment.color = '#e86c00';
+        }
+      });
+    }
+
+    // Define marker colors (darker for past trips)
+    const colorMap = isPast ? {
+      flight: '#084298',
+      hotel: '#198754',
+      transportation: '#e86c00',
+      carRental: '#6c757d',
+      event: '#dc3545'
+    } : {
       flight: '#0d6efd',
       hotel: '#198754',
       transportation: '#fd7e14',

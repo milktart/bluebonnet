@@ -1,423 +1,10 @@
-<!-- Add Flight Modal -->
+<!-- Add Modals - Using unified form partials -->
 
-<div class="modal fade" id="addFlightModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-airplane"></i> Add Flight</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <form action="/flights/trips/<%- trip.id %>/flights" method="POST">
-        <div class="modal-body">
-          <div class="alert alert-info">
-            <i class="bi bi-lightbulb"></i> <strong>Tip:</strong> Search by flight number to auto-detect airline, or type airport codes for quick lookup
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Search by Flight Number</label>
-            <div class="input-group">
-              <input type="text" class="form-control" id="flightSearch" placeholder="e.g., AA100, BA456">
-              <input type="date" class="form-control" id="flightDate">
-              <button type="button" class="btn btn-outline-secondary" onclick="searchFlight()">
-                <i class="bi bi-search"></i> Search
-              </button>
-            </div>
-            <small class="form-text text-muted">Enter flight number to detect airline</small>
-          </div>
-          <hr>
-          <h6 class="mb-3">Flight Details</h6>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Airline *</label>
-              <input type="text" class="form-control" name="airline" required placeholder="e.g., American Airlines">
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Flight Number *</label>
-              <input type="text" class="form-control" name="flightNumber" required placeholder="e.g., AA100">
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Origin Airport *</label>
-              <input type="text" class="form-control airport-search" id="originInput" name="origin" required placeholder="Type airport code or city (e.g., JFK)" autocomplete="off">
-              <div id="originResults" class="autocomplete-results"></div>
-              <input type="hidden" name="originTimezone" id="originTimezone">
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Destination Airport *</label>
-              <input type="text" class="form-control airport-search" id="destinationInput" name="destination" required placeholder="Type airport code or city (e.g., LAX)" autocomplete="off">
-              <div id="destinationResults" class="autocomplete-results"></div>
-              <input type="hidden" name="destinationTimezone" id="destinationTimezone">
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Departure Date/Time *</label>
-              <div class="row">
-                <div class="col-7">
-                  <input type="date" class="form-control" name="departureDate" required>
-                </div>
-                <div class="col-5">
-                  <input type="time" class="form-control" name="departureTime" required>
-                </div>
-              </div>
-              <small class="form-text text-muted">Local departure time</small>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Arrival Date/Time *</label>
-              <div class="row">
-                <div class="col-7">
-                  <input type="date" class="form-control" name="arrivalDate" required>
-                </div>
-                <div class="col-5">
-                  <input type="time" class="form-control" name="arrivalTime" required>
-                </div>
-              </div>
-              <small class="form-text text-muted">Local arrival time</small>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">PNR/Confirmation Number</label>
-              <input type="text" class="form-control" name="pnr" placeholder="e.g., ABC123">
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Seat Assignment</label>
-              <input type="text" class="form-control" name="seat" placeholder="e.g., 12A">
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Add Flight</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- Add Hotel Modal -->
-
-<div class="modal fade" id="addHotelModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-building"></i> Add Hotel</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <form action="/hotels/trips/<%- trip.id %>/hotels" method="POST">
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label">Hotel Name *</label>
-            <input type="text" class="form-control" name="hotelName" required placeholder="e.g., Marriott Downtown">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Address *</label>
-            <textarea class="form-control" name="address" rows="2" required placeholder="Full hotel address with city and country"></textarea>
-            <small class="form-text text-muted">Be specific for accurate map placement</small>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Phone Number</label>
-              <input type="tel" class="form-control" name="phone" placeholder="e.g., +1-555-0123">
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Timezone</label>
-              <input type="text" class="form-control" name="timezone" placeholder="e.g., America/New_York">
-              <small class="form-text text-muted">For accurate local time</small>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Check-in Date/Time *</label>
-              <div class="row">
-                <div class="col-7">
-                  <input type="date" class="form-control" name="checkInDate" required>
-                </div>
-                <div class="col-5">
-                  <input type="time" class="form-control" name="checkInTime" required>
-                </div>
-              </div>
-              <small class="form-text text-muted">Local check-in time</small>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Check-out Date/Time *</label>
-              <div class="row">
-                <div class="col-7">
-                  <input type="date" class="form-control" name="checkOutDate" required>
-                </div>
-                <div class="col-5">
-                  <input type="time" class="form-control" name="checkOutTime" required>
-                </div>
-              </div>
-              <small class="form-text text-muted">Local check-out time</small>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Confirmation Number</label>
-              <input type="text" class="form-control" name="confirmationNumber" placeholder="Booking confirmation number">
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Room Number</label>
-              <input type="text" class="form-control" name="roomNumber" placeholder="e.g., 1205">
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Add Hotel</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- Add Transportation Modal -->
-
-<div class="modal fade" id="addTransportationModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-train-front"></i> Add Transportation</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <form action="/transportation/trips/<%- trip.id %>/transportation" method="POST">
-        <div class="modal-body">
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Method of Travel *</label>
-              <select class="form-select" name="method" required>
-                <option value="">Select method...</option>
-                <option value="train">Train</option>
-                <option value="bus">Bus</option>
-                <option value="ferry">Ferry</option>
-                <option value="shuttle">Shuttle</option>
-                <option value="taxi">Taxi/Rideshare</option>
-                <option value="subway">Subway/Metro</option>
-                <option value="tram">Tram</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Journey Number</label>
-              <input type="text" class="form-control" name="journeyNumber" placeholder="e.g., Amtrak 123, Bus 456">
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Origin Station/Stop *</label>
-              <input type="text" class="form-control" name="origin" required placeholder="e.g., Penn Station, New York">
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Origin Timezone</label>
-              <input type="text" class="form-control" name="originTimezone" placeholder="e.g., America/New_York">
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Destination Station/Stop *</label>
-              <input type="text" class="form-control" name="destination" required placeholder="e.g., Union Station, Washington DC">
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Destination Timezone</label>
-              <input type="text" class="form-control" name="destinationTimezone" placeholder="e.g., America/New_York">
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Departure Date/Time *</label>
-              <div class="row">
-                <div class="col-7">
-                  <input type="date" class="form-control" name="departureDate" required>
-                </div>
-                <div class="col-5">
-                  <input type="time" class="form-control" name="departureTime" required>
-                </div>
-              </div>
-              <small class="form-text text-muted">Local departure time</small>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Arrival Date/Time *</label>
-              <div class="row">
-                <div class="col-7">
-                  <input type="date" class="form-control" name="arrivalDate" required>
-                </div>
-                <div class="col-5">
-                  <input type="time" class="form-control" name="arrivalTime" required>
-                </div>
-              </div>
-              <small class="form-text text-muted">Local arrival time</small>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Confirmation Number</label>
-              <input type="text" class="form-control" name="confirmationNumber" placeholder="Booking confirmation">
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Seat/Coach Number</label>
-              <input type="text" class="form-control" name="seat" placeholder="e.g., Coach 3, Seat 14">
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Add Transportation</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- Add Car Rental Modal -->
-
-<div class="modal fade" id="addCarRentalModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-car-front"></i> Add Car Rental</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <form action="/car-rentals/trips/<%- trip.id %>/car-rentals" method="POST">
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label">Rental Company *</label>
-            <input type="text" class="form-control" name="company" required placeholder="e.g., Hertz, Enterprise, Avis">
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Pick-up Location *</label>
-              <textarea class="form-control" name="pickupLocation" rows="2" required placeholder="Full pick-up address with city"></textarea>
-              <small class="form-text text-muted">Be specific for accurate map placement</small>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Pick-up Timezone</label>
-              <input type="text" class="form-control" name="pickupTimezone" placeholder="e.g., America/New_York">
-              <small class="form-text text-muted">For accurate local time</small>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Drop-off Location *</label>
-              <textarea class="form-control" name="dropoffLocation" rows="2" required placeholder="Full drop-off address with city"></textarea>
-              <small class="form-text text-muted">Can be different from pick-up</small>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Drop-off Timezone</label>
-              <input type="text" class="form-control" name="dropoffTimezone" placeholder="e.g., America/Los_Angeles">
-              <small class="form-text text-muted">For accurate local time</small>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Pick-up Date/Time *</label>
-              <div class="row">
-                <div class="col-7">
-                  <input type="date" class="form-control" name="pickupDate" required>
-                </div>
-                <div class="col-5">
-                  <input type="time" class="form-control" name="pickupTime" required>
-                </div>
-              </div>
-              <small class="form-text text-muted">Local pick-up time</small>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Drop-off Date/Time *</label>
-              <div class="row">
-                <div class="col-7">
-                  <input type="date" class="form-control" name="dropoffDate" required>
-                </div>
-                <div class="col-5">
-                  <input type="time" class="form-control" name="dropoffTime" required>
-                </div>
-              </div>
-              <small class="form-text text-muted">Local drop-off time</small>
-            </div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Confirmation Number</label>
-            <input type="text" class="form-control" name="confirmationNumber" placeholder="Reservation confirmation number">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Add Car Rental</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- Add Event Modal -->
-
-<div class="modal fade" id="addEventModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-calendar-event"></i> Add Event/Activity</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <form action="/events/trips/<%- trip.id %>/events" method="POST">
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label">Event/Activity Name *</label>
-            <input type="text" class="form-control" name="name" required placeholder="e.g., Museum Tour, Dinner Reservation, Concert">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Location/Venue</label>
-            <textarea class="form-control" name="location" rows="2" placeholder="Address or venue name with city"></textarea>
-            <small class="form-text text-muted">Optional - for map placement</small>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Timezone</label>
-            <input type="text" class="form-control" name="timezone" placeholder="e.g., America/New_York">
-            <small class="form-text text-muted">For accurate local time display</small>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Start Date/Time *</label>
-              <div class="row">
-                <div class="col-7">
-                  <input type="date" class="form-control" name="startDate" required>
-                </div>
-                <div class="col-5">
-                  <input type="time" class="form-control" name="startTime" required>
-                </div>
-              </div>
-              <small class="form-text text-muted">Local start time</small>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">End Date/Time *</label>
-              <div class="row">
-                <div class="col-7">
-                  <input type="date" class="form-control" name="endDate" required>
-                </div>
-                <div class="col-5">
-                  <input type="time" class="form-control" name="endTime" required>
-                </div>
-              </div>
-              <small class="form-text text-muted">Local end time</small>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Contact Phone</label>
-              <input type="tel" class="form-control" name="contactPhone" placeholder="e.g., +1-555-0123">
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Contact Email</label>
-              <input type="email" class="form-control" name="contactEmail" placeholder="contact@venue.com">
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Add Event</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
+<%- include('flight-form', { tripId: trip.id, isEditing: false, data: null }) %>
+<%- include('hotel-form', { tripId: trip.id, isEditing: false, data: null }) %>
+<%- include('transportation-form', { tripId: trip.id, isEditing: false, data: null }) %>
+<%- include('car-rental-form', { tripId: trip.id, isEditing: false, data: null }) %>
+<%- include('event-form', { tripId: trip.id, isEditing: false, data: null }) %>
 
 <script>
 // Form validation and enhancements
@@ -425,17 +12,17 @@ document.addEventListener('DOMContentLoaded', function() {
   // Validate check-in/check-out dates for hotels
   const hotelModal = document.getElementById('addHotelModal');
   if (hotelModal) {
-    const checkIn = hotelModal.querySelector('[name="checkInDateTime"]');
-    const checkOut = hotelModal.querySelector('[name="checkOutDateTime"]');
-    
+    const checkIn = hotelModal.querySelector('[name="checkInDate"]');
+    const checkOut = hotelModal.querySelector('[name="checkOutDate"]');
+
     if (checkIn && checkOut) {
       checkIn.addEventListener('change', function() {
         checkOut.min = this.value;
       });
-      
+
       checkOut.addEventListener('change', function() {
         if (this.value && checkIn.value && this.value < checkIn.value) {
-          alert('Check-out time must be after check-in time');
+          alert('Check-out date must be after check-in date');
           this.value = '';
         }
       });
@@ -445,17 +32,17 @@ document.addEventListener('DOMContentLoaded', function() {
   // Validate departure/arrival for transportation
   const transModal = document.getElementById('addTransportationModal');
   if (transModal) {
-    const dep = transModal.querySelector('[name="departureDateTime"]');
-    const arr = transModal.querySelector('[name="arrivalDateTime"]');
-    
-    if (dep && arr) {
-      dep.addEventListener('change', function() {
-        arr.min = this.value;
+    const depDate = transModal.querySelector('[name="departureDate"]');
+    const arrDate = transModal.querySelector('[name="arrivalDate"]');
+
+    if (depDate && arrDate) {
+      depDate.addEventListener('change', function() {
+        arrDate.min = this.value;
       });
-      
-      arr.addEventListener('change', function() {
-        if (this.value && dep.value && this.value < dep.value) {
-          alert('Arrival time must be after departure time');
+
+      arrDate.addEventListener('change', function() {
+        if (this.value && depDate.value && this.value < depDate.value) {
+          alert('Arrival date must be after departure date');
           this.value = '';
         }
       });
@@ -465,17 +52,17 @@ document.addEventListener('DOMContentLoaded', function() {
   // Validate pick-up/drop-off for car rentals
   const carModal = document.getElementById('addCarRentalModal');
   if (carModal) {
-    const pickup = carModal.querySelector('[name="pickupDateTime"]');
-    const dropoff = carModal.querySelector('[name="dropoffDateTime"]');
-    
-    if (pickup && dropoff) {
-      pickup.addEventListener('change', function() {
-        dropoff.min = this.value;
+    const pickupDate = carModal.querySelector('[name="pickupDate"]');
+    const dropoffDate = carModal.querySelector('[name="dropoffDate"]');
+
+    if (pickupDate && dropoffDate) {
+      pickupDate.addEventListener('change', function() {
+        dropoffDate.min = this.value;
       });
-      
-      dropoff.addEventListener('change', function() {
-        if (this.value && pickup.value && this.value < pickup.value) {
-          alert('Drop-off time must be after pick-up time');
+
+      dropoffDate.addEventListener('change', function() {
+        if (this.value && pickupDate.value && this.value < pickupDate.value) {
+          alert('Drop-off date must be after pick-up date');
           this.value = '';
         }
       });
@@ -485,17 +72,17 @@ document.addEventListener('DOMContentLoaded', function() {
   // Validate start/end for events
   const eventModal = document.getElementById('addEventModal');
   if (eventModal) {
-    const start = eventModal.querySelector('[name="startDateTime"]');
-    const end = eventModal.querySelector('[name="endDateTime"]');
-    
-    if (start && end) {
-      start.addEventListener('change', function() {
-        end.min = this.value;
+    const startDate = eventModal.querySelector('[name="startDate"]');
+    const endDate = eventModal.querySelector('[name="endDate"]');
+
+    if (startDate && endDate) {
+      startDate.addEventListener('change', function() {
+        endDate.min = this.value;
       });
-      
-      end.addEventListener('change', function() {
-        if (this.value && start.value && this.value < start.value) {
-          alert('End time must be after start time');
+
+      endDate.addEventListener('change', function() {
+        if (this.value && startDate.value && this.value < startDate.value) {
+          alert('End date must be after start date');
           this.value = '';
         }
       });

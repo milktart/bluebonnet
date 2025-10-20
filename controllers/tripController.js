@@ -87,7 +87,7 @@ exports.listTrips = async (req, res) => {
       order: [['startDateTime', 'ASC']]
     });
 
-    res.render('trips/list', {
+    res.render('trips/dashboard', {
       title: 'My Trips',
       trips: uniqueTrips,
       standaloneFlights,
@@ -204,7 +204,7 @@ exports.viewTrip = async (req, res) => {
     // Get airline data for form lookup
     const airlines = airportService.getAllAirlines();
 
-    res.render('trips/view', {
+    res.render('trips/trip', {
       title: trip.name,
       trip,
       isOwner,
@@ -375,32 +375,6 @@ exports.deleteTrip = async (req, res) => {
   } catch (error) {
     console.error(error);
     req.flash('error_msg', 'Error deleting trip');
-    res.redirect('/trips');
-  }
-};
-
-exports.getCalendarView = async (req, res) => {
-  try {
-    const trip = await Trip.findOne({
-      where: { id: req.params.id, userId: req.user.id },
-      include: [
-        { model: Flight, as: 'flights' },
-        { model: Hotel, as: 'hotels' },
-        { model: Transportation, as: 'transportation' },
-        { model: CarRental, as: 'carRentals' },
-        { model: Event, as: 'events' }
-      ]
-    });
-
-    if (!trip) {
-      req.flash('error_msg', 'Trip not found');
-      return res.redirect('/trips');
-    }
-
-    res.render('trips/calendar', { title: `${trip.name} - Calendar`, trip });
-  } catch (error) {
-    console.error(error);
-    req.flash('error_msg', 'Error loading calendar');
     res.redirect('/trips');
   }
 };

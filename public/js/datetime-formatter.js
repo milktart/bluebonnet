@@ -113,6 +113,8 @@ if (typeof window !== 'undefined') {
   window.formatDateTime = formatDateTime;
   window.formatDateForInput = formatDateForInput;
   window.formatTimeForInput = formatTimeForInput;
+  window.calculateLayover = calculateLayover;
+  window.formatLayoverDisplay = formatLayoverDisplay;
 }
 
 // Auto-format all datetime elements on page load
@@ -143,7 +145,39 @@ if (document.readyState === 'loading') {
   applyDateTimeFormatting();
 }
 
+// Calculate layover duration between two flights
+// Returns { hours, minutes, airport } or null if no layover detected
+function calculateLayover(flight1ArrivalTime, flight1Destination, flight2DepartureTime, flight2Origin) {
+  if (!flight1ArrivalTime || !flight2DepartureTime) return null;
+
+  const arrival = new Date(flight1ArrivalTime);
+  const departure = new Date(flight2DepartureTime);
+  const diffMs = departure - arrival;
+  const diffHours = diffMs / (1000 * 60 * 60);
+
+  // Only show layover if less than 24 hours between flights
+  if (diffMs <= 0 || diffHours >= 24) return null;
+
+  // Extract airport code from location (format: "CODE - City, Country")
+  let airportCode = flight1Destination || '';
+  const match = airportCode.match(/^([A-Z]{3})/);
+  if (!match) return null;
+  airportCode = match[1];
+
+  const hours = Math.floor(diffHours);
+  const minutes = Math.round((diffHours - hours) * 60);
+
+  return { hours, minutes, airport: airportCode };
+}
+
+// Format layover display string
+function formatLayoverDisplay(layover) {
+  if (!layover) return '';
+  const { hours, minutes, airport } = layover;
+  return `------ ${hours}h ${minutes}m at ${airport} ------`;
+}
+
 // Export for modules
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { formatDate, formatTime, formatDateTime, formatDateForInput, formatTimeForInput };
+  module.exports = { formatDate, formatTime, formatDateTime, formatDateForInput, formatTimeForInput, calculateLayover, formatLayoverDisplay };
 }

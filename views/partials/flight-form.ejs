@@ -1,0 +1,192 @@
+<!-- Unified Flight Form - Used for both Add and Edit flows -->
+
+<%
+  const isAddMode = !isEditing;
+  const modalId = isAddMode ? 'addFlightModal' : 'editFlightModal';
+  const formId = isAddMode ? 'addFlightForm' : 'editFlightForm';
+  const formAction = isAddMode
+    ? `/flights/trips/${tripId}/flights`
+    : `/flights/${data?.id}`;
+  const formMethod = isAddMode ? 'POST' : 'POST';
+  const submitButtonText = isAddMode ? 'Add Flight' : 'Update Flight';
+  const submitButtonIcon = isAddMode ? 'bi-plus-circle' : 'bi-check-circle';
+%>
+
+<div class="modal fade" id="<%= modalId %>" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi <%= isAddMode ? 'bi-airplane' : 'bi-pencil' %>"></i>
+          <%= isAddMode ? 'Add Flight' : 'Edit Flight' %>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="<%= formId %>" method="<%= formMethod %>" action="<%= formAction %>">
+        <% if (!isAddMode) { %>
+          <input type="hidden" name="_method" value="PUT">
+        <% } %>
+        <div class="modal-body">
+          <% if (isAddMode) { %>
+            <div class="alert alert-info">
+              <i class="bi bi-lightbulb"></i> <strong>Tip:</strong> Search by flight number to auto-detect airline, or type airport codes for quick lookup
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Search by Flight Number</label>
+              <div class="input-group">
+                <input type="text" class="form-control" id="flightSearch" placeholder="e.g., AA100, BA456">
+                <input type="date" class="form-control" id="flightDate">
+                <button type="button" class="btn btn-outline-secondary" onclick="searchFlight()">
+                  <i class="bi bi-search"></i> Search
+                </button>
+              </div>
+              <small class="form-text text-muted">Enter flight number to detect airline</small>
+            </div>
+            <hr>
+          <% } %>
+          <h6 class="mb-3">Flight Details</h6>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Airline *</label>
+              <input
+                type="text"
+                class="form-control"
+                name="airline"
+                id="<%= isAddMode ? '' : 'edit_flight_airline' %>"
+                value="<%= data?.airline || '' %>"
+                required
+                placeholder="e.g., American Airlines">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Flight Number *</label>
+              <input
+                type="text"
+                class="form-control"
+                name="flightNumber"
+                id="<%= isAddMode ? '' : 'edit_flight_flightNumber' %>"
+                value="<%= data?.flightNumber || '' %>"
+                required
+                placeholder="e.g., AA100">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Origin Airport *</label>
+              <input
+                type="text"
+                class="form-control airport-search"
+                id="<%= isAddMode ? 'originInput' : 'edit_flight_origin' %>"
+                name="origin"
+                value="<%= data?.origin || '' %>"
+                required
+                placeholder="Type airport code or city (e.g., JFK)"
+                autocomplete="off">
+              <div id="<%= isAddMode ? 'originResults' : 'editOriginResults' %>" class="autocomplete-results"></div>
+              <input
+                type="hidden"
+                name="originTimezone"
+                id="<%= isAddMode ? 'originTimezone' : 'edit_flight_originTimezone' %>"
+                value="<%= data?.originTimezone || '' %>">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Destination Airport *</label>
+              <input
+                type="text"
+                class="form-control airport-search"
+                id="<%= isAddMode ? 'destinationInput' : 'edit_flight_destination' %>"
+                name="destination"
+                value="<%= data?.destination || '' %>"
+                required
+                placeholder="Type airport code or city (e.g., LAX)"
+                autocomplete="off">
+              <div id="<%= isAddMode ? 'destinationResults' : 'editDestinationResults' %>" class="autocomplete-results"></div>
+              <input
+                type="hidden"
+                name="destinationTimezone"
+                id="<%= isAddMode ? 'destinationTimezone' : 'edit_flight_destinationTimezone' %>"
+                value="<%= data?.destinationTimezone || '' %>">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Departure Date/Time *</label>
+              <div class="row">
+                <div class="col-7">
+                  <input
+                    type="date"
+                    class="form-control"
+                    name="departureDate"
+                    id="<%= isAddMode ? '' : 'edit_flight_departureDate' %>"
+                    value="<%= data?.departureDate || '' %>"
+                    required>
+                </div>
+                <div class="col-5">
+                  <input
+                    type="time"
+                    class="form-control"
+                    name="departureTime"
+                    id="<%= isAddMode ? '' : 'edit_flight_departureTime' %>"
+                    value="<%= data?.departureTime || '' %>"
+                    required>
+                </div>
+              </div>
+              <small class="form-text text-muted">Local departure time</small>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Arrival Date/Time *</label>
+              <div class="row">
+                <div class="col-7">
+                  <input
+                    type="date"
+                    class="form-control"
+                    name="arrivalDate"
+                    id="<%= isAddMode ? '' : 'edit_flight_arrivalDate' %>"
+                    value="<%= data?.arrivalDate || '' %>"
+                    required>
+                </div>
+                <div class="col-5">
+                  <input
+                    type="time"
+                    class="form-control"
+                    name="arrivalTime"
+                    id="<%= isAddMode ? '' : 'edit_flight_arrivalTime' %>"
+                    value="<%= data?.arrivalTime || '' %>"
+                    required>
+                </div>
+              </div>
+              <small class="form-text text-muted">Local arrival time</small>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">PNR/Confirmation Number</label>
+              <input
+                type="text"
+                class="form-control"
+                name="pnr"
+                id="<%= isAddMode ? '' : 'edit_flight_pnr' %>"
+                value="<%= data?.pnr || '' %>"
+                placeholder="e.g., ABC123">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Seat Assignment</label>
+              <input
+                type="text"
+                class="form-control"
+                name="seat"
+                id="<%= isAddMode ? '' : 'edit_flight_seat' %>"
+                value="<%= data?.seat || '' %>"
+                placeholder="e.g., 12A">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi <%= submitButtonIcon %>"></i> <%= submitButtonText %>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

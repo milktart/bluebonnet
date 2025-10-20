@@ -168,7 +168,7 @@
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
-            Add Event
+            Event
           </button>
           <button
             onclick="showCreateTripForm()"
@@ -177,7 +177,7 @@
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
-            New Trip
+            Trip
           </button>
         </div>
       </div>
@@ -508,11 +508,14 @@
             <div class="space-y-3">
               <% tripItems.forEach((tripData, tripIndex) => { %>
                 <% if (tripData.isStandalone) { %>
+                  <%
+                    const item = tripData.items[0];
+                  %>
                   <!-- Standalone item - single card with no accordion -->
-                  <div class="border border-gray-200 rounded-lg bg-white shadow-sm">
+                  <div class="border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md hover:border-gray-300 transition-all cursor-pointer"
+                       onclick="<% if (item.type === 'event') { %>loadSidebarContent('/events/<%= item.data.id %>/sidebar')<% } %>">
                     <div class="py-4 px-5 inline-flex items-center gap-x-3 w-full font-medium"> <!-- font-semibold -->
                       <%
-                        const item = tripData.items[0];
                         const hours = String(item.time.getHours()).padStart(2, '0');
                         const minutes = String(item.time.getMinutes()).padStart(2, '0');
                         let standaloneIcon, standaloneColor, standaloneLabel, displayName, startDateTime, endDateTime, location;

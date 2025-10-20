@@ -5,8 +5,10 @@ const { ensureAuthenticated } = require('../middleware/auth');
 
 router.use(ensureAuthenticated);
 
+router.get('/:id/sidebar', eventController.getEventSidebar);
+router.get('/:id/edit-form', eventController.getEventEditForm);
 router.post('/trips/:tripId/events', eventController.createEvent);
-router.post('/events/standalone', eventController.createEvent); // Standalone events
+router.post('/standalone', eventController.createEvent); // Standalone events
 router.put('/:id', eventController.updateEvent);
 router.delete('/:id', eventController.deleteEvent);
 

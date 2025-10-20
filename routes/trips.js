@@ -14,7 +14,6 @@ router.get('/:id/edit', tripController.getEditTrip);
 router.get('/:id/edit/sidebar', tripController.getEditTripSidebar);
 router.put('/:id', validateTrip, tripController.updateTrip);
 router.delete('/:id', tripController.deleteTrip);
-router.get('/:id/calendar', tripController.getCalendarView);
 router.get('/:id/map', tripController.getMapView);
 router.delete('/:id/companions/self/remove', tripController.removeSelfFromTrip);
 

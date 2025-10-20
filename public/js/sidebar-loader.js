@@ -90,6 +90,27 @@ function initializeSidebarContent() {
     closeButton.addEventListener('click', closeSecondarySidebar);
   }
 
+  // Handle event edit form save button
+  const saveEventBtn = document.getElementById('saveEventBtn');
+
+  if (saveEventBtn) {
+    // Add a simple click handler first
+    saveEventBtn.onclick = function(e) {
+      e.preventDefault();
+      if (typeof handleEventEditFormSubmit === 'function') {
+        handleEventEditFormSubmit(e);
+      }
+    };
+
+    // Also add addEventListener as backup
+    saveEventBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (typeof handleEventEditFormSubmit === 'function') {
+        handleEventEditFormSubmit(e);
+      }
+    });
+  }
+
   // Initialize companion selector if the form has one
   if (document.getElementById('companionSearch')) {
     if (typeof initCompanionSelector === 'function') {
@@ -138,6 +159,83 @@ function openSecondarySidebar() {
   const sidebar = document.getElementById('secondary-sidebar');
   if (sidebar) {
     sidebar.classList.add('open');
+  }
+}
+
+/**
+ * Handle event edit form submission
+ * Global function that can be called from dynamically loaded content
+ */
+async function handleEventEditFormSubmit(e) {
+  e.preventDefault();
+
+  try {
+    // Get the event ID from the form's data attribute or from the page context
+    const eventIdMatch = document.getElementById('event-edit-form')?.getAttribute('data-event-id') ||
+                         window.currentEventId ||
+                         document.querySelector('[data-event-id]')?.getAttribute('data-event-id');
+
+    // Alternatively, try to extract from button's onclick or nearby elements
+    let eventId = eventIdMatch;
+
+    if (!eventId) {
+      // Try to get it from the action attribute if form has one
+      const form = document.getElementById('event-edit-form');
+      if (form && form.action) {
+        const match = form.action.match(/\/events\/([^\/]+)/);
+        if (match) eventId = match[1];
+      }
+    }
+
+    // Get all form values
+    const nameEl = document.getElementById('eventName');
+    const locationEl = document.getElementById('eventLocation');
+    const startDateEl = document.getElementById('eventStartDate');
+    const startTimeEl = document.getElementById('eventStartTime');
+    const endDateEl = document.getElementById('eventEndDate');
+    const endTimeEl = document.getElementById('eventEndTime');
+    const phoneEl = document.getElementById('eventContactPhone');
+    const emailEl = document.getElementById('eventContactEmail');
+    const descEl = document.getElementById('eventDescription');
+    const urlEl = document.getElementById('eventEventUrl');
+
+    const formData = {
+      name: nameEl ? nameEl.value : '',
+      location: locationEl ? locationEl.value : '',
+      startDate: startDateEl ? startDateEl.value : '',
+      startTime: startTimeEl ? startTimeEl.value : '',
+      endDate: endDateEl ? endDateEl.value : '',
+      endTime: endTimeEl ? endTimeEl.value : '',
+      timezone: 'UTC',
+      contactPhone: phoneEl ? phoneEl.value : '',
+      contactEmail: emailEl ? emailEl.value : '',
+      description: descEl ? descEl.value : '',
+      eventUrl: urlEl ? urlEl.value : ''
+    };
+
+    if (!eventId) {
+      alert('Error: Could not determine event ID');
+      return;
+    }
+
+    const response = await fetch('/events/' + eventId, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(formData)
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      // Reload the page to refresh the primary sidebar with updated event
+      window.location.reload();
+    } else {
+      alert('Error updating event: ' + (result.error || 'Unknown error'));
+    }
+  } catch (error) {
+    alert('Error updating event: ' + error.message);
   }
 }
 

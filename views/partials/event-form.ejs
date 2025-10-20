@@ -1,0 +1,144 @@
+<!-- Unified Event Form - Used for both Add and Edit flows -->
+
+<%
+  const isAddMode = !isEditing;
+  const modalId = isAddMode ? 'addEventModal' : 'editEventModal';
+  const formId = isAddMode ? 'addEventForm' : 'editEventForm';
+  const formAction = isAddMode
+    ? `/events/trips/${tripId}/events`
+    : `/events/${data?.id}`;
+  const formMethod = isAddMode ? 'POST' : 'POST';
+  const submitButtonText = isAddMode ? 'Add Event' : 'Update Event';
+  const submitButtonIcon = isAddMode ? 'bi-plus-circle' : 'bi-check-circle';
+%>
+
+<div class="modal fade" id="<%= modalId %>" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi <%= isAddMode ? 'bi-calendar-event' : 'bi-pencil' %>"></i>
+          <%= isAddMode ? 'Add Event/Activity' : 'Edit Event' %>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="<%= formId %>" method="<%= formMethod %>" action="<%= formAction %>">
+        <% if (!isAddMode) { %>
+          <input type="hidden" name="_method" value="PUT">
+        <% } %>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Event/Activity Name *</label>
+            <input
+              type="text"
+              class="form-control"
+              name="name"
+              id="<%= isAddMode ? '' : 'edit_event_name' %>"
+              value="<%= data?.name || '' %>"
+              required
+              placeholder="e.g., Museum Tour, Dinner Reservation, Concert">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Location/Venue</label>
+            <textarea
+              class="form-control"
+              name="location"
+              id="<%= isAddMode ? '' : 'edit_event_location' %>"
+              rows="2"
+              placeholder="Address or venue name with city"><%= data?.location || '' %></textarea>
+            <small class="form-text text-muted">Optional - for map placement</small>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Timezone</label>
+            <input
+              type="text"
+              class="form-control"
+              name="timezone"
+              id="<%= isAddMode ? '' : 'edit_event_timezone' %>"
+              value="<%= data?.timezone || '' %>"
+              placeholder="e.g., America/New_York">
+            <small class="form-text text-muted">For accurate local time display</small>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Start Date/Time *</label>
+              <div class="row">
+                <div class="col-7">
+                  <input
+                    type="date"
+                    class="form-control"
+                    name="startDate"
+                    id="<%= isAddMode ? '' : 'edit_event_startDate' %>"
+                    value="<%= data?.startDate || '' %>"
+                    required>
+                </div>
+                <div class="col-5">
+                  <input
+                    type="time"
+                    class="form-control"
+                    name="startTime"
+                    id="<%= isAddMode ? '' : 'edit_event_startTime' %>"
+                    value="<%= data?.startTime || '' %>"
+                    required>
+                </div>
+              </div>
+              <small class="form-text text-muted">Local start time</small>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">End Date/Time *</label>
+              <div class="row">
+                <div class="col-7">
+                  <input
+                    type="date"
+                    class="form-control"
+                    name="endDate"
+                    id="<%= isAddMode ? '' : 'edit_event_endDate' %>"
+                    value="<%= data?.endDate || '' %>"
+                    required>
+                </div>
+                <div class="col-5">
+                  <input
+                    type="time"
+                    class="form-control"
+                    name="endTime"
+                    id="<%= isAddMode ? '' : 'edit_event_endTime' %>"
+                    value="<%= data?.endTime || '' %>"
+                    required>
+                </div>
+              </div>
+              <small class="form-text text-muted">Local end time</small>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Contact Phone</label>
+              <input
+                type="tel"
+                class="form-control"
+                name="contactPhone"
+                id="<%= isAddMode ? '' : 'edit_event_contactPhone' %>"
+                value="<%= data?.contactPhone || '' %>"
+                placeholder="e.g., +1-555-0123">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Contact Email</label>
+              <input
+                type="email"
+                class="form-control"
+                name="contactEmail"
+                id="<%= isAddMode ? '' : 'edit_event_contactEmail' %>"
+                value="<%= data?.contactEmail || '' %>"
+                placeholder="contact@venue.com">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi <%= submitButtonIcon %>"></i> <%= submitButtonText %>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
