@@ -13,5 +13,6 @@ router.post('/trips/:tripId/flights', flightController.createFlight);
 router.post('/flights/standalone', flightController.createFlight); // Standalone flights
 router.put('/:id', flightController.updateFlight);
 router.delete('/:id', flightController.deleteFlight);
+router.post('/:id/restore', flightController.restoreFlight);
 
 module.exports = router;

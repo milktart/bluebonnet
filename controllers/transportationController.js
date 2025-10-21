@@ -8,6 +8,7 @@ const {
   verifyResourceOwnership,
   convertToUTC
 } = require('./helpers/resourceController');
+const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 
 exports.createTransportation = async (req, res) => {
   try {
@@ -170,12 +171,18 @@ exports.deleteTransportation = async (req, res) => {
     }
 
     const tripId = transportation.tripId;
+    const transportationData = transportation.get({ plain: true });
+    const transportationName = `${transportation.method} (${transportation.origin} → ${transportation.destination})`;
+
+    // Store the deleted transportation in session for potential restoration
+    storeDeletedItem(req.session, 'transportation', transportation.id, transportationData, transportationName);
+
     await transportation.destroy();
 
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
-      return res.json({ success: true, message: 'Transportation deleted successfully' });
+      return res.json({ success: true, message: 'Transportation deleted successfully', itemId: transportation.id });
     }
 
     redirectAfterSuccess(res, req, tripId, 'transportation', 'Transportation deleted successfully');
@@ -187,6 +194,32 @@ exports.deleteTransportation = async (req, res) => {
     }
     req.flash('error_msg', 'Error deleting transportation');
     res.redirect('back');
+  }
+};
+
+exports.restoreTransportation = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Retrieve the deleted transportation from session
+    const deletedItem = retrieveDeletedItem(req.session, 'transportation', id);
+
+    if (!deletedItem) {
+      return res.status(404).json({ success: false, error: 'Transportation not found in undo history' });
+    }
+
+    // Verify user owns the transportation
+    if (deletedItem.itemData.userId !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Unauthorized' });
+    }
+
+    // Recreate the transportation
+    await Transportation.create(deletedItem.itemData);
+
+    res.json({ success: true, message: 'Transportation restored successfully' });
+  } catch (error) {
+    console.error('Error restoring transportation:', error);
+    res.status(500).json({ success: false, error: 'Error restoring transportation' });
   }
 };
 

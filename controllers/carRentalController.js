@@ -8,6 +8,7 @@ const {
   convertToUTC
 } = require('./helpers/resourceController');
 const { utcToLocal } = require('../utils/timezoneHelper');
+const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 
 exports.createCarRental = async (req, res) => {
   try {
@@ -159,12 +160,17 @@ exports.deleteCarRental = async (req, res) => {
     }
 
     const tripId = carRental.tripId;
+    const carRentalData = carRental.get({ plain: true });
+
+    // Store the deleted car rental in session for potential restoration
+    storeDeletedItem(req.session, 'carRental', carRental.id, carRentalData, carRental.company);
+
     await carRental.destroy();
 
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
-      return res.json({ success: true, message: 'Car rental deleted successfully' });
+      return res.json({ success: true, message: 'Car rental deleted successfully', itemId: carRental.id });
     }
 
     redirectAfterSuccess(res, req, tripId, 'carRentals', 'Car rental deleted successfully');
@@ -176,6 +182,33 @@ exports.deleteCarRental = async (req, res) => {
     }
     req.flash('error_msg', 'Error deleting car rental');
     res.redirect('back');
+  }
+};
+
+exports.restoreCarRental = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Retrieve the deleted car rental from session
+    const deletedItem = retrieveDeletedItem(req.session, 'carRental', id);
+
+    if (!deletedItem) {
+      return res.status(404).json({ success: false, error: 'Car rental not found in undo history' });
+    }
+
+    // Verify user owns the trip (car rentals are trip-based)
+    const trip = await Trip.findByPk(deletedItem.itemData.tripId);
+    if (!trip || trip.userId !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Unauthorized' });
+    }
+
+    // Recreate the car rental
+    await CarRental.create(deletedItem.itemData);
+
+    res.json({ success: true, message: 'Car rental restored successfully' });
+  } catch (error) {
+    console.error('Error restoring car rental:', error);
+    res.status(500).json({ success: false, error: 'Error restoring car rental' });
   }
 };
 

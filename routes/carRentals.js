@@ -10,5 +10,6 @@ router.get('/:id/form', carRentalController.getEditForm);
 router.post('/trips/:tripId/car-rentals', carRentalController.createCarRental);
 router.put('/:id', carRentalController.updateCarRental);
 router.delete('/:id', carRentalController.deleteCarRental);
+router.post('/:id/restore', carRentalController.restoreCarRental);
 
 module.exports = router;

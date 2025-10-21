@@ -11,5 +11,6 @@ router.post('/trips/:tripId/transportation', transportationController.createTran
 router.post('/transportation/standalone', transportationController.createTransportation); // Standalone transportation
 router.put('/:id', transportationController.updateTransportation);
 router.delete('/:id', transportationController.deleteTransportation);
+router.post('/:id/restore', transportationController.restoreTransportation);
 
 module.exports = router;

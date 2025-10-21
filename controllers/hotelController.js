@@ -8,6 +8,7 @@ const {
   verifyResourceOwnershipViaTrip,
   convertToUTC
 } = require('./helpers/resourceController');
+const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 
 exports.createHotel = async (req, res) => {
   try {
@@ -149,12 +150,17 @@ exports.deleteHotel = async (req, res) => {
     }
 
     const tripId = hotel.tripId;
+    const hotelData = hotel.get({ plain: true });
+
+    // Store the deleted hotel in session for potential restoration
+    storeDeletedItem(req.session, 'hotel', hotel.id, hotelData, hotel.hotelName);
+
     await hotel.destroy();
 
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
-      return res.json({ success: true, message: 'Hotel deleted successfully' });
+      return res.json({ success: true, message: 'Hotel deleted successfully', itemId: hotel.id });
     }
 
     redirectAfterSuccess(res, req, tripId, 'hotels', 'Hotel deleted successfully');
@@ -166,6 +172,33 @@ exports.deleteHotel = async (req, res) => {
     }
     req.flash('error_msg', 'Error deleting hotel');
     res.redirect('back');
+  }
+};
+
+exports.restoreHotel = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Retrieve the deleted hotel from session
+    const deletedItem = retrieveDeletedItem(req.session, 'hotel', id);
+
+    if (!deletedItem) {
+      return res.status(404).json({ success: false, error: 'Hotel not found in undo history' });
+    }
+
+    // Verify user owns the trip (hotels are trip-based)
+    const trip = await Trip.findByPk(deletedItem.itemData.tripId);
+    if (!trip || trip.userId !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Unauthorized' });
+    }
+
+    // Recreate the hotel
+    await Hotel.create(deletedItem.itemData);
+
+    res.json({ success: true, message: 'Hotel restored successfully' });
+  } catch (error) {
+    console.error('Error restoring hotel:', error);
+    res.status(500).json({ success: false, error: 'Error restoring hotel' });
   }
 };
 

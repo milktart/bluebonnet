@@ -9,6 +9,7 @@ const {
   convertToUTC,
   geocodeWithAirportFallback
 } = require('./helpers/resourceController');
+const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 
 exports.searchAirports = async (req, res) => {
   try {
@@ -365,12 +366,18 @@ exports.deleteFlight = async (req, res) => {
     }
 
     const tripId = flight.tripId;
+    const flightData = flight.get({ plain: true });
+    const flightName = `${flight.airline} ${flight.flightNumber}`;
+
+    // Store the deleted flight in session for potential restoration
+    storeDeletedItem(req.session, 'flight', flight.id, flightData, flightName);
+
     await flight.destroy();
 
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
-      return res.json({ success: true, message: 'Flight deleted successfully' });
+      return res.json({ success: true, message: 'Flight deleted successfully', itemId: flight.id });
     }
 
     redirectAfterSuccess(res, req, tripId, 'flights', 'Flight deleted successfully');
@@ -382,6 +389,32 @@ exports.deleteFlight = async (req, res) => {
     }
     req.flash('error_msg', 'Error deleting flight');
     res.redirect('back');
+  }
+};
+
+exports.restoreFlight = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Retrieve the deleted flight from session
+    const deletedItem = retrieveDeletedItem(req.session, 'flight', id);
+
+    if (!deletedItem) {
+      return res.status(404).json({ success: false, error: 'Flight not found in undo history' });
+    }
+
+    // Verify user owns the flight
+    if (deletedItem.itemData.userId !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Unauthorized' });
+    }
+
+    // Recreate the flight
+    await Flight.create(deletedItem.itemData);
+
+    res.json({ success: true, message: 'Flight restored successfully' });
+  } catch (error) {
+    console.error('Error restoring flight:', error);
+    res.status(500).json({ success: false, error: 'Error restoring flight' });
   }
 };
 

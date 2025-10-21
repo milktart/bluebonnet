@@ -8,6 +8,7 @@ const {
   convertToUTC
 } = require('./helpers/resourceController');
 const { utcToLocal } = require('../utils/timezoneHelper');
+const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 
 exports.createEvent = async (req, res) => {
   try {
@@ -213,12 +214,17 @@ exports.deleteEvent = async (req, res) => {
     }
 
     const tripId = event.tripId;
+    const eventData = event.get({ plain: true });
+
+    // Store the deleted event in session for potential restoration
+    storeDeletedItem(req.session, 'event', event.id, eventData, event.name);
+
     await event.destroy();
 
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
-      return res.json({ success: true, message: 'Event deleted successfully' });
+      return res.json({ success: true, message: 'Event deleted successfully', itemId: event.id });
     }
 
     redirectAfterSuccess(res, req, tripId, 'events', 'Event deleted successfully');
@@ -399,5 +405,31 @@ exports.getEditForm = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send('Error loading form');
+  }
+};
+
+exports.restoreEvent = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Retrieve the deleted event from session
+    const deletedItem = retrieveDeletedItem(req.session, 'event', id);
+
+    if (!deletedItem) {
+      return res.status(404).json({ success: false, error: 'Event not found in undo history' });
+    }
+
+    // Verify user owns the event
+    if (deletedItem.itemData.userId !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Unauthorized' });
+    }
+
+    // Recreate the event
+    await Event.create(deletedItem.itemData);
+
+    res.json({ success: true, message: 'Event restored successfully' });
+  } catch (error) {
+    console.error('Error restoring event:', error);
+    res.status(500).json({ success: false, error: 'Error restoring event' });
   }
 };

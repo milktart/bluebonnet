@@ -199,3 +199,81 @@ function formatDateTime(dateString) {
     minute: '2-digit'
   });
 }
+
+// Delete notification with undo functionality
+function showDeleteNotification(itemName, itemType, itemId, restoreUrl, onUndoCallback) {
+  // Create a container if it doesn't exist
+  let container = document.getElementById('delete-notification-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'delete-notification-container';
+    container.className = 'fixed top-0 left-1/2 transform -translate-x-1/2 z-50 pt-4';
+    document.body.appendChild(container);
+  }
+
+  // Create the notification
+  const notification = document.createElement('div');
+  notification.className = 'bg-red-50 border-l-4 border-red-500 p-4 rounded-md shadow-lg max-w-md mx-auto flex items-center justify-between';
+  notification.innerHTML = `
+    <div class="flex items-center">
+      <svg class="w-5 h-5 text-red-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+      </svg>
+      <div>
+        <p class="text-sm font-medium text-red-800">${itemName} has been deleted</p>
+      </div>
+    </div>
+    <button class="ml-4 px-3 py-1 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors undo-btn">
+      Undo
+    </button>
+  `;
+
+  // Add to container
+  container.appendChild(notification);
+
+  // Handle undo
+  const undoBtn = notification.querySelector('.undo-btn');
+  let undoTimeout;
+
+  undoBtn.addEventListener('click', async () => {
+    clearTimeout(undoTimeout);
+    try {
+      const response = await fetch(restoreUrl, { method: 'POST' });
+      if (response.ok) {
+        notification.remove();
+        if (onUndoCallback) {
+          onUndoCallback();
+        }
+        // Show success message
+        const successMsg = document.createElement('div');
+        successMsg.className = 'bg-green-50 border-l-4 border-green-500 p-4 rounded-md shadow-lg max-w-md mx-auto';
+        successMsg.innerHTML = `
+          <div class="flex items-center">
+            <svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            <p class="text-sm font-medium text-green-800">${itemName} has been restored</p>
+          </div>
+        `;
+        container.appendChild(successMsg);
+        setTimeout(() => {
+          successMsg.remove();
+        }, 3000);
+      } else {
+        alert('Failed to restore ' + itemName);
+      }
+    } catch (error) {
+      console.error('Error restoring:', error);
+      alert('Error restoring ' + itemName);
+    }
+  });
+
+  // Auto-remove after 5 seconds
+  undoTimeout = setTimeout(() => {
+    notification.style.opacity = '0';
+    notification.style.transition = 'opacity 0.3s ease-out';
+    setTimeout(() => {
+      notification.remove();
+    }, 300);
+  }, 5000);
+}

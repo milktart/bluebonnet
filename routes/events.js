@@ -13,5 +13,6 @@ router.post('/trips/:tripId/events', eventController.createEvent);
 router.post('/standalone', eventController.createEvent); // Standalone events
 router.put('/:id', eventController.updateEvent);
 router.delete('/:id', eventController.deleteEvent);
+router.post('/:id/restore', eventController.restoreEvent);
 
 module.exports = router;
