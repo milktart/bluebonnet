@@ -3,6 +3,23 @@
  * Manages secondary sidebar visibility and add item menu
  */
 
+/**
+ * Execute scripts from loaded HTML content
+ * @param {Element} container - The container with the loaded HTML
+ */
+function executeLoadedScripts(container) {
+  const scripts = container.querySelectorAll('script');
+  scripts.forEach(script => {
+    const newScript = document.createElement('script');
+    if (script.src) {
+      newScript.src = script.src;
+    } else {
+      newScript.textContent = script.textContent;
+    }
+    document.head.appendChild(newScript);
+  });
+}
+
 function closeSecondarySidebar() {
   const sidebar = document.getElementById('secondary-sidebar');
   if (sidebar) {
@@ -48,7 +65,9 @@ function editItem(type, id) {
         })
         .then(html => {
           formContainer.innerHTML = html;
-          // Call form initialization functions directly instead of executing scripts
+          executeLoadedScripts(formContainer);
+
+          // Call form initialization functions
           if (typeof initializeFlightForm === 'function') {
             initializeFlightForm();
           }
@@ -150,7 +169,9 @@ function showAddForm(type) {
         .then(response => response.text())
         .then(html => {
           formContainer.innerHTML = html;
-          // Call form initialization directly
+          executeLoadedScripts(formContainer);
+
+          // Call form initialization
           if (typeof initializeFlightForm === 'function') {
             initializeFlightForm();
           }
