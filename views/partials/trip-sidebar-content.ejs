@@ -201,7 +201,10 @@
           if (!hasHotel) {
             layoversByFlightId[currentFlight.id] = {
               type: 'long',
-              city: getCityName(currentFlight.data.destination)
+              city: getCityName(currentFlight.data.destination),
+              arrivalDateTime: currentFlight.data.arrivalDateTime,
+              departureDateTime: nextFlight.data.departureDateTime,
+              destinationTimezone: currentFlight.data.destinationTimezone
             };
           }
         }
@@ -348,7 +351,7 @@
               <%
                   } else if (layoverInfo.type === 'long') {
               %>
-                <div class="accommodation-suggestion bg-amber-50 rounded-lg" onclick="showAddForm('hotel')">
+                <div class="accommodation-suggestion bg-amber-50 rounded-lg" onclick="showAddFormWithLayoverDates('hotel', '<%= layoverInfo.arrivalDateTime %>', '<%= layoverInfo.departureDateTime %>', '<%= layoverInfo.destinationTimezone %>')">
                   <div class="flex items-center space-x-3 p-3 w-full">
                     <span class="material-symbols-outlined text-amber-600 text-sm flex-shrink-0">hotel</span>
                     <div class="flex-1 min-w-0">

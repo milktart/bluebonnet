@@ -206,6 +206,7 @@ exports.restoreHotel = async (req, res) => {
 exports.getAddForm = async (req, res) => {
   try {
     const { tripId } = req.params;
+    const { checkInDateTime, checkOutDateTime, destinationTimezone } = req.query;
 
     // Verify trip ownership
     const trip = await Trip.findByPk(tripId);
@@ -213,11 +214,34 @@ exports.getAddForm = async (req, res) => {
       return res.status(403).send('Unauthorized');
     }
 
+    let formData = null;
+
+    // If layover dates are provided, pre-populate the form
+    if (checkInDateTime && checkOutDateTime) {
+      // These arrive as ISO strings (e.g., "2025-10-15T10:30:00.000Z")
+      // Convert them to the destination timezone for accurate hotel booking dates
+      // (hotel check-in/out should be in the destination city's local time)
+      const timezone = destinationTimezone || 'UTC';
+      const checkInDateTimeLocal = utcToLocal(checkInDateTime, timezone);
+      const checkOutDateTimeLocal = utcToLocal(checkOutDateTime, timezone);
+
+      // Split into date and time
+      const [checkInDate, checkInTime] = checkInDateTimeLocal.split('T');
+      const [checkOutDate, checkOutTime] = checkOutDateTimeLocal.split('T');
+
+      formData = {
+        checkInDate,
+        checkInTime: '14:00',  // Default check-in time at 2 PM
+        checkOutDate,
+        checkOutTime: '11:00'  // Default check-out time at 11 AM
+      };
+    }
+
     // Render form partial for sidebar (not modal)
     res.render('partials/hotel-form', {
       tripId: tripId,
       isEditing: false,
-      data: null,
+      data: formData,
       isModal: false  // This tells the partial to render for sidebar
     });
   } catch (error) {

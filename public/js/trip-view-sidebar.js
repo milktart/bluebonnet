@@ -155,6 +155,41 @@ function editItem(type, id) {
   }
 }
 
+/**
+ * Show add form with pre-populated layover dates for hotel
+ * @param {string} type - Type of form (e.g., 'hotel')
+ * @param {string} arrivalDateTime - ISO string of arrival time
+ * @param {string} departureDateTime - ISO string of departure time
+ * @param {string} destinationTimezone - IANA timezone string (e.g., "America/New_York")
+ */
+function showAddFormWithLayoverDates(type, arrivalDateTime, departureDateTime, destinationTimezone) {
+  const formContainer = document.getElementById('secondary-sidebar-content');
+  if (!formContainer) return;
+
+  closeEditSidebar();
+  openEditSidebar();
+
+  if (type === 'hotel') {
+    // Fetch form via AJAX with layover dates as query params
+    const params = new URLSearchParams({
+      checkInDateTime: arrivalDateTime,
+      checkOutDateTime: departureDateTime,
+      destinationTimezone: destinationTimezone || 'UTC'
+    });
+    fetch(`/hotels/trips/${tripId}/form?${params.toString()}`)
+      .then(response => response.text())
+      .then(html => {
+        formContainer.innerHTML = html;
+        // Call form initialization directly
+        if (typeof setupAsyncFormSubmission === 'function') {
+          setupAsyncFormSubmission('addHotelForm');
+        }
+        initFlightDateTimePickers();
+      })
+      .catch(error => console.error('Error loading hotel form:', error));
+  }
+}
+
 function showAddForm(type) {
   const formContainer = document.getElementById('secondary-sidebar-content');
   if (!formContainer) return;
