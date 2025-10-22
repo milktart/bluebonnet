@@ -1,7 +1,10 @@
 <!-- Trip Timeline Content - Used for both initial load and async refresh -->
 <div class="p-6">
   <%
-    // Server-side formatting functions (must match datetime-formatter.js)
+    // Shared helper functions
+    const allItems = [];
+
+    // Server-side formatting function (must match datetime-formatter.js)
     function formatDate(date) {
       const d = new Date(date);
       const day = String(d.getDate()).padStart(2, '0');
@@ -10,8 +13,6 @@
       const year = d.getFullYear();
       return `${day} ${month} ${year}`;
     }
-
-    const allItems = [];
 
     // Helper function to extract flight number without airline code
     function getFlightNum(flightNumber) {
@@ -29,6 +30,46 @@
         return parts;
       }
       return location.split(' - ')[0] || location;
+    }
+
+    // Helper function to extract airport code from location
+    function getAirportCode(location) {
+      const match = (location || '').match(/^([A-Z]{3})/);
+      return match ? match[1] : '';
+    }
+
+    // Helper function to calculate layover duration between two flights
+    function calculateLayoverDuration(flight1ArrivalTime, flight2DepartureTime) {
+      const arrival = new Date(flight1ArrivalTime);
+      const departure = new Date(flight2DepartureTime);
+      const diffMs = departure - arrival;
+      const diffHours = diffMs / (1000 * 60 * 60);
+
+      // Only show layover if less than 24 hours between flights
+      if (diffMs <= 0 || diffHours >= 24) return null;
+
+      const hours = Math.floor(diffHours);
+      const minutes = Math.round((diffHours - hours) * 60);
+
+      return { hours, minutes };
+    }
+
+    // Helper function to check if a hotel exists during the layover period
+    function hasHotelDuringPeriod(startDateTime, endDateTime, hotels) {
+      return hotels.some(h => {
+        const hotelCheckIn = new Date(h.checkInDateTime);
+        const hotelCheckOut = new Date(h.checkOutDateTime);
+        // Check if hotel overlaps with the layover period
+        return hotelCheckIn <= endDateTime && hotelCheckOut >= startDateTime;
+      });
+    }
+
+    // Helper function to format layover text
+    function getLayoverText(duration, airportCode) {
+      if (duration.hours === 0) {
+        return `━━━━ ${duration.minutes}m in ${airportCode} ━━━━`;
+      }
+      return `━━━━ ${duration.hours}h ${duration.minutes}m in ${airportCode} ━━━━`;
     }
 
     // Collect all items
@@ -110,6 +151,63 @@
       }
     });
 
+    // Pre-calculate layovers for all consecutive flights
+    const layoversByFlightId = {};
+    const layoversByDateKey = {};
+
+    for (let i = 0; i < allItems.length - 1; i++) {
+      if (allItems[i].type === 'flight' && allItems[i + 1].type === 'flight') {
+        const currentFlight = allItems[i];
+        const nextFlight = allItems[i + 1];
+        const layoverDuration = calculateLayoverDuration(currentFlight.data.arrivalDateTime, nextFlight.data.departureDateTime);
+
+        if (layoverDuration) {
+          // Layover < 24 hours
+          const layoverInfo = {
+            type: 'short',
+            duration: layoverDuration,
+            airport: getAirportCode(currentFlight.data.destination),
+            text: getLayoverText(layoverDuration, getAirportCode(currentFlight.data.destination))
+          };
+
+          // Get departure dates to check if they're on different days
+          let currentFlightDateKey, nextFlightDateKey;
+          let timezone = currentFlight.data.originTimezone;
+          if (timezone) {
+            currentFlightDateKey = formatInTimezone(currentFlight.time, timezone, 'YYYY-MM-DD');
+          } else {
+            currentFlightDateKey = currentFlight.time.toISOString().split('T')[0];
+          }
+
+          timezone = nextFlight.data.originTimezone;
+          if (timezone) {
+            nextFlightDateKey = formatInTimezone(nextFlight.time, timezone, 'YYYY-MM-DD');
+          } else {
+            nextFlightDateKey = nextFlight.time.toISOString().split('T')[0];
+          }
+
+          // If on different dates, store with next flight's date; otherwise store with current flight
+          if (currentFlightDateKey !== nextFlightDateKey) {
+            layoversByDateKey[nextFlightDateKey] = layoverInfo;
+          } else {
+            layoversByFlightId[currentFlight.id] = layoverInfo;
+          }
+        } else {
+          // Layover >= 24 hours - check if accommodation exists
+          const layoverStart = new Date(currentFlight.data.arrivalDateTime);
+          const layoverEnd = new Date(nextFlight.data.departureDateTime);
+          const hasHotel = hasHotelDuringPeriod(layoverStart, layoverEnd, trip.hotels);
+
+          if (!hasHotel) {
+            layoversByFlightId[currentFlight.id] = {
+              type: 'long',
+              city: getCityName(currentFlight.data.destination)
+            };
+          }
+        }
+      }
+    }
+
     const itemsByDate = {};
     allItems.forEach(item => {
       // Get timezone for this item to convert date to local timezone
@@ -165,13 +263,25 @@
         const displayDate = new Date(year, parseInt(month) - 1, day);
       %>
         <div class="border-l-2 border-blue-200 pl-4 ml-2">
-          <div class="mb-3">
+          <div class="mb-3 flex items-center justify-between">
             <div class="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
               <%- formatDate(displayDate) %>
             </div>
+            <%
+              const layoverForDate = layoversByDateKey[dateKey];
+              if (layoverForDate && layoverForDate.type === 'short') {
+            %>
+              <div class="text-xs text-gray-500 font-medium layover-duration" style="border: none; padding: 0; margin: 0;">
+                <%= layoverForDate.text %>
+              </div>
+            <%
+              }
+            %>
           </div>
           <div class="space-y-2">
-            <% itemsByDate[dateKey].forEach(item => {
+            <%
+              const dateItems = itemsByDate[dateKey];
+              dateItems.forEach((item, itemIndex) => {
               // Get timezone for this item based on its type
               let timezone = null;
               if (item.type === 'flight' && item.data.originTimezone) {
@@ -223,6 +333,37 @@
                   </svg>
                 </div>
               </div>
+
+              <!-- Display layover information if applicable -->
+              <%
+                const layoverInfo = layoversByFlightId[item.id];
+                if (item.type === 'flight' && layoverInfo) {
+                  if (layoverInfo.type === 'short') {
+              %>
+                <div class="flex items-center justify-center px-2">
+                  <div class="text-xs text-gray-500 font-medium layover-duration">
+                    <%= layoverInfo.text %>
+                  </div>
+                </div>
+              <%
+                  } else if (layoverInfo.type === 'long') {
+              %>
+                <div class="accommodation-suggestion bg-amber-50 rounded-lg" onclick="showAddForm('hotel')">
+                  <div class="flex items-center space-x-3 p-3 w-full">
+                    <span class="material-symbols-outlined text-amber-600 text-sm flex-shrink-0">hotel</span>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm text-amber-900 font-medium">Do you have accommodation in <%= layoverInfo.city %>?</p>
+                      <p class="text-xs text-amber-700">Add a hotel for your layover</p>
+                    </div>
+                    <svg class="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </div>
+              <%
+                  }
+                }
+              %>
             <% }) %>
           </div>
         </div>
