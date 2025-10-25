@@ -14,7 +14,14 @@ function executeLoadedScripts(container) {
     if (script.src) {
       newScript.src = script.src;
     } else {
-      newScript.textContent = script.textContent;
+      // Execute inline scripts in the container context to avoid global conflicts
+      // This wraps the script in a function to prevent duplicate const/let declarations
+      const wrappedCode = `
+        (function() {
+          ${script.textContent}
+        })();
+      `;
+      newScript.textContent = wrappedCode;
     }
     document.head.appendChild(newScript);
   });

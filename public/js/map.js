@@ -7,9 +7,9 @@ async function initializeMap(tripData, isPast = false) {
     // Find map element
     const mapEl = document.getElementById('map');
     if (!mapEl) {
-      const overviewMap = document.getElementById('overviewMap');
-      if (overviewMap) {
-        overviewMap.id = 'map';
+      const tripMap = document.getElementById('tripMap');
+      if (tripMap) {
+        tripMap.id = 'map';
       } else {
         console.error('No map element found');
         return;
@@ -369,8 +369,8 @@ async function initializeMap(tripData, isPast = false) {
       // paddingTopLeft: [top, left] - tells Leaflet to avoid the left side
       // paddingBottomRight: [bottom, right]
       map.fitBounds(bounds, {
-        paddingTopLeft: [425, 50],
-        paddingBottomRight: [0, 0],
+        paddingTopLeft: [425, 1],
+        paddingBottomRight: [0, 80],
         maxZoom: maxZoom + 0.5
       });
     } else {
@@ -391,7 +391,7 @@ async function initializeMap(tripData, isPast = false) {
     if (loading) loading.remove();
 
     // Show error
-    const mapEl = document.getElementById('map') || document.getElementById('overviewMap');
+    const mapEl = document.getElementById('map') || document.getElementById('tripMap');
     if (mapEl) {
       mapEl.innerHTML = `
         <div class="alert alert-danger">

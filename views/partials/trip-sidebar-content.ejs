@@ -104,13 +104,27 @@
     trip.transportation.forEach(t => {
       const originCity = getCityName(t.origin);
       const destinationCity = getCityName(t.destination);
+      const transportationIcon = 
+        (t.method == "train") ? "train" : 
+        (t.method == "bus") ? "directions_bus" : 
+        (t.method == "ferry") ? "directions_boat" : 
+        (t.method == "shuttle") ? "airport_shuttle" : 
+        (t.method == "taxi/rideshare") ? "hail" : 
+        (t.method == "subway/metro") ? "directions_subway" : 
+        (t.method == "tram") ? "tram" : 
+        (t.method == "funicular") ? "funicular" : 
+        (t.method == "gondola") ? "gondola_lift" : 
+        (t.method == "monorail") ? "monorail" : 
+        (t.method == "other") ? "directions_boat" : "transportation";
+
       allItems.push({
         type: 'transportation',
         time: new Date(t.departureDateTime),
         data: t,
-        display: `${t.method}: ${originCity} → ${destinationCity}`,
+        display: `${originCity} → ${destinationCity}`,
         hasSegment: true,
         marker: null,
+        icon: transportationIcon,
         id: t.id
       });
     });
@@ -304,7 +318,7 @@
               const [hours, minutes] = timeStr.split(':');
               const typeClass = `marker-${item.type}`;
             %>
-              <div class="timeline-item flex items-start space-x-3 p-3 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors cursor-pointer"
+              <div class="timeline-item flex items-start space-x-3 p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-200 transition-colors cursor-pointer"
                    data-item-id="<%= item.id %>"
                    data-item-type="<%= item.type %>"
                    data-marker="<%= item.marker || '' %>"
@@ -317,7 +331,7 @@
                 <% } else if (item.type === 'hotel') { %>
                   <span class="material-symbols-outlined text-green-600 text-sm">hotel</span>
                 <% } else if (item.type === 'transportation') { %>
-                  <span class="material-symbols-outlined text-amber-600 text-sm">train</span>
+                  <span class="material-symbols-outlined text-amber-600 text-sm"><%= item.icon %></span>
                 <% } else if (item.type === 'carRental') { %>
                   <span class="material-symbols-outlined text-gray-600 text-sm">directions_car</span>
                 <% } else if (item.type === 'event') { %>

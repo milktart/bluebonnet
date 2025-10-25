@@ -1,4 +1,5 @@
 /* Full height map with no padding/margins */
+#tripMap,
 #overviewMap {
   height: 100vh;
   width: 100vw;
@@ -8,14 +9,13 @@
   z-index: 0;
 }
 
-/* Primary Sidebar - main navigation floating over map */
+/* Primary Sidebar - main navigation/details floating over map */
 .primary-sidebar {
   position: fixed;
   top: 3vh;
   left: 3vh;
   height: calc(100vh - 6vh);
   width: 400px;
-  background: white;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 1000;
   overflow: hidden;
@@ -25,9 +25,25 @@
   flex-direction: column;
 }
 
-/* Backward compatibility */
-.sidebar-overlay {
-  @extend .primary-sidebar;
+/* Secondary Sidebar - positioned for slide-out/bottom-sheet overlay */
+.secondary-sidebar {
+  position: fixed;
+  top: 3vh;
+  left: -40vh;
+  height: calc(100vh - 6vh);
+  width: 400px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 998;
+  border-radius: 12px;
+  border: 1px solid #e4e4e7;
+  transition: transform 0.3s ease-in-out;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transform: translateX(0);
+}
+
+.secondary-sidebar.open {
+  transform: translateX(calc(400px + 46vh));
 }
 
 /* Sidebar header - fixed */
@@ -45,40 +61,9 @@
   scrollbar-gutter: stable;
 }
 
-/* Secondary Sidebar - positioned exactly like the primary sidebar but hidden underneath */
-.secondary-sidebar {
-  position: fixed;
-  top: 3vh;
-  left: 3vh;
-  height: calc(100vh - 6vh);
-  width: 400px;
-  background: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 998;
-  border-radius: 12px;
-  border: 1px solid #e4e4e7;
-  transition: transform 0.3s ease-in-out;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.secondary-sidebar.open {
-  transform: translateX(calc(400px + 3vh));
-}
-
-/* Backward compatibility */
-.new-trip-sidebar {
-  @extend .secondary-sidebar;
-}
-
-.new-trip-sidebar.open {
-  @extend .secondary-sidebar.open;
-}
-
 /* Mobile bottom sheet */
 @media (max-width: 768px) {
-  .primary-sidebar,
-  .sidebar-overlay {
+  .primary-sidebar {
     top: auto;
     bottom: 3vh;
     left: 3vh;
@@ -88,8 +73,7 @@
     border-radius: 16px;
   }
 
-  .secondary-sidebar,
-  .new-trip-sidebar {
+  .secondary-sidebar {
     top: auto;
     bottom: calc(3vh + 50vh + 3vh);
     left: 3vh;
@@ -99,39 +83,30 @@
     transform: translateY(100%);
   }
 
-  .secondary-sidebar.open,
-  .new-trip-sidebar.open {
+  .secondary-sidebar.open {
     transform: translateY(0);
   }
 }
 
 /* Custom scrollbar for sidebar */
 .primary-sidebar::-webkit-scrollbar,
-.sidebar-overlay::-webkit-scrollbar,
-.secondary-sidebar::-webkit-scrollbar,
-.new-trip-sidebar::-webkit-scrollbar {
+.secondary-sidebar::-webkit-scrollbar {
   width: 6px;
 }
 
 .primary-sidebar::-webkit-scrollbar-track,
-.sidebar-overlay::-webkit-scrollbar-track,
-.secondary-sidebar::-webkit-scrollbar-track,
-.new-trip-sidebar::-webkit-scrollbar-track {
+.secondary-sidebar::-webkit-scrollbar-track {
   background: #f1f5f9;
 }
 
 .primary-sidebar::-webkit-scrollbar-thumb,
-.sidebar-overlay::-webkit-scrollbar-thumb,
-.secondary-sidebar::-webkit-scrollbar-thumb,
-.new-trip-sidebar::-webkit-scrollbar-thumb {
+.secondary-sidebar::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 3px;
 }
 
 .primary-sidebar::-webkit-scrollbar-thumb:hover,
-.sidebar-overlay::-webkit-scrollbar-thumb:hover,
-.secondary-sidebar::-webkit-scrollbar-thumb:hover,
-.new-trip-sidebar::-webkit-scrollbar-thumb:hover {
+.secondary-sidebar::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
@@ -145,7 +120,8 @@
   mix-blend-mode: unset !important;
 }
 
-/* Trip item hover effects */
+/* Timeline item hover effects */
+.timeline-item:hover,
 .trip-item:hover {
   background-color: #f8fafc;
 }
@@ -202,4 +178,41 @@
   vertical-align: middle;
   margin-right: 4px;
   margin-top: -2px;
+}
+
+/* Layover duration display */
+.layover-duration {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 0.75rem;
+  letter-spacing: 0.01em;
+}
+
+/* Accommodation suggestion card */
+.accommodation-suggestion {
+  animation: slideIn 0.3s ease-out;
+  border: 1px dashed #fbbf24 !important;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.accommodation-suggestion:hover {
+  background: #fef3c7;
+  border-color: #f59e0b !important;
 }

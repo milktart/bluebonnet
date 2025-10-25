@@ -31,7 +31,7 @@ function updateMapData(newData, isPast = false) {
 
   // Reinitialize the map with new data
   if (typeof initOverviewMap !== 'undefined') {
-    initOverviewMap(newData, 'overviewMap', isPast)
+    initOverviewMap(newData, 'tripMap', isPast)
       .then((map) => {
         currentMap = map;
       })
@@ -526,7 +526,7 @@ function stopTripAnimation() {
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function () {
   if (typeof L === 'undefined') {
-    const mapEl = document.getElementById('overviewMap');
+    const mapEl = document.getElementById('tripMap');
     if (mapEl) {
       mapEl.innerHTML = '<div class="bg-red-50 border border-red-200 rounded-md p-4 text-red-700">Map library not loaded.</div>';
     }
@@ -572,7 +572,7 @@ document.addEventListener('DOMContentLoaded', function () {
           });
         })
         .catch(error => {
-          const mapEl = document.getElementById('overviewMap');
+          const mapEl = document.getElementById('tripMap');
           if (mapEl) {
             mapEl.innerHTML = '<div class="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-yellow-700">Map failed to load: ' + error.message + '</div>';
           }

@@ -4,14 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%- title %></title>
+  <!-- Core Application CSS -->
+  <link rel="stylesheet" href="/css/core.css">
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <!-- Google Material Symbols -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   <!-- Tailwind CSS -->
   <link href="https://unpkg.com/tailwindcss@^2.0/dist/tailwind.min.css" rel="stylesheet">
-  <!-- Trip View Styles -->
-  <link href="/css/trip-view.css" rel="stylesheet">
+  <!-- Trips Styles -->
+  <link href="/css/trips.css" rel="stylesheet">
 </head>
 <body class="overflow-hidden">
   <!-- Navigation hidden on this full-screen map view -->
@@ -23,7 +25,7 @@
   <div id="tripMap"></div>
 
   <!-- Secondary Sidebar - for editing forms -->
-  <div id="secondary-sidebar" class="secondary-sidebar">
+  <div id="secondary-sidebar" class="secondary-sidebar sidebar">
     <div class="p-6">
       <div id="secondary-sidebar-content">
         <!-- Dynamic edit content will be inserted here -->
@@ -32,7 +34,7 @@
   </div>
 
   <!-- Primary Sidebar -->
-  <div class="primary-sidebar">
+  <div class="primary-sidebar sidebar">
     <!-- Fixed Header -->
     <div class="sidebar-header p-6">
       <!-- Header -->
@@ -203,6 +205,35 @@
     function showAddItemMenu() {
       const container = document.getElementById('secondary-sidebar-content');
       const content = `
+        <div class="flex items-start justify-between mb-6">
+          <div class="flex items-center">
+            <button onclick="closeSecondarySidebar()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <h2 class="text-lg font-bold text-gray-900">Add Item</h2>
+          </div>
+
+          <div class="flex items-center">
+            <div class="mx-1 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-blue-600" style="font-size: 16px;">flight</span>
+            </div>
+            <div class="mx-1 w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-green-600" style="font-size: 16px;">hotel</span>
+            </div>
+            <div class="mx-1 w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+              <span class="material-symbols-outlined text-amber-600" style="font-size: 16px;">train</span>
+            </div>
+            <div class="mx-1 w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+              <span class="material-symbols-outlined text-gray-600" style="font-size: 16px;">directions_car</span>
+            </div>
+            <div class="mx-1 w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+              <span class="material-symbols-outlined text-red-600" style="font-size: 16px;">event</span>
+            </div>
+          </div>
+        </div>
+
         <div class="space-y-3">
           <button onclick="showAddForm('flight')" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors">
             <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
