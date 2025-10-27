@@ -578,10 +578,6 @@ async function removeVoucherAttachment(flightId, attachmentId) {
     return;
   }
 
-  if (!confirm('Are you sure you want to remove this voucher attachment?')) {
-    return;
-  }
-
   try {
     const response = await fetch(`/vouchers/flights/${flightId}/attachments/${attachmentId}`, {
       method: 'DELETE'
