@@ -410,13 +410,18 @@ async function submitVoucherAttachment(event) {
     console.log('[submitVoucherAttachment] Response result:', result);
 
     if (result.success) {
-      console.log('[submitVoucherAttachment] Attachment successful, closing tertiary sidebar');
+      console.log('[submitVoucherAttachment] Attachment successful');
+
+      // Store flightId BEFORE closing the tertiary sidebar (which resets currentFlightId to null)
+      const flightIdToRefresh = currentFlightId;
+      console.log('[submitVoucherAttachment] Saved flightId for refresh:', flightIdToRefresh);
+
       closeTertiarySidebar();
       alert('Voucher attached successfully!');
 
       // Refresh the secondary sidebar with updated flight form
-      console.log('[submitVoucherAttachment] Refreshing flight attachments with flightId:', currentFlightId);
-      refreshFlightAttachments(currentFlightId);
+      console.log('[submitVoucherAttachment] Refreshing flight attachments with flightId:', flightIdToRefresh);
+      refreshFlightAttachments(flightIdToRefresh);
     } else {
       console.error('[submitVoucherAttachment] Server error:', result.message);
       alert('Error: ' + result.message);
