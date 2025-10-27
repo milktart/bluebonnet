@@ -491,6 +491,13 @@ async function submitNewVoucher(event) {
  * Reloads the flight form to display updated voucher attachments
  */
 async function refreshFlightAttachments(flightId) {
+  // Validate flightId before attempting to fetch
+  if (!flightId || flightId === 'null' || flightId === 'undefined') {
+    console.error('Invalid flightId for refresh:', flightId);
+    alert('Error: Invalid flight ID. Please reload the page.');
+    return;
+  }
+
   try {
     // Fetch the updated flight form
     // The getEditForm endpoint fetches the flight with its trip relationship
@@ -567,6 +574,13 @@ function closeTertiarySidebar() {
  * Remove a voucher attachment
  */
 async function removeVoucherAttachment(flightId, attachmentId) {
+  // Validate IDs before proceeding
+  if (!flightId || !attachmentId || flightId === 'null' || attachmentId === 'null') {
+    console.error('Invalid IDs for removal:', { flightId, attachmentId });
+    alert('Error: Invalid flight or attachment ID');
+    return;
+  }
+
   if (!confirm('Are you sure you want to remove this voucher attachment?')) {
     return;
   }

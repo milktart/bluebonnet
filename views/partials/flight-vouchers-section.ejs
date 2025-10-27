@@ -46,7 +46,7 @@
             <% if (isOwner) { %>
               <button
                 type="button"
-                onclick="removeVoucherAttachment('<%= flight.id %>', '<%= attachment.id %>')"
+                onclick="handleRemoveVoucherAttachment('<%= flight.id %>', '<%= attachment.id %>')"
                 class="text-xs text-red-600 hover:text-red-800 mt-1"
               >
                 Remove
@@ -95,35 +95,15 @@
 
 <script>
   /**
-   * Remove a voucher attachment
+   * Handle remove voucher attachment - wrapper to bridge flight.id from template to global function
+   * This is called from the template where we have flight.id context
    */
-  async function removeVoucherAttachment(flightId, attachmentId) {
-    if (!confirm('Are you sure you want to remove this voucher attachment?')) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/vouchers/flights/${flightId}/attachments/${attachmentId}`, {
-        method: 'DELETE'
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        alert('Voucher attachment removed successfully!');
-
-        // Reload the flight form or refresh
-        if (typeof refreshFlightAttachments === 'function') {
-          refreshFlightAttachments(flightId);
-        } else {
-          location.reload();
-        }
-      } else {
-        alert('Error: ' + result.message);
-      }
-    } catch (error) {
-      console.error('Error removing attachment:', error);
-      alert('Error removing voucher attachment');
+  function handleRemoveVoucherAttachment(flightId, attachmentId) {
+    // Call the global removeVoucherAttachment from voucher-sidebar-manager.js
+    if (typeof removeVoucherAttachment === 'function') {
+      removeVoucherAttachment(flightId, attachmentId);
+    } else {
+      alert('Error: Voucher removal function not available');
     }
   }
 </script>

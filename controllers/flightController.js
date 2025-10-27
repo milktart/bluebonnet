@@ -529,6 +529,7 @@ exports.getEditForm = async (req, res) => {
       isEditing: true,
       isOwner: true,  // User is owner since we already verified ownership above
       data: {
+        id: flight.id,  // Explicitly include the flight ID for voucher attachments
         ...flight.toJSON(),
         departureDate,
         departureTime,
