@@ -141,8 +141,14 @@ exports.attachVoucher = async (req, res) => {
       attachmentDate: new Date()
     });
 
-    // Update voucher's usedAmount (only for credit/card types with monetary values)
-    if (!certificateTypes.includes(voucher.type) && voucher.totalValue) {
+    // Update voucher based on type
+    if (certificateTypes.includes(voucher.type)) {
+      // For certificate types, mark as USED immediately when attached
+      // Certificates can only be used once
+      voucher.status = 'USED';
+      await voucher.save();
+    } else if (voucher.totalValue) {
+      // For credit/card types, update usedAmount and check if fully used
       voucher.usedAmount = parseFloat(voucher.usedAmount || 0) + parseFloat(attachmentValue);
 
       // Update status if now fully used
@@ -283,16 +289,23 @@ exports.removeAttachment = async (req, res) => {
 
     // Get voucher to update its used amount
     const voucher = await Voucher.findByPk(attachment.voucherId);
+    const certificateTypes = ['UPGRADE_CERT', 'COMPANION_CERT'];
 
     // Remove attachment
     await attachment.destroy();
 
-    // Update voucher's used amount
-    voucher.usedAmount = parseFloat(voucher.usedAmount) - parseFloat(attachment.attachmentValue);
-
-    // Update status if no longer fully used
-    if (voucher.status === 'USED' && voucher.usedAmount < voucher.totalValue) {
+    // Update voucher based on type
+    if (certificateTypes.includes(voucher.type)) {
+      // For certificate types, mark back to OPEN when attachment is removed
       voucher.status = 'OPEN';
+    } else {
+      // For credit/card types, update used amount
+      voucher.usedAmount = parseFloat(voucher.usedAmount) - parseFloat(attachment.attachmentValue);
+
+      // Update status if no longer fully used
+      if (voucher.status === 'USED' && voucher.usedAmount < voucher.totalValue) {
+        voucher.status = 'OPEN';
+      }
     }
 
     await voucher.save();

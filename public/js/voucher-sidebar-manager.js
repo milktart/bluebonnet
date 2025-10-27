@@ -457,18 +457,26 @@ async function submitNewVoucher(event) {
     if (result.success) {
       alert('Voucher created successfully! You can now attach it to flights.');
 
-      // Save the IDs before closing the sidebar (closeTertiarySidebar sets them to null)
-      const savedFlightId = currentFlightId;
-      const savedTripId = currentTripId;
-      const savedFlightDetails = currentFlightDetails;
+      // Refresh the available vouchers list to include the newly created one
+      try {
+        const [vouchersResponse, companionsResponse] = await Promise.all([
+          fetch(`/vouchers/available-for-flight/${currentFlightId}`),
+          fetch(`/api/trips/${currentTripId}/companions`)
+        ]);
 
-      closeTertiarySidebar();
+        const vouchersResult = await vouchersResponse.json();
+        const companionsResult = await companionsResponse.json();
 
-      // Refresh the voucher list so the newly created voucher appears
-      if (typeof openVoucherAttachmentPanel === 'function') {
-        // Refresh by reopening the panel with saved IDs
-        openVoucherAttachmentPanel(savedFlightId, savedTripId, savedFlightDetails);
-      } else {
+        if (vouchersResult.success) {
+          availableVouchers = vouchersResult.data;
+          // Re-render the attach tab with updated vouchers and companions
+          renderVoucherPanel(companionsResult.success ? companionsResult.data : []);
+          // Switch back to attach tab so user can attach the new voucher
+          switchVoucherTab('attach');
+        }
+      } catch (error) {
+        console.error('Error refreshing vouchers:', error);
+        // Fall back to reloading if refresh fails
         location.reload();
       }
     } else {

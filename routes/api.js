@@ -34,4 +34,53 @@ router.get('/trips/:id', async (req, res) => {
   }
 });
 
+// API endpoint to fetch trip companions
+router.get('/trips/:id/companions', async (req, res) => {
+  try {
+    const { Trip, TravelCompanion, TripCompanion } = require('../models');
+
+    // Verify user owns the trip
+    const trip = await Trip.findOne({
+      where: { id: req.params.id, userId: req.user.id }
+    });
+
+    if (!trip) {
+      return res.status(404).json({
+        success: false,
+        error: 'Trip not found'
+      });
+    }
+
+    // Fetch companions for this trip
+    const companions = await TripCompanion.findAll({
+      where: { tripId: req.params.id },
+      include: [
+        {
+          model: TravelCompanion,
+          as: 'companion',
+          attributes: ['id', 'name', 'email']
+        }
+      ]
+    });
+
+    // Transform to simpler format
+    const companionList = companions.map(tc => ({
+      id: tc.companion.id,
+      name: tc.companion.name,
+      email: tc.companion.email
+    }));
+
+    res.json({
+      success: true,
+      data: companionList
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      error: 'Error fetching trip companions'
+    });
+  }
+});
+
 module.exports = router;

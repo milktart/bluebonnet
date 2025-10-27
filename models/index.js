@@ -26,6 +26,8 @@ db.CarRental = require('./CarRental')(sequelize, Sequelize);
 db.Event = require('./Event')(sequelize, Sequelize);
 db.TravelCompanion = require('./TravelCompanion')(sequelize, Sequelize);
 db.TripCompanion = require('./TripCompanion')(sequelize, Sequelize);
+db.Voucher = require('./Voucher')(sequelize, Sequelize);
+db.VoucherAttachment = require('./VoucherAttachment')(sequelize, Sequelize);
 
 // Define associations
 Object.keys(db).forEach(modelName => {

@@ -24,15 +24,6 @@
   <!-- Full-screen map -->
   <div id="tripMap"></div>
 
-  <!-- Secondary Sidebar - for editing forms -->
-  <div id="secondary-sidebar" class="secondary-sidebar sidebar">
-    <div class="p-6">
-      <div id="secondary-sidebar-content">
-        <!-- Dynamic edit content will be inserted here -->
-      </div>
-    </div>
-  </div>
-
   <!-- Primary Sidebar -->
   <div class="primary-sidebar sidebar">
     <!-- Fixed Header -->
@@ -124,6 +115,25 @@
       <%- include('../partials/trip-sidebar-content') %>
     </div>
   </div>
+
+  <!-- Secondary Sidebar - for editing forms -->
+  <div id="secondary-sidebar" class="secondary-sidebar sidebar">
+    <div class="p-6">
+      <div id="secondary-sidebar-content">
+        <!-- Dynamic edit content will be inserted here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Tertiary Sidebar - for editing forms -->
+  <div id="tertiary-sidebar" class="tertiary-sidebar sidebar">
+    <div class="p-6">
+      <div id="tertiary-sidebar-content">
+        <!-- Dynamic edit content will be inserted here -->
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="/js/datetime-formatter.js"></script>
@@ -139,11 +149,14 @@
   <script src="/js/async-form-handler.js"></script>
   <script src="/js/trip-view-utils.js"></script>
   <script src="/js/companion-selector.js"></script>
+  <script src="/js/voucher-sidebar-manager.js"></script>
 
   <script>
     // Trip data for map
     // Make trip ID available globally for sidebar form loading
     const tripId = '<%- trip.id %>';
+    const userId = '<%- user.id %>';
+    const userName = '<%- user.firstName %> <%- user.lastName %>';
 
     const tripData = {
       id: tripId,
@@ -305,11 +318,6 @@
       if (container) container.innerHTML = content;
       openSecondarySidebar();
     }
-
-
-
-
-
 
     // Toggle event time fields visibility
     function toggleEventTimesVisibility(formType, isAllDay) {

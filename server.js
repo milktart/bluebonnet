@@ -62,6 +62,7 @@ app.use('/hotels', require('./routes/hotels'));
 app.use('/transportation', require('./routes/transportation'));
 app.use('/car-rentals', require('./routes/carRentals'));
 app.use('/events', require('./routes/events'));
+app.use('/vouchers', require('./routes/vouchers'));
 
 // 404 handler
 app.use((req, res) => {

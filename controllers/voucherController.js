@@ -431,9 +431,21 @@ exports.getAvailableVouchersForFlight = async (req, res) => {
       ]
     });
 
-    // Calculate remaining balance and filter out expired
+    // Filter and map available vouchers
     const availableVouchers = vouchers
-      .filter(v => !v.getIsExpired())
+      .filter(v => !v.getIsExpired()) // Filter out expired vouchers
+      .filter(v => {
+        // Filter based on type:
+        // Certificate types (UPGRADE_CERT, COMPANION_CERT) must be OPEN
+        // Credit types can be OPEN or PARTIALLY_USED (as long as they have balance)
+        const certificateTypes = ['UPGRADE_CERT', 'COMPANION_CERT'];
+        if (certificateTypes.includes(v.type)) {
+          // Certificates should only appear if they're OPEN (not yet used)
+          return v.status === 'OPEN';
+        }
+        // For credit types, they're available if they have remaining balance
+        return v.getRemainingBalance() > 0;
+      })
       .map(v => {
         const voucherData = v.toJSON();
         voucherData.remainingBalance = v.getRemainingBalance();

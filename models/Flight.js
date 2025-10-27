@@ -93,6 +93,12 @@ module.exports = (sequelize, DataTypes) => {
       as: 'trip',
       constraints: false
     });
+
+    Flight.hasMany(models.VoucherAttachment, {
+      foreignKey: 'flightId',
+      as: 'voucherAttachments',
+      onDelete: 'CASCADE'
+    });
   };
 
   return Flight;

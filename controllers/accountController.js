@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
-const { User, TravelCompanion } = require('../models');
+const { User, TravelCompanion, Voucher } = require('../models');
+const { Sequelize } = require('sequelize');
 
 exports.getAccountSettings = async (req, res) => {
   try {
@@ -173,6 +174,60 @@ exports.revokeCompanionAccess = async (req, res) => {
       return res.status(500).json({ success: false, error: errorMsg });
     }
     req.flash('error_msg', errorMsg);
+    res.redirect('/account');
+  }
+};
+
+exports.getVouchers = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { status, type } = req.query;
+
+    const where = {
+      [Sequelize.Op.or]: [
+        { userId: userId },
+        { userId: null }
+      ]
+    };
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (type) {
+      where.type = type;
+    }
+
+    const vouchers = await Voucher.findAll({
+      where,
+      include: [
+        {
+          model: User,
+          as: 'owner',
+          attributes: ['id', 'firstName', 'lastName', 'email']
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+
+    // Calculate remaining balance and expiration info for each voucher
+    const vouchersWithInfo = vouchers.map(v => {
+      const vData = v.toJSON();
+      vData.remainingBalance = v.getRemainingBalance();
+      vData.daysUntilExpiration = v.getDaysUntilExpiration();
+      vData.isExpired = v.getIsExpired();
+      vData.usagePercent = Math.round((v.usedAmount / v.totalValue) * 100);
+      return vData;
+    });
+
+    res.render('account/vouchers', {
+      title: 'Travel Vouchers & Credits',
+      user: req.user,
+      vouchers: vouchersWithInfo
+    });
+  } catch (error) {
+    console.error('Error loading vouchers:', error);
+    req.flash('error_msg', 'Error loading vouchers');
     res.redirect('/account');
   }
 };

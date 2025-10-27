@@ -1,4 +1,13 @@
 .sidebar {
+  position: fixed;
+  top: 3vh;
+  height: calc(100vh - 6vh);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid #e4e4e7;
+
   background-color: rgba(255, 255, 255, 0.6) !important;
   backdrop-filter: blur(5px) !important;
 }

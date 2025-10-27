@@ -57,6 +57,11 @@ function showAddItemMenu() {
 function editItem(type, id) {
   openEditSidebar();
 
+  // Close tertiary sidebar when editing a different flight
+  if (type === 'flight' && currentFlightId && currentFlightId !== id) {
+    closeTertiarySidebar();
+  }
+
   const formContainer = document.getElementById('secondary-sidebar-content');
   if (!formContainer) return;
 

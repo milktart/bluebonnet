@@ -49,6 +49,13 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: 'userId',
       as: 'companionProfile'
     });
+
+    // Vouchers owned by this user
+    User.hasMany(models.Voucher, {
+      foreignKey: 'userId',
+      as: 'vouchers',
+      onDelete: 'CASCADE'
+    });
   };
 
   return User;

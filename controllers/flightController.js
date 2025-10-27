@@ -1,4 +1,4 @@
-const { Flight, Trip } = require('../models');
+const { Flight, Trip, VoucherAttachment, Voucher } = require('../models');
 const airportService = require('../services/airportService');
 const { utcToLocal } = require('../utils/timezoneHelper');
 const {
@@ -453,9 +453,22 @@ exports.getEditForm = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Fetch the flight
+    // Fetch the flight with voucher attachments
     const flight = await Flight.findByPk(id, {
-      include: [{ model: Trip, as: 'trip', required: false }]
+      include: [
+        { model: Trip, as: 'trip', required: false },
+        {
+          model: VoucherAttachment,
+          as: 'voucherAttachments',
+          include: [
+            {
+              model: Voucher,
+              as: 'voucher',
+              attributes: ['id', 'type', 'issuer', 'voucherNumber', 'currency', 'totalValue', 'usedAmount', 'status']
+            }
+          ]
+        }
+      ]
     });
 
     // Verify ownership

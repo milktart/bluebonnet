@@ -11,31 +11,25 @@
 
 /* Primary Sidebar - main navigation/details floating over map */
 .primary-sidebar {
-  position: fixed;
-  top: 3vh;
   left: 3vh;
-  height: calc(100vh - 6vh);
   width: 400px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  overflow: hidden;
-  border-radius: 12px;
-  border: 1px solid #e4e4e7;
   display: flex;
   flex-direction: column;
 }
 
 /* Secondary Sidebar - positioned for slide-out/bottom-sheet overlay */
 .secondary-sidebar {
-  position: fixed;
-  top: 3vh;
-  left: -40vh;
-  height: calc(100vh - 6vh);
+  left: -100vh;
   width: 400px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 998;
-  border-radius: 12px;
-  border: 1px solid #e4e4e7;
+  transition: transform 0.3s ease-in-out;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transform: translateX(0);
+}
+
+.tertiary-sidebar { 
+  left: -100vh;
+  width: calc(100vw - 800px - 12vh);
   transition: transform 0.3s ease-in-out;
   overflow-y: auto;
   overflow-x: hidden;
@@ -43,7 +37,11 @@
 }
 
 .secondary-sidebar.open {
-  transform: translateX(calc(400px + 46vh));
+  transform: translateX(calc(400px + 106vh));
+}
+
+.tertiary-sidebar.open {
+  transform: translateX(calc(800px + 109vh));
 }
 
 /* Sidebar header - fixed */
@@ -215,4 +213,30 @@
 .accommodation-suggestion:hover {
   background: #fef3c7;
   border-color: #f59e0b !important;
+}
+
+/* Voucher Tab Styling */
+.voucher-tab {
+  transition: opacity 0.2s ease-in-out;
+}
+
+.voucher-tab.active {
+  opacity: 1;
+}
+
+.voucher-tab.hidden {
+  display: none !important;
+}
+
+.tab-button.active-tab {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+}
+
+.tab-button {
+  transition: all 0.2s ease-in-out;
+}
+
+.tab-button:hover {
+  border-bottom-color: #d1d5db;
 }

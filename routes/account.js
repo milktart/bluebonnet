@@ -22,4 +22,7 @@ router.put('/password', validatePasswordChange, accountController.changePassword
 // PUT revoke companion access
 router.put('/companions/:companionId/revoke', accountController.revokeCompanionAccess);
 
+// GET vouchers page
+router.get('/vouchers', accountController.getVouchers);
+
 module.exports = router;
