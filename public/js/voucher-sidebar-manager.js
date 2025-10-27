@@ -391,12 +391,8 @@ async function submitVoucherAttachment(event) {
       closeTertiarySidebar();
       alert('Voucher attached successfully!');
 
-      // Refresh flight attachments if available
-      if (typeof refreshFlightAttachments === 'function') {
-        refreshFlightAttachments(currentFlightId);
-      } else {
-        location.reload();
-      }
+      // Refresh the secondary sidebar with updated flight form
+      refreshFlightAttachments(currentFlightId);
     } else {
       alert('Error: ' + result.message);
     }
@@ -489,6 +485,58 @@ async function submitNewVoucher(event) {
 }
 
 /**
+ * Refresh flight attachments in secondary sidebar asynchronously
+ * Reloads the flight form to display updated voucher attachments
+ */
+async function refreshFlightAttachments(flightId) {
+  try {
+    // Fetch the updated flight form
+    const response = await fetch(`/flights/${flightId}/form`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const html = await response.text();
+
+    // Update the secondary sidebar with the new form
+    const container = document.getElementById('secondary-sidebar-content');
+    if (container) {
+      container.innerHTML = html;
+
+      // Execute any scripts in the loaded content
+      const scripts = container.querySelectorAll('script');
+      scripts.forEach(script => {
+        const newScript = document.createElement('script');
+        if (script.src) {
+          newScript.src = script.src;
+        } else {
+          newScript.textContent = script.textContent;
+        }
+        document.head.appendChild(newScript);
+      });
+
+      // Call form initialization functions if they exist
+      if (typeof initializeFlightForm === 'function') {
+        initializeFlightForm();
+      }
+      if (typeof setupAsyncFormSubmission === 'function') {
+        setupAsyncFormSubmission('editFlightForm');
+      }
+      if (typeof initFlightDateTimePickers === 'function') {
+        initFlightDateTimePickers();
+      }
+      if (typeof initAirportSearch === 'function') {
+        initAirportSearch();
+      }
+    }
+  } catch (error) {
+    console.error('Error refreshing flight attachments:', error);
+    alert('Error refreshing flight information. Please try reloading the page.');
+  }
+}
+
+/**
  * Open tertiary sidebar
  */
 function openTertiarySidebar() {
@@ -530,12 +578,8 @@ async function removeVoucherAttachment(flightId, attachmentId) {
     if (result.success) {
       alert('Voucher attachment removed successfully!');
 
-      // Refresh flight attachments if available
-      if (typeof refreshFlightAttachments === 'function') {
-        refreshFlightAttachments(flightId);
-      } else {
-        location.reload();
-      }
+      // Refresh the secondary sidebar with updated flight form
+      refreshFlightAttachments(flightId);
     } else {
       alert('Error: ' + result.message);
     }
