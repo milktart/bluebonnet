@@ -46,7 +46,7 @@
             <% if (isOwner) { %>
               <button
                 type="button"
-                onclick="handleRemoveVoucherAttachment('<%= flight.id %>', '<%= attachment.id %>')"
+                onclick="removeVoucherAttachment('<%= flight.id %>', '<%= attachment.id %>')"
                 class="text-xs text-red-600 hover:text-red-800 mt-1"
               >
                 Remove
@@ -93,17 +93,3 @@
   </button>
 </div>
 
-<script>
-  /**
-   * Handle remove voucher attachment - wrapper to bridge flight.id from template to global function
-   * This is called from the template where we have flight.id context
-   */
-  function handleRemoveVoucherAttachment(flightId, attachmentId) {
-    // Call the global removeVoucherAttachment from voucher-sidebar-manager.js
-    if (typeof removeVoucherAttachment === 'function') {
-      removeVoucherAttachment(flightId, attachmentId);
-    } else {
-      alert('Error: Voucher removal function not available');
-    }
-  }
-</script>
