@@ -604,8 +604,6 @@ async function removeVoucherAttachment(flightId, attachmentId) {
     const result = await response.json();
 
     if (result.success) {
-      alert('Voucher attachment removed successfully!');
-
       // Refresh the secondary sidebar with updated flight form
       refreshFlightAttachments(flightId);
     } else {
