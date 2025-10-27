@@ -454,6 +454,7 @@ exports.getEditForm = async (req, res) => {
     const { id } = req.params;
 
     // Fetch the flight with voucher attachments
+    const { User, TravelCompanion } = require('../models');
     const flight = await Flight.findByPk(id, {
       include: [
         { model: Trip, as: 'trip', required: false },
@@ -470,6 +471,23 @@ exports.getEditForm = async (req, res) => {
         }
       ]
     });
+
+    // If flight has voucher attachments, augment with traveler info
+    if (flight && flight.voucherAttachments && flight.voucherAttachments.length > 0) {
+      for (const attachment of flight.voucherAttachments) {
+        if (attachment.travelerType === 'USER') {
+          const user = await User.findByPk(attachment.travelerId, {
+            attributes: ['id', 'firstName', 'lastName', 'email']
+          });
+          attachment.traveler = user;
+        } else if (attachment.travelerType === 'COMPANION') {
+          const companion = await TravelCompanion.findByPk(attachment.travelerId, {
+            attributes: ['id', 'name', 'email']
+          });
+          attachment.traveler = companion;
+        }
+      }
+    }
 
     // Verify ownership
     if (!flight || flight.userId !== req.user.id) {
