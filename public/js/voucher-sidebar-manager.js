@@ -348,13 +348,22 @@ function onVoucherSelected(event) {
 async function submitVoucherAttachment(event) {
   event.preventDefault();
 
+  console.log('[submitVoucherAttachment] Starting attachment...');
+  console.log('[submitVoucherAttachment] currentFlightId:', currentFlightId);
+  console.log('[submitVoucherAttachment] currentTripId:', currentTripId);
+
   const voucherId = document.getElementById('voucherSelect').value;
   const travelerValue = document.getElementById('travelerId').value;
   const voucherType = document.getElementById('voucherSelect').options[document.getElementById('voucherSelect').selectedIndex]?.dataset.type;
   const certificateTypes = ['UPGRADE_CERT', 'COMPANION_CERT'];
 
+  console.log('[submitVoucherAttachment] voucherId:', voucherId);
+  console.log('[submitVoucherAttachment] travelerValue:', travelerValue);
+  console.log('[submitVoucherAttachment] voucherType:', voucherType);
+
   // Validate
   if (!voucherId || !travelerValue) {
+    console.error('[submitVoucherAttachment] Missing required fields');
     alert('Please fill in all required fields');
     return;
   }
@@ -363,6 +372,7 @@ async function submitVoucherAttachment(event) {
   if (!certificateTypes.includes(voucherType)) {
     const attachmentValue = document.getElementById('attachmentValue').value;
     if (!attachmentValue) {
+      console.error('[submitVoucherAttachment] Missing attachment value');
       alert('Please specify an attachment amount');
       return;
     }
@@ -380,8 +390,13 @@ async function submitVoucherAttachment(event) {
     notes
   };
 
+  console.log('[submitVoucherAttachment] Payload:', payload);
+
   try {
-    const response = await fetch(`/vouchers/flights/${currentFlightId}/attach`, {
+    const url = `/vouchers/flights/${currentFlightId}/attach`;
+    console.log('[submitVoucherAttachment] Calling attachment API:', url);
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -389,19 +404,26 @@ async function submitVoucherAttachment(event) {
       body: JSON.stringify(payload)
     });
 
+    console.log('[submitVoucherAttachment] Response status:', response.status);
+
     const result = await response.json();
+    console.log('[submitVoucherAttachment] Response result:', result);
 
     if (result.success) {
+      console.log('[submitVoucherAttachment] Attachment successful, closing tertiary sidebar');
       closeTertiarySidebar();
       alert('Voucher attached successfully!');
 
       // Refresh the secondary sidebar with updated flight form
+      console.log('[submitVoucherAttachment] Refreshing flight attachments with flightId:', currentFlightId);
       refreshFlightAttachments(currentFlightId);
     } else {
+      console.error('[submitVoucherAttachment] Server error:', result.message);
       alert('Error: ' + result.message);
     }
   } catch (error) {
     console.error('Error attaching voucher:', error);
+    console.error('[submitVoucherAttachment] Stack trace:', error.stack);
     alert('Error attaching voucher');
   }
 }
