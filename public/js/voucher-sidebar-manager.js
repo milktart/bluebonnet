@@ -18,7 +18,6 @@ async function openVoucherAttachmentPanel(flightId, tripId, flightDetails) {
   // Validate that we have required IDs
   if (!flightId || !tripId) {
     console.error('openVoucherAttachmentPanel - Missing required IDs:', { flightId, tripId });
-    alert('Error: Flight or trip ID is missing. Please refresh the page.');
     return;
   }
 
@@ -49,7 +48,6 @@ async function openVoucherAttachmentPanel(flightId, tripId, flightDetails) {
     renderVoucherPanel(companionsResult.success ? companionsResult.data : []);
   } catch (error) {
     console.error('Error loading voucher panel:', error);
-    alert('Error loading voucher panel');
   }
 
   // Open tertiary sidebar
@@ -351,7 +349,6 @@ async function submitVoucherAttachment(event) {
 
   // Validate
   if (!voucherId || !travelerValue) {
-    alert('Please fill in all required fields');
     return;
   }
 
@@ -359,7 +356,6 @@ async function submitVoucherAttachment(event) {
   if (!certificateTypes.includes(voucherType)) {
     const attachmentValue = document.getElementById('attachmentValue').value;
     if (!attachmentValue) {
-      alert('Please specify an attachment amount');
       return;
     }
   }
@@ -396,11 +392,10 @@ async function submitVoucherAttachment(event) {
       // Refresh the secondary sidebar with updated flight form
       refreshFlightAttachments(flightIdToRefresh);
     } else {
-      alert('Error: ' + result.message);
+      console.error('Error attaching voucher:', result.message);
     }
   } catch (error) {
     console.error('Error attaching voucher:', error);
-    alert('Error attaching voucher');
   }
 }
 
@@ -420,7 +415,6 @@ async function submitNewVoucher(event) {
   if (!certificateTypes.includes(voucherType)) {
     totalValue = document.getElementById('newTotalValue').value;
     if (!totalValue) {
-      alert('Total value is required for this voucher type');
       return;
     }
   }
@@ -453,8 +447,6 @@ async function submitNewVoucher(event) {
     const result = await response.json();
 
     if (result.success) {
-      alert('Voucher created successfully!');
-
       // Only refresh if we have a valid currentFlightId (voucher panel is open for a specific flight)
       if (currentFlightId && currentFlightId !== 'null') {
         // Refresh the available vouchers list to include the newly created one
@@ -475,22 +467,19 @@ async function submitNewVoucher(event) {
             switchVoucherTab('attach');
           } else {
             console.error('Failed to fetch available vouchers:', vouchersResult);
-            alert('Error: Could not refresh voucher list. Please try again.');
           }
         } catch (error) {
           console.error('Error refreshing vouchers:', error);
-          alert('Error refreshing voucher list. Please close the panel and reopen to see the new voucher.');
         }
       } else {
         // No active flight context - just close the panel and let user reopen to see new voucher
         closeTertiarySidebar();
       }
     } else {
-      alert('Error creating voucher: ' + result.message);
+      console.error('Error creating voucher:', result.message);
     }
   } catch (error) {
     console.error('Error creating voucher:', error);
-    alert('Error creating voucher');
   }
 }
 
@@ -502,7 +491,6 @@ async function refreshFlightAttachments(flightId) {
   // Validate flightId before attempting to fetch
   if (!flightId || flightId === 'null' || flightId === 'undefined') {
     console.error('Invalid flightId for refresh:', flightId);
-    alert('Error: Invalid flight ID. Please reload the page.');
     return;
   }
 
@@ -553,7 +541,6 @@ async function refreshFlightAttachments(flightId) {
     }
   } catch (error) {
     console.error('Error refreshing flight attachments:', error);
-    alert('Error refreshing flight information. Please try reloading the page.');
   }
 }
 
@@ -588,7 +575,6 @@ async function removeVoucherAttachment(flightId, attachmentId) {
   // Validate IDs before proceeding
   if (!flightId || !attachmentId || flightId === 'null' || attachmentId === 'null') {
     console.error('Invalid IDs for removal:', { flightId, attachmentId });
-    alert('Error: Invalid flight or attachment ID');
     return;
   }
 
@@ -607,10 +593,9 @@ async function removeVoucherAttachment(flightId, attachmentId) {
       // Refresh the secondary sidebar with updated flight form
       refreshFlightAttachments(flightId);
     } else {
-      alert('Error: ' + result.message);
+      console.error('Error removing voucher attachment:', result.message);
     }
   } catch (error) {
     console.error('Error removing attachment:', error);
-    alert('Error removing voucher attachment');
   }
 }
