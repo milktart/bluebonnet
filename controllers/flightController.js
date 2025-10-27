@@ -472,26 +472,36 @@ exports.getEditForm = async (req, res) => {
       ]
     });
 
+    // Verify ownership first
+    if (!flight || flight.userId !== req.user.id) {
+      return res.status(403).send('Unauthorized');
+    }
+
     // If flight has voucher attachments, augment with traveler info
-    if (flight && flight.voucherAttachments && flight.voucherAttachments.length > 0) {
-      for (const attachment of flight.voucherAttachments) {
-        if (attachment.travelerType === 'USER') {
-          const user = await User.findByPk(attachment.travelerId, {
-            attributes: ['id', 'firstName', 'lastName', 'email']
-          });
-          attachment.traveler = user;
-        } else if (attachment.travelerType === 'COMPANION') {
-          const companion = await TravelCompanion.findByPk(attachment.travelerId, {
-            attributes: ['id', 'name', 'email']
-          });
-          attachment.traveler = companion;
+    if (flight.voucherAttachments && flight.voucherAttachments.length > 0) {
+      try {
+        for (const attachment of flight.voucherAttachments) {
+          if (attachment.travelerType === 'USER') {
+            const user = await User.findByPk(attachment.travelerId, {
+              attributes: ['id', 'firstName', 'lastName', 'email']
+            });
+            attachment.traveler = user;
+          } else if (attachment.travelerType === 'COMPANION') {
+            const companion = await TravelCompanion.findByPk(attachment.travelerId, {
+              attributes: ['id', 'name', 'email']
+            });
+            attachment.traveler = companion;
+          }
         }
+      } catch (travelerError) {
+        // Log error but don't fail - allow form to render even if traveler data fetch fails
+        console.error('Error fetching traveler data for attachments:', travelerError);
       }
     }
 
-    // Verify ownership
-    if (!flight || flight.userId !== req.user.id) {
-      return res.status(403).send('Unauthorized');
+    // Ensure voucherAttachments is an array even if undefined
+    if (!flight.voucherAttachments) {
+      flight.voucherAttachments = [];
     }
 
     // Convert UTC times to local timezone for display
@@ -516,6 +526,7 @@ exports.getEditForm = async (req, res) => {
     res.render('partials/flight-form', {
       tripId: flight.tripId || '', // Use tripId if available, empty string otherwise
       isEditing: true,
+      isOwner: true,  // User is owner since we already verified ownership above
       data: {
         ...flight.toJSON(),
         departureDate,
