@@ -511,3 +511,36 @@ function closeTertiarySidebar() {
   currentTripId = null;
   currentFlightDetails = null;
 }
+
+/**
+ * Remove a voucher attachment
+ */
+async function removeVoucherAttachment(flightId, attachmentId) {
+  if (!confirm('Are you sure you want to remove this voucher attachment?')) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`/vouchers/flights/${flightId}/attachments/${attachmentId}`, {
+      method: 'DELETE'
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      alert('Voucher attachment removed successfully!');
+
+      // Refresh flight attachments if available
+      if (typeof refreshFlightAttachments === 'function') {
+        refreshFlightAttachments(flightId);
+      } else {
+        location.reload();
+      }
+    } else {
+      alert('Error: ' + result.message);
+    }
+  } catch (error) {
+    console.error('Error removing attachment:', error);
+    alert('Error removing voucher attachment');
+  }
+}
