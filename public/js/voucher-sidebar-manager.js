@@ -15,8 +15,6 @@ let currentFlightDetails = null;
  * @param {string} flightDetails - Display text for the flight (not displayed, kept for reference)
  */
 async function openVoucherAttachmentPanel(flightId, tripId, flightDetails) {
-  console.log('[openVoucherAttachmentPanel] Opening with flightId:', flightId, 'tripId:', tripId, 'details:', flightDetails);
-
   // Validate that we have required IDs
   if (!flightId || !tripId) {
     console.error('openVoucherAttachmentPanel - Missing required IDs:', { flightId, tripId });
@@ -26,14 +24,12 @@ async function openVoucherAttachmentPanel(flightId, tripId, flightDetails) {
 
   // If tertiary sidebar is already open with a different flight, close it first
   if (currentFlightId && currentFlightId !== flightId) {
-    console.log('[openVoucherAttachmentPanel] Closing existing sidebar for different flight');
     closeTertiarySidebar();
   }
 
   currentFlightId = flightId;
   currentTripId = tripId;
   currentFlightDetails = flightDetails;
-  console.log('[openVoucherAttachmentPanel] Set globals - currentFlightId:', currentFlightId, 'currentTripId:', currentTripId);
 
   // Fetch available vouchers and companions
   try {
@@ -348,22 +344,13 @@ function onVoucherSelected(event) {
 async function submitVoucherAttachment(event) {
   event.preventDefault();
 
-  console.log('[submitVoucherAttachment] Starting attachment...');
-  console.log('[submitVoucherAttachment] currentFlightId:', currentFlightId);
-  console.log('[submitVoucherAttachment] currentTripId:', currentTripId);
-
   const voucherId = document.getElementById('voucherSelect').value;
   const travelerValue = document.getElementById('travelerId').value;
   const voucherType = document.getElementById('voucherSelect').options[document.getElementById('voucherSelect').selectedIndex]?.dataset.type;
   const certificateTypes = ['UPGRADE_CERT', 'COMPANION_CERT'];
 
-  console.log('[submitVoucherAttachment] voucherId:', voucherId);
-  console.log('[submitVoucherAttachment] travelerValue:', travelerValue);
-  console.log('[submitVoucherAttachment] voucherType:', voucherType);
-
   // Validate
   if (!voucherId || !travelerValue) {
-    console.error('[submitVoucherAttachment] Missing required fields');
     alert('Please fill in all required fields');
     return;
   }
@@ -372,7 +359,6 @@ async function submitVoucherAttachment(event) {
   if (!certificateTypes.includes(voucherType)) {
     const attachmentValue = document.getElementById('attachmentValue').value;
     if (!attachmentValue) {
-      console.error('[submitVoucherAttachment] Missing attachment value');
       alert('Please specify an attachment amount');
       return;
     }
@@ -390,13 +376,8 @@ async function submitVoucherAttachment(event) {
     notes
   };
 
-  console.log('[submitVoucherAttachment] Payload:', payload);
-
   try {
-    const url = `/vouchers/flights/${currentFlightId}/attach`;
-    console.log('[submitVoucherAttachment] Calling attachment API:', url);
-
-    const response = await fetch(url, {
+    const response = await fetch(`/vouchers/flights/${currentFlightId}/attach`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -404,31 +385,21 @@ async function submitVoucherAttachment(event) {
       body: JSON.stringify(payload)
     });
 
-    console.log('[submitVoucherAttachment] Response status:', response.status);
-
     const result = await response.json();
-    console.log('[submitVoucherAttachment] Response result:', result);
 
     if (result.success) {
-      console.log('[submitVoucherAttachment] Attachment successful');
-
       // Store flightId BEFORE closing the tertiary sidebar (which resets currentFlightId to null)
       const flightIdToRefresh = currentFlightId;
-      console.log('[submitVoucherAttachment] Saved flightId for refresh:', flightIdToRefresh);
 
       closeTertiarySidebar();
-      alert('Voucher attached successfully!');
 
       // Refresh the secondary sidebar with updated flight form
-      console.log('[submitVoucherAttachment] Refreshing flight attachments with flightId:', flightIdToRefresh);
       refreshFlightAttachments(flightIdToRefresh);
     } else {
-      console.error('[submitVoucherAttachment] Server error:', result.message);
       alert('Error: ' + result.message);
     }
   } catch (error) {
     console.error('Error attaching voucher:', error);
-    console.error('[submitVoucherAttachment] Stack trace:', error.stack);
     alert('Error attaching voucher');
   }
 }
@@ -438,10 +409,6 @@ async function submitVoucherAttachment(event) {
  */
 async function submitNewVoucher(event) {
   event.preventDefault();
-
-  console.log('[submitNewVoucher] Starting voucher creation...');
-  console.log('[submitNewVoucher] currentFlightId:', currentFlightId);
-  console.log('[submitNewVoucher] currentTripId:', currentTripId);
 
   const voucherType = document.getElementById('voucherType').value;
   const issuer = document.getElementById('newIssuer').value;
@@ -474,8 +441,6 @@ async function submitNewVoucher(event) {
     userId: userId  // userId is a global const defined in trip.ejs
   };
 
-  console.log('[submitNewVoucher] Payload:', payload);
-
   try {
     const response = await fetch('/vouchers', {
       method: 'POST',
@@ -486,66 +451,45 @@ async function submitNewVoucher(event) {
     });
 
     const result = await response.json();
-    console.log('[submitNewVoucher] Server response:', result);
 
     if (result.success) {
-      console.log('[submitNewVoucher] Voucher created successfully');
-      alert('Voucher created successfully! You can now attach it to flights.');
+      alert('Voucher created successfully!');
 
       // Only refresh if we have a valid currentFlightId (voucher panel is open for a specific flight)
-      console.log('[submitNewVoucher] Checking if refresh needed...');
-      console.log('[submitNewVoucher] currentFlightId:', currentFlightId, 'type:', typeof currentFlightId);
-      console.log('[submitNewVoucher] currentFlightId === "null"?', currentFlightId === 'null');
-      console.log('[submitNewVoucher] !currentFlightId?', !currentFlightId);
-
       if (currentFlightId && currentFlightId !== 'null') {
-        console.log('[submitNewVoucher] Attempting to refresh vouchers for flight:', currentFlightId);
         // Refresh the available vouchers list to include the newly created one
         try {
-          console.log('[submitNewVoucher] Fetching available vouchers...');
           const vouchersResponse = await fetch(`/vouchers/available-for-flight/${currentFlightId}`);
-          console.log('[submitNewVoucher] Vouchers response status:', vouchersResponse.status);
           const vouchersResult = await vouchersResponse.json();
-          console.log('[submitNewVoucher] Vouchers result:', vouchersResult);
 
           if (vouchersResponse.ok && vouchersResult.success) {
-            console.log('[submitNewVoucher] Got available vouchers, count:', vouchersResult.data.length);
             availableVouchers = vouchersResult.data;
 
             // Fetch companions data for the panel
-            console.log('[submitNewVoucher] Fetching companions for trip:', currentTripId);
             const companionsResponse = await fetch(`/api/trips/${currentTripId}/companions`);
-            console.log('[submitNewVoucher] Companions response status:', companionsResponse.status);
             const companionsResult = companionsResponse.ok ? await companionsResponse.json() : { success: false, data: [] };
-            console.log('[submitNewVoucher] Companions result:', companionsResult);
 
             // Re-render the attach tab with updated vouchers and companions
-            console.log('[submitNewVoucher] Re-rendering voucher panel...');
             renderVoucherPanel(companionsResult.success ? companionsResult.data : []);
             // Switch back to attach tab so user can attach the new voucher
             switchVoucherTab('attach');
-            console.log('[submitNewVoucher] Panel refreshed and switched to attach tab');
           } else {
             console.error('Failed to fetch available vouchers:', vouchersResult);
             alert('Error: Could not refresh voucher list. Please try again.');
           }
         } catch (error) {
           console.error('Error refreshing vouchers:', error);
-          console.error('Stack trace:', error.stack);
           alert('Error refreshing voucher list. Please close the panel and reopen to see the new voucher.');
         }
       } else {
-        console.log('[submitNewVoucher] No active flight context, closing panel');
         // No active flight context - just close the panel and let user reopen to see new voucher
         closeTertiarySidebar();
       }
     } else {
-      console.error('[submitNewVoucher] Server error:', result.message);
       alert('Error creating voucher: ' + result.message);
     }
   } catch (error) {
     console.error('Error creating voucher:', error);
-    console.error('Stack trace:', error.stack);
     alert('Error creating voucher');
   }
 }
@@ -555,85 +499,60 @@ async function submitNewVoucher(event) {
  * Reloads the flight form to display updated voucher attachments
  */
 async function refreshFlightAttachments(flightId) {
-  console.log('[refreshFlightAttachments] Called with flightId:', flightId);
-  console.log('[refreshFlightAttachments] Type:', typeof flightId);
-
   // Validate flightId before attempting to fetch
   if (!flightId || flightId === 'null' || flightId === 'undefined') {
-    console.error('[refreshFlightAttachments] Invalid flightId for refresh:', flightId);
+    console.error('Invalid flightId for refresh:', flightId);
     alert('Error: Invalid flight ID. Please reload the page.');
     return;
   }
 
-  console.log('[refreshFlightAttachments] FlightId validation passed, attempting to fetch form');
-
   try {
     // Fetch the updated flight form
     // The getEditForm endpoint fetches the flight with its trip relationship
-    const url = `/flights/${flightId}/form`;
-    console.log('[refreshFlightAttachments] Fetching URL:', url);
-    const response = await fetch(url);
-
-    console.log('[refreshFlightAttachments] Response status:', response.status);
-    console.log('[refreshFlightAttachments] Response ok:', response.ok);
+    const response = await fetch(`/flights/${flightId}/form`);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const html = await response.text();
-    console.log('[refreshFlightAttachments] Got HTML response, length:', html.length);
 
     // Update the secondary sidebar with the new form
     const container = document.getElementById('secondary-sidebar-content');
-    console.log('[refreshFlightAttachments] Found container:', !!container);
 
     if (container) {
-      console.log('[refreshFlightAttachments] Updating container HTML');
       container.innerHTML = html;
 
       // Execute any scripts in the loaded content
       const scripts = container.querySelectorAll('script');
-      console.log('[refreshFlightAttachments] Found scripts:', scripts.length);
-
-      scripts.forEach((script, index) => {
-        console.log(`[refreshFlightAttachments] Processing script ${index}`);
+      scripts.forEach(script => {
         const newScript = document.createElement('script');
         if (script.src) {
           newScript.src = script.src;
-          console.log(`[refreshFlightAttachments] Script ${index} has src:`, script.src);
         } else {
           newScript.textContent = script.textContent;
-          console.log(`[refreshFlightAttachments] Script ${index} has inline content, length:`, script.textContent.length);
         }
         document.head.appendChild(newScript);
       });
 
       // Call form initialization functions if they exist
-      console.log('[refreshFlightAttachments] Calling initialization functions...');
       if (typeof initializeFlightForm === 'function') {
-        console.log('[refreshFlightAttachments] Calling initializeFlightForm');
         initializeFlightForm();
       }
       if (typeof setupAsyncFormSubmission === 'function') {
-        console.log('[refreshFlightAttachments] Calling setupAsyncFormSubmission');
         setupAsyncFormSubmission('editFlightForm');
       }
       if (typeof initFlightDateTimePickers === 'function') {
-        console.log('[refreshFlightAttachments] Calling initFlightDateTimePickers');
         initFlightDateTimePickers();
       }
       if (typeof initAirportSearch === 'function') {
-        console.log('[refreshFlightAttachments] Calling initAirportSearch');
         initAirportSearch();
       }
-      console.log('[refreshFlightAttachments] Refresh completed successfully');
     } else {
-      console.error('[refreshFlightAttachments] Could not find secondary-sidebar-content container');
+      console.error('Could not find secondary-sidebar-content container');
     }
   } catch (error) {
-    console.error('[refreshFlightAttachments] Error refreshing flight attachments:', error);
-    console.error('[refreshFlightAttachments] Stack trace:', error.stack);
+    console.error('Error refreshing flight attachments:', error);
     alert('Error refreshing flight information. Please try reloading the page.');
   }
 }
