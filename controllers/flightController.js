@@ -525,6 +525,7 @@ exports.getEditForm = async (req, res) => {
     // Render form partial for sidebar (not modal)
     res.render('partials/flight-form', {
       tripId: flight.tripId || '', // Use tripId if available, empty string otherwise
+      trip: flight.trip ? { id: flight.trip.id } : { id: flight.tripId }, // Pass trip object for voucher panel
       isEditing: true,
       isOwner: true,  // User is owner since we already verified ownership above
       data: {

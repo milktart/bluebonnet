@@ -455,25 +455,27 @@ async function submitNewVoucher(event) {
 
       // Refresh the available vouchers list to include the newly created one
       try {
-        const [vouchersResponse, companionsResponse] = await Promise.all([
-          fetch(`/vouchers/available-for-flight/${currentFlightId}`),
-          fetch(`/api/trips/${currentTripId}/companions`)
-        ]);
-
+        const vouchersResponse = await fetch(`/vouchers/available-for-flight/${currentFlightId}`);
         const vouchersResult = await vouchersResponse.json();
-        const companionsResult = await companionsResponse.json();
 
-        if (vouchersResult.success) {
+        if (vouchersResponse.ok && vouchersResult.success) {
           availableVouchers = vouchersResult.data;
+
+          // Fetch companions data for the panel
+          const companionsResponse = await fetch(`/api/trips/${currentTripId}/companions`);
+          const companionsResult = companionsResponse.ok ? await companionsResponse.json() : { success: false, data: [] };
+
           // Re-render the attach tab with updated vouchers and companions
           renderVoucherPanel(companionsResult.success ? companionsResult.data : []);
           // Switch back to attach tab so user can attach the new voucher
           switchVoucherTab('attach');
+        } else {
+          console.error('Failed to fetch available vouchers:', vouchersResult);
+          alert('Error: Could not refresh voucher list. Please try again.');
         }
       } catch (error) {
         console.error('Error refreshing vouchers:', error);
-        // Fall back to reloading if refresh fails
-        location.reload();
+        alert('Error refreshing voucher list. Please close the panel and reopen to see the new voucher.');
       }
     } else {
       alert('Error creating voucher: ' + result.message);
@@ -491,6 +493,7 @@ async function submitNewVoucher(event) {
 async function refreshFlightAttachments(flightId) {
   try {
     // Fetch the updated flight form
+    // The getEditForm endpoint fetches the flight with its trip relationship
     const response = await fetch(`/flights/${flightId}/form`);
 
     if (!response.ok) {
