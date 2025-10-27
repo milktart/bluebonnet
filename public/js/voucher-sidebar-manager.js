@@ -453,29 +453,35 @@ async function submitNewVoucher(event) {
     if (result.success) {
       alert('Voucher created successfully! You can now attach it to flights.');
 
-      // Refresh the available vouchers list to include the newly created one
-      try {
-        const vouchersResponse = await fetch(`/vouchers/available-for-flight/${currentFlightId}`);
-        const vouchersResult = await vouchersResponse.json();
+      // Only refresh if we have a valid currentFlightId (voucher panel is open for a specific flight)
+      if (currentFlightId && currentFlightId !== 'null') {
+        // Refresh the available vouchers list to include the newly created one
+        try {
+          const vouchersResponse = await fetch(`/vouchers/available-for-flight/${currentFlightId}`);
+          const vouchersResult = await vouchersResponse.json();
 
-        if (vouchersResponse.ok && vouchersResult.success) {
-          availableVouchers = vouchersResult.data;
+          if (vouchersResponse.ok && vouchersResult.success) {
+            availableVouchers = vouchersResult.data;
 
-          // Fetch companions data for the panel
-          const companionsResponse = await fetch(`/api/trips/${currentTripId}/companions`);
-          const companionsResult = companionsResponse.ok ? await companionsResponse.json() : { success: false, data: [] };
+            // Fetch companions data for the panel
+            const companionsResponse = await fetch(`/api/trips/${currentTripId}/companions`);
+            const companionsResult = companionsResponse.ok ? await companionsResponse.json() : { success: false, data: [] };
 
-          // Re-render the attach tab with updated vouchers and companions
-          renderVoucherPanel(companionsResult.success ? companionsResult.data : []);
-          // Switch back to attach tab so user can attach the new voucher
-          switchVoucherTab('attach');
-        } else {
-          console.error('Failed to fetch available vouchers:', vouchersResult);
-          alert('Error: Could not refresh voucher list. Please try again.');
+            // Re-render the attach tab with updated vouchers and companions
+            renderVoucherPanel(companionsResult.success ? companionsResult.data : []);
+            // Switch back to attach tab so user can attach the new voucher
+            switchVoucherTab('attach');
+          } else {
+            console.error('Failed to fetch available vouchers:', vouchersResult);
+            alert('Error: Could not refresh voucher list. Please try again.');
+          }
+        } catch (error) {
+          console.error('Error refreshing vouchers:', error);
+          alert('Error refreshing voucher list. Please close the panel and reopen to see the new voucher.');
         }
-      } catch (error) {
-        console.error('Error refreshing vouchers:', error);
-        alert('Error refreshing voucher list. Please close the panel and reopen to see the new voucher.');
+      } else {
+        // No active flight context - just close the panel and let user reopen to see new voucher
+        closeTertiarySidebar();
       }
     } else {
       alert('Error creating voucher: ' + result.message);
