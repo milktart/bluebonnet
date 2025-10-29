@@ -7,6 +7,7 @@ let availableVouchers = [];
 let currentFlightId = null;
 let currentTripId = null;
 let currentFlightDetails = null;
+let currentCompanions = [];
 
 /**
  * Open the voucher attachment panel in the tertiary sidebar
@@ -58,6 +59,10 @@ async function openVoucherAttachmentPanel(flightId, tripId, flightDetails) {
  * Render the voucher attachment panel in tertiary sidebar
  */
 function renderVoucherPanel(companions) {
+  // Store companions globally so they're available in updateSelectedVouchersInfo
+  currentCompanions = companions || [];
+  window.currentCompanions = currentCompanions;
+
   const container = document.getElementById('tertiary-sidebar-content');
 
   const panelHTML = `
@@ -94,61 +99,90 @@ function renderVoucherPanel(companions) {
     <div id="attach-tab" class="voucher-tab active">
       <form id="attachmentForm" onsubmit="submitVoucherAttachment(event)" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Select Voucher *</label>
-          <select id="voucherSelect" onchange="onVoucherSelected(event)" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white">
-            <option value="">Select a voucher...</option>
-            ${availableVouchers.map(voucher => {
-              // Calculate remaining balance properly
-              let remaining, remainingDisplay, balanceInfo;
+          <label class="block text-sm font-medium text-gray-700 mb-3">Available Vouchers</label>
+          <div class="overflow-x-auto border border-gray-300 rounded-md">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 border-b border-gray-300">
+                <tr>
+                  <th class="px-3 py-2 text-left w-6">
+                    <input type="checkbox" id="selectAllVouchers" onchange="toggleSelectAllVouchers()" class="rounded border-gray-300">
+                  </th>
+                  <th class="px-3 py-2 text-left font-medium text-gray-700">Issuer & Number</th>
+                  <th class="px-3 py-2 text-left font-medium text-gray-700">Type</th>
+                  <th class="px-3 py-2 text-left font-medium text-gray-700">Balance</th>
+                  <th class="px-3 py-2 text-left font-medium text-gray-700">Expires</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${availableVouchers.length === 0 ? `
+                  <tr>
+                    <td colspan="5" class="px-3 py-4 text-center text-gray-600">No vouchers available</td>
+                  </tr>
+                ` : availableVouchers.sort((a, b) => {
+                  // Sort by expiration date - soonest expiring at top
+                  if (!a.expirationDate && !b.expirationDate) return 0;
+                  if (!a.expirationDate) return 1; // No expiration goes to bottom
+                  if (!b.expirationDate) return -1;
+                  return new Date(a.expirationDate) - new Date(b.expirationDate);
+                }).map(voucher => {
+                  // Calculate remaining balance
+                  let remaining, remainingDisplay, balanceDisplay;
 
-              if (!voucher.totalValue) {
-                // Certificate type - no monetary value
-                remaining = 'N/A';
-                remainingDisplay = 'N/A';
-                balanceInfo = '';
-              } else {
-                // Credit/Card type - calculate remaining
-                const usedAmount = voucher.usedAmount || 0;
-                remaining = parseFloat(voucher.totalValue) - parseFloat(usedAmount);
-                remainingDisplay = remaining.toFixed(2);
-                balanceInfo = ` (${voucher.currency} ${remainingDisplay} remaining,`;
-              }
+                  if (!voucher.totalValue) {
+                    // Certificate type
+                    remaining = null;
+                    remainingDisplay = 'N/A';
+                    balanceDisplay = '<span class="text-purple-600 font-medium">Certificate</span>';
+                  } else {
+                    // Credit/Card type
+                    const usedAmount = voucher.usedAmount || 0;
+                    remaining = parseFloat(voucher.totalValue) - parseFloat(usedAmount);
+                    remainingDisplay = remaining.toFixed(2);
+                    balanceDisplay = `<span class="text-gray-900 font-medium">${voucher.currency} ${remainingDisplay}</span>`;
+                  }
 
-              const expirationText = voucher.expirationDate
-                ? new Date(voucher.expirationDate).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})
-                : 'No expiration';
+                  const expirationText = voucher.expirationDate
+                    ? new Date(voucher.expirationDate).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})
+                    : 'No expiration';
 
-              return `<option value="${voucher.id}" data-balance="${remaining}" data-currency="${voucher.currency}" data-type="${voucher.type}">
-                ${voucher.issuer} - ${voucher.voucherNumber}${balanceInfo ? balanceInfo + ' expires ' + expirationText + ')' : ' - expires ' + expirationText}
-              </option>`;
-            }).join('')}
-          </select>
+                  const voucherType = voucher.type.replace(/_/g, ' ');
+                  const typeColor =
+                    voucher.type === 'TRAVEL_CREDIT' ? 'bg-green-100 text-green-800' :
+                    voucher.type === 'UPGRADE_CERT' || voucher.type === 'REGIONAL_UPGRADE_CERT' || voucher.type === 'GLOBAL_UPGRADE_CERT' ? 'bg-purple-100 text-purple-800' :
+                    voucher.type === 'COMPANION_CERT' ? 'bg-pink-100 text-pink-800' :
+                    voucher.type === 'GIFT_CARD' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-gray-100 text-gray-800';
+
+                  return `<tr class="border-b border-gray-200 hover:bg-gray-50">
+                    <td class="px-3 py-3 text-left">
+                      <input type="checkbox" class="voucher-checkbox rounded border-gray-300" value="${voucher.id}" data-voucher-id="${voucher.id}" data-balance="${remaining}" data-currency="${voucher.currency}" data-type="${voucher.type}">
+                    </td>
+                    <td class="px-2 py-3 text-left w-24">
+                      <span class="font-medium text-gray-900 text-xs">${voucher.issuer}</span>
+                      <br>
+                      <span class="text-xs text-gray-500">${voucher.voucherNumber}</span>
+                    </td>
+                    <td class="px-3 py-3 text-left w-32">
+                      <span class="px-2 py-1 rounded text-xs font-medium ${typeColor} whitespace-nowrap">${voucherType}</span>
+                    </td>
+                    <td class="px-3 py-3 text-left">${balanceDisplay}</td>
+                    <td class="px-3 py-3 text-left text-gray-600 text-xs">${expirationText}</td>
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+          <div id="selectedVouchersInfo" class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800 hidden">
+            <strong id="selectedVouchersCount">0</strong> voucher(s) selected
+          </div>
         </div>
 
-        <!-- Traveler selection (always visible) -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Traveler *</label>
-          <select id="travelerId" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white">
-            <option value="">Select traveler...</option>
-            <option value="${userId}:USER">You</option>
-            ${companions && companions.length > 0 ? `
-              <optgroup label="Travel Companions">
-                ${companions.map(c => `<option value="${c.id}:COMPANION">${c.name}</option>`).join('')}
-              </optgroup>
-            ` : ''}
-          </select>
-        </div>
-
-        <!-- Value field - hidden for certificates -->
-        <div id="valueField">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Attachment Amount *</label>
-          <input type="number" id="attachmentValue" name="attachmentValue" step="0.01" min="0" placeholder="0.00" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <p class="text-xs text-gray-600 mt-1">Max available: <span id="maxAttachmentValue">—</span></p>
-        </div>
-
-        <!-- Certificate type notice -->
-        <div id="certificateNotice" class="p-3 bg-purple-50 border border-purple-200 rounded-md text-purple-700 text-sm hidden">
-          This certificate type has no monetary value associated with it.
+        <!-- Voucher details section for selected vouchers -->
+        <div id="voucherDetailsSection" class="hidden">
+          <label class="block text-sm font-medium text-gray-700 mb-3">Voucher Details</label>
+          <div id="voucherDetailsContainer" class="space-y-3">
+            <!-- Dynamically populated with traveler and amount fields for each selected voucher -->
+          </div>
         </div>
 
         <div>
@@ -176,6 +210,8 @@ function renderVoucherPanel(companions) {
             <option value="">Select type...</option>
             <option value="TRAVEL_CREDIT">Travel Credit</option>
             <option value="UPGRADE_CERT">Upgrade Certificate</option>
+            <option value="REGIONAL_UPGRADE_CERT">Regional Upgrade Certificate</option>
+            <option value="GLOBAL_UPGRADE_CERT">Global Upgrade Certificate</option>
             <option value="COMPANION_CERT">Companion Certificate</option>
             <option value="GIFT_CARD">Gift Card</option>
             <option value="MISC">Miscellaneous</option>
@@ -247,6 +283,22 @@ function renderVoucherPanel(companions) {
 
   if (container) {
     container.innerHTML = panelHTML;
+
+    // Add event listeners to checkboxes after rendering
+    setTimeout(() => {
+      const voucherCheckboxes = document.querySelectorAll('.voucher-checkbox');
+      voucherCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+          updateSelectedVouchersInfo();
+          // Update select-all checkbox state
+          const selectAllCheckbox = document.getElementById('selectAllVouchers');
+          const allChecked = Array.from(voucherCheckboxes).every(cb => cb.checked);
+          const someChecked = Array.from(voucherCheckboxes).some(cb => cb.checked);
+          selectAllCheckbox.checked = allChecked;
+          selectAllCheckbox.indeterminate = someChecked && !allChecked;
+        });
+      });
+    }, 0);
   }
 }
 
@@ -280,12 +332,130 @@ function switchVoucherTab(tabName) {
 }
 
 /**
+ * Toggle select all vouchers
+ */
+function toggleSelectAllVouchers() {
+  const selectAllCheckbox = document.getElementById('selectAllVouchers');
+  const voucherCheckboxes = document.querySelectorAll('.voucher-checkbox');
+
+  voucherCheckboxes.forEach(checkbox => {
+    checkbox.checked = selectAllCheckbox.checked;
+  });
+
+  updateSelectedVouchersInfo();
+}
+
+/**
+ * Update selected vouchers info and details section
+ */
+function updateSelectedVouchersInfo() {
+  const selectedCheckboxesNodeList = document.querySelectorAll('.voucher-checkbox:checked');
+  const selectedCheckboxes = Array.from(selectedCheckboxesNodeList);
+  const selectedVouchersInfo = document.getElementById('selectedVouchersInfo');
+  const voucherDetailsSection = document.getElementById('voucherDetailsSection');
+  const voucherDetailsContainer = document.getElementById('voucherDetailsContainer');
+  const selectedVouchersCount = document.getElementById('selectedVouchersCount');
+
+  selectedVouchersCount.textContent = selectedCheckboxes.length;
+
+  if (selectedCheckboxes.length > 0) {
+    selectedVouchersInfo.classList.remove('hidden');
+    voucherDetailsSection.classList.remove('hidden');
+
+    // Get companions data - stored in renderVoucherPanel context
+    const companionOptions = window.currentCompanions || [];
+    // userId is defined globally in trip.ejs as window.userId
+    const userId = window.userId;
+
+    // Populate details container with traveler and amount fields for each selected voucher
+    voucherDetailsContainer.innerHTML = selectedCheckboxes.map(checkbox => {
+      const voucherId = checkbox.dataset.voucherId;
+      const issuer = checkbox.closest('tr').querySelector('td:nth-child(2) span:first-child').textContent;
+      const voucherNumber = checkbox.closest('tr').querySelector('td:nth-child(2) span:last-child').textContent;
+      const voucherType = checkbox.dataset.type;
+      let balance = checkbox.dataset.balance;
+      const currency = checkbox.dataset.currency;
+      const certificateTypes = ['UPGRADE_CERT', 'REGIONAL_UPGRADE_CERT', 'GLOBAL_UPGRADE_CERT', 'COMPANION_CERT'];
+
+      // Build traveler select HTML
+      let travelerSelectHtml = `
+        <select id="traveler-${voucherId}" class="voucher-traveler-select w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white" data-voucher-id="${voucherId}" required>
+          <option value="">Select traveler...</option>
+          <option value="${userId}:USER">You</option>
+      `;
+
+      if (companionOptions && companionOptions.length > 0) {
+        travelerSelectHtml += `<optgroup label="Travel Companions">`;
+        companionOptions.forEach(c => {
+          travelerSelectHtml += `<option value="${c.id}:COMPANION">${c.name}</option>`;
+        });
+        travelerSelectHtml += `</optgroup>`;
+      }
+
+      travelerSelectHtml += `</select>`;
+
+      if (certificateTypes.includes(voucherType)) {
+        return `
+          <div class="p-3 bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-lg">
+            <div class="flex items-start justify-between mb-2">
+              <div>
+                <div class="font-semibold text-sm text-gray-900">${issuer}</div>
+                <div class="text-xs text-gray-600">${voucherNumber}</div>
+              </div>
+              <span class="px-2 py-0.5 bg-purple-200 text-purple-800 text-xs font-medium rounded">Certificate</span>
+            </div>
+            <div class="mt-3">
+              ${travelerSelectHtml}
+            </div>
+          </div>
+        `;
+      } else {
+        // Ensure balance is a valid number - default to 999999 if invalid
+        let numBalance = 0;
+        if (balance && balance !== 'null' && balance !== 'undefined') {
+          const parsed = parseFloat(balance);
+          numBalance = !isNaN(parsed) ? parsed : 999999;
+        } else {
+          numBalance = 999999;
+        }
+        const maxAmount = numBalance.toFixed(2);
+        return `
+          <div class="p-3 bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg">
+            <div class="flex items-start justify-between mb-3">
+              <div>
+                <div class="font-semibold text-sm text-gray-900">${issuer}</div>
+                <div class="text-xs text-gray-600">${voucherNumber}</div>
+              </div>
+              <span class="px-2 py-0.5 bg-blue-200 text-blue-800 text-xs font-medium rounded">${currency} ${maxAmount}</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Traveler *</label>
+                ${travelerSelectHtml}
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Amount *</label>
+                <input type="number" id="amount-${voucherId}" data-voucher-id="${voucherId}" class="voucher-amount-input w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" step="0.01" min="0" max="${maxAmount}" placeholder="0.00" required>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }).join('');
+  } else {
+    selectedVouchersInfo.classList.add('hidden');
+    voucherDetailsSection.classList.add('hidden');
+    voucherDetailsContainer.innerHTML = '';
+  }
+}
+
+/**
  * Handle voucher type change in new voucher form
  */
 function onVoucherTypeChange(event) {
   const voucherType = event.target.value;
   const valueFields = document.getElementById('newValueFields');
-  const certificateTypes = ['UPGRADE_CERT', 'COMPANION_CERT'];
+  const certificateTypes = ['UPGRADE_CERT', 'REGIONAL_UPGRADE_CERT', 'GLOBAL_UPGRADE_CERT', 'COMPANION_CERT'];
 
   if (certificateTypes.includes(voucherType)) {
     valueFields.style.display = 'none';
@@ -297,83 +467,84 @@ function onVoucherTypeChange(event) {
 }
 
 /**
- * Handle voucher selection change in attach form
- */
-function onVoucherSelected(event) {
-  const selectedValue = event.target.value;
-  const voucherType = event.target.options[event.target.selectedIndex]?.dataset.type;
-  const valueField = document.getElementById('valueField');
-  const certificateNotice = document.getElementById('certificateNotice');
-  const certificateTypes = ['UPGRADE_CERT', 'COMPANION_CERT'];
-
-  if (!selectedValue) {
-    document.getElementById('maxAttachmentValue').textContent = '—';
-    document.getElementById('attachmentValue').max = '';
-    document.getElementById('attachmentValue').value = '';
-    document.getElementById('attachmentValue').removeAttribute('required');
-    valueField.style.display = 'grid';
-    certificateNotice.classList.add('hidden');
-    return;
-  }
-
-  // Show/hide value field based on voucher type
-  if (certificateTypes.includes(voucherType)) {
-    valueField.style.display = 'none';
-    document.getElementById('attachmentValue').removeAttribute('required');
-    certificateNotice.classList.remove('hidden');
-  } else {
-    valueField.style.display = 'block';
-    document.getElementById('attachmentValue').setAttribute('required', 'required');
-    certificateNotice.classList.add('hidden');
-
-    const selectedOption = event.target.options[event.target.selectedIndex];
-    const balance = selectedOption.dataset.balance;
-    const currency = selectedOption.dataset.currency;
-
-    document.getElementById('maxAttachmentValue').textContent = `${currency} ${parseFloat(balance).toFixed(2)}`;
-    document.getElementById('attachmentValue').max = balance;
-    document.getElementById('attachmentValue').value = '';
-  }
-}
-
-/**
- * Submit voucher attachment
+ * Submit multiple voucher attachments
  */
 async function submitVoucherAttachment(event) {
   event.preventDefault();
 
-  const voucherId = document.getElementById('voucherSelect').value;
-  const travelerValue = document.getElementById('travelerId').value;
-  const voucherType = document.getElementById('voucherSelect').options[document.getElementById('voucherSelect').selectedIndex]?.dataset.type;
-  const certificateTypes = ['UPGRADE_CERT', 'COMPANION_CERT'];
+  const selectedCheckboxesNodeList = document.querySelectorAll('.voucher-checkbox:checked');
+  const selectedCheckboxes = Array.from(selectedCheckboxesNodeList);
+  const notes = document.getElementById('attachmentNotes').value;
+  const certificateTypes = ['UPGRADE_CERT', 'REGIONAL_UPGRADE_CERT', 'GLOBAL_UPGRADE_CERT', 'COMPANION_CERT'];
 
   // Validate
-  if (!voucherId || !travelerValue) {
+  if (selectedCheckboxes.length === 0) {
+    alert('Please select at least one voucher');
     return;
   }
 
-  // For non-certificate types, require attachment value
-  if (!certificateTypes.includes(voucherType)) {
-    const attachmentValue = document.getElementById('attachmentValue').value;
-    if (!attachmentValue) {
+  // Collect voucher attachments with per-voucher travelers
+  const attachments = [];
+
+  for (const checkbox of selectedCheckboxes) {
+    let voucherId = checkbox.dataset.voucherId;
+    const voucherType = checkbox.dataset.type;
+
+    // Validate voucherId
+    if (!voucherId || voucherId === 'undefined') {
+      console.error('Invalid voucherId:', voucherId);
+      alert('Error: Voucher ID is missing or invalid');
       return;
     }
+
+    // Get traveler for this specific voucher
+    const travelerSelect = document.getElementById(`traveler-${voucherId}`);
+    if (!travelerSelect || !travelerSelect.value) {
+      const issuer = checkbox.closest('tr').querySelector('td:nth-child(2) span:first-child').textContent;
+      alert(`Please select a traveler for ${issuer}`);
+      return;
+    }
+
+    const [travelerId, travelerType] = travelerSelect.value.split(':');
+
+    // Validate travelerId and travelerType
+    if (!travelerId || !travelerType || travelerId === 'undefined' || travelerType === 'undefined') {
+      alert('Error: Traveler information is invalid. Please select a traveler again.');
+      return;
+    }
+
+    let attachmentValue = null;
+
+    // For non-certificate types, get the amount from the input field
+    if (!certificateTypes.includes(voucherType)) {
+      const amountInput = document.getElementById(`amount-${voucherId}`);
+      if (!amountInput || !amountInput.value) {
+        const issuer = checkbox.closest('tr').querySelector('td:nth-child(2) span:first-child').textContent;
+        alert(`Please enter an amount for ${issuer}`);
+        return;
+      }
+      attachmentValue = parseFloat(amountInput.value);
+    }
+
+    attachments.push({
+      voucherId,
+      travelerId,
+      travelerType,
+      attachmentValue
+    });
   }
 
-  const attachmentValue = document.getElementById('attachmentValue').value || null;
-  const notes = document.getElementById('attachmentNotes').value;
-  const [travelerId, travelerType] = travelerValue.split(':');
+  // Log the payload for debugging
+  console.log('Submitting voucher attachments:', { attachments, notes });
 
+  // Send all attachments in a single request
   const payload = {
-    voucherId,
-    travelerId,
-    travelerType,
-    attachmentValue: attachmentValue ? parseFloat(attachmentValue) : null,
+    attachments,
     notes
   };
 
   try {
-    const response = await fetch(`/vouchers/flights/${currentFlightId}/attach`, {
+    const response = await fetch(`/vouchers/flights/${currentFlightId}/attach-multiple`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -384,18 +555,67 @@ async function submitVoucherAttachment(event) {
     const result = await response.json();
 
     if (result.success) {
-      // Store flightId BEFORE closing the tertiary sidebar (which resets currentFlightId to null)
-      const flightIdToRefresh = currentFlightId;
+      // Check if there are partial vouchers that need new numbers
+      if (result.partialVouchers && result.partialVouchers.length > 0) {
+        // Prompt user for new voucher numbers for partial credits
+        for (const partialVoucher of result.partialVouchers) {
+          const newNumber = prompt(
+            `A partial credit was created. Please enter the new credit number for the remaining balance:`,
+            ''
+          );
 
-      closeTertiarySidebar();
+          if (newNumber && newNumber.trim()) {
+            // Extract the voucher ID from the notes
+            const voucherIdMatch = partialVoucher.notes.match(/New partial credit created: ([a-f0-9-]+)/);
+            if (voucherIdMatch) {
+              const newVoucherId = voucherIdMatch[1];
+              try {
+                await fetch(`/vouchers/${newVoucherId}/partial-number`, {
+                  method: 'PATCH',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ newVoucherNumber: newNumber.trim() })
+                });
+              } catch (error) {
+                console.error('Error updating partial voucher number:', error);
+              }
+            }
+          }
+        }
+      }
+
+      // Refresh the tertiary sidebar (voucher panel) with updated available vouchers
+      try {
+        const vouchersResponse = await fetch(`/vouchers/available-for-flight/${currentFlightId}`);
+        const vouchersResult = await vouchersResponse.json();
+
+        if (vouchersResult.success) {
+          availableVouchers = vouchersResult.data;
+
+          // Fetch companions data
+          const companionsResponse = await fetch(`/api/trips/${currentTripId}/companions`);
+          const companionsResult = companionsResponse.ok ? await companionsResponse.json() : { success: false, data: [] };
+
+          // Re-render the voucher panel with updated data
+          renderVoucherPanel(companionsResult.success ? companionsResult.data : []);
+
+          // Switch to attach tab in case user was viewing add tab
+          switchVoucherTab('attach');
+        }
+      } catch (error) {
+        console.error('Error refreshing voucher panel:', error);
+      }
 
       // Refresh the secondary sidebar with updated flight form
-      refreshFlightAttachments(flightIdToRefresh);
+      refreshFlightAttachments(currentFlightId);
     } else {
-      console.error('Error attaching voucher:', result.message);
+      console.error('Error attaching vouchers:', result.message);
+      alert('Error attaching vouchers: ' + result.message);
     }
   } catch (error) {
-    console.error('Error attaching voucher:', error);
+    console.error('Error attaching vouchers:', error);
+    alert('Error attaching vouchers');
   }
 }
 
@@ -408,7 +628,7 @@ async function submitNewVoucher(event) {
   const voucherType = document.getElementById('voucherType').value;
   const issuer = document.getElementById('newIssuer').value;
   const voucherNumber = document.getElementById('newVoucherNumber').value;
-  const certificateTypes = ['UPGRADE_CERT', 'COMPANION_CERT'];
+  const certificateTypes = ['UPGRADE_CERT', 'REGIONAL_UPGRADE_CERT', 'GLOBAL_UPGRADE_CERT', 'COMPANION_CERT'];
   const ownerBoundTypes = ['TRAVEL_CREDIT', 'COMPANION_CERT', 'GIFT_CARD'];
 
   let totalValue = null;
@@ -586,6 +806,32 @@ async function removeVoucherAttachment(flightId, attachmentId) {
     const result = await response.json();
 
     if (result.success) {
+      // Check if tertiary sidebar is open with voucher panel
+      const tertiarySidebar = document.getElementById('tertiary-sidebar');
+      const isVoucherPanelOpen = tertiarySidebar && tertiarySidebar.classList.contains('open');
+
+      // If voucher panel is open and we're on the Attach Voucher tab, refresh the available vouchers
+      if (isVoucherPanelOpen && currentFlightId === flightId) {
+        try {
+          // Fetch updated available vouchers
+          const vouchersResponse = await fetch(`/vouchers/available-for-flight/${flightId}`);
+          const vouchersResult = await vouchersResponse.json();
+
+          if (vouchersResult.success) {
+            availableVouchers = vouchersResult.data;
+
+            // Fetch companions data
+            const companionsResponse = await fetch(`/api/trips/${currentTripId}/companions`);
+            const companionsResult = companionsResponse.ok ? await companionsResponse.json() : { success: false, data: [] };
+
+            // Re-render the voucher panel with updated data
+            renderVoucherPanel(companionsResult.success ? companionsResult.data : []);
+          }
+        } catch (error) {
+          console.error('Error refreshing voucher panel:', error);
+        }
+      }
+
       // Refresh the secondary sidebar with updated flight form
       refreshFlightAttachments(flightId);
     } else {

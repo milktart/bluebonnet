@@ -27,13 +27,22 @@
   transform: translateX(0);
 }
 
-.tertiary-sidebar { 
+.tertiary-sidebar {
   left: -100vh;
   width: calc(100vw - 800px - 12vh);
   transition: transform 0.3s ease-in-out;
   overflow-y: auto;
   overflow-x: hidden;
   transform: translateX(0);
+  display: flex;
+  flex-direction: column;
+}
+
+.tertiary-sidebar > div {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .secondary-sidebar.open {
@@ -88,23 +97,31 @@
 
 /* Custom scrollbar for sidebar */
 .primary-sidebar::-webkit-scrollbar,
-.secondary-sidebar::-webkit-scrollbar {
+.secondary-sidebar::-webkit-scrollbar,
+.tertiary-sidebar::-webkit-scrollbar,
+.tertiary-sidebar > div::-webkit-scrollbar {
   width: 6px;
 }
 
 .primary-sidebar::-webkit-scrollbar-track,
-.secondary-sidebar::-webkit-scrollbar-track {
+.secondary-sidebar::-webkit-scrollbar-track,
+.tertiary-sidebar::-webkit-scrollbar-track,
+.tertiary-sidebar > div::-webkit-scrollbar-track {
   background: #f1f5f9;
 }
 
 .primary-sidebar::-webkit-scrollbar-thumb,
-.secondary-sidebar::-webkit-scrollbar-thumb {
+.secondary-sidebar::-webkit-scrollbar-thumb,
+.tertiary-sidebar::-webkit-scrollbar-thumb,
+.tertiary-sidebar > div::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 3px;
 }
 
 .primary-sidebar::-webkit-scrollbar-thumb:hover,
-.secondary-sidebar::-webkit-scrollbar-thumb:hover {
+.secondary-sidebar::-webkit-scrollbar-thumb:hover,
+.tertiary-sidebar::-webkit-scrollbar-thumb:hover,
+.tertiary-sidebar > div::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 

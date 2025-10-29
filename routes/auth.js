@@ -8,10 +8,13 @@ const { validateRegistration, validateLogin } = require('../middleware/validatio
 router.get('/login', forwardAuthenticated, authController.getLogin);
 
 router.post('/login', validateLogin, passport.authenticate('local', {
-  successRedirect: '/trips',
   failureRedirect: '/auth/login',
   failureFlash: true
-}));
+}), (req, res) => {
+  const returnTo = req.session.returnTo || '/trips';
+  delete req.session.returnTo;
+  res.redirect(returnTo);
+});
 
 router.get('/register', forwardAuthenticated, authController.getRegister);
 

@@ -478,31 +478,38 @@ exports.getEditForm = async (req, res) => {
     }
 
     // If flight has voucher attachments, augment with traveler info
+    let voucherAttachmentsWithTravelers = [];
     if (flight.voucherAttachments && flight.voucherAttachments.length > 0) {
       try {
         for (const attachment of flight.voucherAttachments) {
+          let traveler = null;
           if (attachment.travelerType === 'USER') {
-            const user = await User.findByPk(attachment.travelerId, {
+            traveler = await User.findByPk(attachment.travelerId, {
               attributes: ['id', 'firstName', 'lastName', 'email']
             });
-            attachment.traveler = user;
           } else if (attachment.travelerType === 'COMPANION') {
-            const companion = await TravelCompanion.findByPk(attachment.travelerId, {
+            traveler = await TravelCompanion.findByPk(attachment.travelerId, {
               attributes: ['id', 'name', 'email']
             });
-            attachment.traveler = companion;
           }
+
+          // Convert attachment to plain object and add traveler
+          const attachmentData = attachment.toJSON();
+          attachmentData.traveler = traveler ? traveler.toJSON() : null;
+          voucherAttachmentsWithTravelers.push(attachmentData);
+
+          console.log('Attachment traveler data:', { travelerId: attachment.travelerId, travelerType: attachment.travelerType, travelerData: traveler });
         }
       } catch (travelerError) {
         // Log error but don't fail - allow form to render even if traveler data fetch fails
         console.error('Error fetching traveler data for attachments:', travelerError);
+        voucherAttachmentsWithTravelers = flight.voucherAttachments.map(att => att.toJSON());
       }
     }
 
-    // Ensure voucherAttachments is an array even if undefined
-    if (!flight.voucherAttachments) {
-      flight.voucherAttachments = [];
-    }
+    // Use the augmented attachments
+    const flightData = flight.toJSON();
+    flightData.voucherAttachments = voucherAttachmentsWithTravelers;
 
     // Convert UTC times to local timezone for display
     // utcToLocal returns "YYYY-MM-DDTHH:mm" format, so we split it into date and time
@@ -529,8 +536,7 @@ exports.getEditForm = async (req, res) => {
       isEditing: true,
       isOwner: true,  // User is owner since we already verified ownership above
       data: {
-        id: flight.id,  // Explicitly include the flight ID for voucher attachments
-        ...flight.toJSON(),
+        ...flightData,
         departureDate,
         departureTime,
         arrivalDate,

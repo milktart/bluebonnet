@@ -154,9 +154,14 @@
   <script>
     // Trip data for map
     // Make trip ID available globally for sidebar form loading
-    const tripId = '<%- trip.id %>';
-    const userId = '<%- user.id %>';
-    const userName = '<%- user.firstName %> <%- user.lastName %>';
+    window.tripId = '<%- trip.id %>';
+    window.userId = '<%- user.id %>';
+    window.userName = '<%- user.firstName %> <%- user.lastName %>';
+
+    // Also define as local for backward compatibility
+    const tripId = window.tripId;
+    const userId = window.userId;
+    const userName = window.userName;
 
     const tripData = {
       id: tripId,

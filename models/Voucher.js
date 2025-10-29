@@ -17,6 +17,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.ENUM(
         'TRAVEL_CREDIT',
         'UPGRADE_CERT',
+        'REGIONAL_UPGRADE_CERT',
+        'GLOBAL_UPGRADE_CERT',
         'COMPANION_CERT',
         'GIFT_CARD',
         'MISC'
