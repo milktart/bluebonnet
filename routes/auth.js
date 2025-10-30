@@ -11,7 +11,7 @@ router.post('/login', validateLogin, passport.authenticate('local', {
   failureRedirect: '/auth/login',
   failureFlash: true
 }), (req, res) => {
-  const returnTo = req.session.returnTo || '/trips';
+  const returnTo = req.session.returnTo || '/';
   delete req.session.returnTo;
   res.redirect(returnTo);
 });

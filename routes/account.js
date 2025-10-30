@@ -25,4 +25,10 @@ router.put('/companions/:companionId/revoke', accountController.revokeCompanionA
 // GET vouchers page
 router.get('/vouchers', accountController.getVouchers);
 
+// GET vouchers sidebar content (AJAX)
+router.get('/vouchers/sidebar', accountController.getVouchersSidebar);
+
+// GET voucher details (AJAX)
+router.get('/vouchers/:voucherId/details', accountController.getVoucherDetails);
+
 module.exports = router;

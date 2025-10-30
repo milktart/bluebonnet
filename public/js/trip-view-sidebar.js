@@ -289,3 +289,28 @@ function showAddForm(type) {
       break;
   }
 }
+
+/**
+ * Override openTertiarySidebar to handle secondary-to-tertiary transition
+ * When tertiary sidebar opens, secondary should maintain its state but position may change
+ */
+if (typeof window.openTertiarySidebar === 'undefined') {
+  window.openTertiarySidebar = function() {
+    const tertiarySidebar = document.getElementById('tertiary-sidebar');
+    if (tertiarySidebar) {
+      tertiarySidebar.classList.add('open');
+    }
+  };
+}
+
+/**
+ * Override closeTertiarySidebar
+ */
+if (typeof window.closeTertiarySidebar === 'undefined') {
+  window.closeTertiarySidebar = function() {
+    const tertiarySidebar = document.getElementById('tertiary-sidebar');
+    if (tertiarySidebar) {
+      tertiarySidebar.classList.remove('open');
+    }
+  };
+}

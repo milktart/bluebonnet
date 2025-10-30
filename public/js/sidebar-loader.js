@@ -10,11 +10,13 @@ let sidebarHistoryIndex = -1;
 /**
  * Load content into the secondary sidebar
  * @param {string} url - The URL to fetch content from
+ * @param {object} options - Optional configuration { fullWidth: boolean }
  */
-async function loadSidebarContent(url) {
+async function loadSidebarContent(url, options = {}) {
   try {
     // Show loading state
     const container = document.getElementById('secondary-sidebar-content');
+    const sidebar = document.getElementById('secondary-sidebar');
     if (!container) {
       return;
     }
@@ -58,8 +60,20 @@ async function loadSidebarContent(url) {
     sidebarHistory.push(html);
     sidebarHistoryIndex++;
 
-    // Open the sidebar
+    // Open the sidebar and apply styling based on options
     openSecondarySidebar();
+
+    // Check if this is a vouchers sidebar request (full-width)
+    if (url.includes('/vouchers/sidebar') || options.fullWidth) {
+      if (sidebar) {
+        sidebar.classList.add('full-width');
+      }
+    } else {
+      // Remove full-width class for other sidebars
+      if (sidebar) {
+        sidebar.classList.remove('full-width');
+      }
+    }
 
     // Re-initialize any scripts/interactions in the loaded content
     initializeSidebarContent();

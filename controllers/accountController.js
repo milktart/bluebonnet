@@ -231,3 +231,92 @@ exports.getVouchers = async (req, res) => {
     res.redirect('/account');
   }
 };
+
+exports.getVouchersSidebar = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const vouchers = await Voucher.findAll({
+      where: {
+        [Sequelize.Op.or]: [
+          { userId: userId },
+          { userId: null }
+        ]
+      },
+      include: [
+        {
+          model: User,
+          as: 'owner',
+          attributes: ['id', 'firstName', 'lastName', 'email']
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+
+    // Calculate remaining balance and expiration info for each voucher
+    const vouchersWithInfo = vouchers.map(v => {
+      const vData = v.toJSON();
+      vData.remainingBalance = v.getRemainingBalance();
+      vData.daysUntilExpiration = v.getDaysUntilExpiration();
+      vData.isExpired = v.getIsExpired();
+      vData.usagePercent = v.totalValue ? Math.round(((v.usedAmount || 0) / v.totalValue) * 100) : 0;
+      return vData;
+    });
+
+    // Separate open and closed vouchers
+    const openVouchers = vouchersWithInfo.filter(v => v.status === 'OPEN' || v.status === 'PARTIALLY_USED');
+    const closedVouchers = vouchersWithInfo.filter(v => v.status === 'USED' || v.status === 'EXPIRED' || v.status === 'TRANSFERRED' || v.status === 'CANCELLED');
+
+    res.render('partials/vouchers-sidebar', {
+      openVouchers,
+      closedVouchers,
+      user: req.user,
+      isSidebarRequest: true,
+      layout: false
+    });
+  } catch (error) {
+    console.error('Error loading vouchers sidebar:', error);
+    res.status(500).send('<div class="p-4"><p class="text-red-600">Error loading vouchers. Please try again.</p></div>');
+  }
+};
+
+exports.getVoucherDetails = async (req, res) => {
+  try {
+    const voucherId = req.params.voucherId;
+    const userId = req.user.id;
+
+    const voucher = await Voucher.findByPk(voucherId, {
+      include: [
+        {
+          model: User,
+          as: 'owner',
+          attributes: ['id', 'firstName', 'lastName', 'email']
+        }
+      ]
+    });
+
+    if (!voucher) {
+      return res.status(404).send('<div class="p-4"><p class="text-red-600">Voucher not found</p></div>');
+    }
+
+    // Check authorization: user must be owner or voucher must be non-owner-bound
+    if (voucher.userId && voucher.userId !== userId) {
+      return res.status(403).send('<div class="p-4"><p class="text-red-600">Unauthorized to access this voucher</p></div>');
+    }
+
+    // Calculate values
+    const voucherData = voucher.toJSON();
+    voucherData.remainingBalance = voucher.getRemainingBalance();
+    voucherData.daysUntilExpiration = voucher.getDaysUntilExpiration();
+    voucherData.isExpired = voucher.getIsExpired();
+    voucherData.usagePercent = voucher.totalValue ? Math.round(((voucher.usedAmount || 0) / voucher.totalValue) * 100) : 0;
+
+    res.render('partials/voucher-details-tertiary', {
+      voucher: voucherData,
+      layout: false
+    });
+  } catch (error) {
+    console.error('Error loading voucher details:', error);
+    res.status(500).send('<div class="p-4"><p class="text-red-600">Error loading voucher details. Please try again.</p></div>');
+  }
+};

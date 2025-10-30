@@ -208,19 +208,30 @@ function initializeFlightForm() {
     airlineInput.setAttribute('readonly', 'readonly');
   }
 
-  function updateAirportFromCode(input) {
-    const code = input.value.trim().toUpperCase();
+  function formatAirportDisplay(code, airport) {
+    // Format: "[AAA] City"
+    return `[${code}] ${airport.city_name}`;
+  }
 
-    // Check if input is exactly 3 characters
-    if (code.length !== 3 || !/^[A-Z]{3}$/.test(code)) {
+  function extractAirportCode(value) {
+    // Extract IATA code from various formats:
+    // "[AAA] City", "AAA - City, Country", "AAA" => "AAA"
+    const match = value.match(/\[?([A-Z]{3})\]?/);
+    return match ? match[1] : null;
+  }
+
+  function updateAirportFromCode(input) {
+    const value = input.value.trim();
+    const code = extractAirportCode(value);
+
+    if (!code) {
       return;
     }
 
     const airport = airports[code];
 
     if (airport) {
-      // Format: "AAA - City, Country"
-      const formatted = `${code} - ${airport.city_name}, ${airport.country_name}`;
+      const formatted = formatAirportDisplay(code, airport);
       input.value = formatted;
 
       // Update timezone hidden field if it exists
@@ -254,6 +265,13 @@ function initializeFlightForm() {
     }
   }
 
+  function reformatAirportField(input) {
+    // Reformat existing airport values on initial load
+    if (input.value) {
+      updateAirportFromCode(input);
+    }
+  }
+
   // Set up event listeners
   const flightNumberInput = document.querySelector('input[name="flightNumber"]');
   if (flightNumberInput) {
@@ -269,12 +287,16 @@ function initializeFlightForm() {
   if (originInput) {
     originInput.removeEventListener('blur', handleOriginBlur);
     originInput.addEventListener('blur', handleOriginBlur);
+    // Reformat on initial load
+    reformatAirportField(originInput);
   }
 
   const destinationInput = document.querySelector('input[name="destination"]');
   if (destinationInput) {
     destinationInput.removeEventListener('blur', handleDestinationBlur);
     destinationInput.addEventListener('blur', handleDestinationBlur);
+    // Reformat on initial load
+    reformatAirportField(destinationInput);
   }
 }
 

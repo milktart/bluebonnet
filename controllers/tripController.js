@@ -2,7 +2,7 @@ const { Trip, Flight, Hotel, Transportation, CarRental, Event, TravelCompanion, 
 const airportService = require('../services/airportService');
 const { formatInTimezone } = require('../utils/timezoneHelper');
 
-exports.listTrips = async (req, res) => {
+exports.listTrips = async (req, res, options = {}) => {
   try {
     // Get trips the user owns
     const ownedTrips = await Trip.findAll({
@@ -87,13 +87,17 @@ exports.listTrips = async (req, res) => {
       order: [['startDateTime', 'ASC']]
     });
 
-    res.render('trips/dashboard', {
+    const renderData = {
       title: 'My Trips',
       trips: uniqueTrips,
       standaloneFlights,
       standaloneTransportation,
-      standaloneEvents
-    });
+      standaloneEvents,
+      openCertificatesSidebar: options.openCertificatesSidebar || false,
+      openCertificateDetails: options.openCertificateDetails || null
+    };
+
+    res.render('trips/dashboard', renderData);
   } catch (error) {
     console.error(error);
     req.flash('error_msg', 'Error loading trips');
@@ -141,11 +145,11 @@ exports.createTrip = async (req, res) => {
     }
 
     req.flash('success_msg', 'Trip created successfully');
-    res.redirect('/trips');
+    res.redirect('/');
   } catch (error) {
     console.error(error);
     req.flash('error_msg', 'Error creating trip');
-    res.redirect('/trips');
+    res.redirect('/');
   }
 };
 
@@ -181,7 +185,7 @@ exports.viewTrip = async (req, res) => {
 
     if (!trip) {
       req.flash('error_msg', 'Trip not found');
-      return res.redirect('/trips');
+      return res.redirect('/');
     }
 
     // Check if user has permission to view this trip
@@ -192,7 +196,7 @@ exports.viewTrip = async (req, res) => {
 
     if (!isOwner && !companionRecord) {
       req.flash('error_msg', 'You do not have permission to view this trip');
-      return res.redirect('/trips');
+      return res.redirect('/');
     }
 
     // Determine if user can edit this trip
@@ -212,7 +216,7 @@ exports.viewTrip = async (req, res) => {
   } catch (error) {
     console.error(error);
     req.flash('error_msg', 'Error loading trip');
-    res.redirect('/trips');
+    res.redirect('/');
   }
 };
 
@@ -243,14 +247,14 @@ exports.getEditTrip = async (req, res) => {
 
     if (!trip) {
       req.flash('error_msg', 'Trip not found');
-      return res.redirect('/trips');
+      return res.redirect('/');
     }
 
     res.render('trips/edit', { title: 'Edit Trip', trip });
   } catch (error) {
     console.error(error);
     req.flash('error_msg', 'Error loading trip');
-    res.redirect('/trips');
+    res.redirect('/');
   }
 };
 
@@ -304,7 +308,7 @@ exports.updateTrip = async (req, res) => {
 
     if (!trip) {
       req.flash('error_msg', 'Trip not found');
-      return res.redirect('/trips');
+      return res.redirect('/');
     }
 
     // Update trip details
@@ -363,16 +367,16 @@ exports.deleteTrip = async (req, res) => {
 
     if (!trip) {
       req.flash('error_msg', 'Trip not found');
-      return res.redirect('/trips');
+      return res.redirect('/');
     }
 
     await trip.destroy();
     req.flash('success_msg', 'Trip deleted successfully');
-    res.redirect('/trips');
+    res.redirect('/');
   } catch (error) {
     console.error(error);
     req.flash('error_msg', 'Error deleting trip');
-    res.redirect('/trips');
+    res.redirect('/');
   }
 };
 
@@ -391,14 +395,14 @@ exports.getMapView = async (req, res) => {
 
     if (!trip) {
       req.flash('error_msg', 'Trip not found');
-      return res.redirect('/trips');
+      return res.redirect('/');
     }
 
     res.render('trips/map', { title: `${trip.name} - Map`, trip });
   } catch (error) {
     console.error(error);
     req.flash('error_msg', 'Error loading map');
-    res.redirect('/trips');
+    res.redirect('/');
   }
 };
 

@@ -842,7 +842,7 @@
         <!-- Settings Content -->
         <div id="settings-content" class="space-y-4 p-6 hidden">
           <div class="space-y-3">
-            <button onclick="loadSidebarContent('/account/sidebar')" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors">
+            <button onclick="loadSidebarContent('/account/sidebar')" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
               <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                 <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
@@ -857,7 +857,20 @@
               </svg>
             </button>
 
-            <button onclick="loadSidebarContent('/companions/sidebar')" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors">
+            <button onclick="window.history.pushState({}, '', '/certificates'); loadSidebarContent('/account/vouchers/sidebar');" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
+              <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                <span class="material-symbols-outlined text-amber-600" style="font-size: 18px;">wallet</span>
+              </div>
+              <div class="flex-1 text-left">
+                <h3 class="text-sm font-medium text-gray-900">Manage Certificates & Vouchers</h3>
+                <p class="text-xs text-gray-500">View and manage your travel credits</p>
+              </div>
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </button>
+
+            <button onclick="loadSidebarContent('/companions/sidebar')" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
               <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                 <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
@@ -872,7 +885,7 @@
               </svg>
             </button>
 
-            <button onclick="confirmLogout()" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-red-300 hover:bg-red-50 transition-colors">
+            <button onclick="confirmLogout()" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-red-200 hover:border-red-300 hover:bg-red-100 transition-colors bg-red-50">
               <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
                 <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
@@ -993,6 +1006,81 @@
       allTripsData.flights.push(f);
       pastTripsData.flights.push(f);
     });
+
+    // Auto-open certificates sidebar if requested
+    <% if (openCertificatesSidebar) { %>
+      window.addEventListener('DOMContentLoaded', function() {
+        // Switch to settings tab
+        showSettings();
+        // Load certificates sidebar content
+        setTimeout(function() {
+          loadSidebarContent('/account/vouchers/sidebar');
+          // If specific certificate details requested, load them too
+          <% if (openCertificateDetails) { %>
+            setTimeout(function() {
+              loadCertificateDetails('<%= openCertificateDetails %>');
+            }, 100);
+          <% } %>
+        }, 50);
+      });
+    <% } %>
+
+    // Function to load certificate details
+    function loadCertificateDetails(voucherId) {
+      try {
+        console.log('Loading certificate details for:', voucherId);
+
+        // Fetch the voucher details
+        fetch(`/account/vouchers/${voucherId}/details`)
+          .then(response => {
+            if (!response.ok) {
+              console.error('Failed to fetch voucher details:', response.status);
+              return;
+            }
+            return response.text();
+          })
+          .then(html => {
+            if (!html) return;
+
+            console.log('Received voucher details HTML');
+
+            // Load content into tertiary sidebar
+            const tertiaryContent = document.getElementById('tertiary-sidebar-content');
+            if (!tertiaryContent) {
+              console.error('tertiary-sidebar-content not found');
+              return;
+            }
+
+            tertiaryContent.innerHTML = html;
+
+            // Execute any scripts in the loaded content
+            const scripts = tertiaryContent.querySelectorAll('script');
+            scripts.forEach(script => {
+              const newScript = document.createElement('script');
+              if (script.src) {
+                newScript.src = script.src;
+              } else {
+                newScript.textContent = script.textContent;
+              }
+              document.head.appendChild(newScript);
+            });
+
+            // Open the tertiary sidebar
+            console.log('Calling openTertiarySidebar');
+            if (typeof openTertiarySidebar === 'function') {
+              openTertiarySidebar();
+              console.log('Tertiary sidebar opened');
+            } else {
+              console.error('openTertiarySidebar function not found');
+            }
+          })
+          .catch(error => {
+            console.error('Error loading certificate details:', error);
+          });
+      } catch (error) {
+        console.error('Error in loadCertificateDetails:', error);
+      }
+    }
   </script>
   <% } %>
 

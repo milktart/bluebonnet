@@ -1,3 +1,13 @@
+/* ===== Sidebar Layout System ===== */
+/* Define spacing variables */
+:root {
+  --sidebar-spacing: 3vh;
+  --sidebar-width: 400px;
+  --sidebar-gap: 3vh;
+  --sidebar-transition-duration: 0.35s;
+  --sidebar-transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* Full height map with no padding/margins */
 #tripMap,
 #overviewMap {
@@ -9,33 +19,57 @@
   z-index: 0;
 }
 
-/* Primary Sidebar - main navigation/details floating over map */
+/* Primary Sidebar - always visible, fixed width on the left */
 .primary-sidebar {
-  left: 3vh;
-  width: 400px;
+  left: var(--sidebar-spacing);
+  width: var(--sidebar-width);
   display: flex;
   flex-direction: column;
 }
 
-/* Secondary Sidebar - positioned for slide-out/bottom-sheet overlay */
+/* Secondary Sidebar - narrow width by default, can be full width */
 .secondary-sidebar {
-  left: -100vh;
-  width: 400px;
-  transition: transform 0.3s ease-in-out;
+  left: calc(var(--sidebar-spacing) + var(--sidebar-width) + var(--sidebar-gap));
+  width: var(--sidebar-width);
+  transition: all var(--sidebar-transition-duration) var(--sidebar-transition-timing);
   overflow-y: auto;
   overflow-x: hidden;
   transform: translateX(0);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
+.secondary-sidebar.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Full-width secondary sidebar for vouchers and other full-width views */
+.secondary-sidebar.full-width {
+  left: calc(var(--sidebar-spacing) + var(--sidebar-width) + var(--sidebar-gap));
+  width: calc(100vw - var(--sidebar-spacing) * 2 - var(--sidebar-width) - var(--sidebar-gap));
+}
+
+/* When tertiary sidebar is open, secondary sidebar shrinks back to normal width */
+.tertiary-sidebar.open ~ .secondary-sidebar.full-width {
+  width: var(--sidebar-width);
+}
+
+/* Tertiary Sidebar - consumes remainder of space, hidden by default */
 .tertiary-sidebar {
-  left: -100vh;
-  width: calc(100vw - 800px - 12vh);
-  transition: transform 0.3s ease-in-out;
+  left: calc(var(--sidebar-spacing) + (var(--sidebar-width) * 2) + (var(--sidebar-gap) * 2));
+  width: calc(100vw - var(--sidebar-spacing) * 2 - (var(--sidebar-width) * 2) - (var(--sidebar-gap) * 2));
+  transition: all var(--sidebar-transition-duration) var(--sidebar-transition-timing);
   overflow-y: auto;
   overflow-x: hidden;
   transform: translateX(0);
   display: flex;
   flex-direction: column;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .tertiary-sidebar > div {
@@ -45,12 +79,10 @@
   overflow-y: auto;
 }
 
-.secondary-sidebar.open {
-  transform: translateX(calc(400px + 106vh));
-}
-
 .tertiary-sidebar.open {
-  transform: translateX(calc(800px + 109vh));
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 /* Sidebar header - fixed */
@@ -68,29 +100,59 @@
   scrollbar-gutter: stable;
 }
 
-/* Mobile bottom sheet */
+/* Mobile bottom sheet layout */
 @media (max-width: 768px) {
+  :root {
+    --sidebar-spacing: 3vh;
+    --sidebar-width: 100%;
+    --sidebar-gap: 3vh;
+  }
+
   .primary-sidebar {
     top: auto;
-    bottom: 3vh;
-    left: 3vh;
-    right: 3vh;
-    width: calc(100% - 6vh);
+    bottom: var(--sidebar-spacing);
+    left: var(--sidebar-spacing);
+    right: var(--sidebar-spacing);
+    width: calc(100% - (var(--sidebar-spacing) * 2));
     height: 50vh;
     border-radius: 16px;
   }
 
   .secondary-sidebar {
     top: auto;
-    bottom: calc(3vh + 50vh + 3vh);
-    left: 3vh;
-    right: 3vh;
-    width: calc(100% - 6vh);
+    bottom: calc(var(--sidebar-spacing) + 50vh + var(--sidebar-gap));
+    left: var(--sidebar-spacing);
+    right: var(--sidebar-spacing);
+    width: calc(100% - (var(--sidebar-spacing) * 2));
     height: 45vh;
+    opacity: 0;
+    visibility: hidden;
     transform: translateY(100%);
+    transition: all var(--sidebar-transition-duration) var(--sidebar-transition-timing);
   }
 
   .secondary-sidebar.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .tertiary-sidebar {
+    top: auto;
+    bottom: calc(var(--sidebar-spacing) + 50vh + var(--sidebar-gap) + 45vh + var(--sidebar-gap));
+    left: var(--sidebar-spacing);
+    right: var(--sidebar-spacing);
+    width: calc(100% - (var(--sidebar-spacing) * 2));
+    height: 40vh;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(100%);
+    transition: all var(--sidebar-transition-duration) var(--sidebar-transition-timing);
+  }
+
+  .tertiary-sidebar.open {
+    opacity: 1;
+    visibility: visible;
     transform: translateY(0);
   }
 }

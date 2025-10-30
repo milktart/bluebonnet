@@ -85,7 +85,7 @@ function redirectAfterSuccess(res, req, tripId, tab, successMessage) {
   if (tripId) {
     res.redirect(`/trips/${tripId}?tab=${tab}`);
   } else {
-    res.redirect('/trips');
+    res.redirect('/');
   }
 }
 
@@ -104,7 +104,7 @@ function redirectAfterError(res, req, tripId, errorMessage) {
   if (tripId) {
     res.redirect(`/trips/${tripId}`);
   } else {
-    res.redirect('/trips');
+    res.redirect('/');
   }
 }
 
