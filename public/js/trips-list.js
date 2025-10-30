@@ -91,62 +91,9 @@ function toggleAccordion(contentId) {
   }
 }
 
-// Secondary Sidebar Controls
-function openSecondarySidebar() {
-  const sidebar = document.getElementById('secondary-sidebar');
-  if (sidebar) {
-    sidebar.classList.add('open');
-  }
-}
-
-function closeSecondarySidebar() {
-  const sidebar = document.getElementById('secondary-sidebar');
-  if (sidebar) {
-    sidebar.classList.remove('open');
-  }
-}
-
-// Show create trip form in secondary sidebar
-function showCreateTripForm() {
-  const content = document.getElementById('secondary-sidebar-content');
-  const form = document.getElementById('create-trip-form');
-  if (content && form) {
-    // Clear any previous content from secondary-sidebar-content
-    content.innerHTML = '';
-    // Hide the form initially
-    form.style.display = 'none';
-    // Move form content into secondary-sidebar-content
-    const formContent = form.innerHTML;
-    content.innerHTML = formContent;
-    // Reset form fields
-    const formElement = content.querySelector('form');
-    if (formElement) {
-      formElement.reset();
-    }
-    openSecondarySidebar();
-  }
-}
-
-// Show create event form in secondary sidebar
-function showCreateEventForm() {
-  const content = document.getElementById('secondary-sidebar-content');
-  const form = document.getElementById('create-event-form');
-  if (content && form) {
-    // Clear any previous content from secondary-sidebar-content
-    content.innerHTML = '';
-    // Hide the form initially
-    form.style.display = 'none';
-    // Move form content into secondary-sidebar-content
-    const formContent = form.innerHTML;
-    content.innerHTML = formContent;
-    // Reset form fields
-    const formElement = content.querySelector('form');
-    if (formElement) {
-      formElement.reset();
-    }
-    openSecondarySidebar();
-  }
-}
+// Note: openSecondarySidebar(), closeSecondarySidebar(), showCreateTripForm(),
+// and showCreateEventForm() are now defined in dashboard.ejs before the onclick
+// handlers to avoid ReferenceError
 
 // Backward compatibility
 function toggleNewTripSidebar() {

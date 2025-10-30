@@ -16,6 +16,55 @@
   <link href="/css/trips.css" rel="stylesheet">
 </head>
 <body class="overflow-hidden">
+<script>
+  // Define critical functions immediately in head to avoid ReferenceError
+  // These must be defined BEFORE any HTML elements reference them
+  window.openSecondarySidebar = function() {
+    const sidebar = document.getElementById('secondary-sidebar');
+    if (sidebar) {
+      sidebar.classList.add('open');
+    }
+  };
+
+  window.closeSecondarySidebar = function() {
+    const sidebar = document.getElementById('secondary-sidebar');
+    if (sidebar) {
+      sidebar.classList.remove('open');
+    }
+  };
+
+  window.showCreateTripForm = function() {
+    const content = document.getElementById('secondary-sidebar-content');
+    const form = document.getElementById('create-trip-form');
+    if (content && form) {
+      content.innerHTML = '';
+      form.style.display = 'none';
+      const formContent = form.innerHTML;
+      content.innerHTML = formContent;
+      const formElement = content.querySelector('form');
+      if (formElement) {
+        formElement.reset();
+      }
+      window.openSecondarySidebar();
+    }
+  };
+
+  window.showCreateEventForm = function() {
+    const content = document.getElementById('secondary-sidebar-content');
+    const form = document.getElementById('create-event-form');
+    if (content && form) {
+      content.innerHTML = '';
+      form.style.display = 'none';
+      const formContent = form.innerHTML;
+      content.innerHTML = formContent;
+      const formElement = content.querySelector('form');
+      if (formElement) {
+        formElement.reset();
+      }
+      window.openSecondarySidebar();
+    }
+  };
+</script>
   <!-- Navigation hidden on this full-screen map view -->
   <div class="hide-nav">
     <%- include('../partials/nav') %>
@@ -910,6 +959,9 @@
   <script src="/js/trip-map.js"></script>
   <script src="/js/sidebar-loader.js"></script>
   <script src="/js/companions-manager.js"></script>
+
+  <!-- Critical functions are now defined in the <head> section -->
+
   <script src="/js/trips-list.js"></script>
 
   <script>
