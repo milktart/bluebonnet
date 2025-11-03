@@ -42,19 +42,31 @@ function updateMapData(newData, isPast = false) {
 }
 
 function switchTab(activeTab) {
+  console.log('[switchTab] Switching to tab:', activeTab);
   Object.keys(TAB_CONFIG).forEach(tab => {
     const { tab: tabId, content: contentId } = TAB_CONFIG[tab];
     const tabElement = document.getElementById(tabId);
     const contentElement = document.getElementById(contentId);
 
+    console.log(`[switchTab] Processing ${tab}: tabElement=${!!tabElement}, contentElement=${!!contentElement}`);
+
+    // Skip if elements don't exist (e.g., when there are no trips)
+    if (!tabElement || !contentElement) {
+      console.log(`[switchTab] Skipping ${tab} - elements don't exist`);
+      return;
+    }
+
     if (tab === activeTab) {
+      console.log(`[switchTab] Showing ${tab}`);
       tabElement.className = 'py-3 px-4 border-b-2 border-blue-500 font-medium text-sm text-blue-600 bg-blue-50 rounded-t-lg transition-all duration-200';
       contentElement.classList.remove('hidden');
     } else {
+      console.log(`[switchTab] Hiding ${tab}`);
       tabElement.className = 'py-3 px-4 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-t-lg transition-all duration-200';
       contentElement.classList.add('hidden');
     }
   });
+  console.log('[switchTab] Tab switch complete');
 }
 
 function showUpcomingTrips() {

@@ -374,10 +374,8 @@ async function initializeMap(tripData, isPast = false) {
         maxZoom: maxZoom + 0.5
       });
     } else {
-      const alert = document.createElement('div');
-      alert.className = 'alert alert-warning mt-3';
-      alert.innerHTML = '<i class="bi bi-exclamation-triangle"></i> No locations to display. Add some items to see them on the map.';
-      document.getElementById('map').parentElement.insertBefore(alert, document.getElementById('map'));
+      // No locations - zoom in slightly more for better initial view
+      map.setView([25, -50], 3);
     }
 
     // Return the map instance for external management

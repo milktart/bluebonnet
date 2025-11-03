@@ -17,8 +17,10 @@ exports.createHotel = async (req, res) => {
       hotelName,
       address,
       phone,
-      checkInDateTime,
-      checkOutDateTime,
+      checkInDate,
+      checkInTime,
+      checkOutDate,
+      checkOutTime,
       timezone,
       confirmationNumber,
       roomNumber
@@ -33,6 +35,10 @@ exports.createHotel = async (req, res) => {
       }
       return redirectAfterError(res, req, null, 'Trip not found');
     }
+
+    // Combine date and time fields
+    const checkInDateTime = `${checkInDate}T${checkInTime}`;
+    const checkOutDateTime = `${checkOutDate}T${checkOutTime}`;
 
     // Geocode address
     const coords = await geocodeIfChanged(address);
@@ -74,8 +80,10 @@ exports.updateHotel = async (req, res) => {
       hotelName,
       address,
       phone,
-      checkInDateTime,
-      checkOutDateTime,
+      checkInDate,
+      checkInTime,
+      checkOutDate,
+      checkOutTime,
       timezone,
       confirmationNumber,
       roomNumber
@@ -94,6 +102,10 @@ exports.updateHotel = async (req, res) => {
       }
       return redirectAfterError(res, req, null, 'Hotel not found');
     }
+
+    // Combine date and time fields
+    const checkInDateTime = `${checkInDate}T${checkInTime}`;
+    const checkOutDateTime = `${checkOutDate}T${checkOutTime}`;
 
     // Geocode address if changed
     const coords = await geocodeIfChanged(

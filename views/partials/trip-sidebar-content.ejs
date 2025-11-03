@@ -1,58 +1,10 @@
 <!-- Trip Timeline Content - Used for both initial load and async refresh -->
 <div class="p-6">
   <%
-    // Shared helper functions
+    // All helper functions now available via res.locals from utils/dateFormatter.js
+    // Available: formatDate, getFlightNum, getCityName, getAirportCode,
+    //            calculateLayoverDuration, getLayoverText
     const allItems = [];
-
-    // Server-side formatting function (must match datetime-formatter.js)
-    function formatDate(date) {
-      const d = new Date(date);
-      const day = String(d.getDate()).padStart(2, '0');
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const month = months[d.getMonth()];
-      const year = d.getFullYear();
-      return `${day} ${month} ${year}`;
-    }
-
-    // Helper function to extract flight number without airline code
-    function getFlightNum(flightNumber) {
-      const match = flightNumber.match(/(\d+)$/);
-      return match ? match[1] : flightNumber;
-    }
-
-    // Helper function to extract city name from location string
-    function getCityName(location) {
-      if (location.includes(' - ')) {
-        const parts = location.split(' - ')[1];
-        if (parts && parts.includes(',')) {
-          return parts.split(',')[0].trim();
-        }
-        return parts;
-      }
-      return location.split(' - ')[0] || location;
-    }
-
-    // Helper function to extract airport code from location
-    function getAirportCode(location) {
-      const match = (location || '').match(/^([A-Z]{3})/);
-      return match ? match[1] : '';
-    }
-
-    // Helper function to calculate layover duration between two flights
-    function calculateLayoverDuration(flight1ArrivalTime, flight2DepartureTime) {
-      const arrival = new Date(flight1ArrivalTime);
-      const departure = new Date(flight2DepartureTime);
-      const diffMs = departure - arrival;
-      const diffHours = diffMs / (1000 * 60 * 60);
-
-      // Only show layover if less than 24 hours between flights
-      if (diffMs <= 0 || diffHours >= 24) return null;
-
-      const hours = Math.floor(diffHours);
-      const minutes = Math.round((diffHours - hours) * 60);
-
-      return { hours, minutes };
-    }
 
     // Helper function to check if a hotel exists during the layover period
     function hasHotelDuringPeriod(startDateTime, endDateTime, hotels) {
@@ -62,14 +14,6 @@
         // Check if hotel overlaps with the layover period
         return hotelCheckIn <= endDateTime && hotelCheckOut >= startDateTime;
       });
-    }
-
-    // Helper function to format layover text
-    function getLayoverText(duration, airportCode) {
-      if (duration.hours === 0) {
-        return `━━━━ ${duration.minutes}m in ${airportCode} ━━━━`;
-      }
-      return `━━━━ ${duration.hours}h ${duration.minutes}m in ${airportCode} ━━━━`;
     }
 
     // Collect all items

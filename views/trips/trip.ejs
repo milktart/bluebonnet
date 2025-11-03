@@ -37,15 +37,7 @@
             </svg>
           </a>
           <%
-            // Server-side formatting functions (must match datetime-formatter.js)
-            function formatDate(date) {
-              const d = new Date(date);
-              const day = String(d.getDate()).padStart(2, '0');
-              const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-              const month = months[d.getMonth()];
-              const year = d.getFullYear();
-              return `${day} ${month} ${year}`;
-            }
+            // formatDate is now available via res.locals from utils/dateFormatter.js
 
             // Determine icon based on trip purpose
             let tripIcon = 'flights_and_hotels'; // default
@@ -253,7 +245,7 @@
         </div>
 
         <div class="space-y-3">
-          <button onclick="showAddForm('flight')" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors">
+          <button onclick="showAddForm('flight')" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 hover:bg-gray-50 transition-colors">
             <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
               <span class="material-symbols-outlined text-blue-600" style="font-size: 16px;">flight</span>
             </div>
@@ -266,7 +258,7 @@
             </svg>
           </button>
 
-          <button onclick="showAddForm('hotel')" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors">
+          <button onclick="showAddForm('hotel')" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 hover:bg-gray-50 transition-colors">
             <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
               <span class="material-symbols-outlined text-green-600" style="font-size: 16px;">hotel</span>
             </div>
@@ -279,7 +271,7 @@
             </svg>
           </button>
 
-          <button onclick="showAddForm('transportation')" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors">
+          <button onclick="showAddForm('transportation')" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 hover:bg-gray-50 transition-colors">
             <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
               <span class="material-symbols-outlined text-amber-600" style="font-size: 16px;">train</span>
             </div>
@@ -292,7 +284,7 @@
             </svg>
           </button>
 
-          <button onclick="showAddForm('carRental')" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors">
+          <button onclick="showAddForm('carRental')" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 hover:bg-gray-50 transition-colors">
             <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
               <span class="material-symbols-outlined text-gray-600" style="font-size: 16px;">directions_car</span>
             </div>
@@ -305,7 +297,7 @@
             </svg>
           </button>
 
-          <button onclick="showAddForm('event')" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors">
+          <button onclick="showAddForm('event')" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 hover:bg-gray-50 transition-colors">
             <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
               <span class="material-symbols-outlined text-red-600" style="font-size: 16px;">event</span>
             </div>

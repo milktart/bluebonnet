@@ -6,6 +6,7 @@ const flash = require('connect-flash');
 const methodOverride = require('method-override');
 const path = require('path');
 const db = require('./models');
+const dateFormatter = require('./utils/dateFormatter');
 
 const app = express();
 
@@ -37,12 +38,25 @@ app.use(passport.session());
 // Flash messages
 app.use(flash());
 
-// Global variables
+// Global variables and utility functions
 app.use((req, res, next) => {
   res.locals.success_msg = req.flash('success_msg');
   res.locals.error_msg = req.flash('error_msg');
   res.locals.error = req.flash('error');
   res.locals.user = req.user || null;
+
+  // Make date formatting utilities available to all EJS templates
+  res.locals.formatDate = dateFormatter.formatDate;
+  res.locals.formatTime = dateFormatter.formatTime;
+  res.locals.formatDateTime = dateFormatter.formatDateTime;
+  res.locals.getAirportCode = dateFormatter.getAirportCode;
+  res.locals.getFlightNum = dateFormatter.getFlightNum;
+  res.locals.getCityName = dateFormatter.getCityName;
+  res.locals.calculateLayoverDuration = dateFormatter.calculateLayoverDuration;
+  res.locals.formatLayoverDisplay = dateFormatter.formatLayoverDisplay;
+  res.locals.calculateLayover = dateFormatter.calculateLayover;
+  res.locals.getLayoverText = dateFormatter.getLayoverText;
+
   next();
 });
 

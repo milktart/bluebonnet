@@ -1,6 +1,6 @@
 <!-- Vouchers Management Sidebar -->
 <div class="h-full flex flex-col">
-  <% const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']; %>
+  <% // formatDate is now available via res.locals from utils/dateFormatter.js %>
 
   <!-- Header with close button -->
   <div class="flex items-center justify-between mb-6 pb-6 border-b border-gray-200">
@@ -97,13 +97,7 @@
                   </td>
                   <td class="px-3 py-3">
                     <% if (voucher.expirationDate) { %>
-                      <%
-                        const expDate = new Date(voucher.expirationDate);
-                        const day = String(expDate.getDate()).padStart(2, '0');
-                        const month = months[expDate.getMonth()];
-                        const year = expDate.getFullYear();
-                      %>
-                      <div class="text-gray-900 text-xs"><%= day %> <%= month %> <%= year %></div>
+                      <div class="text-gray-900 text-xs"><%= formatDate(voucher.expirationDate) %></div>
                       <% if (voucher.daysUntilExpiration !== null) { %>
                         <div class="text-xs <% if (voucher.daysUntilExpiration <= 30) { %>text-red-600<% } else { %>text-gray-500<% } %>">
                           <% if (voucher.daysUntilExpiration <= 0) { %>Expired<% } else if (voucher.daysUntilExpiration <= 30) { %>Expires in <%= voucher.daysUntilExpiration %> days<% } else { %><%= voucher.daysUntilExpiration %> days<% } %>
@@ -186,13 +180,7 @@
                     <% } %>
                   </td>
                   <td class="px-3 py-3">
-                    <%
-                      const updatedDate = new Date(voucher.updatedAt);
-                      const updDay = String(updatedDate.getDate()).padStart(2, '0');
-                      const updMonth = months[updatedDate.getMonth()];
-                      const updYear = updatedDate.getFullYear();
-                    %>
-                    <div class="text-gray-900 text-xs"><%= updDay %> <%= updMonth %> <%= updYear %></div>
+                    <div class="text-gray-900 text-xs"><%= formatDate(voucher.updatedAt) %></div>
                   </td>
                 </tr>
               <% }) %>

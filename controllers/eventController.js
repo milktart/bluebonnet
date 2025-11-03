@@ -9,6 +9,7 @@ const {
 } = require('./helpers/resourceController');
 const { utcToLocal } = require('../utils/timezoneHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
+const { formatDate, formatTime } = require('../utils/dateFormatter');
 
 exports.createEvent = async (req, res) => {
   try {
@@ -249,23 +250,7 @@ exports.getEventSidebar = async (req, res) => {
       return res.status(404).send('<p class="text-red-600">Event not found</p>');
     }
 
-    const formatDate = (date) => {
-      if (!date) return '';
-      const d = new Date(date);
-      const day = String(d.getDate()).padStart(2, '0');
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const month = months[d.getMonth()];
-      const year = d.getFullYear();
-      return `${day} ${month} ${year}`;
-    };
-
-    const formatTime = (date) => {
-      if (!date) return '';
-      const d = new Date(date);
-      const hours = String(d.getHours()).padStart(2, '0');
-      const minutes = String(d.getMinutes()).padStart(2, '0');
-      return `${hours}:${minutes}`;
-    };
+    // formatDate and formatTime now imported from utils/dateFormatter.js
 
     const startDate = formatDate(event.startDateTime);
     const startTime = formatTime(event.startDateTime);

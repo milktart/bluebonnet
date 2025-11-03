@@ -1,23 +1,29 @@
 // DateTime formatting utilities
 // Format: DD MMM YYYY for dates, HH:MM for times (24-hour)
 
+// Constants
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 function formatDate(dateString) {
   if (!dateString) return '';
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
+
   const day = String(date.getDate()).padStart(2, '0');
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const month = months[date.getMonth()];
+  const month = MONTHS[date.getMonth()];
   const year = date.getFullYear();
-  
+
   return `${day} ${month} ${year}`;
 }
 
 function formatTime(dateString) {
   if (!dateString) return '';
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
+
   const hours = String(date.getHours()).padStart(2, '0');
   const minutes = String(date.getMinutes()).padStart(2, '0');
-  
+
   return `${hours}:${minutes}`;
 }
 
@@ -26,14 +32,31 @@ function formatDateTime(dateString) {
   return `${formatDate(dateString)} ${formatTime(dateString)}`;
 }
 
+// Helper function to validate timezone string
+function validateTimezone(timezone) {
+  return timezone && typeof timezone === 'string' && timezone.trim() &&
+         timezone !== 'undefined' && timezone !== 'null' ? timezone.trim() : null;
+}
+
+// Helper function to extract UTC date parts
+function getUTCDateParts(date) {
+  return {
+    year: String(date.getUTCFullYear()),
+    month: String(date.getUTCMonth() + 1).padStart(2, '0'),
+    day: String(date.getUTCDate()).padStart(2, '0'),
+    hours: String(date.getUTCHours()).padStart(2, '0'),
+    minutes: String(date.getUTCMinutes()).padStart(2, '0')
+  };
+}
+
 // Format date for HTML input type="date" (YYYY-MM-DD)
 // Converts UTC date to the specified timezone for display
 function formatDateForInput(date, timezone) {
   if (!date) return '';
   const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
 
-  // Validate timezone
-  const validTimezone = timezone && typeof timezone === 'string' && timezone.trim() && timezone !== 'undefined' && timezone !== 'null' ? timezone.trim() : null;
+  const validTimezone = validateTimezone(timezone);
 
   let year, month, day;
 
@@ -52,20 +75,17 @@ function formatDateForInput(date, timezone) {
       console.log('[formatDateForInput] UTC:', date, 'timezone:', validTimezone, 'local:', `${year}-${month}-${day}`);
     } catch (e) {
       console.warn('[formatDateForInput] Invalid timezone "' + validTimezone + '", using UTC:', e);
-      year = String(d.getUTCFullYear());
-      month = String(d.getUTCMonth() + 1).padStart(2, '0');
-      day = String(d.getUTCDate()).padStart(2, '0');
+      const utcParts = getUTCDateParts(d);
+      ({ year, month, day } = utcParts);
     }
   } else {
     // No timezone, show UTC
-    year = String(d.getUTCFullYear());
-    month = String(d.getUTCMonth() + 1).padStart(2, '0');
-    day = String(d.getUTCDate()).padStart(2, '0');
+    const utcParts = getUTCDateParts(d);
+    ({ year, month, day } = utcParts);
     console.log('[formatDateForInput] UTC date (no timezone):', `${year}-${month}-${day}`);
   }
 
-  const result = `${year}-${month}-${day}`;
-  return result;
+  return `${year}-${month}-${day}`;
 }
 
 // Format time for HTML input type="time" (HH:MM)
@@ -73,9 +93,9 @@ function formatDateForInput(date, timezone) {
 function formatTimeForInput(date, timezone) {
   if (!date) return '';
   const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
 
-  // Validate timezone
-  const validTimezone = timezone && typeof timezone === 'string' && timezone.trim() && timezone !== 'undefined' && timezone !== 'null' ? timezone.trim() : null;
+  const validTimezone = validateTimezone(timezone);
 
   let hours, minutes;
 
@@ -93,49 +113,40 @@ function formatTimeForInput(date, timezone) {
       console.log(`[formatTimeForInput] UTC: ${date}, timezone: ${validTimezone}, local: ${hours}:${minutes}`);
     } catch (e) {
       console.warn(`[formatTimeForInput] Invalid timezone "${validTimezone}", using UTC:`, e);
-      hours = String(d.getUTCHours()).padStart(2, '0');
-      minutes = String(d.getUTCMinutes()).padStart(2, '0');
+      const utcParts = getUTCDateParts(d);
+      ({ hours, minutes } = utcParts);
     }
   } else {
     // No timezone, show UTC
-    hours = String(d.getUTCHours()).padStart(2, '0');
-    minutes = String(d.getUTCMinutes()).padStart(2, '0');
+    const utcParts = getUTCDateParts(d);
+    ({ hours, minutes } = utcParts);
     console.log(`[formatTimeForInput] UTC time (no timezone provided): ${hours}:${minutes}`);
   }
 
   return `${hours}:${minutes}`;
 }
 
-// Make available globally
-if (typeof window !== 'undefined') {
-  window.formatDate = formatDate;
-  window.formatTime = formatTime;
-  window.formatDateTime = formatDateTime;
-  window.formatDateForInput = formatDateForInput;
-  window.formatTimeForInput = formatTimeForInput;
-  window.getAirportCode = getAirportCode;
-  window.calculateLayoverDuration = calculateLayoverDuration;
-  window.calculateLayover = calculateLayover;
-  window.formatLayoverDisplay = formatLayoverDisplay;
-}
+// Note: Additional functions are exported to window below after they are defined
 
 // Auto-format all datetime elements on page load
 function applyDateTimeFormatting() {
-  // Format all elements with data-datetime attribute
+  const formatters = {
+    date: formatDate,
+    time: formatTime,
+    datetime: formatDateTime
+  };
+
   document.querySelectorAll('[data-datetime]').forEach(el => {
     const datetime = el.getAttribute('data-datetime');
     const format = el.getAttribute('data-format') || 'datetime';
-    
-    try {
-      if (format === 'date') {
-        el.textContent = formatDate(datetime);
-      } else if (format === 'time') {
-        el.textContent = formatTime(datetime);
-      } else {
-        el.textContent = formatDateTime(datetime);
+    const formatter = formatters[format];
+
+    if (formatter) {
+      try {
+        el.textContent = formatter(datetime);
+      } catch (e) {
+        console.error('Error formatting datetime:', datetime, e);
       }
-    } catch (e) {
-      console.error('Error formatting datetime:', datetime, e);
     }
   });
 }
@@ -176,10 +187,8 @@ function calculateLayoverDuration(flight1ArrivalTime, flight2DepartureTime) {
 function formatLayoverDisplay(duration, airportCode) {
   if (!duration) return '';
   const { hours, minutes } = duration;
-  if (hours === 0) {
-    return `━━━━ ${minutes}m in ${airportCode} ━━━━`;
-  }
-  return `━━━━ ${hours}h ${minutes}m in ${airportCode} ━━━━`;
+  const hoursPart = hours ? `${hours}h ` : '';
+  return `━━━━ ${hoursPart}${minutes}m in ${airportCode} ━━━━`;
 }
 
 // Legacy function for backward compatibility
@@ -193,6 +202,19 @@ function calculateLayover(flight1ArrivalTime, flight1Destination, flight2Departu
   if (!airportCode) return null;
 
   return { ...duration, airport: airportCode };
+}
+
+// Make all functions available globally
+if (typeof window !== 'undefined') {
+  window.formatDate = formatDate;
+  window.formatTime = formatTime;
+  window.formatDateTime = formatDateTime;
+  window.formatDateForInput = formatDateForInput;
+  window.formatTimeForInput = formatTimeForInput;
+  window.getAirportCode = getAirportCode;
+  window.calculateLayoverDuration = calculateLayoverDuration;
+  window.calculateLayover = calculateLayover;
+  window.formatLayoverDisplay = formatLayoverDisplay;
 }
 
 // Export for modules

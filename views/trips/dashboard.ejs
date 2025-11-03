@@ -326,66 +326,74 @@
         const pastTrips = [];
 
         trips.forEach(trip => {
-          const returnDate = new Date(trip.returnDate);
-          let isPast = returnDate < now;
+          // Find the latest end date across all trip segments and the trip return date
+          let latestEndDate = new Date(trip.returnDate);
 
-          if (!isPast && trip.flights && trip.flights.length > 0) {
-            const lastFlight = trip.flights.reduce((latest, f) => {
-              const arrivalDate = f.arrivalDateTime ? new Date(f.arrivalDateTime) : new Date(0);
-              return arrivalDate > latest ? arrivalDate : latest;
-            }, new Date(0));
-            if (lastFlight > new Date(0) && lastFlight < now) isPast = true;
+          // Check flights for latest arrival
+          if (trip.flights && trip.flights.length > 0) {
+            trip.flights.forEach(f => {
+              if (f.arrivalDateTime) {
+                const arrivalDate = new Date(f.arrivalDateTime);
+                if (arrivalDate > latestEndDate) latestEndDate = arrivalDate;
+              }
+            });
           }
 
-          if (!isPast && trip.hotels && trip.hotels.length > 0) {
-            const lastHotel = trip.hotels.reduce((latest, h) => {
-              const checkoutDate = h.checkOutDateTime ? new Date(h.checkOutDateTime) : new Date(0);
-              return checkoutDate > latest ? checkoutDate : latest;
-            }, new Date(0));
-            if (lastHotel > new Date(0) && lastHotel < now) isPast = true;
+          // Check hotels for latest checkout
+          if (trip.hotels && trip.hotels.length > 0) {
+            trip.hotels.forEach(h => {
+              if (h.checkOutDateTime) {
+                const checkoutDate = new Date(h.checkOutDateTime);
+                if (checkoutDate > latestEndDate) latestEndDate = checkoutDate;
+              }
+            });
           }
 
-          if (!isPast && trip.transportation && trip.transportation.length > 0) {
-            const lastTransport = trip.transportation.reduce((latest, t) => {
-              const arrivalDate = t.arrivalDateTime ? new Date(t.arrivalDateTime) : new Date(0);
-              return arrivalDate > latest ? arrivalDate : latest;
-            }, new Date(0));
-            if (lastTransport > new Date(0) && lastTransport < now) isPast = true;
+          // Check transportation for latest arrival
+          if (trip.transportation && trip.transportation.length > 0) {
+            trip.transportation.forEach(t => {
+              if (t.arrivalDateTime) {
+                const arrivalDate = new Date(t.arrivalDateTime);
+                if (arrivalDate > latestEndDate) latestEndDate = arrivalDate;
+              }
+            });
           }
 
-          if (!isPast && trip.carRentals && trip.carRentals.length > 0) {
-            const lastRental = trip.carRentals.reduce((latest, c) => {
-              const dropoffDate = c.dropoffDateTime ? new Date(c.dropoffDateTime) : new Date(0);
-              return dropoffDate > latest ? dropoffDate : latest;
-            }, new Date(0));
-            if (lastRental > new Date(0) && lastRental < now) isPast = true;
+          // Check car rentals for latest dropoff
+          if (trip.carRentals && trip.carRentals.length > 0) {
+            trip.carRentals.forEach(c => {
+              if (c.dropoffDateTime) {
+                const dropoffDate = new Date(c.dropoffDateTime);
+                if (dropoffDate > latestEndDate) latestEndDate = dropoffDate;
+              }
+            });
           }
 
-          if (!isPast && trip.events && trip.events.length > 0) {
-            const lastEvent = trip.events.reduce((latest, e) => {
-              const endDate = e.endDateTime ? new Date(e.endDateTime) : new Date(0);
-              return endDate > latest ? endDate : latest;
-            }, new Date(0));
-            if (lastEvent > new Date(0) && lastEvent < now) isPast = true;
+          // Check events for latest end
+          if (trip.events && trip.events.length > 0) {
+            trip.events.forEach(e => {
+              if (e.endDateTime) {
+                const endDate = new Date(e.endDateTime);
+                if (endDate > latestEndDate) latestEndDate = endDate;
+              }
+            });
           }
 
-          if (isPast) {
+          // Trip is past only if the latest end date of all segments is in the past
+          if (latestEndDate < now) {
             pastTrips.push(trip);
           } else {
             upcomingTrips.push(trip);
           }
         });
+
+        // Declare tripItems outside the if block so it's accessible later
+        let tripItems = [];
       %>
 
-      <div class="tab-content">
-        <!-- UPCOMING TRIPS TAB -->
-        <div class="tab-pane fade show active" id="upcomingTrips">
-          <% if (upcomingTrips.length === 0) { %>
-            <div class="alert alert-info m-4">
-              <i class="bi bi-info-circle"></i> No upcoming trips.
-            </div>
-          <% } else { %>
-            <%
+          <%
+            // Process upcoming trips data only if there are any
+            if (upcomingTrips.length > 0) {
               // Helper function to extract flight number without airline code
               function getFlightNum(flightNumber) {
                 const match = flightNumber.match(/(\d+)$/);
@@ -528,7 +536,7 @@
               });
 
               // Now group items by trip for display
-              const tripItems = [];
+              // tripItems already declared outside the if block
 
               // Add standalone items as individual cards (not grouped)
               const standaloneItems = allItemsWithTrip.filter(item => item.tripId === null);
@@ -556,11 +564,12 @@
 
               // Sort all items (trips and standalone events) chronologically
               tripItems.sort((a, b) => a.sortTime - b.sortTime);
+            }
             %>
 
         <!-- Upcoming Trips Content -->
         <div id="upcoming-content" class="space-y-4 p-6">
-          <% if (tripItems.length === 0) { %>
+          <% if (typeof tripItems === 'undefined' || tripItems.length === 0) { %>
             <div class="text-center py-8">
               <p class="text-gray-500">No upcoming trips to display.</p>
             </div>
@@ -947,7 +956,6 @@
             </button>
           </div>
         </div>
-      <% } %>
     </div>
   </div>
 
@@ -1134,6 +1142,7 @@
       }
     }
   </script>
+
   <% } %>
 
 </body>

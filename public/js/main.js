@@ -179,26 +179,8 @@ function editEvent(id) {
   console.log('Edit event:', id);
 }
 
-// Utility function to format dates
-function formatDate(dateString) {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-EU', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
-}
-
-function formatDateTime(dateString) {
-  const date = new Date(dateString);
-  return date.toLocaleString('en-EU', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-}
+// Note: formatDate() and formatDateTime() are now provided by datetime-formatter.js
+// which is loaded before this file in the templates.
 
 // Delete notification with undo functionality
 function showDeleteNotification(itemName, itemType, itemId, restoreUrl, onUndoCallback) {
