@@ -11,6 +11,14 @@
   </div>
 
   <div class="space-y-6">
+    <!-- Add Companion Button -->
+    <button onclick="loadSidebarContent('/companions/sidebar/create')" class="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm">
+      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      Add Companion
+    </button>
+
     <!-- Section 1: Mutual Companions (Accepted Relationships) -->
     <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
       <h3 class="text-sm font-semibold text-gray-900 mb-4 flex items-center">
@@ -143,9 +151,7 @@
 // Store current relationship ID for modal actions
 let currentRelationshipId = null;
 
-// Load all companion data on page load
-document.addEventListener('DOMContentLoaded', loadCompanionData);
-
+// Load all companion data immediately (not waiting for DOMContentLoaded since this is loaded via AJAX)
 async function loadCompanionData() {
   try {
     // Load mutual companions
@@ -280,49 +286,60 @@ function openAcceptModal(relationshipId, companionName) {
   new bootstrap.Modal(document.getElementById('acceptCompanionModal')).show();
 }
 
-document.getElementById('confirmPermissionChange').addEventListener('click', async () => {
-  const newPermission = document.querySelector('input[name="newPermissionLevel"]:checked').value;
+// Wait for DOM to be ready before attaching event listeners
+setTimeout(() => {
+  const confirmBtn = document.getElementById('confirmPermissionChange');
+  if (confirmBtn) {
+    confirmBtn.addEventListener('click', async () => {
+      const newPermission = document.querySelector('input[name="newPermissionLevel"]:checked').value;
 
-  try {
-    const response = await fetch(`/companion-relationships/${currentRelationshipId}/permission`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ permissionLevel: newPermission })
+      try {
+        const response = await fetch(`/companion-relationships/${currentRelationshipId}/permission`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ permissionLevel: newPermission })
+        });
+
+        if (response.ok) {
+          bootstrap.Modal.getInstance(document.getElementById('changePermissionModal')).hide();
+          loadCompanionData();
+        } else {
+          alert('Error changing permission level');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error changing permission level');
+      }
     });
-
-    if (response.ok) {
-      bootstrap.Modal.getInstance(document.getElementById('changePermissionModal')).hide();
-      loadCompanionData();
-    } else {
-      alert('Error changing permission level');
-    }
-  } catch (error) {
-    console.error('Error:', error);
-    alert('Error changing permission level');
   }
-});
+}, 100);
 
-document.getElementById('confirmAcceptRequest').addEventListener('click', async () => {
-  const permissionLevel = document.querySelector('input[name="acceptPermissionLevel"]:checked').value;
+setTimeout(() => {
+  const acceptBtn = document.getElementById('confirmAcceptRequest');
+  if (acceptBtn) {
+    acceptBtn.addEventListener('click', async () => {
+      const permissionLevel = document.querySelector('input[name="acceptPermissionLevel"]:checked').value;
 
-  try {
-    const response = await fetch(`/companion-relationships/${currentRelationshipId}/accept`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ permissionLevel })
+      try {
+        const response = await fetch(`/companion-relationships/${currentRelationshipId}/accept`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ permissionLevel })
+        });
+
+        if (response.ok) {
+          bootstrap.Modal.getInstance(document.getElementById('acceptCompanionModal')).hide();
+          loadCompanionData();
+        } else {
+          alert('Error accepting companion request');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error accepting companion request');
+      }
     });
-
-    if (response.ok) {
-      bootstrap.Modal.getInstance(document.getElementById('acceptCompanionModal')).hide();
-      loadCompanionData();
-    } else {
-      alert('Error accepting companion request');
-    }
-  } catch (error) {
-    console.error('Error:', error);
-    alert('Error accepting companion request');
   }
-});
+}, 100);
 
 async function declineRequest(relationshipId) {
   if (!confirm('Are you sure you want to decline this request?')) return;
@@ -390,4 +407,7 @@ async function revokeCompanion(relationshipId) {
     alert('Error revoking companion');
   }
 }
+
+// Load companion data when sidebar is opened
+loadCompanionData();
 </script>
