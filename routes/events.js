@@ -5,6 +5,7 @@ const { ensureAuthenticated } = require('../middleware/auth');
 
 router.use(ensureAuthenticated);
 
+router.get('/standalone/form', eventController.getStandaloneForm); // Get standalone form
 router.get('/trips/:tripId/form', eventController.getAddForm);
 router.get('/:id/form', eventController.getEditForm);
 router.get('/:id/sidebar', eventController.getEventSidebar);

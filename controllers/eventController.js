@@ -38,9 +38,6 @@ exports.createEvent = async (req, res) => {
       endDateTime = `${endDate}T${endTime}`;
     }
 
-    // Set default timezone to UTC if not provided
-    timezone = timezone || 'UTC';
-
     // Verify trip ownership if tripId provided
     if (tripId) {
       const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
@@ -56,8 +53,20 @@ exports.createEvent = async (req, res) => {
     // Geocode location if provided
     const coords = location ? await geocodeIfChanged(location) : null;
 
+    // Infer timezone from location if not provided
+    let finalTimezone = timezone;
+    if (!finalTimezone && coords?.lat && coords?.lng) {
+      try {
+        finalTimezone = await require('../services/geocodingService').inferTimezone(coords.lat, coords.lng);
+      } catch (error) {
+        console.error('Error inferring timezone:', error);
+        finalTimezone = 'UTC';
+      }
+    }
+    finalTimezone = finalTimezone || 'UTC';
+
     // If no endDateTime provided, default to startDateTime (for instant/point-in-time events)
-    const finalEndDateTime = endDateTime ? convertToUTC(endDateTime, timezone) : convertToUTC(startDateTime, timezone);
+    const finalEndDateTime = endDateTime ? convertToUTC(endDateTime, finalTimezone) : convertToUTC(startDateTime, finalTimezone);
 
     // Sanitize optional fields - convert empty strings to null to avoid validation errors
     const sanitizedContactEmail = contactEmail && contactEmail.trim() !== '' ? contactEmail : null;
@@ -68,10 +77,10 @@ exports.createEvent = async (req, res) => {
       userId: req.user.id,
       tripId: tripId || null,
       name,
-      startDateTime: convertToUTC(startDateTime, timezone),
+      startDateTime: convertToUTC(startDateTime, finalTimezone),
       endDateTime: finalEndDateTime,
       location,
-      timezone,
+      timezone: finalTimezone,
       lat: coords?.lat,
       lng: coords?.lng,
       contactPhone: sanitizedContactPhone,
@@ -124,9 +133,6 @@ exports.updateEvent = async (req, res) => {
       endDateTime = `${endDate}T${endTime}`;
     }
 
-    // Set default timezone to UTC if not provided
-    timezone = timezone || 'UTC';
-
     // Find event with trip
     const event = await Event.findByPk(req.params.id, {
       include: [{ model: Trip, as: 'trip', required: false }]
@@ -157,8 +163,20 @@ exports.updateEvent = async (req, res) => {
       location ? { lat: event.lat, lng: event.lng } : null
     );
 
+    // Infer timezone from location if not provided
+    let finalTimezone = timezone;
+    if (!finalTimezone && coords?.lat && coords?.lng) {
+      try {
+        finalTimezone = await require('../services/geocodingService').inferTimezone(coords.lat, coords.lng);
+      } catch (error) {
+        console.error('Error inferring timezone:', error);
+        finalTimezone = event.timezone || 'UTC';
+      }
+    }
+    finalTimezone = finalTimezone || event.timezone || 'UTC';
+
     // If no endDateTime provided, default to startDateTime (for instant/point-in-time events)
-    const finalEndDateTime = endDateTime ? convertToUTC(endDateTime, timezone) : convertToUTC(startDateTime, timezone);
+    const finalEndDateTime = endDateTime ? convertToUTC(endDateTime, finalTimezone) : convertToUTC(startDateTime, finalTimezone);
 
     // Sanitize optional fields - convert empty strings to null to avoid validation errors
     const sanitizedContactEmail = contactEmail && contactEmail.trim() !== '' ? contactEmail : null;
@@ -167,10 +185,10 @@ exports.updateEvent = async (req, res) => {
 
     await event.update({
       name,
-      startDateTime: convertToUTC(startDateTime, timezone),
+      startDateTime: convertToUTC(startDateTime, finalTimezone),
       endDateTime: finalEndDateTime,
       location,
-      timezone,
+      timezone: finalTimezone,
       lat: coords?.lat,
       lng: coords?.lng,
       contactPhone: sanitizedContactPhone,
@@ -386,6 +404,20 @@ exports.getEditForm = async (req, res) => {
       tripId: event.tripId,
       isEditing: true,
       data: formattedData
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error loading form');
+  }
+};
+
+exports.getStandaloneForm = async (req, res) => {
+  try {
+    // Return the standalone event form for dashboard
+    res.render('partials/event-form', {
+      tripId: null,
+      isEditing: false,
+      data: null
     });
   } catch (error) {
     console.error(error);

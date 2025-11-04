@@ -71,7 +71,7 @@
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Departure Time</label>
-        <input type="time" name="departureTime" id="<%= isAddMode ? '' : 'edit_transportation_departureTime' %>" value="<%= data?.departureTime || '' %>" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500" required>
+        <input type="text" name="departureTime" id="<%= isAddMode ? '' : 'edit_transportation_departureTime' %>" data-time-input value="<%= data?.departureTime || '' %>" placeholder="HH:MM" maxlength="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500" required>
       </div>
     </div>
 
@@ -83,7 +83,7 @@
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Arrival Time</label>
-        <input type="time" name="arrivalTime" id="<%= isAddMode ? '' : 'edit_transportation_arrivalTime' %>" value="<%= data?.arrivalTime || '' %>" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500" required>
+        <input type="text" name="arrivalTime" id="<%= isAddMode ? '' : 'edit_transportation_arrivalTime' %>" data-time-input value="<%= data?.arrivalTime || '' %>" placeholder="HH:MM" maxlength="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500" required>
       </div>
     </div>
 
@@ -120,3 +120,31 @@
   <% } %>
 </div>
 
+<script>
+function initializeTransportationDateSync() {
+  const departureDateInput = document.querySelector('input[name="departureDate"]');
+  const arrivalDateInput = document.querySelector('input[name="arrivalDate"]');
+
+  if (departureDateInput && arrivalDateInput) {
+    departureDateInput.addEventListener('change', function() {
+      const departureDate = this.value;
+      const arrivalDate = arrivalDateInput.value;
+
+      // Case 1: Arrival date is blank - auto-fill with departure date
+      if (!arrivalDate) {
+        arrivalDateInput.value = departureDate;
+      }
+      // Case 2: Departure date is after arrival date - update arrival date to match departure date
+      else if (departureDate > arrivalDate) {
+        arrivalDateInput.value = departureDate;
+      }
+      // Case 3: Departure date is before arrival date - leave arrival date unchanged
+    });
+  }
+}
+
+// Call on initial page load
+document.addEventListener('DOMContentLoaded', initializeTransportationDateSync);
+// Also call immediately in case the form is already loaded
+initializeTransportationDateSync();
+</script>

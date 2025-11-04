@@ -78,6 +78,11 @@ async function loadSidebarContent(url, options = {}) {
     // Re-initialize any scripts/interactions in the loaded content
     initializeSidebarContent();
 
+    // Initialize time input formatting for any time inputs in the loaded content
+    if (typeof initializeTimeInputs === 'function') {
+      initializeTimeInputs();
+    }
+
     // Scripts in the loaded partials handle their own interactions via global listeners or inline handlers
   } catch (error) {
     const container = document.getElementById('secondary-sidebar-content');
@@ -108,6 +113,11 @@ function initializeSidebarContent() {
   const closeButton = document.querySelector('#secondary-sidebar-content .close-sidebar');
   if (closeButton) {
     closeButton.addEventListener('click', closeSecondarySidebar);
+  }
+
+  // Initialize event date sync (auto-fill end date when start date changes)
+  if (typeof initializeEventDateSync === 'function') {
+    initializeEventDateSync();
   }
 
   // Handle event edit form save button

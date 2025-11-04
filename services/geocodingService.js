@@ -94,8 +94,178 @@ function getCacheSize() {
   return geocodeCache.size;
 }
 
+/**
+ * Reverse geocode coordinates to get location info including country
+ * @param {number} lat - Latitude
+ * @param {number} lng - Longitude
+ * @returns {Promise<{country_code: string, timezone: string} | null>}
+ */
+async function reverseGeocode(lat, lng) {
+  if (!lat || !lng) {
+    return null;
+  }
+
+  const cacheKey = `reverse_${lat}_${lng}`;
+  if (geocodeCache.has(cacheKey)) {
+    return geocodeCache.get(cacheKey);
+  }
+
+  try {
+    // Respect rate limiting
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTime;
+    if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+      await new Promise(resolve =>
+        setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLastRequest)
+      );
+    }
+    lastRequestTime = Date.now();
+
+    console.log(`Reverse geocoding: ${lat}, ${lng}`);
+
+    // Use Nominatim reverse geocoding
+    const response = await axios.get('https://nominatim.openstreetmap.org/reverse', {
+      params: {
+        format: 'json',
+        lat: lat,
+        lon: lng
+      },
+      headers: {
+        'User-Agent': 'TravelPlannerApp/1.0'
+      },
+      timeout: 10000
+    });
+
+    if (response.data && response.data.address) {
+      const countryCode = response.data.address.country_code?.toUpperCase();
+      const result = {
+        country_code: countryCode,
+        timezone: getTimezoneForCountry(countryCode, lat, lng)
+      };
+
+      geocodeCache.set(cacheKey, result);
+      return result;
+    }
+
+    return null;
+  } catch (error) {
+    console.error(`Reverse geocoding error for (${lat}, ${lng}):`, error.message);
+    return null;
+  }
+}
+
+/**
+ * Infer timezone from latitude/longitude
+ * Uses reverse geocoding to get country, then looks up timezone
+ * @param {number} lat - Latitude
+ * @param {number} lng - Longitude
+ * @returns {Promise<string|null>} - IANA timezone string or null
+ */
+async function inferTimezone(lat, lng) {
+  if (!lat || !lng) {
+    return null;
+  }
+
+  try {
+    const geoData = await reverseGeocode(lat, lng);
+    return geoData?.timezone || null;
+  } catch (error) {
+    console.error('Error inferring timezone:', error);
+    return null;
+  }
+}
+
+/**
+ * Map country code to timezone
+ * @param {string} countryCode - Two-letter country code (e.g., 'US', 'GB')
+ * @param {number} lat - Latitude (for fallback estimation)
+ * @param {number} lng - Longitude (for fallback estimation)
+ * @returns {string} - IANA timezone string
+ */
+function getTimezoneForCountry(countryCode, lat, lng) {
+  // Country code to primary timezone mapping
+  const countryTimezones = {
+    // Americas
+    'US': 'America/New_York',
+    'CA': 'America/Toronto',
+    'MX': 'America/Mexico_City',
+    'BR': 'America/Sao_Paulo',
+    'AR': 'America/Argentina/Buenos_Aires',
+    'CL': 'America/Santiago',
+    'CO': 'America/Bogota',
+    'PE': 'America/Lima',
+
+    // Europe
+    'GB': 'Europe/London',
+    'IE': 'Europe/Dublin',
+    'FR': 'Europe/Paris',
+    'DE': 'Europe/Berlin',
+    'IT': 'Europe/Rome',
+    'ES': 'Europe/Madrid',
+    'NL': 'Europe/Amsterdam',
+    'BE': 'Europe/Brussels',
+    'CH': 'Europe/Zurich',
+    'AT': 'Europe/Vienna',
+    'SE': 'Europe/Stockholm',
+    'NO': 'Europe/Oslo',
+    'DK': 'Europe/Copenhagen',
+    'FI': 'Europe/Helsinki',
+    'PL': 'Europe/Warsaw',
+    'CZ': 'Europe/Prague',
+    'RU': 'Europe/Moscow',
+
+    // Asia
+    'JP': 'Asia/Tokyo',
+    'CN': 'Asia/Shanghai',
+    'IN': 'Asia/Kolkata',
+    'SG': 'Asia/Singapore',
+    'TH': 'Asia/Bangkok',
+    'MY': 'Asia/Kuala_Lumpur',
+    'PH': 'Asia/Manila',
+    'KR': 'Asia/Seoul',
+    'ID': 'Asia/Jakarta',
+    'VN': 'Asia/Ho_Chi_Minh',
+    'HK': 'Asia/Hong_Kong',
+
+    // Middle East
+    'AE': 'Asia/Dubai',
+    'SA': 'Asia/Riyadh',
+    'IL': 'Asia/Jerusalem',
+    'TR': 'Europe/Istanbul',
+
+    // Africa
+    'ZA': 'Africa/Johannesburg',
+    'EG': 'Africa/Cairo',
+    'NG': 'Africa/Lagos',
+    'KE': 'Africa/Nairobi',
+
+    // Oceania
+    'AU': 'Australia/Sydney',
+    'NZ': 'Pacific/Auckland'
+  };
+
+  if (countryCode && countryTimezones[countryCode]) {
+    return countryTimezones[countryCode];
+  }
+
+  // Fallback: estimate timezone from longitude
+  if (lng !== undefined) {
+    const estimatedOffset = Math.round(lng / 15);
+    if (estimatedOffset >= -12 && estimatedOffset <= 12) {
+      const hours = Math.abs(estimatedOffset);
+      const sign = estimatedOffset >= 0 ? '+' : '-';
+      return `UTC${sign}${hours}`;
+    }
+  }
+
+  return 'UTC';
+}
+
 module.exports = {
   geocodeLocation,
+  reverseGeocode,
+  inferTimezone,
+  getTimezoneForCountry,
   clearCache,
   getCacheSize
 };

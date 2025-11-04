@@ -16,6 +16,22 @@
       });
     }
 
+    // Helper function to get timezone for an item
+    function getItemTimezone(item) {
+      if (item.type === 'flight' && item.data.originTimezone) {
+        return item.data.originTimezone;
+      } else if (item.type === 'hotel' && item.data.timezone) {
+        return item.data.timezone;
+      } else if (item.type === 'transportation' && item.data.originTimezone) {
+        return item.data.originTimezone;
+      } else if (item.type === 'carRental' && item.data.pickupTimezone) {
+        return item.data.pickupTimezone;
+      } else if (item.type === 'event' && item.data.timezone) {
+        return item.data.timezone;
+      }
+      return null;
+    }
+
     // Collect all items
     trip.flights.forEach(f => {
       const flightNum = getFlightNum(f.flightNumber);
@@ -25,6 +41,7 @@
       allItems.push({
         type: 'flight',
         time: new Date(f.departureDateTime),
+        timezone: f.originTimezone,
         data: f,
         display: `${airlineCode}${flightNum}: ${originCity} → ${destinationCity}`,
         hasSegment: true,
@@ -37,6 +54,7 @@
       allItems.push({
         type: 'hotel',
         time: new Date(h.checkInDateTime),
+        timezone: h.timezone,
         data: h,
         display: h.hotelName,
         hasSegment: false,
@@ -48,22 +66,23 @@
     trip.transportation.forEach(t => {
       const originCity = getCityName(t.origin);
       const destinationCity = getCityName(t.destination);
-      const transportationIcon = 
-        (t.method == "train") ? "train" : 
-        (t.method == "bus") ? "directions_bus" : 
-        (t.method == "ferry") ? "directions_boat" : 
-        (t.method == "shuttle") ? "airport_shuttle" : 
-        (t.method == "taxi/rideshare") ? "hail" : 
-        (t.method == "subway/metro") ? "directions_subway" : 
-        (t.method == "tram") ? "tram" : 
-        (t.method == "funicular") ? "funicular" : 
-        (t.method == "gondola") ? "gondola_lift" : 
-        (t.method == "monorail") ? "monorail" : 
+      const transportationIcon =
+        (t.method == "train") ? "train" :
+        (t.method == "bus") ? "directions_bus" :
+        (t.method == "ferry") ? "directions_boat" :
+        (t.method == "shuttle") ? "airport_shuttle" :
+        (t.method == "taxi/rideshare") ? "hail" :
+        (t.method == "subway/metro") ? "directions_subway" :
+        (t.method == "tram") ? "tram" :
+        (t.method == "funicular") ? "funicular" :
+        (t.method == "gondola") ? "gondola_lift" :
+        (t.method == "monorail") ? "monorail" :
         (t.method == "other") ? "directions_boat" : "transportation";
 
       allItems.push({
         type: 'transportation',
         time: new Date(t.departureDateTime),
+        timezone: t.originTimezone,
         data: t,
         display: `${originCity} → ${destinationCity}`,
         hasSegment: true,
@@ -77,6 +96,7 @@
       allItems.push({
         type: 'carRental',
         time: new Date(c.pickupDateTime),
+        timezone: c.pickupTimezone,
         data: c,
         display: `${c.company}`,
         hasSegment: false,
@@ -89,6 +109,7 @@
       allItems.push({
         type: 'event',
         time: new Date(e.startDateTime),
+        timezone: e.timezone,
         data: e,
         display: e.name,
         hasSegment: false,
@@ -97,7 +118,7 @@
       });
     });
 
-    // Sort by time FIRST
+    // Sort by UTC time (all times are stored in UTC)
     allItems.sort((a, b) => a.time - b.time);
 
     // Now assign markers in chronological order to items with segments
@@ -169,7 +190,10 @@
       }
     }
 
+    // Group items by local date while preserving the global chronological sort order
     const itemsByDate = {};
+    const dateKeysInOrder = [];
+
     allItems.forEach(item => {
       // Get timezone for this item to convert date to local timezone
       let timezone = null;
@@ -195,7 +219,10 @@
         dateKey = item.time.toISOString().split('T')[0];
       }
 
-      if (!itemsByDate[dateKey]) itemsByDate[dateKey] = [];
+      if (!itemsByDate[dateKey]) {
+        itemsByDate[dateKey] = [];
+        dateKeysInOrder.push(dateKey);
+      }
       itemsByDate[dateKey].push(item);
     });
   %>
@@ -218,7 +245,7 @@
     </div>
   <% } else { %>
     <div class="space-y-4">
-      <% Object.keys(itemsByDate).forEach(dateKey => {
+      <% dateKeysInOrder.forEach(dateKey => {
         // Parse dateKey back to Date for display
         const [year, month, day] = dateKey.split('-');
         const displayDate = new Date(year, parseInt(month) - 1, day);
@@ -242,6 +269,7 @@
           <div class="space-y-2">
             <%
               const dateItems = itemsByDate[dateKey];
+              // Items are already in chronological order from the global sort
               dateItems.forEach((item, itemIndex) => {
               // Get timezone for this item based on its type
               let timezone = null;

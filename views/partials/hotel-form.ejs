@@ -53,7 +53,7 @@
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Check-in Time</label>
-        <input type="time" name="checkInTime" id="<%= isAddMode ? '' : 'edit_hotel_checkInTime' %>" value="<%= data?.checkInTime || '14:00' %>" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
+        <input type="text" name="checkInTime" id="<%= isAddMode ? '' : 'edit_hotel_checkInTime' %>" data-time-input value="<%= data?.checkInTime || '14:00' %>" placeholder="HH:MM" maxlength="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
       </div>
     </div>
 
@@ -65,7 +65,7 @@
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Check-out Time</label>
-        <input type="time" name="checkOutTime" id="<%= isAddMode ? '' : 'edit_hotel_checkOutTime' %>" value="<%= data?.checkOutTime || '11:00' %>" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
+        <input type="text" name="checkOutTime" id="<%= isAddMode ? '' : 'edit_hotel_checkOutTime' %>" data-time-input value="<%= data?.checkOutTime || '11:00' %>" placeholder="HH:MM" maxlength="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
       </div>
     </div>
 
@@ -102,3 +102,31 @@
   <% } %>
 </div>
 
+<script>
+function initializeHotelDateSync() {
+  const checkInDateInput = document.querySelector('input[name="checkInDate"]');
+  const checkOutDateInput = document.querySelector('input[name="checkOutDate"]');
+
+  if (checkInDateInput && checkOutDateInput) {
+    checkInDateInput.addEventListener('change', function() {
+      const checkInDate = this.value;
+      const checkOutDate = checkOutDateInput.value;
+
+      // Case 1: Check-out date is blank - auto-fill with check-in date
+      if (!checkOutDate) {
+        checkOutDateInput.value = checkInDate;
+      }
+      // Case 2: Check-in date is after check-out date - update check-out date to match check-in date
+      else if (checkInDate > checkOutDate) {
+        checkOutDateInput.value = checkInDate;
+      }
+      // Case 3: Check-in date is before check-out date - leave check-out date unchanged
+    });
+  }
+}
+
+// Call on initial page load
+document.addEventListener('DOMContentLoaded', initializeHotelDateSync);
+// Also call immediately in case the form is already loaded
+initializeHotelDateSync();
+</script>

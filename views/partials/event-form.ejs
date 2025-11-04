@@ -9,7 +9,7 @@
 <div class="sidebar-form-container">
   <div class="flex items-start justify-between mb-6">
     <div class="flex items-center">
-      <button onclick="<%= isAddMode ? 'showAddItemMenu()' : 'closeSecondarySidebar()' %>" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
+      <button onclick="<%= isAddMode ? (tripId ? 'showAddItemMenu()' : 'closeSecondarySidebar()') : 'closeSecondarySidebar()' %>" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
         </svg>
@@ -21,11 +21,13 @@
     </div>
   </div>
 
-  <form id="<%= isAddMode ? 'addEventForm' : 'editEventForm' %>" action="<%= isAddMode ? `/events/trips/${tripId}/events` : `/events/${data?.id}` %>" method="POST" class="space-y-4">
+  <form id="<%= isAddMode ? 'addEventForm' : 'editEventForm' %>" action="<%= isAddMode ? (tripId ? `/events/trips/${tripId}/events` : `/events/standalone`) : `/events/${data?.id}` %>" method="POST" class="space-y-4">
     <% if (!isAddMode) { %>
       <input type="hidden" name="_method" value="PUT">
     <% } %>
-    <input type="hidden" name="tripId" value="<%= tripId %>">
+    <% if (tripId) { %>
+      <input type="hidden" name="tripId" value="<%= tripId %>">
+    <% } %>
 
     <!-- Event Name -->
     <div>
@@ -48,7 +50,7 @@
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-        <input type="time" name="startTime" id="<%= isAddMode ? '' : 'edit_event_startTime' %>" value="<%= data?.startTime || '' %>" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500" required>
+        <input type="text" name="startTime" id="<%= isAddMode ? '' : 'edit_event_startTime' %>" data-time-input value="<%= data?.startTime || '' %>" placeholder="HH:MM" maxlength="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500" required>
       </div>
     </div>
 
@@ -60,7 +62,7 @@
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-        <input type="time" name="endTime" id="<%= isAddMode ? '' : 'edit_event_endTime' %>" value="<%= data?.endTime || '' %>" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500" required>
+        <input type="text" name="endTime" id="<%= isAddMode ? '' : 'edit_event_endTime' %>" data-time-input value="<%= data?.endTime || '' %>" placeholder="HH:MM" maxlength="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500" required>
       </div>
     </div>
 
@@ -94,4 +96,33 @@
     </form>
   <% } %>
 </div>
+
+<script>
+function initializeEventDateSync() {
+  const startDateInput = document.querySelector('input[name="startDate"]');
+  const endDateInput = document.querySelector('input[name="endDate"]');
+
+  if (startDateInput && endDateInput) {
+    startDateInput.addEventListener('change', function() {
+      const startDate = this.value;
+      const endDate = endDateInput.value;
+
+      // Case 1: End date is blank - auto-fill with start date
+      if (!endDate) {
+        endDateInput.value = startDate;
+      }
+      // Case 2: Start date is after end date - update end date to match start date
+      else if (startDate > endDate) {
+        endDateInput.value = startDate;
+      }
+      // Case 3: Start date is before end date - leave end date unchanged
+    });
+  }
+}
+
+// Call on initial page load
+document.addEventListener('DOMContentLoaded', initializeEventDateSync);
+// Also call immediately in case the form is already loaded
+initializeEventDateSync();
+</script>
 

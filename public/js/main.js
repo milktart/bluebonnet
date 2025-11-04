@@ -20,6 +20,44 @@ document.querySelectorAll('form[onsubmit*="confirm"]').forEach(form => {
   });
 });
 
+// Auto-close date/time pickers after selection
+// Handles dynamically added inputs as well (excludes time inputs managed by time-input-formatter.js)
+function initializeDateTimePickerClosing() {
+  // Select all date inputs (not time, as those are managed by time-input-formatter.js)
+  const dateTimeInputs = document.querySelectorAll('input[type="date"]:not([data-time-input]), input[type="datetime-local"]');
+
+  dateTimeInputs.forEach(input => {
+    // Only add listener if not already added
+    if (!input.dataset.datePickerInitialized) {
+      // Use 'change' event to close the picker
+      input.addEventListener('change', function() {
+        // Blur the input to close the date/time picker
+        this.blur();
+      });
+
+      input.dataset.datePickerInitialized = 'true';
+    }
+  });
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', initializeDateTimePickerClosing);
+
+// Also initialize for dynamically added inputs (when forms are loaded via AJAX)
+// Use MutationObserver to watch for new date/time inputs
+const observer = new MutationObserver(() => {
+  initializeDateTimePickerClosing();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: false,
+    characterData: false
+  });
+});
+
 // Date validation - ensure return date is after departure date
 const departureDateInput = document.getElementById('departureDate');
 const returnDateInput = document.getElementById('returnDate');
@@ -31,7 +69,7 @@ if (departureDateInput && returnDateInput) {
       returnDateInput.value = this.value;
     }
   });
-  
+
   returnDateInput.addEventListener('change', function() {
     if (this.value < departureDateInput.value) {
       alert('Return date must be after departure date');

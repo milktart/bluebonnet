@@ -156,9 +156,16 @@ function editItem(type, id) {
         .then(response => response.text())
         .then(html => {
           formContainer.innerHTML = html;
+          executeLoadedScripts(formContainer);
           // Call form initialization directly
           if (typeof setupAsyncFormSubmission === 'function') {
             setupAsyncFormSubmission('editEventForm');
+          }
+          if (typeof initializeEventDateSync === 'function') {
+            initializeEventDateSync();
+          }
+          if (typeof initializeTimeInputs === 'function') {
+            initializeTimeInputs();
           }
           initFlightDateTimePickers();
         })
@@ -279,9 +286,16 @@ function showAddForm(type) {
         .then(response => response.text())
         .then(html => {
           formContainer.innerHTML = html;
+          executeLoadedScripts(formContainer);
           // Call form initialization directly
           if (typeof setupAsyncFormSubmission === 'function') {
             setupAsyncFormSubmission('addEventForm');
+          }
+          if (typeof initializeEventDateSync === 'function') {
+            initializeEventDateSync();
+          }
+          if (typeof initializeTimeInputs === 'function') {
+            initializeTimeInputs();
           }
           initFlightDateTimePickers();
         })

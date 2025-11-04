@@ -43,14 +43,27 @@ exports.createHotel = async (req, res) => {
     // Geocode address
     const coords = await geocodeIfChanged(address);
 
+    // Infer timezone from location if not provided
+    let finalTimezone = timezone;
+    if (!finalTimezone && coords?.lat && coords?.lng) {
+      const { geocodingService } = require('../services/geocodingService');
+      try {
+        finalTimezone = await require('../services/geocodingService').inferTimezone(coords.lat, coords.lng);
+      } catch (error) {
+        console.error('Error inferring timezone:', error);
+        finalTimezone = 'UTC';
+      }
+    }
+    finalTimezone = finalTimezone || 'UTC';
+
     await Hotel.create({
       tripId,
       hotelName,
       address,
       phone,
-      checkInDateTime: convertToUTC(checkInDateTime, timezone || 'UTC'),
-      checkOutDateTime: convertToUTC(checkOutDateTime, timezone || 'UTC'),
-      timezone: timezone || null,
+      checkInDateTime: convertToUTC(checkInDateTime, finalTimezone),
+      checkOutDateTime: convertToUTC(checkOutDateTime, finalTimezone),
+      timezone: finalTimezone,
       lat: coords?.lat,
       lng: coords?.lng,
       confirmationNumber,
@@ -114,13 +127,25 @@ exports.updateHotel = async (req, res) => {
       { lat: hotel.lat, lng: hotel.lng }
     );
 
+    // Infer timezone from location if not provided
+    let finalTimezone = timezone;
+    if (!finalTimezone && coords?.lat && coords?.lng) {
+      try {
+        finalTimezone = await require('../services/geocodingService').inferTimezone(coords.lat, coords.lng);
+      } catch (error) {
+        console.error('Error inferring timezone:', error);
+        finalTimezone = hotel.timezone || 'UTC';
+      }
+    }
+    finalTimezone = finalTimezone || hotel.timezone || 'UTC';
+
     await hotel.update({
       hotelName,
       address,
       phone,
-      checkInDateTime: convertToUTC(checkInDateTime, timezone || 'UTC'),
-      checkOutDateTime: convertToUTC(checkOutDateTime, timezone || 'UTC'),
-      timezone: timezone || null,
+      checkInDateTime: convertToUTC(checkInDateTime, finalTimezone),
+      checkOutDateTime: convertToUTC(checkOutDateTime, finalTimezone),
+      timezone: finalTimezone,
       lat: coords?.lat,
       lng: coords?.lng,
       confirmationNumber,
