@@ -28,7 +28,8 @@ exports.createEvent = async (req, res) => {
       startTime,
       endDate,
       endTime,
-      description
+      description,
+      companions
     } = req.body;
 
     // Convert separate date/time fields to datetime strings if provided
@@ -89,9 +90,39 @@ exports.createEvent = async (req, res) => {
       description: sanitizedDescription
     });
 
-    // Auto-add trip-level companions to this event
-    if (tripId) {
-      await itemCompanionHelper.autoAddTripCompanions('event', event.id, tripId, req.user.id);
+    // Add companions to this event
+    try {
+      if (tripId) {
+        let companionIds = [];
+
+        // Try to parse companions if provided
+        if (companions) {
+          try {
+            companionIds = typeof companions === 'string' ? JSON.parse(companions) : companions;
+            companionIds = Array.isArray(companionIds) ? companionIds : [];
+          } catch (e) {
+            console.error('Error parsing companions:', e);
+            companionIds = [];
+          }
+        }
+
+        // If companions were provided and not empty, use them; otherwise use fallback
+        if (companionIds.length > 0) {
+          await itemCompanionHelper.updateItemCompanions(
+            'event',
+            event.id,
+            companionIds,
+            tripId,
+            req.user.id
+          );
+        } else {
+          // Fallback: auto-add trip-level companions
+          await itemCompanionHelper.autoAddTripCompanions('event', event.id, tripId, req.user.id);
+        }
+      }
+    } catch (e) {
+      console.error('Error managing companions for event:', e);
+      // Don't fail the event creation due to companion errors
     }
 
     // Check if this is an async request

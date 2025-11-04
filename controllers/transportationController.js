@@ -24,7 +24,8 @@ exports.createTransportation = async (req, res) => {
       departureDateTime,
       arrivalDateTime,
       confirmationNumber,
-      seat
+      seat,
+      companions
     } = req.body;
 
     // Verify trip ownership if tripId provided
@@ -64,9 +65,39 @@ exports.createTransportation = async (req, res) => {
       seat
     });
 
-    // Auto-add trip-level companions to this transportation
-    if (tripId) {
-      await itemCompanionHelper.autoAddTripCompanions('transportation', transportation.id, tripId, req.user.id);
+    // Add companions to this transportation
+    try {
+      if (tripId) {
+        let companionIds = [];
+
+        // Try to parse companions if provided
+        if (companions) {
+          try {
+            companionIds = typeof companions === 'string' ? JSON.parse(companions) : companions;
+            companionIds = Array.isArray(companionIds) ? companionIds : [];
+          } catch (e) {
+            console.error('Error parsing companions:', e);
+            companionIds = [];
+          }
+        }
+
+        // If companions were provided and not empty, use them; otherwise use fallback
+        if (companionIds.length > 0) {
+          await itemCompanionHelper.updateItemCompanions(
+            'transportation',
+            transportation.id,
+            companionIds,
+            tripId,
+            req.user.id
+          );
+        } else {
+          // Fallback: auto-add trip-level companions
+          await itemCompanionHelper.autoAddTripCompanions('transportation', transportation.id, tripId, req.user.id);
+        }
+      }
+    } catch (e) {
+      console.error('Error managing companions for transportation:', e);
+      // Don't fail the transportation creation due to companion errors
     }
 
     // Check if this is an async request

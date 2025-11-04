@@ -22,7 +22,8 @@ exports.createCarRental = async (req, res) => {
       dropoffTimezone,
       pickupDateTime,
       dropoffDateTime,
-      confirmationNumber
+      confirmationNumber,
+      companions
     } = req.body;
 
     // Verify trip ownership
@@ -58,9 +59,39 @@ exports.createCarRental = async (req, res) => {
       userId: req.user.id
     });
 
-    // Auto-add trip-level companions to this car rental
-    if (tripId) {
-      await itemCompanionHelper.autoAddTripCompanions('car_rental', carRental.id, tripId, req.user.id);
+    // Add companions to this car rental
+    try {
+      if (tripId) {
+        let companionIds = [];
+
+        // Try to parse companions if provided
+        if (companions) {
+          try {
+            companionIds = typeof companions === 'string' ? JSON.parse(companions) : companions;
+            companionIds = Array.isArray(companionIds) ? companionIds : [];
+          } catch (e) {
+            console.error('Error parsing companions:', e);
+            companionIds = [];
+          }
+        }
+
+        // If companions were provided and not empty, use them; otherwise use fallback
+        if (companionIds.length > 0) {
+          await itemCompanionHelper.updateItemCompanions(
+            'car_rental',
+            carRental.id,
+            companionIds,
+            tripId,
+            req.user.id
+          );
+        } else {
+          // Fallback: auto-add trip-level companions
+          await itemCompanionHelper.autoAddTripCompanions('car_rental', carRental.id, tripId, req.user.id);
+        }
+      }
+    } catch (e) {
+      console.error('Error managing companions for car rental:', e);
+      // Don't fail the car rental creation due to companion errors
     }
 
     // Check if this is an async request

@@ -96,7 +96,8 @@ exports.createFlight = async (req, res) => {
       destination,
       destinationTimezone,
       pnr,
-      seat
+      seat,
+      companions
     } = req.body;
 
     // Handle both combined and separate date/time fields
@@ -164,9 +165,39 @@ exports.createFlight = async (req, res) => {
       seat
     });
 
-    // Auto-add trip-level companions to this flight
-    if (tripId) {
-      await itemCompanionHelper.autoAddTripCompanions('flight', flight.id, tripId, req.user.id);
+    // Add companions to this flight
+    try {
+      if (tripId) {
+        let companionIds = [];
+
+        // Try to parse companions if provided
+        if (companions) {
+          try {
+            companionIds = typeof companions === 'string' ? JSON.parse(companions) : companions;
+            companionIds = Array.isArray(companionIds) ? companionIds : [];
+          } catch (e) {
+            console.error('Error parsing companions:', e);
+            companionIds = [];
+          }
+        }
+
+        // If companions were provided and not empty, use them; otherwise use fallback
+        if (companionIds.length > 0) {
+          await itemCompanionHelper.updateItemCompanions(
+            'flight',
+            flight.id,
+            companionIds,
+            tripId,
+            req.user.id
+          );
+        } else {
+          // Fallback: auto-add trip-level companions
+          await itemCompanionHelper.autoAddTripCompanions('flight', flight.id, tripId, req.user.id);
+        }
+      }
+    } catch (e) {
+      console.error('Error managing companions for flight:', e);
+      // Don't fail the flight creation due to companion errors
     }
 
     // Check if this is an async request

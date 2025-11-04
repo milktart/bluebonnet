@@ -24,7 +24,8 @@ exports.createHotel = async (req, res) => {
       checkOutTime,
       timezone,
       confirmationNumber,
-      roomNumber
+      roomNumber,
+      companions
     } = req.body;
 
     // Verify trip ownership
@@ -72,9 +73,39 @@ exports.createHotel = async (req, res) => {
       userId: req.user.id
     });
 
-    // Auto-add trip-level companions to this hotel
-    if (tripId) {
-      await itemCompanionHelper.autoAddTripCompanions('hotel', hotel.id, tripId, req.user.id);
+    // Add companions to this hotel
+    try {
+      if (tripId) {
+        let companionIds = [];
+
+        // Try to parse companions if provided
+        if (companions) {
+          try {
+            companionIds = typeof companions === 'string' ? JSON.parse(companions) : companions;
+            companionIds = Array.isArray(companionIds) ? companionIds : [];
+          } catch (e) {
+            console.error('Error parsing companions:', e);
+            companionIds = [];
+          }
+        }
+
+        // If companions were provided and not empty, use them; otherwise use fallback
+        if (companionIds.length > 0) {
+          await itemCompanionHelper.updateItemCompanions(
+            'hotel',
+            hotel.id,
+            companionIds,
+            tripId,
+            req.user.id
+          );
+        } else {
+          // Fallback: auto-add trip-level companions
+          await itemCompanionHelper.autoAddTripCompanions('hotel', hotel.id, tripId, req.user.id);
+        }
+      }
+    } catch (e) {
+      console.error('Error managing companions for hotel:', e);
+      // Don't fail the hotel creation due to companion errors
     }
 
     // Check if this is an async request
