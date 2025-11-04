@@ -1,0 +1,457 @@
+<!-- Manage Companions Section -->
+<div class="card shadow mb-4">
+  <div class="card-header bg-light border-bottom">
+    <h5 class="mb-0">
+      <i class="bi bi-people-fill me-2"></i> Manage Travel Companions
+    </h5>
+  </div>
+  <div class="card-body">
+    <!-- Section 1: Mutual Companions (Accepted Relationships) -->
+    <div class="companions-section mb-5" id="mutualCompanions">
+      <h6 class="text-uppercase text-muted mb-3">
+        <i class="bi bi-check-circle-fill text-success me-2"></i> Active Companions
+      </h6>
+
+      <div id="mutualCompanionsList" class="list-group list-group-flush">
+        <!-- Populated by JavaScript -->
+        <div class="text-muted text-center py-3">Loading...</div>
+      </div>
+    </div>
+
+    <hr class="my-5">
+
+    <!-- Section 2: Pending Requests -->
+    <div class="pending-section mb-5">
+      <h6 class="text-uppercase text-muted mb-3">
+        <i class="bi bi-clock-history me-2"></i> Pending Requests
+      </h6>
+
+      <!-- Incoming Requests -->
+      <div class="pending-incoming mb-4">
+        <h6 class="small text-secondary ms-2 mb-3">Requests from Others</h6>
+
+        <div id="incomingRequestsList" class="list-group list-group-flush">
+          <!-- Populated by JavaScript -->
+          <div class="text-muted text-center py-3 small">No pending incoming requests</div>
+        </div>
+      </div>
+
+      <!-- Outgoing Requests -->
+      <div class="pending-outgoing">
+        <h6 class="small text-secondary ms-2 mb-3">Requests You've Sent</h6>
+
+        <div id="outgoingRequestsList" class="list-group list-group-flush">
+          <!-- Populated by JavaScript -->
+          <div class="text-muted text-center py-3 small">No pending outgoing requests</div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="my-5">
+
+    <!-- Section 3: Unlinked Companions -->
+    <div class="unlinked-section" id="unlinkedCompanions">
+      <h6 class="text-uppercase text-muted mb-3">
+        <i class="bi bi-person-dash-fill me-2"></i> Unlinked Companions
+      </h6>
+
+      <div id="unlinkedCompanionsList" class="list-group list-group-flush">
+        <!-- Populated by JavaScript -->
+        <div class="text-muted text-center py-3">Loading...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Change Permission Level -->
+<div class="modal fade" id="changePermissionModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Change Permission Level</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-3" id="permissionModalCompanionName"></p>
+
+        <div class="mb-3">
+          <label class="form-check mb-2">
+            <input type="radio" class="form-check-input" name="newPermissionLevel" value="view_travel">
+            <span class="form-check-label">
+              <strong>View Travel</strong>
+              <br>
+              <small class="text-muted">They can view your trips and travel items</small>
+            </span>
+          </label>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-check">
+            <input type="radio" class="form-check-input" name="newPermissionLevel" value="manage_travel">
+            <span class="form-check-label">
+              <strong>Manage Travel</strong>
+              <br>
+              <small class="text-muted">They can edit and manage your travel plans</small>
+            </span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="confirmPermissionChange">Change Permission</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Accept Companion Request -->
+<div class="modal fade" id="acceptCompanionModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Accept Companion Request</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-3" id="acceptModalCompanionName"></p>
+        <p class="text-muted small mb-4">What permission level would you like to grant?</p>
+
+        <div class="mb-3">
+          <label class="form-check mb-2">
+            <input type="radio" class="form-check-input" name="acceptPermissionLevel" value="view_travel" checked>
+            <span class="form-check-label">
+              <strong>View Travel</strong>
+              <br>
+              <small class="text-muted">They can view my trips and travel items</small>
+            </span>
+          </label>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-check">
+            <input type="radio" class="form-check-input" name="acceptPermissionLevel" value="manage_travel">
+            <span class="form-check-label">
+              <strong>Manage Travel</strong>
+              <br>
+              <small class="text-muted">They can edit and manage my travel plans</small>
+            </span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Decline Request</button>
+        <button type="button" class="btn btn-primary" id="confirmAcceptRequest">Accept Request</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Store current relationship ID for modal actions
+let currentRelationshipId = null;
+
+// Load all companion data on page load
+document.addEventListener('DOMContentLoaded', loadCompanionData);
+
+async function loadCompanionData() {
+  try {
+    // Load mutual companions
+    const mutualRes = await fetch('/companion-relationships/mutual');
+    const mutualData = await mutualRes.json();
+    renderMutualCompanions(mutualData.relationships || []);
+
+    // Load pending requests
+    const pendingRes = await fetch('/companion-relationships/pending');
+    const pendingData = await pendingRes.json();
+    renderPendingRequests(pendingData.relationships || []);
+
+    // Load unlinked companions
+    const unlinkedRes = await fetch('/companions');
+    const unlinkedData = await unlinkedRes.json();
+    renderUnlinkedCompanions(unlinkedData.companions || []);
+  } catch (error) {
+    console.error('Error loading companion data:', error);
+  }
+}
+
+function renderMutualCompanions(relationships) {
+  const container = document.getElementById('mutualCompanionsList');
+
+  if (!relationships || relationships.length === 0) {
+    container.innerHTML = '<div class="text-muted text-center py-3">No active companions yet</div>';
+    return;
+  }
+
+  container.innerHTML = relationships.map(rel => {
+    const companion = rel.companionUser || rel.requesterUser;
+    const theirPermission = rel.permissionLevel;
+    const myPermission = rel.reciprocalPermissionLevel || 'view_travel';
+
+    return `
+      <div class="list-group-item d-flex justify-content-between align-items-start py-3">
+        <div class="flex-grow-1">
+          <h6 class="mb-1">${companion.firstName} ${companion.lastName}</h6>
+          <p class="text-muted small mb-2">${companion.email}</p>
+
+          <div class="small mb-2">
+            <div class="mb-1">
+              <span class="badge bg-light text-dark">${theirPermission === 'manage_travel' ? '📝 Manage Travel' : '👁️ View Travel'}</span>
+              <span class="text-muted">→ Their permission to you</span>
+            </div>
+            <div>
+              <span class="badge bg-light text-dark">${myPermission === 'manage_travel' ? '📝 Manage Travel' : '👁️ View Travel'}</span>
+              <span class="text-muted">→ Your permission to them</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ms-3">
+          <button class="btn btn-sm btn-outline-primary" onclick="openChangePermissionModal('${rel.id}', '${companion.firstName} ${companion.lastName}', '${myPermission}')">
+            <i class="bi bi-pencil"></i> Change
+          </button>
+          <button class="btn btn-sm btn-outline-danger" onclick="revokeCompanion('${rel.id}')">
+            <i class="bi bi-trash"></i> Revoke
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderPendingRequests(relationships) {
+  // Separate incoming and outgoing
+  const incoming = relationships.filter(r => r.companionUserId === <%= user.id %> && r.status === 'pending');
+  const outgoing = relationships.filter(r => r.userId === <%= user.id %> && r.status === 'pending');
+
+  // Render incoming
+  const incomingContainer = document.getElementById('incomingRequestsList');
+  if (!incoming || incoming.length === 0) {
+    incomingContainer.innerHTML = '<div class="text-muted text-center py-3 small">No pending incoming requests</div>';
+  } else {
+    incomingContainer.innerHTML = incoming.map(rel => {
+      const requester = rel.requesterUser;
+      return `
+        <div class="list-group-item d-flex justify-content-between align-items-start py-3">
+          <div class="flex-grow-1">
+            <h6 class="mb-1">${requester.firstName} ${requester.lastName}</h6>
+            <p class="text-muted small mb-2">${requester.email}</p>
+            <p class="small text-muted">Requested: <strong>${rel.permissionLevel === 'manage_travel' ? '📝 Manage Travel' : '👁️ View Travel'}</strong></p>
+          </div>
+
+          <div class="ms-3">
+            <button class="btn btn-sm btn-success" onclick="openAcceptModal('${rel.id}', '${requester.firstName} ${requester.lastName}')">
+              <i class="bi bi-check"></i> Accept
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="declineRequest('${rel.id}')">
+              <i class="bi bi-x"></i> Decline
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Render outgoing
+  const outgoingContainer = document.getElementById('outgoingRequestsList');
+  if (!outgoing || outgoing.length === 0) {
+    outgoingContainer.innerHTML = '<div class="text-muted text-center py-3 small">No pending outgoing requests</div>';
+  } else {
+    outgoingContainer.innerHTML = outgoing.map(rel => {
+      const recipient = rel.companionUser;
+      return `
+        <div class="list-group-item d-flex justify-content-between align-items-start py-3">
+          <div class="flex-grow-1">
+            <h6 class="mb-1">${recipient.firstName} ${recipient.lastName}</h6>
+            <p class="text-muted small mb-2">${recipient.email}</p>
+            <p class="small text-muted">Requested: <strong>${rel.permissionLevel === 'manage_travel' ? '📝 Manage Travel' : '👁️ View Travel'}</strong></p>
+            <span class="badge bg-warning text-dark">Pending...</span>
+          </div>
+
+          <div class="ms-3">
+            <button class="btn btn-sm btn-outline-primary" onclick="resendRequest('${rel.id}')">
+              <i class="bi bi-arrow-repeat"></i> Resend
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="cancelRequest('${rel.id}')">
+              <i class="bi bi-x"></i> Cancel
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+function renderUnlinkedCompanions(companions) {
+  const container = document.getElementById('unlinkedCompanionsList');
+
+  // Filter only unlinked companions (userId is null)
+  const unlinked = companions.filter(c => !c.userId);
+
+  if (!unlinked || unlinked.length === 0) {
+    container.innerHTML = '<div class="text-muted text-center py-3">No unlinked companions</div>';
+    return;
+  }
+
+  container.innerHTML = unlinked.map(companion => `
+    <div class="list-group-item d-flex justify-content-between align-items-start py-3">
+      <div class="flex-grow-1">
+        <h6 class="mb-1">${companion.name}</h6>
+        <p class="text-muted small mb-2">${companion.email}</p>
+        <p class="text-muted small">
+          <i class="bi bi-info-circle"></i> Will auto-link when they create an account
+        </p>
+      </div>
+
+      <div class="ms-3">
+        <a href="/companions/<%= null %>/edit" class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-pencil"></i> Edit
+        </a>
+        <button class="btn btn-sm btn-outline-danger" onclick="deleteUnlinkedCompanion('${companion.id}')">
+          <i class="bi bi-trash"></i> Delete
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openChangePermissionModal(relationshipId, companionName, currentPermission) {
+  currentRelationshipId = relationshipId;
+  document.getElementById('permissionModalCompanionName').textContent = companionName;
+  document.querySelector(`input[name="newPermissionLevel"][value="${currentPermission}"]`).checked = true;
+  new bootstrap.Modal(document.getElementById('changePermissionModal')).show();
+}
+
+function openAcceptModal(relationshipId, companionName) {
+  currentRelationshipId = relationshipId;
+  document.getElementById('acceptModalCompanionName').textContent = companionName;
+  document.querySelector('input[name="acceptPermissionLevel"][value="view_travel"]').checked = true;
+  new bootstrap.Modal(document.getElementById('acceptCompanionModal')).show();
+}
+
+document.getElementById('confirmPermissionChange').addEventListener('click', async () => {
+  const newPermission = document.querySelector('input[name="newPermissionLevel"]:checked').value;
+
+  try {
+    const response = await fetch(`/companion-relationships/${currentRelationshipId}/permission`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ permissionLevel: newPermission })
+    });
+
+    if (response.ok) {
+      bootstrap.Modal.getInstance(document.getElementById('changePermissionModal')).hide();
+      loadCompanionData();
+    } else {
+      alert('Error changing permission level');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Error changing permission level');
+  }
+});
+
+document.getElementById('confirmAcceptRequest').addEventListener('click', async () => {
+  const permissionLevel = document.querySelector('input[name="acceptPermissionLevel"]:checked').value;
+
+  try {
+    const response = await fetch(`/companion-relationships/${currentRelationshipId}/accept`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ permissionLevel })
+    });
+
+    if (response.ok) {
+      bootstrap.Modal.getInstance(document.getElementById('acceptCompanionModal')).hide();
+      loadCompanionData();
+    } else {
+      alert('Error accepting companion request');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Error accepting companion request');
+  }
+});
+
+async function declineRequest(relationshipId) {
+  if (!confirm('Are you sure you want to decline this request?')) return;
+
+  try {
+    const response = await fetch(`/companion-relationships/${relationshipId}/decline`, { method: 'PUT' });
+    if (response.ok) {
+      loadCompanionData();
+    } else {
+      alert('Error declining request');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Error declining request');
+  }
+}
+
+async function cancelRequest(relationshipId) {
+  if (!confirm('Are you sure you want to cancel this request?')) return;
+
+  try {
+    const response = await fetch(`/companion-relationships/${relationshipId}`, { method: 'DELETE' });
+    if (response.ok) {
+      loadCompanionData();
+    } else {
+      alert('Error cancelling request');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Error cancelling request');
+  }
+}
+
+async function resendRequest(relationshipId) {
+  try {
+    const response = await fetch(`/companion-relationships/${relationshipId}/resend`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (response.ok) {
+      alert('Request resent successfully');
+      loadCompanionData();
+    } else {
+      alert('Error resending request');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Error resending request');
+  }
+}
+
+async function revokeCompanion(relationshipId) {
+  if (!confirm('Are you sure you want to revoke this companion relationship?')) return;
+
+  try {
+    const response = await fetch(`/companion-relationships/${relationshipId}`, { method: 'DELETE' });
+    if (response.ok) {
+      loadCompanionData();
+    } else {
+      alert('Error revoking companion');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Error revoking companion');
+  }
+}
+
+async function deleteUnlinkedCompanion(companionId) {
+  if (!confirm('Are you sure you want to delete this unlinked companion?')) return;
+
+  try {
+    const response = await fetch(`/companions/${companionId}`, { method: 'DELETE' });
+    if (response.ok) {
+      loadCompanionData();
+    } else {
+      alert('Error deleting companion');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Error deleting companion');
+  }
+}
+</script>

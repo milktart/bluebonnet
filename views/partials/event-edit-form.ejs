@@ -68,6 +68,28 @@
     <input type="url" id="eventEventUrl" name="eventUrl" value="<%= event.eventUrl || '' %>" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g., https://example.com/event">
   </div>
 
+  <!-- Travel Companions Section -->
+  <div class="border-t border-gray-200 pt-4 mt-4">
+    <h3 class="text-sm font-semibold text-gray-700 mb-3">
+      <i class="bi bi-people-fill me-2"></i>Travel Companions
+    </h3>
+    <div id="itemCompanions" class="space-y-2">
+      <div class="text-center text-gray-500 text-sm py-2">Loading companions...</div>
+    </div>
+  </div>
+
+  <!-- Set context for companion loading -->
+  <script>
+    window.itemType = 'event';
+    window.itemId = '<%= event.id %>';
+    window.tripId = '<%= event.tripId || "" %>';
+
+    // Load companions on form load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadItemCompanions(window.itemType, window.itemId, window.tripId);
+    });
+  </script>
+
   <!-- Action Buttons -->
   <div class="flex space-x-3 pt-4 border-t border-gray-200">
     <button type="button" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors text-sm font-medium" id="saveEventBtn">

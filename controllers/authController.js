@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
-const { User, TravelCompanion } = require('../models');
+const { User, TravelCompanion, CompanionRelationship, Notification } = require('../models');
+const { Op } = require('sequelize');
 
 exports.getLogin = (req, res) => {
   res.render('login', { title: 'Login' });
@@ -14,7 +15,7 @@ exports.postRegister = async (req, res) => {
     const { email, password, firstName, lastName } = req.body;
 
     const existingUser = await User.findOne({ where: { email: email.toLowerCase() } });
-    
+
     if (existingUser) {
       req.flash('error_msg', 'Email already registered');
       return res.redirect('/auth/register');
@@ -26,7 +27,8 @@ exports.postRegister = async (req, res) => {
       email: email.toLowerCase(),
       password: hashedPassword,
       firstName,
-      lastName
+      lastName,
+      linkedAt: new Date()
     });
 
     // Auto-link any existing travel companions with this email
@@ -41,9 +43,47 @@ exports.postRegister = async (req, res) => {
       // Link all companions to this new user account
       await Promise.all(
         companionsToLink.map(companion =>
-          companion.update({ userId: newUser.id })
+          companion.update({ userId: newUser.id, linkedAt: new Date() })
         )
       );
+
+      // Process companion relationships for this newly linked account
+      // Find all pending companion requests where this new user is the recipient
+      const pendingRequests = await CompanionRelationship.findAll({
+        where: {
+          companionUserId: newUser.id,
+          status: 'pending'
+        }
+      });
+
+      // For each pending request, create notifications
+      for (const relationship of pendingRequests) {
+        // Create notification for new account about the request
+        await Notification.create({
+          userId: newUser.id,
+          type: 'companion_request_received',
+          relatedId: relationship.id,
+          relatedType: 'companion_relationship',
+          message: `You have a pending travel companion request`,
+          read: false,
+          actionRequired: true
+        });
+      }
+
+      // Check if any manage_travel relationships need to be downgraded
+      const manageRelationships = await CompanionRelationship.findAll({
+        where: {
+          companionUserId: newUser.id,
+          status: 'accepted',
+          permissionLevel: 'manage_travel'
+        }
+      });
+
+      // Downgrade manage_travel to view_travel since user now has an account
+      for (const relationship of manageRelationships) {
+        relationship.permissionLevel = 'view_travel';
+        await relationship.save();
+      }
 
       const companionCount = companionsToLink.length;
       req.flash('success_msg',

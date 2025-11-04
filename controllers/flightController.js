@@ -1,6 +1,7 @@
 const { Flight, Trip, VoucherAttachment, Voucher } = require('../models');
 const airportService = require('../services/airportService');
 const { utcToLocal } = require('../utils/timezoneHelper');
+const itemCompanionHelper = require('../utils/itemCompanionHelper');
 const {
   verifyTripOwnership,
   redirectAfterSuccess,
@@ -144,7 +145,7 @@ exports.createFlight = async (req, res) => {
     if (!originTimezone) originTimezone = originResult.timezone;
     if (!destinationTimezone) destinationTimezone = destResult.timezone;
 
-    await Flight.create({
+    const flight = await Flight.create({
       userId: req.user.id,
       tripId: tripId || null,
       airline,
@@ -162,6 +163,11 @@ exports.createFlight = async (req, res) => {
       pnr,
       seat
     });
+
+    // Auto-add trip-level companions to this flight
+    if (tripId) {
+      await itemCompanionHelper.autoAddTripCompanions('flight', flight.id, tripId, req.user.id);
+    }
 
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
@@ -198,7 +204,8 @@ exports.updateFlight = async (req, res) => {
       destination,
       destinationTimezone,
       pnr,
-      seat
+      seat,
+      companions
     } = req.body;
 
     // Handle both combined and separate date/time fields
@@ -321,6 +328,29 @@ exports.updateFlight = async (req, res) => {
       seat
     });
 
+    // Update companions for this flight
+    if (companions) {
+      let companionIds = [];
+      try {
+        companionIds = typeof companions === 'string' ? JSON.parse(companions) : companions;
+      } catch (e) {
+        companionIds = Array.isArray(companions) ? companions : [];
+      }
+
+      if (companionIds.length > 0) {
+        await itemCompanionHelper.updateItemCompanions(
+          'flight',
+          flight.id,
+          companionIds,
+          flight.tripId,
+          req.user.id
+        );
+      } else {
+        // No companions provided, remove all
+        await itemCompanionHelper.removeItemCompanions('flight', flight.id);
+      }
+    }
+
     console.log('Flight updated successfully:', { flightId: req.params.id });
 
     // Check if this is an async request
@@ -371,6 +401,9 @@ exports.deleteFlight = async (req, res) => {
 
     // Store the deleted flight in session for potential restoration
     storeDeletedItem(req.session, 'flight', flight.id, flightData, flightName);
+
+    // Remove all item companions
+    await itemCompanionHelper.removeItemCompanions('flight', flight.id);
 
     await flight.destroy();
 

@@ -69,8 +69,11 @@ app.use('/', require('./routes/index'));
 app.use('/auth', require('./routes/auth'));
 app.use('/account', require('./routes/account'));
 app.use('/companions', require('./routes/companions'));
+app.use('/companion-relationships', require('./routes/companionRelationships'));
 app.use('/api', require('./routes/api'));
 app.use('/trips', require('./routes/trips'));
+app.use('/trip-invitations', require('./routes/tripInvitations'));
+app.use('/notifications', require('./routes/notifications'));
 app.use('/flights', require('./routes/flights'));
 app.use('/hotels', require('./routes/hotels'));
 app.use('/transportation', require('./routes/transportation'));
@@ -106,6 +109,34 @@ db.sequelize.sync({ alter: true }).then(async () => {
   } catch (err) {
     // Constraint might not exist yet or already be nullable, that's fine
     console.log('Constraint update skipped (may not exist yet)');
+  }
+
+  // Add custom constraints and indexes for new companion system
+  try {
+    // Create indexes for performance on frequently queried columns
+    await db.sequelize.query(`
+      CREATE INDEX IF NOT EXISTS idx_companion_relationships_status
+      ON companion_relationships(status);
+    `);
+
+    await db.sequelize.query(`
+      CREATE INDEX IF NOT EXISTS idx_trip_invitations_status
+      ON trip_invitations(status);
+    `);
+
+    await db.sequelize.query(`
+      CREATE INDEX IF NOT EXISTS idx_item_companions_item
+      ON item_companions(item_type, item_id);
+    `);
+
+    await db.sequelize.query(`
+      CREATE INDEX IF NOT EXISTS idx_notifications_read
+      ON notifications(read);
+    `);
+
+    console.log('Custom indexes for companion system created');
+  } catch (err) {
+    console.log('Some indexes may already exist:', err.message);
   }
 
   console.log('Database synced');

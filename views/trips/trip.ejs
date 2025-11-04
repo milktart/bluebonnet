@@ -564,6 +564,38 @@
     // NOTE: showAddForm is now defined in trip-view-sidebar.js
     // This function has been moved there to handle AJAX form loading
 
+    // Trip invitation response handler
+    async function respondToTripInvitation(tripId, response) {
+      try {
+        // First, find the invitation ID for this trip
+        const pendingRes = await fetch('/trip-invitations/pending');
+        const pendingData = await pendingRes.json();
+
+        const invitation = pendingData.invitations && pendingData.invitations.find(inv => inv.tripId === tripId);
+        if (!invitation) {
+          alert('Invitation not found');
+          return;
+        }
+
+        // Respond to the invitation
+        const respondRes = await fetch(`/trip-invitations/${invitation.id}/respond`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ response })
+        });
+
+        if (respondRes.ok) {
+          alert(response === 'join' ? 'You have joined the trip!' : 'You have declined the invitation');
+          location.reload();
+        } else {
+          alert('Error responding to invitation');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error responding to invitation');
+      }
+    }
+
   </script>
 
 </body>

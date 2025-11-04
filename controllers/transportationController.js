@@ -1,5 +1,6 @@
 const { Transportation, Trip } = require('../models');
 const { utcToLocal } = require('../utils/timezoneHelper');
+const itemCompanionHelper = require('../utils/itemCompanionHelper');
 const {
   verifyTripOwnership,
   geocodeOriginDestination,
@@ -44,7 +45,7 @@ exports.createTransportation = async (req, res) => {
       destNew: destination
     });
 
-    await Transportation.create({
+    const transportation = await Transportation.create({
       userId: req.user.id,
       tripId: tripId || null,
       method,
@@ -62,6 +63,11 @@ exports.createTransportation = async (req, res) => {
       confirmationNumber,
       seat
     });
+
+    // Auto-add trip-level companions to this transportation
+    if (tripId) {
+      await itemCompanionHelper.autoAddTripCompanions('transportation', transportation.id, tripId, req.user.id);
+    }
 
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';

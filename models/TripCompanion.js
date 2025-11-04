@@ -33,6 +33,16 @@ module.exports = (sequelize, DataTypes) => {
         model: 'users',
         key: 'id'
       }
+    },
+    canAddItems: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
+    permissionSource: {
+      type: DataTypes.ENUM('owner', 'manage_travel', 'explicit'),
+      allowNull: false,
+      defaultValue: 'explicit'
     }
   }, {
     tableName: 'trip_companions',

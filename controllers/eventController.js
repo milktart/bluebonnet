@@ -1,4 +1,5 @@
 const { Event, Trip } = require('../models');
+const itemCompanionHelper = require('../utils/itemCompanionHelper');
 const {
   verifyTripOwnership,
   geocodeIfChanged,
@@ -73,7 +74,7 @@ exports.createEvent = async (req, res) => {
     const sanitizedContactPhone = contactPhone && contactPhone.trim() !== '' ? contactPhone : null;
     const sanitizedDescription = description && description.trim() !== '' ? description : null;
 
-    await Event.create({
+    const event = await Event.create({
       userId: req.user.id,
       tripId: tripId || null,
       name,
@@ -87,6 +88,11 @@ exports.createEvent = async (req, res) => {
       contactEmail: sanitizedContactEmail,
       description: sanitizedDescription
     });
+
+    // Auto-add trip-level companions to this event
+    if (tripId) {
+      await itemCompanionHelper.autoAddTripCompanions('event', event.id, tripId, req.user.id);
+    }
 
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';

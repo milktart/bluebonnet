@@ -1,4 +1,5 @@
 const { CarRental, Trip } = require('../models');
+const itemCompanionHelper = require('../utils/itemCompanionHelper');
 const {
   verifyTripOwnership,
   geocodeOriginDestination,
@@ -40,7 +41,7 @@ exports.createCarRental = async (req, res) => {
       destNew: dropoffLocation
     });
 
-    await CarRental.create({
+    const carRental = await CarRental.create({
       tripId,
       company,
       pickupLocation,
@@ -53,8 +54,14 @@ exports.createCarRental = async (req, res) => {
       dropoffLng: dropoffCoords?.lng,
       pickupDateTime: convertToUTC(pickupDateTime, pickupTimezone),
       dropoffDateTime: convertToUTC(dropoffDateTime, dropoffTimezone),
-      confirmationNumber
+      confirmationNumber,
+      userId: req.user.id
     });
+
+    // Auto-add trip-level companions to this car rental
+    if (tripId) {
+      await itemCompanionHelper.autoAddTripCompanions('car_rental', carRental.id, tripId, req.user.id);
+    }
 
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';

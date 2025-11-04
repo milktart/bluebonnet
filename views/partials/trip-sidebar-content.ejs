@@ -1,5 +1,33 @@
 <!-- Trip Timeline Content - Used for both initial load and async refresh -->
 <div class="p-6">
+  <!-- Pending Trip Invitations Section -->
+  <% if (typeof pendingInvitations !== 'undefined' && pendingInvitations && pendingInvitations.length > 0) { %>
+    <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      <h3 class="text-sm font-semibold text-blue-900 mb-3">
+        <i class="bi bi-info-circle-fill me-2"></i>Pending Invitation
+      </h3>
+      <p class="text-sm text-blue-800 mb-3">
+        You've been invited to join this trip. Accept or decline below.
+      </p>
+      <div class="flex gap-2">
+        <button
+          type="button"
+          class="flex-1 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+          onclick="respondToTripInvitation('<%= trip.id %>', 'join')"
+        >
+          <i class="bi bi-check-lg me-1"></i>Join Trip
+        </button>
+        <button
+          type="button"
+          class="flex-1 px-3 py-2 bg-white text-red-600 border border-red-200 text-sm font-medium rounded-md hover:bg-red-50 transition-colors"
+          onclick="respondToTripInvitation('<%= trip.id %>', 'decline')"
+        >
+          <i class="bi bi-x-lg me-1"></i>Decline
+        </button>
+      </div>
+    </div>
+  <% } %>
+
   <%
     // All helper functions now available via res.locals from utils/dateFormatter.js
     // Available: formatDate, getFlightNum, getCityName, getAirportCode,
@@ -316,7 +344,17 @@
                   </div>
                   <p class="text-sm text-gray-600"><%= item.display %></p>
                 </div>
-                <div class="flex-shrink-0">
+                <div class="flex-shrink-0 flex items-center gap-2">
+                  <%
+                    // Get companion count for this item
+                    const itemCompanions = trip.itemCompanions ? trip.itemCompanions.filter(ic => ic.itemType === item.type && ic.itemId === item.id) : [];
+                    const companionCount = itemCompanions.length;
+                  %>
+                  <% if (companionCount > 0) { %>
+                    <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
+                      <i class="bi bi-people-fill me-1"></i><%= companionCount %> <%= companionCount === 1 ? 'companion' : 'companions' %>
+                    </span>
+                  <% } %>
                   <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                   </svg>

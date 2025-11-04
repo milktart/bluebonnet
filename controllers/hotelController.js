@@ -1,5 +1,6 @@
 const { Hotel, Trip } = require('../models');
 const { utcToLocal } = require('../utils/timezoneHelper');
+const itemCompanionHelper = require('../utils/itemCompanionHelper');
 const {
   verifyTripOwnership,
   geocodeIfChanged,
@@ -56,7 +57,7 @@ exports.createHotel = async (req, res) => {
     }
     finalTimezone = finalTimezone || 'UTC';
 
-    await Hotel.create({
+    const hotel = await Hotel.create({
       tripId,
       hotelName,
       address,
@@ -67,8 +68,14 @@ exports.createHotel = async (req, res) => {
       lat: coords?.lat,
       lng: coords?.lng,
       confirmationNumber,
-      roomNumber
+      roomNumber,
+      userId: req.user.id
     });
+
+    // Auto-add trip-level companions to this hotel
+    if (tripId) {
+      await itemCompanionHelper.autoAddTripCompanions('hotel', hotel.id, tripId, req.user.id);
+    }
 
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';

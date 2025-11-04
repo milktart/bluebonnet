@@ -1,6 +1,7 @@
-const { Trip, Flight, Hotel, Transportation, CarRental, Event, TravelCompanion, TripCompanion, User } = require('../models');
+const { Trip, Flight, Hotel, Transportation, CarRental, Event, TravelCompanion, TripCompanion, User, CompanionRelationship, TripInvitation, Notification } = require('../models');
 const airportService = require('../services/airportService');
 const { formatInTimezone } = require('../utils/timezoneHelper');
+const { Op } = require('sequelize');
 
 exports.listTrips = async (req, res, options = {}) => {
   try {
@@ -87,12 +88,52 @@ exports.listTrips = async (req, res, options = {}) => {
       order: [['startDateTime', 'ASC']]
     });
 
+    // Get pending trip invitations for the current user
+    const pendingInvitations = await TripInvitation.findAll({
+      where: {
+        companionEmail: req.user.email,
+        status: 'pending'
+      },
+      include: [
+        {
+          model: Trip,
+          as: 'trip',
+          include: [
+            { model: Flight, as: 'flights' },
+            { model: Hotel, as: 'hotels' },
+            { model: Transportation, as: 'transportation' },
+            { model: CarRental, as: 'carRentals' },
+            { model: Event, as: 'events' },
+            {
+              model: TripCompanion,
+              as: 'tripCompanions',
+              include: [
+                {
+                  model: TravelCompanion,
+                  as: 'companion',
+                  include: [
+                    {
+                      model: User,
+                      as: 'linkedAccount',
+                      attributes: ['id', 'firstName', 'lastName']
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+
     const renderData = {
       title: 'My Trips',
       trips: uniqueTrips,
       standaloneFlights,
       standaloneTransportation,
       standaloneEvents,
+      pendingInvitations,
       openCertificatesSidebar: options.openCertificatesSidebar || false,
       openCertificateDetails: options.openCertificateDetails || null
     };
@@ -124,23 +165,75 @@ exports.createTrip = async (req, res) => {
     if (companions) {
       let companionIds = [];
       try {
-        // Parse companions from JSON string sent by frontend
         companionIds = typeof companions === 'string' ? JSON.parse(companions) : companions;
       } catch (e) {
-        // Fallback if not JSON, treat as array
         companionIds = Array.isArray(companions) ? companions : [];
       }
 
       if (companionIds.length > 0) {
-        const companionPromises = companionIds.map(companionId =>
-          TripCompanion.create({
+        for (const companionId of companionIds) {
+          const companion = await TravelCompanion.findByPk(companionId);
+          if (!companion) continue;
+
+          // Check if companion has a linked account
+          let permissionSource = 'explicit';
+          let canAddItems = false;
+          let canEdit = !!defaultCompanionEditPermission;
+
+          if (companion.userId) {
+            // Has linked account - check for manage_travel permission
+            const relationship = await CompanionRelationship.findOne({
+              where: {
+                userId: req.user.id,
+                companionUserId: companion.userId,
+                status: 'accepted',
+              },
+            });
+
+            if (relationship && relationship.permissionLevel === 'manage_travel') {
+              permissionSource = 'manage_travel';
+              canEdit = true;
+              canAddItems = true;
+            }
+          }
+
+          await TripCompanion.create({
             tripId: trip.id,
             companionId: companionId,
-            canEdit: !!defaultCompanionEditPermission,
-            addedBy: req.user.id
-          })
-        );
-        await Promise.all(companionPromises);
+            canEdit,
+            canAddItems,
+            permissionSource,
+            addedBy: req.user.id,
+          });
+
+          // If manage_travel, automatically add items and create trip companion record
+          // If view_travel, send trip invitation instead
+          if (companion.userId && permissionSource === 'manage_travel') {
+            // Auto-add to all trip items (will be created later)
+          } else if (companion.userId) {
+            // Send trip invitation for view_travel
+            await TripInvitation.create({
+              tripId: trip.id,
+              invitedUserId: companion.userId,
+              invitedByUserId: req.user.id,
+              status: 'pending',
+            });
+
+            // Create notification
+            const user = await User.findByPk(companion.userId);
+            if (user) {
+              await Notification.create({
+                userId: companion.userId,
+                type: 'trip_invitation_received',
+                relatedId: trip.id,
+                relatedType: 'trip_invitation',
+                message: `${req.user.firstName} ${req.user.lastName} invited you to join the trip "${trip.name}"`,
+                read: false,
+                actionRequired: true,
+              });
+            }
+          }
+        }
       }
     }
 
@@ -300,7 +393,7 @@ exports.getEditTripSidebar = async (req, res) => {
 
 exports.updateTrip = async (req, res) => {
   try {
-    const { name, departureDate, returnDate, companions, purpose, defaultCompanionEditPermission } = req.body;
+    const { name, departureDate, returnDate, companions, companionPermissions, purpose, defaultCompanionEditPermission } = req.body;
 
     const trip = await Trip.findOne({
       where: { id: req.params.id, userId: req.user.id }
@@ -320,33 +413,147 @@ exports.updateTrip = async (req, res) => {
       defaultCompanionEditPermission: !!defaultCompanionEditPermission
     });
 
-    // Handle companion updates
-    // First, remove all existing companions for this trip
-    await TripCompanion.destroy({
+    // Get existing companions
+    const existingCompanions = await TripCompanion.findAll({
       where: { tripId: trip.id }
     });
 
-    // Add new companions if provided
-    if (companions) {
-      let companionIds = [];
-      try {
-        // Parse companions from JSON string sent by frontend
-        companionIds = typeof companions === 'string' ? JSON.parse(companions) : companions;
-      } catch (e) {
-        // Fallback if not JSON, treat as array
-        companionIds = Array.isArray(companions) ? companions : [];
+    // Parse companions and permissions
+    let companionIds = [];
+    let permissionsMap = {};
+    try {
+      companionIds = typeof companions === 'string' ? JSON.parse(companions) : companions;
+      if (companionPermissions) {
+        permissionsMap = typeof companionPermissions === 'string' ? JSON.parse(companionPermissions) : companionPermissions;
       }
+    } catch (e) {
+      companionIds = Array.isArray(companions) ? companions : [];
+    }
 
-      if (companionIds.length > 0) {
-        const companionPromises = companionIds.map(companionId =>
-          TripCompanion.create({
-            tripId: trip.id,
-            companionId: companionId,
-            canEdit: !!defaultCompanionEditPermission,
-            addedBy: req.user.id
-          })
-        );
-        await Promise.all(companionPromises);
+    // Identify companions to remove
+    const existingIds = existingCompanions.map(c => c.companionId);
+    const toRemove = existingIds.filter(id => !companionIds.includes(id));
+    const toAdd = companionIds.filter(id => !existingIds.includes(id));
+
+    // Remove companions that were deleted
+    if (toRemove.length > 0) {
+      for (const companionId of toRemove) {
+        await TripCompanion.destroy({
+          where: { tripId: trip.id, companionId }
+        });
+      }
+    }
+
+    // Update permissions for existing companions
+    for (const existingTripCompanion of existingCompanions) {
+      if (companionIds.includes(existingTripCompanion.companionId)) {
+        const companion = await TravelCompanion.findByPk(existingTripCompanion.companionId);
+        if (!companion) continue;
+
+        let canEdit = !!defaultCompanionEditPermission;
+        let canAddItems = false;
+        let permissionSource = existingTripCompanion.permissionSource;
+
+        // Check if explicit permission override exists
+        if (permissionsMap[existingTripCompanion.companionId] !== undefined) {
+          canEdit = permissionsMap[existingTripCompanion.companionId];
+        }
+
+        // Check manage_travel relationship
+        if (companion.userId && existingTripCompanion.permissionSource === 'manage_travel') {
+          const relationship = await CompanionRelationship.findOne({
+            where: {
+              userId: req.user.id,
+              companionUserId: companion.userId,
+              status: 'accepted',
+            },
+          });
+
+          if (relationship && relationship.permissionLevel === 'manage_travel') {
+            canEdit = true;
+            canAddItems = true;
+          } else {
+            // Relationship changed to view_travel
+            canEdit = !!defaultCompanionEditPermission;
+            canAddItems = false;
+            permissionSource = 'explicit';
+          }
+        }
+
+        await existingTripCompanion.update({
+          canEdit,
+          canAddItems,
+          permissionSource,
+        });
+      }
+    }
+
+    // Add new companions
+    if (toAdd.length > 0) {
+      for (const companionId of toAdd) {
+        const companion = await TravelCompanion.findByPk(companionId);
+        if (!companion) continue;
+
+        let permissionSource = 'explicit';
+        let canAddItems = false;
+        let canEdit = !!defaultCompanionEditPermission;
+
+        if (companion.userId) {
+          const relationship = await CompanionRelationship.findOne({
+            where: {
+              userId: req.user.id,
+              companionUserId: companion.userId,
+              status: 'accepted',
+            },
+          });
+
+          if (relationship && relationship.permissionLevel === 'manage_travel') {
+            permissionSource = 'manage_travel';
+            canEdit = true;
+            canAddItems = true;
+          }
+        }
+
+        await TripCompanion.create({
+          tripId: trip.id,
+          companionId: companionId,
+          canEdit,
+          canAddItems,
+          permissionSource,
+          addedBy: req.user.id,
+        });
+
+        // Send invitation for view_travel companions
+        if (companion.userId && permissionSource !== 'manage_travel') {
+          const existingInvitation = await TripInvitation.findOne({
+            where: {
+              tripId: trip.id,
+              invitedUserId: companion.userId,
+            },
+          });
+
+          if (!existingInvitation) {
+            await TripInvitation.create({
+              tripId: trip.id,
+              invitedUserId: companion.userId,
+              invitedByUserId: req.user.id,
+              status: 'pending',
+            });
+
+            const user = await User.findByPk(companion.userId);
+            if (user) {
+              await Notification.create({
+                userId: companion.userId,
+                type: 'trip_invitation_received',
+                relatedId: trip.id,
+                relatedType: 'trip_invitation',
+                message: `${req.user.firstName} ${req.user.lastName} invited you to join the trip "${trip.name}"`,
+                read: false,
+                actionRequired: true,
+              });
+            }
+          }
+        }
       }
     }
 
