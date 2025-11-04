@@ -69,18 +69,6 @@
                 <small class="form-text text-muted">Optional - useful for trip coordination</small>
               </div>
 
-              <div class="mb-3">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="canBeAddedByOthers" name="canBeAddedByOthers" <%= companion.canBeAddedByOthers ? 'checked' : '' %>>
-                  <label class="form-check-label" for="canBeAddedByOthers">
-                    Allow other users to add this companion to their trips
-                  </label>
-                  <small class="form-text text-muted d-block">
-                    When enabled, other users can find and add this companion to their trips.
-                  </small>
-                </div>
-              </div>
-
               <% if (companion.linkedAccount) { %>
                 <div class="alert alert-light">
                   <h6><i class="bi bi-gear"></i> Account Management</h6>

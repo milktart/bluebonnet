@@ -76,15 +76,6 @@
       <p class="text-xs text-gray-500 mt-1">Optional - useful for trip coordination</p>
     </div>
 
-    <div class="flex items-center gap-2 pt-2">
-      <input type="checkbox" id="edit-canBeAddedByOthers" name="canBeAddedByOthers" <%= companion.canBeAddedByOthers ? 'checked' : '' %>
-             class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-      <label for="edit-canBeAddedByOthers" class="text-sm font-medium text-gray-700">
-        Allow other users to add this companion to their trips
-      </label>
-    </div>
-    <p class="text-xs text-gray-500 ml-6">When enabled, other users can find and add this companion to their trips.</p>
-
     <!-- Account Management Section -->
     <% if (companion.linkedAccount) { %>
       <div class="pt-4 border-t border-gray-200">
