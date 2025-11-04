@@ -20,6 +20,9 @@ router.get('/', companionController.listCompanions);
 // GET companions sidebar content (AJAX)
 router.get('/sidebar', companionController.listCompanionsSidebar);
 
+// GET companions as JSON (for dashboard/sidebar display)
+router.get('/api/json', companionController.getCompanionsJson);
+
 // GET create companion form
 router.get('/create', companionController.getCreateCompanion);
 

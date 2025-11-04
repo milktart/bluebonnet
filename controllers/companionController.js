@@ -53,6 +53,38 @@ exports.listCompanionsSidebar = async (req, res) => {
   }
 };
 
+// Get companions as JSON (for sidebar/dashboard display)
+exports.getCompanionsJson = async (req, res) => {
+  try {
+    const companions = await TravelCompanion.findAll({
+      where: { createdBy: req.user.id },
+      include: [
+        {
+          model: User,
+          as: 'linkedAccount',
+          attributes: ['id', 'firstName', 'lastName', 'email']
+        }
+      ],
+      order: [['name', 'ASC']]
+    });
+
+    res.json({
+      success: true,
+      companions: companions.map(c => ({
+        id: c.id,
+        name: c.name,
+        email: c.email,
+        phone: c.phone,
+        linkedAccount: c.linkedAccount,
+        createdAt: c.createdAt
+      }))
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: 'Error loading companions' });
+  }
+};
+
 // Get form to create new companion
 exports.getCreateCompanion = (req, res) => {
   res.render('companions/create', { title: 'Add Travel Companion' });

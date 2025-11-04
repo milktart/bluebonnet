@@ -33,33 +33,6 @@
       </div>
     </div>
 
-    <!-- Section 2: Pending Requests -->
-    <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
-      <h3 class="text-sm font-semibold text-gray-900 mb-4 flex items-center">
-        <svg class="w-4 h-4 mr-2 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-        Pending Requests
-      </h3>
-
-      <!-- Incoming Requests -->
-      <div class="mb-4">
-        <h4 class="text-xs font-semibold text-gray-600 mb-2">Requests from Others</h4>
-        <div id="incomingRequestsList" class="space-y-2">
-          <!-- Populated by JavaScript -->
-          <div class="text-gray-500 text-xs text-center py-2">No pending incoming requests</div>
-        </div>
-      </div>
-
-      <!-- Outgoing Requests -->
-      <div>
-        <h4 class="text-xs font-semibold text-gray-600 mb-2">Requests You've Sent</h4>
-        <div id="outgoingRequestsList" class="space-y-2">
-          <!-- Populated by JavaScript -->
-          <div class="text-gray-500 text-xs text-center py-2">No pending outgoing requests</div>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -154,15 +127,13 @@ let currentRelationshipId = null;
 // Load all companion data immediately (not waiting for DOMContentLoaded since this is loaded via AJAX)
 async function loadCompanionData() {
   try {
-    // Load mutual companions
-    const mutualRes = await fetch('/companion-relationships/mutual');
-    const mutualData = await mutualRes.json();
-    renderMutualCompanions(mutualData.companions || []);
+    // Load travel companions (simple contacts created for trips)
+    const companionsRes = await fetch('/companions/api/json');
+    const companionsData = await companionsRes.json();
 
-    // Load pending requests
-    const pendingRes = await fetch('/companion-relationships/pending');
-    const pendingData = await pendingRes.json();
-    renderPendingRequests(pendingData || {});
+    if (companionsData.success) {
+      renderMutualCompanions(companionsData.companions || []);
+    }
   } catch (error) {
     console.error('Error loading companion data:', error);
   }
@@ -176,34 +147,27 @@ function renderMutualCompanions(companions) {
     return;
   }
 
-  container.innerHTML = companions.map(companionObj => {
-    const companion = companionObj.user;
-    const theirPermission = companionObj.theirPermissionLevel || 'view_travel';
-    const myPermission = companionObj.myPermissionLevel || 'view_travel';
-    const relationshipId = companionObj.relationshipId;
+  container.innerHTML = companions.map(companion => {
+    const accountStatus = companion.linkedAccount ?
+      `<span class="inline-block mt-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded">✓ Account Linked</span>` :
+      `<span class="inline-block mt-2 px-2 py-1 text-xs bg-amber-100 text-amber-800 rounded">Account: Not Linked</span>`;
 
     return `
       <div class="flex justify-between items-start p-3 bg-gray-50 rounded-md">
         <div class="flex-grow">
-          <p class="text-sm font-medium text-gray-900">${companion.firstName} ${companion.lastName}</p>
+          <p class="text-sm font-medium text-gray-900">${companion.name}</p>
           <p class="text-xs text-gray-600">${companion.email}</p>
-          <div class="mt-2 space-y-1 text-xs">
-            <div class="text-gray-600">
-              <span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded">${theirPermission === 'manage_travel' ? '📝 Manage' : '👁️ View'}</span>
-              <span class="text-gray-500">→ their access</span>
-            </div>
-            <div class="text-gray-600">
-              <span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded">${myPermission === 'manage_travel' ? '📝 Manage' : '👁️ View'}</span>
-              <span class="text-gray-500">→ your access</span>
-            </div>
+          ${companion.phone ? `<p class="text-xs text-gray-600 mt-1">${companion.phone}</p>` : ''}
+          <div>
+            ${accountStatus}
           </div>
         </div>
         <div class="flex gap-2 ml-2">
-          <button class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200" onclick="openChangePermissionModal('${relationshipId}', '${companion.firstName} ${companion.lastName}', '${myPermission}')">
-            Change
+          <button class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200" onclick="editCompanion('${companion.id}')">
+            Edit
           </button>
-          <button class="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200" onclick="revokeCompanion('${relationshipId}')">
-            Revoke
+          <button class="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200" onclick="deleteCompanionClick('${companion.id}')">
+            Delete
           </button>
         </div>
       </div>
@@ -389,6 +353,34 @@ async function resendRequest(relationshipId) {
   } catch (error) {
     console.error('Error:', error);
     alert('Error resending request');
+  }
+}
+
+async function editCompanion(companionId) {
+  try {
+    // Load the edit form in the secondary sidebar
+    await loadSidebarContent(`/companions/${companionId}/sidebar/edit`);
+  } catch (error) {
+    console.error('Error loading edit form:', error);
+    alert('Error loading edit form');
+  }
+}
+
+async function deleteCompanionClick(companionId) {
+  if (!confirm('Are you sure you want to delete this companion?')) return;
+
+  try {
+    const response = await fetch(`/companions/${companionId}`, { method: 'DELETE' });
+    if (response.ok) {
+      // Reload companion data to reflect the deletion
+      loadCompanionData();
+      alert('Companion deleted successfully');
+    } else {
+      alert('Error deleting companion');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Error deleting companion');
   }
 }
 
