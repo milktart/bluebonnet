@@ -94,11 +94,6 @@
       });
   };
 </script>
-  <!-- Navigation hidden on this full-screen map view -->
-  <div class="hide-nav">
-    <%- include('../partials/nav') %>
-  </div>
-
   <!-- Full-screen map -->
   <div id="tripMap"></div>
 
@@ -1158,8 +1153,8 @@
       }
     }
 
-    // Prepare trip data for map
-    const allTripsData = {
+    // Prepare trip data for map (window-scoped for access from trips-list.js)
+    window.allTripsData = {
       flights: [],
       hotels: [],
       transportation: [],
@@ -1168,7 +1163,7 @@
     };
 
     // Prepare data for upcoming trips (flights and events)
-    const upcomingTripsData = {
+    window.upcomingTripsData = {
       flights: [],
       hotels: [],
       transportation: [],
@@ -1177,7 +1172,7 @@
     };
 
     // Prepare data for past trips (flights only)
-    const pastTripsData = {
+    window.pastTripsData = {
       flights: [],
       hotels: [],
       transportation: [],
@@ -1187,17 +1182,17 @@
 
     // Add standalone items to all data and upcoming data
     <% if (typeof standaloneFlights !== 'undefined' && standaloneFlights && standaloneFlights.length > 0) { %>
-      allTripsData.flights.push(...<%- JSON.stringify(standaloneFlights) %>);
-      upcomingTripsData.flights.push(...<%- JSON.stringify(standaloneFlights) %>);
-      pastTripsData.flights.push(...<%- JSON.stringify(standaloneFlights) %>);
+      window.allTripsData.flights.push(...<%- JSON.stringify(standaloneFlights) %>);
+      window.upcomingTripsData.flights.push(...<%- JSON.stringify(standaloneFlights) %>);
+      window.pastTripsData.flights.push(...<%- JSON.stringify(standaloneFlights) %>);
     <% } %>
     <% if (typeof standaloneTransportation !== 'undefined' && standaloneTransportation && standaloneTransportation.length > 0) { %>
-      allTripsData.transportation.push(...<%- JSON.stringify(standaloneTransportation) %>);
-      upcomingTripsData.transportation.push(...<%- JSON.stringify(standaloneTransportation) %>);
+      window.allTripsData.transportation.push(...<%- JSON.stringify(standaloneTransportation) %>);
+      window.upcomingTripsData.transportation.push(...<%- JSON.stringify(standaloneTransportation) %>);
     <% } %>
     <% if (typeof standaloneEvents !== 'undefined' && standaloneEvents && standaloneEvents.length > 0) { %>
-      allTripsData.events.push(...<%- JSON.stringify(standaloneEvents) %>);
-      upcomingTripsData.events.push(...<%- JSON.stringify(standaloneEvents) %>);
+      window.allTripsData.events.push(...<%- JSON.stringify(standaloneEvents) %>);
+      window.upcomingTripsData.events.push(...<%- JSON.stringify(standaloneEvents) %>);
     <% } %>
 
     // Collect all upcoming items for sorting
@@ -1219,16 +1214,16 @@
 
     // Sort upcoming items chronologically and add to data
     upcomingFlights.forEach(f => {
-      allTripsData.flights.push(f);
-      upcomingTripsData.flights.push(f);
+      window.allTripsData.flights.push(f);
+      window.upcomingTripsData.flights.push(f);
     });
     upcomingEvents.forEach(e => {
-      allTripsData.events.push(e);
-      upcomingTripsData.events.push(e);
+      window.allTripsData.events.push(e);
+      window.upcomingTripsData.events.push(e);
     });
     upcomingTransportation.forEach(t => {
-      allTripsData.transportation.push(t);
-      upcomingTripsData.transportation.push(t);
+      window.allTripsData.transportation.push(t);
+      window.upcomingTripsData.transportation.push(t);
     });
 
     // Collect all past flights for sorting
@@ -1248,8 +1243,8 @@
     });
 
     pastFlights.forEach(f => {
-      allTripsData.flights.push(f);
-      pastTripsData.flights.push(f);
+      window.allTripsData.flights.push(f);
+      window.pastTripsData.flights.push(f);
     });
 
     // Auto-open certificates sidebar if requested
