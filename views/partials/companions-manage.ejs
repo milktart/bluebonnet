@@ -158,12 +158,12 @@ async function loadCompanionData() {
     // Load mutual companions
     const mutualRes = await fetch('/companion-relationships/mutual');
     const mutualData = await mutualRes.json();
-    renderMutualCompanions(mutualData.relationships || []);
+    renderMutualCompanions(mutualData.companions || []);
 
     // Load pending requests
     const pendingRes = await fetch('/companion-relationships/pending');
     const pendingData = await pendingRes.json();
-    renderPendingRequests(pendingData.relationships || []);
+    renderPendingRequests(pendingData || {});
 
     // Load unlinked companions
     const unlinkedRes = await fetch('/companions');
@@ -174,18 +174,19 @@ async function loadCompanionData() {
   }
 }
 
-function renderMutualCompanions(relationships) {
+function renderMutualCompanions(companions) {
   const container = document.getElementById('mutualCompanionsList');
 
-  if (!relationships || relationships.length === 0) {
+  if (!companions || companions.length === 0) {
     container.innerHTML = '<div class="text-muted text-center py-3">No active companions yet</div>';
     return;
   }
 
-  container.innerHTML = relationships.map(rel => {
-    const companion = rel.companionUser || rel.requesterUser;
-    const theirPermission = rel.permissionLevel;
-    const myPermission = rel.reciprocalPermissionLevel || 'view_travel';
+  container.innerHTML = companions.map(companionObj => {
+    const companion = companionObj.user;
+    const theirPermission = companionObj.theirPermissionLevel || 'view_travel';
+    const myPermission = companionObj.myPermissionLevel || 'view_travel';
+    const relationshipId = companionObj.relationshipId;
 
     return `
       <div class="list-group-item d-flex justify-content-between align-items-start py-3">
@@ -206,10 +207,10 @@ function renderMutualCompanions(relationships) {
         </div>
 
         <div class="ms-3">
-          <button class="btn btn-sm btn-outline-primary" onclick="openChangePermissionModal('${rel.id}', '${companion.firstName} ${companion.lastName}', '${myPermission}')">
+          <button class="btn btn-sm btn-outline-primary" onclick="openChangePermissionModal('${relationshipId}', '${companion.firstName} ${companion.lastName}', '${myPermission}')">
             <i class="bi bi-pencil"></i> Change
           </button>
-          <button class="btn btn-sm btn-outline-danger" onclick="revokeCompanion('${rel.id}')">
+          <button class="btn btn-sm btn-outline-danger" onclick="revokeCompanion('${relationshipId}')">
             <i class="bi bi-trash"></i> Revoke
           </button>
         </div>
@@ -218,10 +219,10 @@ function renderMutualCompanions(relationships) {
   }).join('');
 }
 
-function renderPendingRequests(relationships) {
-  // Separate incoming and outgoing
-  const incoming = relationships.filter(r => r.companionUserId === <%= user.id %> && r.status === 'pending');
-  const outgoing = relationships.filter(r => r.userId === <%= user.id %> && r.status === 'pending');
+function renderPendingRequests(data) {
+  // Extract incoming and outgoing from API response
+  const incoming = data.incoming || [];
+  const outgoing = data.outgoing || [];
 
   // Render incoming
   const incomingContainer = document.getElementById('incomingRequestsList');
@@ -229,7 +230,7 @@ function renderPendingRequests(relationships) {
     incomingContainer.innerHTML = '<div class="text-muted text-center py-3 small">No pending incoming requests</div>';
   } else {
     incomingContainer.innerHTML = incoming.map(rel => {
-      const requester = rel.requesterUser;
+      const requester = rel.requester;
       return `
         <div class="list-group-item d-flex justify-content-between align-items-start py-3">
           <div class="flex-grow-1">
@@ -257,7 +258,7 @@ function renderPendingRequests(relationships) {
     outgoingContainer.innerHTML = '<div class="text-muted text-center py-3 small">No pending outgoing requests</div>';
   } else {
     outgoingContainer.innerHTML = outgoing.map(rel => {
-      const recipient = rel.companionUser;
+      const recipient = rel.recipient;
       return `
         <div class="list-group-item d-flex justify-content-between align-items-start py-3">
           <div class="flex-grow-1">
