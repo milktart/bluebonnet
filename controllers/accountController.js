@@ -136,6 +136,20 @@ exports.getAccountSettingsSidebar = async (req, res) => {
   }
 };
 
+exports.getCompanionsSidebar = async (req, res) => {
+  try {
+    // Simply render the companions sidebar partial
+    // The partial will load companion data via JavaScript API calls
+    res.render('partials/account-companions-sidebar', {
+      user: req.user,
+      layout: false  // Don't use main layout, just render the partial
+    });
+  } catch (error) {
+    console.error('Error loading companions sidebar:', error);
+    res.status(500).send('<div class="p-4"><p class="text-red-600">Error loading companions. Please try again.</p></div>');
+  }
+};
+
 exports.revokeCompanionAccess = async (req, res) => {
   try {
     const companionId = req.params.companionId;

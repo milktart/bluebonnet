@@ -13,6 +13,9 @@ router.get('/', accountController.getAccountSettings);
 // GET account settings sidebar content (AJAX)
 router.get('/sidebar', accountController.getAccountSettingsSidebar);
 
+// GET companions sidebar content (AJAX)
+router.get('/companions-sidebar', accountController.getCompanionsSidebar);
+
 // PUT update profile (name, email)
 router.put('/profile', validateProfileUpdate, accountController.updateProfile);
 
