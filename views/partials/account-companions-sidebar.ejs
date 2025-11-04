@@ -121,8 +121,15 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+// Initialize companion management scope only once
+if (typeof window.CompanionManager === 'undefined') {
+  window.CompanionManager = {};
+}
+
 // Store current relationship ID for modal actions
-let currentRelationshipId = null;
+if (typeof window.CompanionManager.currentRelationshipId === 'undefined') {
+  window.CompanionManager.currentRelationshipId = null;
+}
 
 // Load all companion data immediately (not waiting for DOMContentLoaded since this is loaded via AJAX)
 async function loadCompanionData() {
@@ -237,14 +244,14 @@ function renderPendingRequests(data) {
 }
 
 function openChangePermissionModal(relationshipId, companionName, currentPermission) {
-  currentRelationshipId = relationshipId;
+  window.CompanionManager.currentRelationshipId = relationshipId;
   document.getElementById('permissionModalCompanionName').textContent = companionName;
   document.querySelector(`input[name="newPermissionLevel"][value="${currentPermission}"]`).checked = true;
   new bootstrap.Modal(document.getElementById('changePermissionModal')).show();
 }
 
 function openAcceptModal(relationshipId, companionName) {
-  currentRelationshipId = relationshipId;
+  window.CompanionManager.currentRelationshipId = relationshipId;
   document.getElementById('acceptModalCompanionName').textContent = companionName;
   document.querySelector('input[name="acceptPermissionLevel"][value="view_travel"]').checked = true;
   new bootstrap.Modal(document.getElementById('acceptCompanionModal')).show();
@@ -253,12 +260,13 @@ function openAcceptModal(relationshipId, companionName) {
 // Wait for DOM to be ready before attaching event listeners
 setTimeout(() => {
   const confirmBtn = document.getElementById('confirmPermissionChange');
-  if (confirmBtn) {
+  if (confirmBtn && !confirmBtn.dataset.listenerAttached) {
+    confirmBtn.dataset.listenerAttached = 'true';
     confirmBtn.addEventListener('click', async () => {
       const newPermission = document.querySelector('input[name="newPermissionLevel"]:checked').value;
 
       try {
-        const response = await fetch(`/companion-relationships/${currentRelationshipId}/permission`, {
+        const response = await fetch(`/companion-relationships/${window.CompanionManager.currentRelationshipId}/permission`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ permissionLevel: newPermission })
@@ -280,12 +288,13 @@ setTimeout(() => {
 
 setTimeout(() => {
   const acceptBtn = document.getElementById('confirmAcceptRequest');
-  if (acceptBtn) {
+  if (acceptBtn && !acceptBtn.dataset.listenerAttached) {
+    acceptBtn.dataset.listenerAttached = 'true';
     acceptBtn.addEventListener('click', async () => {
       const permissionLevel = document.querySelector('input[name="acceptPermissionLevel"]:checked').value;
 
       try {
-        const response = await fetch(`/companion-relationships/${currentRelationshipId}/accept`, {
+        const response = await fetch(`/companion-relationships/${window.CompanionManager.currentRelationshipId}/accept`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ permissionLevel })
