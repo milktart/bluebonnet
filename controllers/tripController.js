@@ -91,7 +91,7 @@ exports.listTrips = async (req, res, options = {}) => {
     // Get pending trip invitations for the current user
     const pendingInvitations = await TripInvitation.findAll({
       where: {
-        companionEmail: req.user.email,
+        invitedUserId: req.user.id,
         status: 'pending'
       },
       include: [
