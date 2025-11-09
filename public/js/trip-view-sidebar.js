@@ -86,6 +86,9 @@ function editItem(type, id) {
           if (typeof setupAsyncFormSubmission === 'function') {
             setupAsyncFormSubmission('editFlightForm');
           }
+          if (typeof initializeItemCompanions === 'function') {
+            initializeItemCompanions();
+          }
           initFlightDateTimePickers();
           initAirportSearch();
         })
@@ -100,9 +103,13 @@ function editItem(type, id) {
         .then(response => response.text())
         .then(html => {
           formContainer.innerHTML = html;
+          executeLoadedScripts(formContainer);
           // Call form initialization directly
           if (typeof setupAsyncFormSubmission === 'function') {
             setupAsyncFormSubmission('editHotelForm');
+          }
+          if (typeof initializeItemCompanions === 'function') {
+            initializeItemCompanions();
           }
           initFlightDateTimePickers();
         })
@@ -114,9 +121,13 @@ function editItem(type, id) {
         .then(response => response.text())
         .then(html => {
           formContainer.innerHTML = html;
+          executeLoadedScripts(formContainer);
           // Call form initialization directly
           if (typeof setupAsyncFormSubmission === 'function') {
             setupAsyncFormSubmission('editTransportationForm');
+          }
+          if (typeof initializeItemCompanions === 'function') {
+            initializeItemCompanions();
           }
           initFlightDateTimePickers();
         })
@@ -138,9 +149,13 @@ function editItem(type, id) {
             formContainer.innerHTML = '<p class="text-red-600">Error loading form: empty response</p>';
           } else {
             formContainer.innerHTML = html;
+            executeLoadedScripts(formContainer);
             // Call form initialization directly
             if (typeof setupAsyncFormSubmission === 'function') {
               setupAsyncFormSubmission('editCarRentalForm');
+            }
+            if (typeof initializeItemCompanions === 'function') {
+              initializeItemCompanions();
             }
             initFlightDateTimePickers();
           }
@@ -166,6 +181,9 @@ function editItem(type, id) {
           }
           if (typeof initializeTimeInputs === 'function') {
             initializeTimeInputs();
+          }
+          if (typeof initializeItemCompanions === 'function') {
+            initializeItemCompanions();
           }
           initFlightDateTimePickers();
         })

@@ -1,6 +1,7 @@
-const { Trip, Flight, Hotel, Transportation, CarRental, Event, TravelCompanion, TripCompanion, User, CompanionRelationship, TripInvitation, Notification } = require('../models');
+const { Trip, Flight, Hotel, Transportation, CarRental, Event, TravelCompanion, TripCompanion, User, CompanionRelationship, TripInvitation, Notification, ItemCompanion } = require('../models');
 const airportService = require('../services/airportService');
 const { formatInTimezone } = require('../utils/timezoneHelper');
+const itemCompanionHelper = require('../utils/itemCompanionHelper');
 const { Op } = require('sequelize');
 
 exports.listTrips = async (req, res, options = {}) => {
@@ -161,6 +162,33 @@ exports.createTrip = async (req, res) => {
       defaultCompanionEditPermission: !!defaultCompanionEditPermission
     });
 
+    // Ensure trip owner is added as a trip companion
+    // Get or create a TravelCompanion record for the trip owner
+    let ownerCompanion = await TravelCompanion.findOne({
+      where: { userId: req.user.id }
+    });
+
+    if (!ownerCompanion) {
+      // Create a companion record for the trip owner if they don't have one
+      ownerCompanion = await TravelCompanion.create({
+        name: `${req.user.firstName} ${req.user.lastName}`,
+        email: req.user.email,
+        userId: req.user.id,
+        createdBy: req.user.id,
+        canBeAddedByOthers: true
+      });
+    }
+
+    // Add trip owner as a trip companion
+    await TripCompanion.create({
+      tripId: trip.id,
+      companionId: ownerCompanion.id,
+      canEdit: true,
+      canAddItems: true,
+      permissionSource: 'owner',
+      addedBy: req.user.id,
+    });
+
     // Add companions if provided
     if (companions) {
       let companionIds = [];
@@ -295,6 +323,41 @@ exports.viewTrip = async (req, res) => {
     // Determine if user can edit this trip
     const canEdit = isOwner || (companionRecord && companionRecord.canEdit);
 
+    // Get current user's travel companion profile (if they're a companion)
+    let userCompanionId = null;
+    let userItemCompanions = {};
+
+    if (!isOwner && companionRecord) {
+      // User is a companion on this trip - use their companion profile
+      const userCompanionProfile = await TravelCompanion.findOne({
+        where: { userId: req.user.id }
+      });
+      if (userCompanionProfile) {
+        userCompanionId = userCompanionProfile.id;
+      }
+    } else if (isOwner) {
+      // Trip owner should also check if they have a companion profile
+      const ownerCompanionProfile = await TravelCompanion.findOne({
+        where: { userId: req.user.id }
+      });
+      if (ownerCompanionProfile) {
+        userCompanionId = ownerCompanionProfile.id;
+      }
+    }
+
+    // Get item companions data for the current user
+    if (userCompanionId) {
+      const itemCompanions = await ItemCompanion.findAll({
+        where: { companionId: userCompanionId }
+      });
+
+      // Create a map of itemId -> itemType for quick lookup
+      itemCompanions.forEach(ic => {
+        const key = `${ic.itemType}_${ic.itemId}`;
+        userItemCompanions[key] = true;
+      });
+    }
+
     // Get airline data for form lookup
     const airlines = airportService.getAllAirlines();
 
@@ -304,7 +367,9 @@ exports.viewTrip = async (req, res) => {
       isOwner,
       canEdit,
       airlines,
-      formatInTimezone
+      formatInTimezone,
+      userItemCompanions, // Pass item companions data to view
+      userCompanionId // Pass user's companion ID for reference
     });
   } catch (error) {
     console.error(error);
@@ -522,6 +587,9 @@ exports.updateTrip = async (req, res) => {
           permissionSource,
           addedBy: req.user.id,
         });
+
+        // Auto-add this companion to all existing items in the trip
+        await itemCompanionHelper.addCompanionToAllItems(companionId, trip.id, req.user.id);
 
         // Send invitation for view_travel companions
         if (companion.userId && permissionSource !== 'manage_travel') {
@@ -741,10 +809,48 @@ exports.getTripSidebarHtml = async (req, res) => {
       }
     }
 
+    // Get current user's travel companion profile and item companions
+    let userCompanionId = null;
+    let userItemCompanions = {};
+
+    if (!isOwner) {
+      // User is a companion on this trip - use their companion profile
+      const userCompanionProfile = await TravelCompanion.findOne({
+        where: { userId: req.user.id }
+      });
+      if (userCompanionProfile) {
+        userCompanionId = userCompanionProfile.id;
+      }
+    } else {
+      // Trip owner should also check if they have a companion profile
+      const ownerCompanionProfile = await TravelCompanion.findOne({
+        where: { userId: req.user.id }
+      });
+      if (ownerCompanionProfile) {
+        userCompanionId = ownerCompanionProfile.id;
+      }
+    }
+
+    // Get item companions data for the current user
+    if (userCompanionId) {
+      const itemCompanions = await ItemCompanion.findAll({
+        where: { companionId: userCompanionId }
+      });
+
+      // Create a map of itemId -> itemType for quick lookup
+      itemCompanions.forEach(ic => {
+        const key = `${ic.itemType}_${ic.itemId}`;
+        userItemCompanions[key] = true;
+      });
+    }
+
     // Render just the sidebar content partial
     res.render('partials/trip-sidebar-content', {
       trip,
-      formatInTimezone
+      formatInTimezone,
+      isOwner,
+      userItemCompanions,
+      userCompanionId
     });
   } catch (error) {
     console.error('Error fetching sidebar HTML:', error);

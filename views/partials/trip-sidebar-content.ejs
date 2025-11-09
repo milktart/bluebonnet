@@ -166,53 +166,65 @@
       if (allItems[i].type === 'flight' && allItems[i + 1].type === 'flight') {
         const currentFlight = allItems[i];
         const nextFlight = allItems[i + 1];
+
+        // Check if user is a participant on BOTH consecutive flights
+        const currentFlightKey = `flight_${currentFlight.id}`;
+        const nextFlightKey = `flight_${nextFlight.id}`;
+        const userOnCurrentFlight = (typeof userItemCompanions !== 'undefined' && userItemCompanions && userItemCompanions[currentFlightKey]) === true;
+        const userOnNextFlight = (typeof userItemCompanions !== 'undefined' && userItemCompanions && userItemCompanions[nextFlightKey]) === true;
+        const userTravelingBothFlights = userOnCurrentFlight && userOnNextFlight;
+
         const layoverDuration = calculateLayoverDuration(currentFlight.data.arrivalDateTime, nextFlight.data.departureDateTime);
 
         if (layoverDuration) {
-          // Layover < 24 hours
-          const layoverInfo = {
-            type: 'short',
-            duration: layoverDuration,
-            airport: getAirportCode(currentFlight.data.destination),
-            text: getLayoverText(layoverDuration, getAirportCode(currentFlight.data.destination))
-          };
+          // Layover < 24 hours - only show if user is on both flights
+          if (userTravelingBothFlights) {
+            const layoverInfo = {
+              type: 'short',
+              duration: layoverDuration,
+              airport: getAirportCode(currentFlight.data.destination),
+              text: getLayoverText(layoverDuration, getAirportCode(currentFlight.data.destination))
+            };
 
-          // Get departure dates to check if they're on different days
-          let currentFlightDateKey, nextFlightDateKey;
-          let timezone = currentFlight.data.originTimezone;
-          if (timezone) {
-            currentFlightDateKey = formatInTimezone(currentFlight.time, timezone, 'YYYY-MM-DD');
-          } else {
-            currentFlightDateKey = currentFlight.time.toISOString().split('T')[0];
-          }
+            // Get departure dates to check if they're on different days
+            let currentFlightDateKey, nextFlightDateKey;
+            let timezone = currentFlight.data.originTimezone;
+            if (timezone) {
+              currentFlightDateKey = formatInTimezone(currentFlight.time, timezone, 'YYYY-MM-DD');
+            } else {
+              currentFlightDateKey = currentFlight.time.toISOString().split('T')[0];
+            }
 
-          timezone = nextFlight.data.originTimezone;
-          if (timezone) {
-            nextFlightDateKey = formatInTimezone(nextFlight.time, timezone, 'YYYY-MM-DD');
-          } else {
-            nextFlightDateKey = nextFlight.time.toISOString().split('T')[0];
-          }
+            timezone = nextFlight.data.originTimezone;
+            if (timezone) {
+              nextFlightDateKey = formatInTimezone(nextFlight.time, timezone, 'YYYY-MM-DD');
+            } else {
+              nextFlightDateKey = nextFlight.time.toISOString().split('T')[0];
+            }
 
-          // If on different dates, store with next flight's date; otherwise store with current flight
-          if (currentFlightDateKey !== nextFlightDateKey) {
-            layoversByDateKey[nextFlightDateKey] = layoverInfo;
-          } else {
-            layoversByFlightId[currentFlight.id] = layoverInfo;
+            // If on different dates, store with next flight's date; otherwise store with current flight
+            if (currentFlightDateKey !== nextFlightDateKey) {
+              layoversByDateKey[nextFlightDateKey] = layoverInfo;
+            } else {
+              layoversByFlightId[currentFlight.id] = layoverInfo;
+            }
           }
         } else {
-          // Layover >= 24 hours - check if accommodation exists
-          const layoverStart = new Date(currentFlight.data.arrivalDateTime);
-          const layoverEnd = new Date(nextFlight.data.departureDateTime);
-          const hasHotel = hasHotelDuringPeriod(layoverStart, layoverEnd, trip.hotels);
+          // Layover >= 24 hours - check if accommodation exists and user is traveling both flights
+          if (userTravelingBothFlights) {
+            const layoverStart = new Date(currentFlight.data.arrivalDateTime);
+            const layoverEnd = new Date(nextFlight.data.departureDateTime);
+            const hasHotel = hasHotelDuringPeriod(layoverStart, layoverEnd, trip.hotels);
 
-          if (!hasHotel) {
-            layoversByFlightId[currentFlight.id] = {
-              type: 'long',
-              city: getCityName(currentFlight.data.destination),
-              arrivalDateTime: currentFlight.data.arrivalDateTime,
-              departureDateTime: nextFlight.data.departureDateTime,
-              destinationTimezone: currentFlight.data.destinationTimezone
-            };
+            if (!hasHotel) {
+              layoversByFlightId[currentFlight.id] = {
+                type: 'long',
+                city: getCityName(currentFlight.data.destination),
+                arrivalDateTime: currentFlight.data.arrivalDateTime,
+                departureDateTime: nextFlight.data.departureDateTime,
+                destinationTimezone: currentFlight.data.destinationTimezone
+              };
+            }
           }
         }
       }
@@ -317,11 +329,23 @@
               const timeStr = formatInTimezone(item.data.departureDateTime || item.data.checkInDateTime || item.data.pickupDateTime || item.data.startDateTime, timezone, 'HH:mm');
               const [hours, minutes] = timeStr.split(':');
               const typeClass = `marker-${item.type}`;
+
+              // Check if user is a participant in this item
+              // Convert item type to match database enum (carRental -> car_rental)
+              const itemTypeForDb = item.type === 'carRental' ? 'car_rental' : item.type;
+              const itemKey = `${itemTypeForDb}_${item.id}`;
+              const userIsParticipant = (typeof userItemCompanions !== 'undefined' && userItemCompanions && userItemCompanions[itemKey]) === true;
+              // Non-participant style applies if user is not in the ItemCompanion list
+              // This applies to anyone (owner or companion) who isn't explicitly added to the item
+              const isNonParticipant = !userIsParticipant;
+              const nonParticipantClass = isNonParticipant ? 'opacity-60 italic' : '';
+              const nonParticipantTitle = isNonParticipant ? 'You are not a participant in this item' : '';
             %>
-              <div class="timeline-item flex items-start space-x-3 p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-200 transition-colors cursor-pointer"
+              <div class="timeline-item flex items-start space-x-3 p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-200 transition-colors cursor-pointer <%= nonParticipantClass %>"
                    data-item-id="<%= item.id %>"
                    data-item-type="<%= item.type %>"
                    data-marker="<%= item.marker || '' %>"
+                   title="<%= nonParticipantTitle %>"
                    onmouseover="highlightMapMarker('<%= item.marker || '' %>', '<%= item.type %>')"
                    onmouseout="unhighlightMapMarker('<%= item.marker || '' %>')"
                    onclick="editItem('<%= item.type %>', '<%= item.id %>')">
@@ -341,6 +365,9 @@
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center space-x-2 mb-1">
                     <span class="text-xs font-medium text-gray-900"><%= hours %>:<%= minutes %></span>
+                    <% if (isNonParticipant) { %>
+                      <span class="text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded font-medium">not participating</span>
+                    <% } %>
                   </div>
                   <p class="text-sm text-gray-600"><%= item.display %></p>
                 </div>

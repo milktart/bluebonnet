@@ -41,8 +41,12 @@ function attachCompanionsFormHandler() {
       })
       .then(data => {
         if (data.success) {
-          // Success - reload the companions list
-          loadSidebarContent('/companions/sidebar');
+          // Success - clear sidebar and reload companions list
+          const secondarySidebar = document.getElementById('secondary-sidebar-content');
+          if (secondarySidebar) {
+            secondarySidebar.innerHTML = '';
+          }
+          loadAndOpenCompanionsSidebar();
         } else {
           alert(data.error || 'Failed to update companion');
         }
@@ -79,8 +83,12 @@ function attachCompanionsFormHandler() {
       })
       .then(data => {
         if (data.success) {
-          // Success - reload the companions list
-          loadSidebarContent('/companions/sidebar');
+          // Success - clear sidebar and reload companions list
+          const secondarySidebar = document.getElementById('secondary-sidebar-content');
+          if (secondarySidebar) {
+            secondarySidebar.innerHTML = '';
+          }
+          loadAndOpenCompanionsSidebar();
         } else {
           alert(data.error || 'Failed to add companion');
         }

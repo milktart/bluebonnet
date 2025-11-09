@@ -15,7 +15,7 @@
   <!-- Trips Styles -->
   <link href="/css/trips.css" rel="stylesheet">
 </head>
-<body class="overflow-hidden">
+<body class="overflow-hidden" data-current-user-id="<%- user.id %>" data-current-user-name="<%- user.firstName %> <%- user.lastName %>">
   <!-- Full-screen map -->
   <div id="tripMap"></div>
 
@@ -184,6 +184,7 @@
   <script src="/js/trip-view-utils.js"></script>
   <script src="/js/companion-selector.js"></script>
   <script src="/js/voucher-sidebar-manager.js"></script>
+  <script src="/js/item-companions-loader.js"></script>
 
   <script>
     // Trip data for map

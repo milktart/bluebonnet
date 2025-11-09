@@ -89,6 +89,10 @@
       window.itemType = 'hotel';
       window.itemId = '<%= data?.id || "" %>';
       window.tripId = '<%= tripId %>';
+      // Initialize companions after setting window variables
+      if (typeof initializeItemCompanions === 'function') {
+        initializeItemCompanions();
+      }
     </script>
 
     <!-- Buttons -->

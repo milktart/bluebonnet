@@ -4,113 +4,38 @@
     <i class="bi bi-people-fill me-2"></i>Travel Companions
   </h3>
   <p class="text-xs text-gray-500 mb-3">
-    Trip-level companions are automatically included. You can remove them from this item or add additional companions.
+    <% if (data?.id) { %>
+      Click the X on any companion to remove them from this item only (they remain on the trip).
+    <% } else { %>
+      Companions from the trip will be automatically added to this new item. You can remove them after creating the item if needed.
+    <% } %>
   </p>
 
-  <div id="itemCompanions" class="space-y-2 mb-3">
+  <!-- Current companions -->
+  <div id="itemCompanions" class="space-y-2 mb-4">
     <div class="text-center text-gray-500 text-sm py-2">Loading companions...</div>
   </div>
 
-  <!-- Hidden field for companion IDs -->
-  <input type="hidden" name="itemCompanions" id="itemCompanionsJson" value="[]">
-</div>
-
-<script>
-// Load companions for this item
-async function loadItemCompanions(itemType, itemId, tripId) {
-  const container = document.getElementById('itemCompanions');
-
-  try {
-    let companions = [];
-
-    // If editing (itemId exists), fetch existing item companions
-    if (itemId) {
-      const response = await fetch(`/items/${itemType}/${itemId}/companions`);
-      if (response.ok) {
-        const data = await response.json();
-        companions = data.companions || [];
-      }
-    } else if (tripId) {
-      // If creating, get trip-level companions
-      const response = await fetch(`/trips/${tripId}`);
-      if (response.ok) {
-        const trip = await response.json();
-        if (trip.tripCompanions) {
-          companions = trip.tripCompanions.map(tc => ({
-            id: tc.companion.id,
-            name: tc.companion.name,
-            email: tc.companion.email,
-            inherited: true
-          }));
-        }
-      }
-    }
-
-    displayItemCompanions(companions);
-  } catch (error) {
-    console.error('Error loading companions:', error);
-    container.innerHTML = '<div class="text-red-500 text-sm">Error loading companions</div>';
-  }
-}
-
-function displayItemCompanions(companions) {
-  const container = document.getElementById('itemCompanions');
-
-  if (!companions || companions.length === 0) {
-    container.innerHTML = '<div class="text-center text-gray-500 text-sm py-2">No companions added to this item</div>';
-    updateCompanionIds([]);
-    return;
-  }
-
-  container.innerHTML = companions.map(c => `
-    <div class="companion-badge flex items-center justify-between bg-gray-100 rounded-full px-3 py-2" data-companion-id="${c.id}">
-      <div class="flex items-center flex-1 min-w-0">
-        <span class="text-sm font-medium text-gray-900 truncate">${c.name || c.email}</span>
-        <span class="text-xs text-gray-500 ml-2">
-          ${c.inherited ? '(inherited)' : '(added)'}
-        </span>
-      </div>
-      <button
-        type="button"
-        class="remove-btn ml-2 text-gray-400 hover:text-gray-600 flex-shrink-0"
-        onclick="removeCompanion('${c.id}'); return false;"
+  <!-- Add companion section -->
+  <div class="mt-4 pt-4 border-t border-gray-200">
+    <label class="block text-xs font-semibold text-gray-700 mb-2">Add Additional Companion</label>
+    <div class="relative">
+      <input
+        type="text"
+        id="companionSearch"
+        placeholder="Search by name or email..."
+        class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        autocomplete="off"
       >
-        <i class="bi bi-x"></i>
-      </button>
+      <div id="companionSearchResults" class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 hidden max-h-48 overflow-y-auto">
+        <!-- Search results will appear here -->
+      </div>
     </div>
-  `).join('');
+    <p class="text-xs text-gray-500 mt-2">
+      Search for companions from your saved list to add them to this item only.
+    </p>
+  </div>
 
-  updateCompanionIds(companions.map(c => c.id));
-}
-
-function removeCompanion(companionId) {
-  const badge = document.querySelector(`[data-companion-id="${companionId}"]`);
-  if (badge) {
-    badge.remove();
-    updateCompanionIds();
-  }
-}
-
-function updateCompanionIds(companionIds = null) {
-  let ids = companionIds;
-
-  if (!companionIds) {
-    ids = Array.from(document.querySelectorAll('.companion-badge')).map(b => b.dataset.companionId);
-  }
-
-  document.getElementById('itemCompanionsJson').value = JSON.stringify(ids);
-}
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', () => {
-  // Get the item type and ID from the page context
-  // These should be set in the parent form
-  const itemType = window.itemType;
-  const itemId = window.itemId;
-  const tripId = window.tripId;
-
-  if (itemType) {
-    loadItemCompanions(itemType, itemId, tripId);
-  }
-});
-</script>
+  <!-- Hidden field for companion IDs to submit with form -->
+  <input type="hidden" name="companions" id="itemCompanionsJson" value="[]">
+</div>

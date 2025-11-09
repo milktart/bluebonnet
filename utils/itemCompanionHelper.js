@@ -84,9 +84,13 @@ exports.getAllCompanionsForItem = async (itemType, itemId, tripId) => {
  * Auto-add trip-level companions to an item
  */
 exports.autoAddTripCompanions = async (itemType, itemId, tripId, addedBy) => {
+  console.log('autoAddTripCompanions called:', { itemType, itemId, tripId, addedBy });
+
   const tripCompanions = await db.TripCompanion.findAll({
     where: { tripId },
   });
+
+  console.log('Found trip companions:', tripCompanions.map(tc => ({ id: tc.id, companionId: tc.companionId })));
 
   const itemCompanionRecords = tripCompanions.map(tc => ({
     itemType,
@@ -97,10 +101,15 @@ exports.autoAddTripCompanions = async (itemType, itemId, tripId, addedBy) => {
     inheritedFromTrip: true,
   }));
 
+  console.log('Creating item companions:', itemCompanionRecords);
+
   if (itemCompanionRecords.length > 0) {
-    await db.ItemCompanion.bulkCreate(itemCompanionRecords, {
+    const result = await db.ItemCompanion.bulkCreate(itemCompanionRecords, {
       ignoreDuplicates: true,
     });
+    console.log('Created item companions:', result);
+  } else {
+    console.log('No item companions to create');
   }
 };
 
@@ -176,4 +185,85 @@ exports.removeItemCompanions = async (itemType, itemId) => {
 exports.getNotAttendingCompanions = async (itemType, itemId, tripId) => {
   const allCompanions = await this.getAllCompanionsForItem(itemType, itemId, tripId);
   return allCompanions.filter(c => c.status === 'not_attending' || c.inheritedFromTrip);
+};
+
+/**
+ * Add a companion to all existing items in a trip
+ * Used when adding a new companion to a trip - they should be added to all existing items
+ */
+exports.addCompanionToAllItems = async (companionId, tripId, addedBy) => {
+  const { Flight, Hotel, Transportation, CarRental, Event } = db;
+
+  // Find all items in the trip
+  const [flights, hotels, transportation, carRentals, events] = await Promise.all([
+    Flight.findAll({ where: { tripId } }),
+    Hotel.findAll({ where: { tripId } }),
+    Transportation.findAll({ where: { tripId } }),
+    CarRental.findAll({ where: { tripId } }),
+    Event.findAll({ where: { tripId } })
+  ]);
+
+  // Add companion to all items
+  const itemCompanionRecords = [];
+
+  flights.forEach(f => {
+    itemCompanionRecords.push({
+      itemType: 'flight',
+      itemId: f.id,
+      companionId,
+      status: 'attending',
+      addedBy,
+      inheritedFromTrip: true
+    });
+  });
+
+  hotels.forEach(h => {
+    itemCompanionRecords.push({
+      itemType: 'hotel',
+      itemId: h.id,
+      companionId,
+      status: 'attending',
+      addedBy,
+      inheritedFromTrip: true
+    });
+  });
+
+  transportation.forEach(t => {
+    itemCompanionRecords.push({
+      itemType: 'transportation',
+      itemId: t.id,
+      companionId,
+      status: 'attending',
+      addedBy,
+      inheritedFromTrip: true
+    });
+  });
+
+  carRentals.forEach(cr => {
+    itemCompanionRecords.push({
+      itemType: 'car_rental',
+      itemId: cr.id,
+      companionId,
+      status: 'attending',
+      addedBy,
+      inheritedFromTrip: true
+    });
+  });
+
+  events.forEach(e => {
+    itemCompanionRecords.push({
+      itemType: 'event',
+      itemId: e.id,
+      companionId,
+      status: 'attending',
+      addedBy,
+      inheritedFromTrip: true
+    });
+  });
+
+  if (itemCompanionRecords.length > 0) {
+    await db.ItemCompanion.bulkCreate(itemCompanionRecords, {
+      ignoreDuplicates: true
+    });
+  }
 };
