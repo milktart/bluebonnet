@@ -87,35 +87,38 @@
     Delete Trip
   </button>
 </form>
-<script>
-  // Pass existing companions data to JavaScript
-  window.existingCompanions = [
-    <% if (trip.tripCompanions && trip.tripCompanions.length > 0) { %>
-      <% trip.tripCompanions.forEach((tc, index) => { %>
-        {
-          id: '<%= tc.companion.id %>',
-          name: '<%= tc.companion.name.replace(/'/g, "\\'") %>',
-          email: '<%= tc.companion.email %>',
-          phone: '<%= tc.companion.phone || "" %>',
-          isLinked: <%= !!tc.companion.linkedAccount %>,
-          isOwn: <%= tc.companion.createdBy === user.id %>,
-          linkedAccountName: <%= tc.companion.linkedAccount ? `'${tc.companion.linkedAccount.firstName} ${tc.companion.linkedAccount.lastName}'` : 'null' %>,
-          canAddItems: <%= tc.canAddItems %>,
-          permissionSource: '<%= tc.permissionSource %>'
-        }<%= index < trip.tripCompanions.length - 1 ? ',' : '' %>
-      <% }); %>
-    <% } %>
-  ];
+<!-- Hidden data attributes to store companion information -->
+<% if (trip.tripCompanions && trip.tripCompanions.length > 0) { %>
+  <% trip.tripCompanions.forEach((tc) => { %>
+    <input type="hidden" class="existing-companion-data" data-id="<%= tc.companion.id %>" data-name="<%= tc.companion.name.replace(/"/g, '&quot;') %>" data-email="<%= tc.companion.email %>" data-phone="<%= tc.companion.phone || '' %>" data-linked="<%= !!tc.companion.linkedAccount %>" data-own="<%= tc.companion.createdBy === user.id %>" data-can-add="<%= tc.canAddItems %>" data-permission="<%= tc.permissionSource %>">
+  <% }); %>
+<% } %>
 
-  // Render companion permissions on page load
-  document.addEventListener('DOMContentLoaded', () => {
+<script>
+  // Initialize companion permissions after page loads
+  function initializeCompanionPermissions() {
+    // Build existingCompanions array from hidden data attributes
+    const companionElements = document.querySelectorAll('.existing-companion-data');
+    window.existingCompanions = Array.from(companionElements).map(el => ({
+      id: el.dataset.id,
+      name: el.dataset.name,
+      email: el.dataset.email,
+      phone: el.dataset.phone,
+      isLinked: el.dataset.linked === 'true',
+      isOwn: el.dataset.own === 'true',
+      canAddItems: el.dataset.canAdd === 'true',
+      permissionSource: el.dataset.permission
+    }));
+
     updateCompanionPermissions();
 
     // Listen for changes to selected companions
     const companionContainer = document.getElementById('selectedCompanions');
-    const observer = new MutationObserver(updateCompanionPermissions);
-    observer.observe(companionContainer, { childList: true });
-  });
+    if (companionContainer) {
+      const observer = new MutationObserver(updateCompanionPermissions);
+      observer.observe(companionContainer, { childList: true });
+    }
+  }
 
   function updateCompanionPermissions() {
     const permissionsContainer = document.getElementById('companionPermissions');
@@ -167,4 +170,7 @@
     });
     document.getElementById('companionPermissionsJson').value = JSON.stringify(permissions);
   }
+
+  // Initialize when form loads
+  initializeCompanionPermissions();
 </script>

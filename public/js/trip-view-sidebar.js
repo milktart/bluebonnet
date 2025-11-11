@@ -217,9 +217,13 @@ function showAddFormWithLayoverDates(type, arrivalDateTime, departureDateTime, d
       .then(response => response.text())
       .then(html => {
         formContainer.innerHTML = html;
+        executeLoadedScripts(formContainer);
         // Call form initialization directly
         if (typeof setupAsyncFormSubmission === 'function') {
           setupAsyncFormSubmission('addHotelForm');
+        }
+        if (typeof initializeItemCompanions === 'function') {
+          initializeItemCompanions();
         }
         initFlightDateTimePickers();
       })
@@ -261,9 +265,13 @@ function showAddForm(type) {
         .then(response => response.text())
         .then(html => {
           formContainer.innerHTML = html;
+          executeLoadedScripts(formContainer);
           // Call form initialization directly
           if (typeof setupAsyncFormSubmission === 'function') {
             setupAsyncFormSubmission('addHotelForm');
+          }
+          if (typeof initializeItemCompanions === 'function') {
+            initializeItemCompanions();
           }
           initFlightDateTimePickers();
         })
@@ -275,9 +283,13 @@ function showAddForm(type) {
         .then(response => response.text())
         .then(html => {
           formContainer.innerHTML = html;
+          executeLoadedScripts(formContainer);
           // Call form initialization directly
           if (typeof setupAsyncFormSubmission === 'function') {
             setupAsyncFormSubmission('addTransportationForm');
+          }
+          if (typeof initializeItemCompanions === 'function') {
+            initializeItemCompanions();
           }
           initFlightDateTimePickers();
         })
@@ -290,9 +302,13 @@ function showAddForm(type) {
         .then(response => response.text())
         .then(html => {
           formContainer.innerHTML = html;
+          executeLoadedScripts(formContainer);
           // Call form initialization directly
           if (typeof setupAsyncFormSubmission === 'function') {
             setupAsyncFormSubmission('addCarRentalForm');
+          }
+          if (typeof initializeItemCompanions === 'function') {
+            initializeItemCompanions();
           }
           initFlightDateTimePickers();
         })
@@ -314,6 +330,9 @@ function showAddForm(type) {
           }
           if (typeof initializeTimeInputs === 'function') {
             initializeTimeInputs();
+          }
+          if (typeof initializeItemCompanions === 'function') {
+            initializeItemCompanions();
           }
           initFlightDateTimePickers();
         })

@@ -69,17 +69,16 @@ function displayItemCompanions(companions) {
   }
 
   container.innerHTML = companions.map(c => `
-    <div class="companion-badge flex items-center justify-between bg-gray-100 rounded-full px-3 py-2" data-companion-id="${c.id}">
-      <div class="flex items-center flex-1 min-w-0">
-        <span class="text-sm font-medium text-gray-900 truncate">${c.name || c.email}</span>
-      </div>
+    <div class="companion-badge inline-flex items-center gap-2 bg-blue-100 text-blue-900 px-3 py-2 rounded-lg text-sm mr-2 mb-2" data-companion-id="${c.id}">
+      <span class="truncate">${c.name || c.email}</span>
       <button
         type="button"
-        class="remove-companion-btn ml-2 text-gray-400 hover:text-gray-600 flex-shrink-0 flex items-center justify-center"
+        class="remove-companion-btn text-blue-900 hover:text-blue-700 font-bold ml-1 focus:outline-none flex-shrink-0"
         onclick="removeCompanionFromItem('${c.id}'); return false;"
         title="Remove from this item"
+        style="font-size: 1.2em; line-height: 1;"
       >
-        <span class="material-symbols-outlined" style="font-size: 18px; line-height: 1;">close</span>
+        ×
       </button>
     </div>
   `).join('');
@@ -272,9 +271,10 @@ function initializeCompanionSearch() {
 async function addCompanionToItem(companionId, companionName, companionEmail) {
   const itemType = window.itemType;
   const itemId = window.itemId;
+  const isNewItem = !itemId;
 
-  if (!itemType || !itemId) {
-    console.error('Cannot add companion: missing itemType or itemId');
+  if (!itemType) {
+    console.error('Cannot add companion: missing itemType');
     return;
   }
 
@@ -284,56 +284,58 @@ async function addCompanionToItem(companionId, companionName, companionEmail) {
     const companionIds = Array.from(currentBadges).map(b => b.dataset.companionId);
     companionIds.push(companionId);
 
-    // Send update to server
-    const response = await fetch(`/api/items/${itemType}/${itemId}/companions`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ companionIds })
-    });
+    // Only send to server for existing items
+    if (!isNewItem) {
+      const response = await fetch(`/api/items/${itemType}/${itemId}/companions`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ companionIds })
+      });
 
-    if (response.ok) {
-      // Add badge to UI
-      const container = document.getElementById('itemCompanions');
-
-      // Remove "no companions" message if present
-      const emptyMessage = container.querySelector('.text-center.text-gray-500');
-      if (emptyMessage) {
-        emptyMessage.remove();
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Error adding companion:', error);
+        alert('Failed to add companion. Please try again.');
+        return;
       }
-
-      // Create new badge
-      const badge = document.createElement('div');
-      badge.className = 'companion-badge flex items-center justify-between bg-gray-100 rounded-full px-3 py-2';
-      badge.dataset.companionId = companionId;
-      badge.innerHTML = `
-        <div class="flex items-center flex-1 min-w-0">
-          <span class="text-sm font-medium text-gray-900 truncate">${companionName || companionEmail}</span>
-        </div>
-        <button
-          type="button"
-          class="remove-companion-btn ml-2 text-gray-400 hover:text-gray-600 flex-shrink-0 flex items-center justify-center"
-          onclick="removeCompanionFromItem('${companionId}'); return false;"
-          title="Remove from this item"
-        >
-          <span class="material-symbols-outlined" style="font-size: 18px; line-height: 1;">close</span>
-        </button>
-      `;
-      container.appendChild(badge);
-
-      // Update hidden field
-      updateCompanionIdsForSubmission(companionIds);
-
-      // Clear search
-      const searchInput = document.getElementById('companionSearch');
-      searchInput.value = '';
-      document.getElementById('companionSearchResults').classList.add('hidden');
-    } else {
-      const error = await response.json();
-      console.error('Error adding companion:', error);
-      alert('Failed to add companion. Please try again.');
     }
+
+    // Add badge to UI
+    const container = document.getElementById('itemCompanions');
+
+    // Remove "no companions" message if present
+    const emptyMessage = container.querySelector('.text-center.text-gray-500');
+    if (emptyMessage) {
+      emptyMessage.remove();
+    }
+
+    // Create new badge
+    const badge = document.createElement('div');
+    badge.className = 'companion-badge inline-flex items-center gap-2 bg-blue-100 text-blue-900 px-3 py-2 rounded-lg text-sm mr-2 mb-2';
+    badge.dataset.companionId = companionId;
+    badge.innerHTML = `
+      <span class="truncate">${companionName || companionEmail}</span>
+      <button
+        type="button"
+        class="remove-companion-btn text-blue-900 hover:text-blue-700 font-bold ml-1 focus:outline-none flex-shrink-0"
+        onclick="removeCompanionFromItem('${companionId}'); return false;"
+        title="Remove from this item"
+        style="font-size: 1.2em; line-height: 1;"
+      >
+        ×
+      </button>
+    `;
+    container.appendChild(badge);
+
+    // Update hidden field
+    updateCompanionIdsForSubmission(companionIds);
+
+    // Clear search
+    const searchInput = document.getElementById('companionSearch');
+    searchInput.value = '';
+    document.getElementById('companionSearchResults').classList.add('hidden');
   } catch (error) {
     console.error('Error adding companion:', error);
     alert('Failed to add companion. Please try again.');

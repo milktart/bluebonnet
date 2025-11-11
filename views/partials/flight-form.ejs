@@ -222,11 +222,6 @@ function initializeFlightForm() {
     airlineInput.setAttribute('readonly', 'readonly');
   }
 
-  function formatAirportDisplay(code, airport) {
-    // Format: "[AAA] City"
-    return `[${code}] ${airport.city_name}`;
-  }
-
   function extractAirportCode(value) {
     // Extract IATA code from various formats:
     // "[AAA] City", "AAA - City, Country", "AAA" => "AAA"
@@ -235,7 +230,7 @@ function initializeFlightForm() {
   }
 
   function updateAirportFromCode(input) {
-    const value = input.value.trim();
+    const value = input.value.trim().toUpperCase();
     const code = extractAirportCode(value);
 
     if (!code) {
@@ -245,8 +240,8 @@ function initializeFlightForm() {
     const airport = airports[code];
 
     if (airport) {
-      const formatted = formatAirportDisplay(code, airport);
-      input.value = formatted;
+      // Keep only the airport code, no formatting
+      input.value = code;
 
       // Update timezone hidden field if it exists
       if (input.name === 'origin') {

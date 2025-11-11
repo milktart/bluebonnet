@@ -266,7 +266,7 @@ exports.createTrip = async (req, res) => {
     }
 
     req.flash('success_msg', 'Trip created successfully');
-    res.redirect('/');
+    res.redirect(`/trips/${trip.id}`);
   } catch (error) {
     console.error('Error creating trip:', error);
     req.flash('error_msg', 'Error creating trip');
