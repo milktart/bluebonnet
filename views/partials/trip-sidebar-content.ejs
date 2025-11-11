@@ -338,10 +338,43 @@
               // Non-participant style applies if user is not in the ItemCompanion list
               // This applies to anyone (owner or companion) who isn't explicitly added to the item
               const isNonParticipant = !userIsParticipant;
-              const nonParticipantClass = isNonParticipant ? 'opacity-60 italic' : '';
               const nonParticipantTitle = isNonParticipant ? 'You are not a participant in this item' : '';
+
+              // Check if item is complete (in the past) - applies to flights, hotels, transportation, car rentals, and events during active trips
+              let isComplete = false;
+              let completeClass = '';
+              let backgroundColor = 'bg-white';
+              let nonParticipantClass = '';
+
+              if (typeof tripStatus !== 'undefined' && tripStatus === 'in_progress') {
+                let itemDateTime = null;
+
+                // Determine which end time to use for completion check
+                if (item.type === 'flight') {
+                  itemDateTime = new Date(item.data.arrivalDateTime);
+                } else if (item.type === 'hotel') {
+                  itemDateTime = new Date(item.data.checkOutDateTime);
+                } else if (item.type === 'transportation') {
+                  itemDateTime = new Date(item.data.arrivalDateTime);
+                } else if (item.type === 'carRental') {
+                  itemDateTime = new Date(item.data.dropoffDateTime);
+                } else if (item.type === 'event') {
+                  itemDateTime = new Date(item.data.endDateTime || item.data.startDateTime);
+                }
+
+                if (itemDateTime) {
+                  const now = new Date();
+                  if (itemDateTime < now) {
+                    isComplete = true;
+                    completeClass = 'italic text-gray-500';
+                    backgroundColor = 'bg-gray-100 opacity-50';
+                  }
+                }
+              }
+
+              // Don't apply non-participant styling - show all items normally
             %>
-              <div class="timeline-item flex items-start space-x-3 p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-200 transition-colors cursor-pointer <%= nonParticipantClass %>"
+              <div class="timeline-item flex items-start space-x-3 p-3 rounded-lg border border-gray-200 <%= backgroundColor %> shadow-sm hover:border-gray-200 transition-colors cursor-pointer <%= nonParticipantClass %>"
                    data-item-id="<%= item.id %>"
                    data-item-type="<%= item.type %>"
                    data-marker="<%= item.marker || '' %>"
@@ -363,25 +396,25 @@
                 <% } %>
 
                 <div class="flex-1 min-w-0">
-                  <div class="flex items-center space-x-2 mb-1">
-                    <span class="text-xs font-medium text-gray-900"><%= hours %>:<%= minutes %></span>
-                    <% if (isNonParticipant) { %>
-                      <span class="text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded font-medium">not participating</span>
-                    <% } %>
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-xs font-medium text-gray-900 <%= completeClass %>"><%= hours %>:<%= minutes %></span>
+                    <%
+                      // For non-participant items, show the companion first names
+                      if (isNonParticipant) {
+                        const itemCompanions = trip.itemCompanions ? trip.itemCompanions.filter(ic => ic.itemType === item.type && ic.itemId === item.id) : [];
+                        if (itemCompanions.length > 0) {
+                          // Extract first names from full names
+                          const companionFirstNames = itemCompanions.map(ic => ic.companion.name.split(' ')[0]).join(', ');
+                    %>
+                      <span class="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium <%= completeClass %>"><%= companionFirstNames %></span>
+                    <%
+                        }
+                      }
+                    %>
                   </div>
-                  <p class="text-sm text-gray-600"><%= item.display %></p>
+                  <p class="text-sm text-gray-600 <%= completeClass %>"><%= item.display %></p>
                 </div>
                 <div class="flex-shrink-0 flex items-center gap-2">
-                  <%
-                    // Get companion count for this item
-                    const itemCompanions = trip.itemCompanions ? trip.itemCompanions.filter(ic => ic.itemType === item.type && ic.itemId === item.id) : [];
-                    const companionCount = itemCompanions.length;
-                  %>
-                  <% if (companionCount > 0) { %>
-                    <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
-                      <i class="bi bi-people-fill me-1"></i><%= companionCount %> <%= companionCount === 1 ? 'companion' : 'companions' %>
-                    </span>
-                  <% } %>
                   <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                   </svg>

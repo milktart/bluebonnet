@@ -304,6 +304,32 @@ exports.viewTrip = async (req, res) => {
       ]
     });
 
+    // Fetch all item companions for this trip's items
+    if (trip) {
+      const allItemIds = [
+        ...trip.flights.map(f => f.id),
+        ...trip.hotels.map(h => h.id),
+        ...trip.transportation.map(t => t.id),
+        ...trip.carRentals.map(c => c.id),
+        ...trip.events.map(e => e.id)
+      ];
+
+      const itemCompanions = await ItemCompanion.findAll({
+        where: {
+          itemId: allItemIds
+        },
+        include: [
+          {
+            model: TravelCompanion,
+            as: 'companion',
+            attributes: ['id', 'name', 'email']
+          }
+        ]
+      });
+
+      trip.itemCompanions = itemCompanions;
+    }
+
     if (!trip) {
       req.flash('error_msg', 'Trip not found');
       return res.redirect('/');
@@ -361,6 +387,22 @@ exports.viewTrip = async (req, res) => {
     // Get airline data for form lookup
     const airlines = airportService.getAllAirlines();
 
+    // Determine trip status based on dates
+    const now = new Date();
+    // Parse dates and set to end of day for return date comparison
+    const departureDate = new Date(trip.departureDate);
+    departureDate.setHours(0, 0, 0, 0);
+    const returnDate = new Date(trip.returnDate);
+    returnDate.setHours(23, 59, 59, 999);
+
+    let tripStatus = 'upcoming';
+
+    if (now >= departureDate && now <= returnDate) {
+      tripStatus = 'in_progress';
+    } else if (now > returnDate) {
+      tripStatus = 'completed';
+    }
+
     res.render('trips/trip', {
       title: trip.name,
       trip,
@@ -369,7 +411,8 @@ exports.viewTrip = async (req, res) => {
       airlines,
       formatInTimezone,
       userItemCompanions, // Pass item companions data to view
-      userCompanionId // Pass user's companion ID for reference
+      userCompanionId, // Pass user's companion ID for reference
+      tripStatus
     });
   } catch (error) {
     console.error(error);
@@ -786,6 +829,30 @@ exports.getTripSidebarHtml = async (req, res) => {
       return res.status(404).send('<p class="text-red-600">Trip not found</p>');
     }
 
+    // Fetch all item companions for this trip's items
+    const allItemIds = [
+      ...trip.flights.map(f => f.id),
+      ...trip.hotels.map(h => h.id),
+      ...trip.transportation.map(t => t.id),
+      ...trip.carRentals.map(c => c.id),
+      ...trip.events.map(e => e.id)
+    ];
+
+    const allItemCompanions = await ItemCompanion.findAll({
+      where: {
+        itemId: allItemIds
+      },
+      include: [
+        {
+          model: TravelCompanion,
+          as: 'companion',
+          attributes: ['id', 'name', 'email']
+        }
+      ]
+    });
+
+    trip.itemCompanions = allItemCompanions;
+
     // Check if user has permission to view this trip
     const isOwner = trip.userId === req.user.id;
 
@@ -844,13 +911,30 @@ exports.getTripSidebarHtml = async (req, res) => {
       });
     }
 
+    // Determine trip status based on dates
+    const now = new Date();
+    // Parse dates and set to end of day for return date comparison
+    const departureDate = new Date(trip.departureDate);
+    departureDate.setHours(0, 0, 0, 0);
+    const returnDate = new Date(trip.returnDate);
+    returnDate.setHours(23, 59, 59, 999);
+
+    let tripStatus = 'upcoming';
+
+    if (now >= departureDate && now <= returnDate) {
+      tripStatus = 'in_progress';
+    } else if (now > returnDate) {
+      tripStatus = 'completed';
+    }
+
     // Render just the sidebar content partial
     res.render('partials/trip-sidebar-content', {
       trip,
       formatInTimezone,
       isOwner,
       userItemCompanions,
-      userCompanionId
+      userCompanionId,
+      tripStatus
     });
   } catch (error) {
     console.error('Error fetching sidebar HTML:', error);
