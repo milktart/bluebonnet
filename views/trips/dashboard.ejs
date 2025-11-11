@@ -995,39 +995,14 @@
                       </svg>
                     </button>
 
-                    <div id="upcoming-<%= tripIndex %>" class="accordion-content hidden">
+                    <div id="upcoming-<%= tripIndex %>" class="accordion-content hidden" data-trip-id="<%= tripData.trip.id %>">
                       <div class="pb-4 px-5">
-                        <% if (tripData.items.length === 0) { %>
-                          <div class="text-center py-4">
-                            <p class="text-sm text-gray-500 italic">No activities added yet. Click trip name to add details.</p>
+                        <div class="flex items-center justify-center py-6">
+                          <div class="inline-flex items-center space-x-2">
+                            <div class="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                            <p class="text-sm text-gray-500">Loading trip details...</p>
                           </div>
-                        <% } else { %>
-                          <div class="space-y-2">
-                            <% tripData.items.forEach((item, itemIndex) => {
-                              const hours = String(item.time.getHours()).padStart(2, '0');
-                              const minutes = String(item.time.getMinutes()).padStart(2, '0');
-                              const typeClass = `marker-${item.type}`;
-                            %>
-                              <div class="trip-item flex items-start space-x-3 p-3 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors cursor-pointer"
-                                   data-trip-id="<%= tripData.tripId || '' %>"
-                                   data-item-type="<%= item.type %>"
-                                   data-marker="<%= item.marker || '' %>"
-                                   onmouseover="highlightMapMarker('<%= item.marker || '' %>', '<%= item.type %>')"
-                                   onmouseout="unhighlightMapMarker('<%= item.marker || '' %>')"
-                                   onclick="window.location.href='/trips/<%= tripData.trip.id %>'">
-                                <% if (item.marker) { %>
-                                  <!-- <div class="timeline-marker <%= typeClass %> mt-1 flex-shrink-0"><%= item.marker %></div> -->
-                                <% } %>
-                                <div class="flex-1 min-w-0">
-                                  <div class="flex items-center space-x-2 mb-1">
-                                    <span class="text-xs font-medium text-gray-900"><%= formatDate(item.time) %> <%= hours %>:<%= minutes %></span>
-                                  </div>
-                                  <p class="text-sm text-gray-600"><%- item.display %></p>
-                                </div>
-                              </div>
-                            <% }) %>
-                          </div>
-                        <% } %>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1144,39 +1119,14 @@
                   </button>
 
                   <!-- Accordion Content -->
-                  <div id="past-<%= tripIndex %>" class="accordion-content hidden">
+                  <div id="past-<%= tripIndex %>" class="accordion-content hidden" data-trip-id="<%= tripData.trip.id %>">
                     <div class="pb-4 px-5">
-                      <% if (tripData.items.length === 0) { %>
-                        <div class="text-center py-4">
-                          <p class="text-sm text-gray-500 italic">No flights recorded for this past trip.</p>
+                      <div class="flex items-center justify-center py-6">
+                        <div class="inline-flex items-center space-x-2">
+                          <div class="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                          <p class="text-sm text-gray-500">Loading trip details...</p>
                         </div>
-                      <% } else { %>
-                        <div class="space-y-2">
-                          <% tripData.items.forEach((item, itemIndex) => {
-                            const hours = String(item.time.getHours()).padStart(2, '0');
-                            const minutes = String(item.time.getMinutes()).padStart(2, '0');
-                            const typeClass = `marker-${item.type}`;
-                          %>
-                            <div class="trip-item flex items-start space-x-3 p-3 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors cursor-pointer"
-                                 data-trip-id="<%= tripData.trip.id %>"
-                                 data-item-type="<%= item.type %>"
-                                 data-marker="<%= item.marker || '' %>"
-                                 onmouseover="highlightMapMarker('<%= item.marker || '' %>', '<%= item.type %>')"
-                                 onmouseout="unhighlightMapMarker('<%= item.marker || '' %>')"
-                                 onclick="window.location.href='/trips/<%= tripData.trip.id %>'">
-                              <% if (item.marker) { %>
-                                <!-- <div class="timeline-marker <%= typeClass %> mt-1 flex-shrink-0"><%= item.marker %></div> -->
-                              <% } %>
-                              <div class="flex-1 min-w-0">
-                                <div class="flex items-center space-x-2 mb-1">
-                                  <span class="text-xs font-medium text-gray-900"><%= formatDate(item.time) %> <%= hours %>:<%= minutes %></span>
-                                </div>
-                                <p class="text-sm text-gray-600"><%- item.display %></p>
-                              </div>
-                            </div>
-                          <% }) %>
-                        </div>
-                      <% } %>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1261,6 +1211,47 @@
   <!-- Critical functions are now defined in the <head> section -->
 
   <script src="/js/trips-list.js"></script>
+  <script>
+    // Handle accordion expansion to load trip items via AJAX
+    window.loadTripItemsIfNeeded = async function(accordionId) {
+      const accordionContent = document.getElementById(accordionId);
+      if (!accordionContent) return;
+
+      const tripId = accordionContent.getAttribute('data-trip-id');
+      if (!tripId) return;
+
+      // Check if already loaded
+      if (accordionContent.getAttribute('data-loaded') === 'true') {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/trips/${tripId}/sidebar`);
+        if (!response.ok) {
+          throw new Error(`Failed to load trip items: ${response.status}`);
+        }
+        const html = await response.text();
+        accordionContent.innerHTML = html;
+        accordionContent.setAttribute('data-loaded', 'true');
+
+        // Execute any scripts in the loaded content
+        const scripts = accordionContent.querySelectorAll('script');
+        scripts.forEach(script => {
+          const newScript = document.createElement('script');
+          if (script.src) {
+            newScript.src = script.src;
+          } else {
+            newScript.textContent = script.textContent;
+          }
+          document.head.appendChild(newScript);
+        });
+      } catch (error) {
+        console.error('Error loading trip items:', error);
+        accordionContent.innerHTML = '<div class="p-4 text-red-600 text-sm">Error loading trip details. Please try again.</div>';
+        accordionContent.setAttribute('data-loaded', 'true');
+      }
+    };
+  </script>
 
   <script>
     // Handle trip invitation response

@@ -97,6 +97,11 @@ function toggleAccordion(contentId) {
   if (content.classList.contains('hidden')) {
     content.classList.remove('hidden');
     arrow.style.transform = 'rotate(180deg)';
+
+    // Load trip items via AJAX if not already loaded
+    if (typeof loadTripItemsIfNeeded === 'function') {
+      loadTripItemsIfNeeded(contentId);
+    }
   } else {
     content.classList.add('hidden');
     arrow.style.transform = 'rotate(0deg)';
