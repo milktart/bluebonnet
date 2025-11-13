@@ -107,6 +107,6 @@ exports.logout = (req, res) => {
       return next(err);
     }
     req.flash('success_msg', 'You are logged out');
-    res.redirect('/auth/login');
+    res.redirect('/');
   });
 };
