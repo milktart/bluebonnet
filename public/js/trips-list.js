@@ -523,7 +523,18 @@ document.addEventListener('DOMContentLoaded', function () {
               }
 
               if (tripIndex) {
-                button.addEventListener('mouseenter', () => {
+                button.addEventListener('mouseenter', async () => {
+                  const accordionId = `${prefix}-${tripIndex}`;
+                  const accordionContent = document.getElementById(accordionId);
+
+                  // Load items if not already loaded
+                  if (accordionContent && accordionContent.getAttribute('data-loaded') !== 'true') {
+                    if (typeof loadTripItemsIfNeeded === 'function') {
+                      await loadTripItemsIfNeeded(accordionId);
+                    }
+                  }
+
+                  // Now animate
                   zoomToTripBounds(tripIndex, prefix);
                   animateTripSegments(tripIndex, prefix);
                 });

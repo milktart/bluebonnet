@@ -927,6 +927,19 @@ exports.getTripSidebarHtml = async (req, res) => {
       tripStatus = 'completed';
     }
 
+    // Extract global marker assignments from query params
+    let globalMarkerAssignments = {};
+    if (req.query.marker) {
+      // marker can be a single value or an array of values
+      const markerParams = Array.isArray(req.query.marker) ? req.query.marker : [req.query.marker];
+      markerParams.forEach(markerStr => {
+        const [key, value] = markerStr.split('=');
+        if (key && value) {
+          globalMarkerAssignments[decodeURIComponent(key)] = parseInt(decodeURIComponent(value));
+        }
+      });
+    }
+
     // Render just the sidebar content partial
     res.render('partials/trip-sidebar-content', {
       trip,
@@ -934,7 +947,8 @@ exports.getTripSidebarHtml = async (req, res) => {
       isOwner,
       userItemCompanions,
       userCompanionId,
-      tripStatus
+      tripStatus,
+      globalMarkerAssignments
     });
   } catch (error) {
     console.error('Error fetching sidebar HTML:', error);

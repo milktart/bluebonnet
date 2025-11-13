@@ -639,6 +639,9 @@
       %>
 
           <%
+            // Initialize global marker map (will be populated below and exported to client)
+            var globalMarkerMap = {};
+
             // Process upcoming trips data only if there are any
             if (upcomingTrips.length > 0) {
               // Helper function to extract flight number without airline code
@@ -779,6 +782,9 @@
                 if (item.hasSegment) {
                   mapMarkerCounter++;
                   item.marker = mapMarkerCounter;
+                  // Store for passing to sidebar
+                  const key = `${item.type}-${item.data.id}`;
+                  globalMarkerMap[key] = mapMarkerCounter;
                 }
               });
 
@@ -1226,7 +1232,17 @@
       }
 
       try {
-        const response = await fetch(`/trips/${tripId}/sidebar`);
+        // Build URL with global marker assignments as query params
+        let url = `/trips/${tripId}/sidebar`;
+        if (window.globalMarkerAssignments && Object.keys(window.globalMarkerAssignments).length > 0) {
+          const params = new URLSearchParams();
+          for (const [key, value] of Object.entries(window.globalMarkerAssignments)) {
+            params.append('marker', `${key}=${value}`);
+          }
+          url += '?' + params.toString();
+        }
+
+        const response = await fetch(url);
         if (!response.ok) {
           throw new Error(`Failed to load trip items: ${response.status}`);
         }
@@ -1245,6 +1261,9 @@
           }
           document.head.appendChild(newScript);
         });
+
+        // Note: No need to re-attach hover handlers - they were already attached
+        // to the accordion button and will work with the newly loaded items
       } catch (error) {
         console.error('Error loading trip items:', error);
         accordionContent.innerHTML = '<div class="p-4 text-red-600 text-sm">Error loading trip details. Please try again.</div>';
@@ -1301,6 +1320,9 @@
       carRentals: [],
       events: []
     };
+
+    // Store global marker assignments for sidebar loading
+    window.globalMarkerAssignments = <%- JSON.stringify(globalMarkerMap) %>;
 
     // Add standalone items to all data and upcoming data
     <% if (typeof standaloneFlights !== 'undefined' && standaloneFlights && standaloneFlights.length > 0) { %>

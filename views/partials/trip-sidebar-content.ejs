@@ -149,14 +149,25 @@
     // Sort by UTC time (all times are stored in UTC)
     allItems.sort((a, b) => a.time - b.time);
 
-    // Now assign markers in chronological order to items with segments
-    let mapMarkerCounter = 0;
-    allItems.forEach(item => {
-      if (item.hasSegment) {
-        mapMarkerCounter++;
-        item.marker = mapMarkerCounter;
-      }
-    });
+    // Assign markers - either use global assignments (from dashboard) or create local ones
+    if (typeof globalMarkerAssignments !== 'undefined' && globalMarkerAssignments && Object.keys(globalMarkerAssignments).length > 0) {
+      // Use global marker assignments passed from dashboard
+      allItems.forEach(item => {
+        const key = `${item.type}-${item.id}`;
+        if (globalMarkerAssignments[key]) {
+          item.marker = parseInt(globalMarkerAssignments[key]);
+        }
+      });
+    } else {
+      // Fallback: assign markers locally (for standalone sidebar rendering)
+      let mapMarkerCounter = 0;
+      allItems.forEach(item => {
+        if (item.hasSegment) {
+          mapMarkerCounter++;
+          item.marker = mapMarkerCounter;
+        }
+      });
+    }
 
     // Pre-calculate layovers for all consecutive flights
     const layoversByFlightId = {};
@@ -376,7 +387,7 @@
             %>
               <% if (item.type === 'flight') { %>
                 <!-- Flight Card - New Layout -->
-                <div class="timeline-item flex items-start justify-between p-3 rounded-lg border border-gray-200 <%= backgroundColor %> shadow-sm hover:border-gray-300 transition-colors cursor-pointer <%= nonParticipantClass %>"
+                <div class="trip-item timeline-item flex items-start justify-between p-3 rounded-lg border border-gray-200 <%= backgroundColor %> shadow-sm hover:border-gray-300 transition-colors cursor-pointer <%= nonParticipantClass %>"
                      data-item-id="<%= item.id %>"
                      data-item-type="<%= item.type %>"
                      data-marker="<%= item.marker || '' %>"
@@ -424,7 +435,7 @@
                 </div>
               <% } else { %>
                 <!-- Other item types - Updated layout -->
-                <div class="timeline-item flex items-start justify-between gap-2 p-3 rounded-lg border border-gray-200 <%= backgroundColor %> shadow-sm hover:border-gray-300 transition-colors cursor-pointer <%= nonParticipantClass %>"
+                <div class="trip-item timeline-item flex items-start justify-between gap-2 p-3 rounded-lg border border-gray-200 <%= backgroundColor %> shadow-sm hover:border-gray-300 transition-colors cursor-pointer <%= nonParticipantClass %>"
                      data-item-id="<%= item.id %>"
                      data-item-type="<%= item.type %>"
                      data-marker="<%= item.marker || '' %>"
