@@ -454,6 +454,13 @@
         return;
       }
 
+      // Clear previous error states
+      document.querySelectorAll('.is-invalid').forEach(el => {
+        el.classList.remove('is-invalid');
+        const errorMsg = el.parentElement?.querySelector('.error-message');
+        if (errorMsg) errorMsg.remove();
+      });
+
       const formData = new FormData(form);
       const data = {
         type: formData.get('type'),
@@ -468,16 +475,37 @@
         userId: window.currentUserId // This should be set in the parent page
       };
 
+      let hasErrors = false;
+      const requiredFields = [
+        { name: 'type', id: 'voucher-type', label: 'Type' },
+        { name: 'issuer', id: 'voucher-issuer', label: 'Issuer' },
+        { name: 'voucherNumber', id: 'voucher-number', label: 'Voucher Number' }
+      ];
+
       // Validate required fields
-      if (!data.type || !data.issuer || !data.voucherNumber) {
-        alert('Please fill in all required fields (Type, Issuer, Voucher Number)');
-        return;
-      }
+      requiredFields.forEach(field => {
+        if (!data[field.name]) {
+          hasErrors = true;
+          const element = document.getElementById(field.id);
+          if (element) {
+            element.classList.add('is-invalid');
+            element.style.borderColor = '#dc2626';
+          }
+        }
+      });
 
       // Validate value for value-required types
       const valueRequiredTypes = ['TRAVEL_CREDIT', 'GIFT_CARD', 'MISC'];
       if (valueRequiredTypes.includes(data.type) && !data.totalValue) {
-        alert('Please enter a total value for this voucher type');
+        hasErrors = true;
+        const element = document.getElementById('voucher-total-value');
+        if (element) {
+          element.classList.add('is-invalid');
+          element.style.borderColor = '#dc2626';
+        }
+      }
+
+      if (hasErrors) {
         return;
       }
 
