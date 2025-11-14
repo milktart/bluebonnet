@@ -13,7 +13,7 @@
     <%- include('../partials/flash') %>
 
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h1><i class="bi bi-people"></i> Travel Companions</h1>
+      <h1><span class="material-symbols-outlined me-2" style="display: inline-block; vertical-align: middle;">group</span>Travel Companions</h1>
       <a href="/companions/create" class="btn btn-primary">
         <i class="bi bi-plus-circle"></i> Add Companion
       </a>
@@ -22,7 +22,7 @@
     <% if (companions.length === 0) { %>
       <div class="card text-center">
         <div class="card-body py-5">
-          <i class="bi bi-people display-1 text-muted"></i>
+          <span class="material-symbols-outlined text-muted" style="display: block; font-size: 56px; line-height: 56px; margin-bottom: 8px;">group</span>
           <h3 class="mt-3">No Travel Companions Yet</h3>
           <p class="text-muted">Add companions to easily include them in your trips</p>
           <a href="/companions/create" class="btn btn-primary">

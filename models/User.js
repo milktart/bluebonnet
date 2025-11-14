@@ -22,8 +22,14 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false
     },
     lastName: {
-      type: DataTypes.STRING,
-      allowNull: false
+      type: DataTypes.STRING(1),
+      allowNull: false,
+      validate: {
+        len: {
+          args: [1, 1],
+          msg: 'Last initial must be exactly one character'
+        }
+      }
     }
   }, {
     tableName: 'users',

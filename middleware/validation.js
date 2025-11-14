@@ -20,7 +20,7 @@ module.exports = {
       return true;
     }),
     body('firstName').notEmpty().trim().withMessage('First name is required'),
-    body('lastName').notEmpty().trim().withMessage('Last name is required'),
+    body('lastName').notEmpty().trim().isLength({ min: 1, max: 1 }).withMessage('Last initial must be exactly one character'),
     handleValidationErrors
   ],
 
@@ -63,7 +63,7 @@ module.exports = {
   validateProfileUpdate: [
     body('email').isEmail().normalizeEmail().withMessage('Invalid email address'),
     body('firstName').notEmpty().trim().withMessage('First name is required'),
-    body('lastName').notEmpty().trim().withMessage('Last name is required'),
+    body('lastName').notEmpty().trim().isLength({ min: 1, max: 1 }).withMessage('Last initial must be exactly one character'),
     handleValidationErrors
   ],
 
