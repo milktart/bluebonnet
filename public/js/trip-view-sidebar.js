@@ -32,6 +32,20 @@ function closeSecondarySidebar() {
   if (sidebar) {
     sidebar.classList.remove('open');
   }
+
+  // Update URL based on current location
+  const currentPath = window.location.pathname;
+  if (currentPath.startsWith('/manage/')) {
+    // If closing a sidebar within /manage/*, go back to /manage
+    window.history.pushState({}, '', '/manage');
+  } else if (currentPath === '/manage/companions') {
+    // Companions at /manage level
+    window.history.pushState({}, '', '/manage');
+  } else if (currentPath === '/') {
+    // Already at root, no change needed
+  } else if (currentPath.startsWith('/trips/')) {
+    // Trip view, no change - sidebar close doesn't change URL in trip context
+  }
 }
 
 function openSecondarySidebar() {

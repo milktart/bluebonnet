@@ -42,7 +42,7 @@ function attachCompanionsFormHandler() {
       .then(data => {
         if (data.success) {
           // Success - reload companions sidebar using standardized loader
-          loadSidebarContent('/companions', { fullWidth: true });
+          loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
         } else {
           alert(data.error || 'Failed to update companion');
         }
@@ -80,7 +80,7 @@ function attachCompanionsFormHandler() {
       .then(data => {
         if (data.success) {
           // Success - reload companions sidebar using standardized loader
-          loadSidebarContent('/companions', { fullWidth: true });
+          loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
         } else {
           alert(data.error || 'Failed to add companion');
         }

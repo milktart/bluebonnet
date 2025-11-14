@@ -499,7 +499,7 @@
             <button
               id="upcoming-tab"
               class="py-3 px-4 border-b-2 border-blue-500 font-medium text-sm text-blue-600 bg-blue-50 rounded-t-lg transition-all duration-200"
-              onclick="window.history.pushState({}, '', '/trips/upcoming'); showUpcomingTrips()"
+              onclick="window.history.pushState({}, '', '/'); showUpcomingTrips()"
             >
               <div class="flex items-center space-x-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1172,7 +1172,7 @@
               </svg>
             </button>
 
-            <button onclick="window.history.pushState({}, '', '/manage/companions'); loadSidebarContent('/companions', { fullWidth: true })" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
+            <button onclick="window.history.pushState({}, '', '/manage/companions'); loadSidebarContent('/account/companions-sidebar', { fullWidth: true })" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
               <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                 <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
@@ -1429,7 +1429,7 @@
         showSettings();
         // Load companions sidebar content
         setTimeout(function() {
-          loadSidebarContent('/companions', { fullWidth: true });
+          loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
         }, 50);
       });
     <% } %>
@@ -1450,6 +1450,18 @@
     <% if (activeTab === 'past') { %>
       window.addEventListener('DOMContentLoaded', function() {
         showPastTrips();
+      });
+    <% } %>
+
+    // Auto-open settings tab without sidebar if requested
+    <% if (showSettingsTab) { %>
+      window.addEventListener('DOMContentLoaded', function() {
+        showSettings();
+        // Make sure secondary sidebar is closed
+        const secondarySidebar = document.getElementById('secondary-sidebar');
+        if (secondarySidebar && secondarySidebar.classList.contains('open')) {
+          closeSecondarySidebar();
+        }
       });
     <% } %>
 

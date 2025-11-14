@@ -33,7 +33,7 @@ router.get('/companions', ensureAuthenticated, (req, res) => {
 
 // ===== Tab Navigation URLs =====
 
-// GET upcoming trips (default dashboard view)
+// GET upcoming trips (accessible at both / and /trips/upcoming)
 router.get('/trips/upcoming', ensureAuthenticated, (req, res) => {
   tripController.listTrips(req, res, { activeTab: 'upcoming' });
 });
@@ -45,9 +45,9 @@ router.get('/trips/past', ensureAuthenticated, (req, res) => {
 
 // ===== Settings Menu URLs =====
 
-// GET manage page (settings tab)
+// GET manage page (settings tab, no sidebar open)
 router.get('/manage', ensureAuthenticated, (req, res) => {
-  tripController.listTrips(req, res, { openSettingsSidebar: true });
+  tripController.listTrips(req, res, { showSettingsTab: true });
 });
 
 // GET account settings within manage

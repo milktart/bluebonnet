@@ -1,5 +1,70 @@
 // Main JavaScript for Travel Planner
 
+// Handle browser back/forward button navigation
+window.addEventListener('popstate', function(e) {
+  const path = window.location.pathname;
+
+  // Handle dashboard tab navigation
+  if (path === '/' || path === '/trips/upcoming') {
+    if (typeof showUpcomingTrips === 'function') {
+      showUpcomingTrips();
+    }
+  } else if (path === '/trips/past') {
+    if (typeof showPastTrips === 'function') {
+      showPastTrips();
+    }
+  }
+
+  // Handle manage menu navigation
+  if (path === '/manage') {
+    if (typeof showSettings === 'function') {
+      showSettings();
+    }
+    // Close sidebars if open
+    if (typeof closeSecondarySidebar === 'function') {
+      const secondarySidebar = document.getElementById('secondary-sidebar');
+      if (secondarySidebar && secondarySidebar.classList.contains('open')) {
+        closeSecondarySidebar();
+      }
+    }
+  } else if (path === '/manage/account') {
+    if (typeof showSettings === 'function') {
+      showSettings();
+    }
+    if (typeof loadSidebarContent === 'function') {
+      loadSidebarContent('/account/sidebar', { fullWidth: true });
+    }
+  } else if (path === '/manage/certificates') {
+    if (typeof showSettings === 'function') {
+      showSettings();
+    }
+    if (typeof loadSidebarContent === 'function') {
+      loadSidebarContent('/account/vouchers/sidebar', { fullWidth: true });
+    }
+  } else if (path.startsWith('/manage/certificates/')) {
+    if (typeof showSettings === 'function') {
+      showSettings();
+    }
+    if (typeof loadSidebarContent === 'function') {
+      loadSidebarContent('/account/vouchers/sidebar', { fullWidth: true });
+    }
+    // Extract voucher ID and load details
+    const voucherId = path.split('/').pop();
+    if (typeof loadCertificateDetails === 'function') {
+      setTimeout(function() {
+        loadCertificateDetails(voucherId);
+      }, 100);
+    }
+  } else if (path === '/manage/companions') {
+    if (typeof showSettings === 'function') {
+      showSettings();
+    }
+    if (typeof loadSidebarContent === 'function') {
+      loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
+    }
+  }
+});
+
 // Auto-hide alerts after 5 seconds
 document.addEventListener('DOMContentLoaded', function() {
   const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');

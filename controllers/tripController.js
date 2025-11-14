@@ -140,6 +140,7 @@ exports.listTrips = async (req, res, options = {}) => {
       openCertificatesSidebar: options.openCertificatesSidebar || false,
       openCertificateDetails: options.openCertificateDetails || null,
       openCompanionsSidebar: options.openCompanionsSidebar || false,
+      showSettingsTab: options.showSettingsTab || false,
       activeTab: options.activeTab || 'upcoming'
     };
 

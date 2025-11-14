@@ -793,6 +793,14 @@ function closeTertiarySidebar() {
   currentFlightId = null;
   currentTripId = null;
   currentFlightDetails = null;
+
+  // Update URL based on current location
+  // When closing tertiary sidebar, go back to the parent URL (without the certificate ID)
+  const currentPath = window.location.pathname;
+  if (currentPath.startsWith('/manage/certificates/')) {
+    // If viewing certificate details, go back to /manage/certificates
+    window.history.pushState({}, '', '/manage/certificates');
+  }
 }
 
 // Also expose to window for global access
