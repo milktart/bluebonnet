@@ -831,45 +831,6 @@
     // Load notifications on page load and provide global access to companion sidebar function
     document.addEventListener('DOMContentLoaded', loadNotifications);
 
-    // Function to load and open companions sidebar
-    async function loadAndOpenCompanionsSidebar() {
-      try {
-        const content = document.getElementById('secondary-sidebar-content');
-        if (!content) {
-          console.error('Secondary sidebar content not found');
-          return;
-        }
-
-        const response = await fetch('/account/companions-sidebar');
-        if (!response.ok) {
-          console.error('Failed to load companions sidebar');
-          return;
-        }
-
-        const html = await response.text();
-        content.innerHTML = html;
-
-        // Execute any scripts in the loaded content
-        const scripts = content.querySelectorAll('script');
-        scripts.forEach(script => {
-          const newScript = document.createElement('script');
-          if (script.src) {
-            newScript.src = script.src;
-          } else {
-            newScript.textContent = script.textContent;
-          }
-          document.head.appendChild(newScript);
-        });
-
-        // Open the sidebar
-        if (typeof openSecondarySidebar === 'function') {
-          openSecondarySidebar();
-        }
-      } catch (error) {
-        console.error('Error loading companions sidebar:', error);
-        alert('Error loading companions. Please try again.');
-      }
-    }
 
   </script>
 

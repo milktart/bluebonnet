@@ -135,8 +135,12 @@ exports.listTrips = async (req, res, options = {}) => {
       standaloneTransportation,
       standaloneEvents,
       pendingInvitations,
+      openSettingsSidebar: options.openSettingsSidebar || false,
+      openAccountSettings: options.openAccountSettings || false,
       openCertificatesSidebar: options.openCertificatesSidebar || false,
-      openCertificateDetails: options.openCertificateDetails || null
+      openCertificateDetails: options.openCertificateDetails || null,
+      openCompanionsSidebar: options.openCompanionsSidebar || false,
+      activeTab: options.activeTab || 'upcoming'
     };
 
     res.render('trips/dashboard', renderData);

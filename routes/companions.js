@@ -15,7 +15,15 @@ const validateCompanion = [
 ];
 
 // GET companions list
-router.get('/', companionController.listCompanions);
+// Can render either full page or sidebar content based on context
+router.get('/', (req, res, next) => {
+  // If request comes from sidebar loader, render sidebar content
+  if (req.get('X-Sidebar-Request') === 'true' || req.query.sidebar === 'true') {
+    return companionController.listCompanionsSidebar(req, res);
+  }
+  // Otherwise render full page
+  companionController.listCompanions(req, res);
+});
 
 // GET companions sidebar content (AJAX)
 router.get('/sidebar', companionController.listCompanionsSidebar);

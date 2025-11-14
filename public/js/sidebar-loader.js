@@ -60,11 +60,16 @@ async function loadSidebarContent(url, options = {}) {
     sidebarHistory.push(html);
     sidebarHistoryIndex++;
 
+    // Close tertiary sidebar if open
+    if (typeof closeTertiarySidebar === 'function') {
+      closeTertiarySidebar();
+    }
+
     // Open the sidebar and apply styling based on options
     openSecondarySidebar();
 
-    // Check if this is a vouchers sidebar request (full-width)
-    if (url.includes('/vouchers/sidebar') || options.fullWidth) {
+    // Apply full-width styling if specified in options or for specific endpoints
+    if (url.includes('/vouchers/sidebar') || url.includes('/companions') || url.includes('/account/sidebar') || options.fullWidth) {
       if (sidebar) {
         sidebar.classList.add('full-width');
       }

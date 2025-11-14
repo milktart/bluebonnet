@@ -768,11 +768,18 @@ async function refreshFlightAttachments(flightId) {
  * Open tertiary sidebar
  */
 function openTertiarySidebar() {
+  console.log('[openTertiarySidebar] Called');
   const sidebar = document.getElementById('tertiary-sidebar');
+  console.log('[openTertiarySidebar] sidebar element:', sidebar);
   if (sidebar) {
+    console.log('[openTertiarySidebar] Adding open class');
     sidebar.classList.add('open');
+    console.log('[openTertiarySidebar] classList now:', Array.from(sidebar.classList));
   }
 }
+
+// Also expose to window for global access
+window.openTertiarySidebar = openTertiarySidebar;
 
 /**
  * Close tertiary sidebar
@@ -787,6 +794,9 @@ function closeTertiarySidebar() {
   currentTripId = null;
   currentFlightDetails = null;
 }
+
+// Also expose to window for global access
+window.closeTertiarySidebar = closeTertiarySidebar;
 
 /**
  * Remove a voucher attachment

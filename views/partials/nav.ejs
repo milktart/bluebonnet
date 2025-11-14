@@ -19,7 +19,7 @@
           <a href="/" class="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors duration-200">
             My Trips
           </a>
-          <a href="/companions" class="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors duration-200">
+          <a href="/manage/companions" class="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors duration-200">
             Companions
           </a>
 
@@ -27,7 +27,7 @@
           <button
             type="button"
             class="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors duration-200"
-            onclick="loadAndOpenCompanionsSidebar()"
+            onclick="window.history.pushState({}, '', '/manage/companions'); loadSidebarContent('/companions', { fullWidth: true })"
             title="Manage your travel companion relationships"
           >
             <i class="bi bi-person-check text-lg"></i>
@@ -161,7 +161,7 @@
           </div>
           <div class="space-y-1">
             <a href="/" class="block px-4 py-2 text-base font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900">My Trips</a>
-            <a href="/companions" class="block px-4 py-2 text-base font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900">Companions</a>
+            <a href="/manage/companions" class="block px-4 py-2 text-base font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900">Companions</a>
             <a href="/account" class="block px-4 py-2 text-base font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900">Account Settings</a>
             <a href="/auth/logout" class="block px-4 py-2 text-base font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900">Logout</a>
           </div>
@@ -369,44 +369,4 @@ async function handleTripAction(notificationId, invitationId, action) {
 
 // Load notifications on page load
 document.addEventListener('DOMContentLoaded', loadNotifications);
-
-// Function to load and open companions sidebar
-async function loadAndOpenCompanionsSidebar() {
-  try {
-    const content = document.getElementById('secondary-sidebar-content');
-    if (!content) {
-      console.error('Secondary sidebar content not found');
-      return;
-    }
-
-    const response = await fetch('/account/companions-sidebar');
-    if (!response.ok) {
-      console.error('Failed to load companions sidebar');
-      return;
-    }
-
-    const html = await response.text();
-    content.innerHTML = html;
-
-    // Execute any scripts in the loaded content
-    const scripts = content.querySelectorAll('script');
-    scripts.forEach(script => {
-      const newScript = document.createElement('script');
-      if (script.src) {
-        newScript.src = script.src;
-      } else {
-        newScript.textContent = script.textContent;
-      }
-      document.head.appendChild(newScript);
-    });
-
-    // Open the sidebar
-    if (typeof openSecondarySidebar === 'function') {
-      openSecondarySidebar();
-    }
-  } catch (error) {
-    console.error('Error loading companions sidebar:', error);
-    alert('Error loading companions. Please try again.');
-  }
-}
 </script>

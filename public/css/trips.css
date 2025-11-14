@@ -38,6 +38,7 @@
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
+  z-index: 10;
 }
 
 .secondary-sidebar.open {
@@ -52,8 +53,8 @@
   width: calc(100vw - var(--sidebar-spacing) * 2 - var(--sidebar-width) - var(--sidebar-gap));
 }
 
-/* When tertiary sidebar is open, secondary sidebar shrinks back to normal width */
-.tertiary-sidebar.open ~ .secondary-sidebar.full-width {
+/* When tertiary sidebar is open, secondary sidebar shrinks back to normal width to make room */
+.tertiary-sidebar.open + .secondary-sidebar.full-width {
   width: var(--sidebar-width);
 }
 
@@ -70,6 +71,7 @@
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
+  z-index: 20;
 }
 
 .tertiary-sidebar > div {

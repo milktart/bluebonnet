@@ -499,7 +499,7 @@
             <button
               id="upcoming-tab"
               class="py-3 px-4 border-b-2 border-blue-500 font-medium text-sm text-blue-600 bg-blue-50 rounded-t-lg transition-all duration-200"
-              onclick="showUpcomingTrips()"
+              onclick="window.history.pushState({}, '', '/trips/upcoming'); showUpcomingTrips()"
             >
               <div class="flex items-center space-x-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -511,7 +511,7 @@
             <button
               id="past-tab"
               class="py-3 px-4 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-t-lg transition-all duration-200"
-              onclick="showPastTrips()"
+              onclick="window.history.pushState({}, '', '/trips/past'); showPastTrips()"
             >
               <div class="flex items-center space-x-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -524,7 +524,7 @@
           <button
             id="settings-tab"
             class="py-3 px-4 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-t-lg transition-all duration-200"
-            onclick="showSettings()"
+            onclick="window.history.pushState({}, '', '/manage'); showSettings()"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
@@ -1144,7 +1144,7 @@
         <!-- Settings Content -->
         <div id="settings-content" class="space-y-4 p-6 hidden">
           <div class="space-y-3">
-            <button onclick="loadSidebarContent('/account/sidebar')" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
+            <button onclick="window.history.pushState({}, '', '/manage/account'); loadSidebarContent('/account/sidebar', { fullWidth: true })" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
               <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                 <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
@@ -1159,7 +1159,7 @@
               </svg>
             </button>
 
-            <button onclick="window.history.pushState({}, '', '/certificates'); loadSidebarContent('/account/vouchers/sidebar');" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
+            <button onclick="window.history.pushState({}, '', '/manage/certificates'); loadSidebarContent('/account/vouchers/sidebar');" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
               <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
                 <span class="material-symbols-outlined text-amber-600" style="font-size: 18px;">wallet</span>
               </div>
@@ -1172,7 +1172,7 @@
               </svg>
             </button>
 
-            <button onclick="loadAndOpenCompanionsSidebar()" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
+            <button onclick="window.history.pushState({}, '', '/manage/companions'); loadSidebarContent('/companions', { fullWidth: true })" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
               <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                 <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
@@ -1213,6 +1213,7 @@
   <script src="/js/trip-map.js"></script>
   <script src="/js/sidebar-loader.js"></script>
   <script src="/js/companions-manager.js"></script>
+  <script src="/js/voucher-sidebar-manager.js"></script>
 
   <!-- Critical functions are now defined in the <head> section -->
 
@@ -1391,6 +1392,18 @@
       window.pastTripsData.flights.push(f);
     });
 
+    // Auto-open settings sidebar if requested
+    <% if (openSettingsSidebar) { %>
+      window.addEventListener('DOMContentLoaded', function() {
+        // Switch to settings tab
+        showSettings();
+        // Load account settings sidebar content
+        setTimeout(function() {
+          loadSidebarContent('/account/sidebar', { fullWidth: true });
+        }, 50);
+      });
+    <% } %>
+
     // Auto-open certificates sidebar if requested
     <% if (openCertificatesSidebar) { %>
       window.addEventListener('DOMContentLoaded', function() {
@@ -1406,6 +1419,37 @@
             }, 100);
           <% } %>
         }, 50);
+      });
+    <% } %>
+
+    // Auto-open companions sidebar if requested
+    <% if (openCompanionsSidebar) { %>
+      window.addEventListener('DOMContentLoaded', function() {
+        // Switch to settings tab
+        showSettings();
+        // Load companions sidebar content
+        setTimeout(function() {
+          loadSidebarContent('/companions', { fullWidth: true });
+        }, 50);
+      });
+    <% } %>
+
+    // Auto-open account settings if requested (nested under settings)
+    <% if (openAccountSettings) { %>
+      window.addEventListener('DOMContentLoaded', function() {
+        // Switch to settings tab
+        showSettings();
+        // Load account settings sidebar content
+        setTimeout(function() {
+          loadSidebarContent('/account/sidebar', { fullWidth: true });
+        }, 50);
+      });
+    <% } %>
+
+    // Auto-open past trips tab if requested
+    <% if (activeTab === 'past') { %>
+      window.addEventListener('DOMContentLoaded', function() {
+        showPastTrips();
       });
     <% } %>
 
@@ -1659,45 +1703,6 @@
     // Load notifications on page load and provide global access to companion sidebar function
     document.addEventListener('DOMContentLoaded', loadNotifications);
 
-    // Function to load and open companions sidebar
-    async function loadAndOpenCompanionsSidebar() {
-      try {
-        const content = document.getElementById('secondary-sidebar-content');
-        if (!content) {
-          console.error('Secondary sidebar content not found');
-          return;
-        }
-
-        const response = await fetch('/account/companions-sidebar');
-        if (!response.ok) {
-          console.error('Failed to load companions sidebar');
-          return;
-        }
-
-        const html = await response.text();
-        content.innerHTML = html;
-
-        // Execute any scripts in the loaded content
-        const scripts = content.querySelectorAll('script');
-        scripts.forEach(script => {
-          const newScript = document.createElement('script');
-          if (script.src) {
-            newScript.src = script.src;
-          } else {
-            newScript.textContent = script.textContent;
-          }
-          document.head.appendChild(newScript);
-        });
-
-        // Open the sidebar
-        if (typeof openSecondarySidebar === 'function') {
-          openSecondarySidebar();
-        }
-      } catch (error) {
-        console.error('Error loading companions sidebar:', error);
-        alert('Error loading companions. Please try again.');
-      }
-    }
   </script>
 
   <% } %>

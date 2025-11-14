@@ -420,6 +420,8 @@
 
       if (typeof openTertiarySidebar === 'function') {
         openTertiarySidebar();
+      } else {
+        console.warn('openTertiarySidebar is not available');
       }
     } catch (error) {
       console.error('Error showing create voucher form:', error);
