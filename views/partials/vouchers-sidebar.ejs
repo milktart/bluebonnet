@@ -3,33 +3,22 @@
   <% // formatDate is now available via res.locals from utils/dateFormatter.js %>
 
   <!-- Header with close button -->
-  <div class="flex items-center justify-between mb-6">
-    <div class="flex items-center space-x-3">
-      <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+  <div class="flex items-center justify-between mb-6 gap-2">
+    <div class="flex items-center space-x-3 min-w-0">
+      <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
         <span class="material-symbols-outlined text-amber-600" style="font-size: 20px;">wallet</span>
       </div>
-      <h2 class="text-lg font-bold text-gray-900">Manage Certificates & Vouchers</h2>
+      <h2 class="text-lg font-bold text-gray-900 truncate">Manage Certificates & Vouchers</h2>
     </div>
-    <div class="flex items-center space-x-2">
-      <button
-        onclick="showCreateVoucherForm()"
-        class="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-      >
-        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-        </svg>
-        Voucher
-      </button>
-      <button onclick="window.history.pushState({}, '', '/'); closeTertiarySidebar(); closeSecondarySidebar();" class="text-gray-400 hover:text-gray-600">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </button>
-    </div>
+    <button onclick="window.history.pushState({}, '', '/'); closeTertiarySidebar(); closeSecondarySidebar();" class="text-gray-400 hover:text-gray-600 flex-shrink-0">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
   </div>
 
   <!-- Tabs -->
-  <div class="flex space-x-4 mb-6 border-b border-gray-200 -mx-6 px-6">
+  <div class="flex space-x-4 mb-4 border-b border-gray-200 -mx-6 px-6">
     <button id="open-vouchers-tab" class="py-3 px-4 border-b-2 border-blue-500 font-medium text-sm text-blue-600 bg-blue-50 transition-all duration-200" onclick="switchVouchersTab('open')">
       <div class="flex items-center space-x-2">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -41,6 +30,19 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         <span>Closed Vouchers</span>
       </div>
+    </button>
+  </div>
+
+  <!-- Add Voucher Button -->
+  <div class="px-4 mb-2">
+    <button
+      onclick="showCreateVoucherForm()"
+      class="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+    >
+      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      Add Voucher
     </button>
   </div>
 
