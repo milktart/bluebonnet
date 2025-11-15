@@ -38,12 +38,18 @@ app.use(passport.session());
 // Flash messages
 app.use(flash());
 
+// Asset version for cache-busting (set once at server start)
+const ASSET_VERSION = Date.now();
+
 // Global variables and utility functions
 app.use((req, res, next) => {
   res.locals.success_msg = req.flash('success_msg');
   res.locals.error_msg = req.flash('error_msg');
   res.locals.error = req.flash('error');
   res.locals.user = req.user || null;
+
+  // Asset version for cache-busting
+  res.locals.assetVersion = ASSET_VERSION;
 
   // Make date formatting utilities available to all EJS templates
   res.locals.formatDate = dateFormatter.formatDate;
