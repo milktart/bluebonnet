@@ -307,7 +307,22 @@ function initializeNotifications(panelId = 'notification-panel', bellId = 'notif
   window[`toggle_${panelId}`] = () => toggleNotificationCenter(panelId, bellId);
 }
 
-// Make functions available globally
+// ============================================================================
+// EXPORTS
+// ============================================================================
+
+// ES6 Module exports
+export {
+  toggleNotificationCenter,
+  loadNotifications,
+  markNotificationAsRead,
+  deleteNotification,
+  handleCompanionAction,
+  handleTripAction,
+  initializeNotifications
+};
+
+// Make functions available globally for backward compatibility
 if (typeof window !== 'undefined') {
   window.toggleNotificationCenter = toggleNotificationCenter;
   window.loadNotifications = loadNotifications;
