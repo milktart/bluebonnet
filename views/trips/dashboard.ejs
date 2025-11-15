@@ -1202,19 +1202,14 @@
   </div>
 
   <!-- Scripts -->
+  <!-- External dependencies (CDN) -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="/js/datetime-formatter.js?v=<%= assetVersion %>"></script>
-  <script src="/js/time-input-formatter.js?v=<%= assetVersion %>"></script>
-  <script src="/js/main.js?v=<%= assetVersion %>"></script>
-  <script src="/js/maps.js?v=<%= assetVersion %>"></script>
-  <script src="/js/trip-view-utils.js?v=<%= assetVersion %>"></script>
-  <script src="/js/sidebar-loader.js?v=<%= assetVersion %>"></script>
-  <script src="/js/companions.js?v=<%= assetVersion %>"></script>
-  <script src="/js/voucher-sidebar-manager.js?v=<%= assetVersion %>"></script>
-  <script src="/js/notifications.js?v=<%= assetVersion %>"></script>
 
-  <!-- Critical functions are now defined in the <head> section -->
+  <!-- Bundled JavaScript (with code splitting and minification) -->
+  <script type="module" src="<%= getBundle('common') %>"></script>
+  <script type="module" src="<%= getBundle('dashboard') %>"></script>
 
+  <!-- Additional standalone scripts -->
   <script src="/js/trips-list.js?v=<%= assetVersion %>"></script>
   <script>
     // Handle accordion expansion to load trip items via AJAX

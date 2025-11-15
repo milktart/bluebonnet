@@ -5,6 +5,7 @@ const passport = require('passport');
 const flash = require('connect-flash');
 const methodOverride = require('method-override');
 const path = require('path');
+const fs = require('fs');
 const db = require('./models');
 const dateFormatter = require('./utils/dateFormatter');
 
@@ -41,6 +42,25 @@ app.use(flash());
 // Asset version for cache-busting (set once at server start)
 const ASSET_VERSION = Date.now();
 
+// Load bundle manifest for esbuild bundles
+let bundleManifest = {};
+try {
+  const manifestPath = path.join(__dirname, 'public/dist/manifest.json');
+  if (fs.existsSync(manifestPath)) {
+    bundleManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    console.log('✅ Loaded bundle manifest:', Object.keys(bundleManifest).join(', '));
+  } else {
+    console.warn('⚠️  Bundle manifest not found. Run "npm run build-js" to generate bundles.');
+  }
+} catch (error) {
+  console.error('❌ Error loading bundle manifest:', error.message);
+}
+
+// Helper function to get bundle path
+function getBundle(name) {
+  return bundleManifest[name] || `/js/entries/${name}.js`;
+}
+
 // Global variables and utility functions
 app.use((req, res, next) => {
   res.locals.success_msg = req.flash('success_msg');
@@ -50,6 +70,9 @@ app.use((req, res, next) => {
 
   // Asset version for cache-busting
   res.locals.assetVersion = ASSET_VERSION;
+
+  // Bundle paths for templates
+  res.locals.getBundle = getBundle;
 
   // Make date formatting utilities available to all EJS templates
   res.locals.formatDate = dateFormatter.formatDate;
