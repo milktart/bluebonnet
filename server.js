@@ -112,7 +112,7 @@ app.use('/vouchers', require('./routes/vouchers'));
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).render('404', { title: 'Page Not Found' });
+  res.status(404).render('404', { title: 'Page Not Found', req });
 });
 
 // Error handler
