@@ -44,7 +44,8 @@ async function build() {
         if (info.entryPoint) {
           // Extract entry name from entry point path
           const entryName = path.basename(info.entryPoint, '.js');
-          const publicPath = '/' + outputPath;
+          // Remove 'public/' prefix since Express serves from public folder
+          const publicPath = '/' + outputPath.replace(/^public\//, '');
 
           manifest[entryName] = publicPath;
         }
@@ -59,8 +60,10 @@ async function build() {
       console.log('✅ Build complete!');
       console.log('📦 Bundle sizes:');
 
-      for (const [name, path] of Object.entries(manifest)) {
-        const stats = fs.statSync('.' + path);
+      for (const [name, bundlePath] of Object.entries(manifest)) {
+        // Convert web path to filesystem path
+        const fsPath = path.join(__dirname, 'public', bundlePath);
+        const stats = fs.statSync(fsPath);
         const sizeKB = (stats.size / 1024).toFixed(2);
         console.log(`   ${name}: ${sizeKB} KB`);
       }

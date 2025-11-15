@@ -1,6 +1,6 @@
 {
-  "common": "/public/dist/common-VWDW2EY3.js",
-  "dashboard": "/public/dist/dashboard-UGCKAMII.js",
-  "trip-view": "/public/dist/trip-view-CY74A6AW.js",
-  "map-view": "/public/dist/map-view-QFM3INWM.js"
+  "common": "/dist/common-VWDW2EY3.js",
+  "dashboard": "/dist/dashboard-UGCKAMII.js",
+  "trip-view": "/dist/trip-view-CY74A6AW.js",
+  "map-view": "/dist/map-view-QFM3INWM.js"
 }
