@@ -69,10 +69,14 @@ function initOverviewMap(tripData, mapElementId = 'tripMap', isPast = false) {
 
           // Single map size recalculation to fix tile rendering without disrupting bounds
           setTimeout(() => {
-            if (map && typeof map.invalidateSize === 'function' && map._container && map._container.parentNode) {
-              map.invalidateSize(false); // Use false to prevent bounds recalculation
+            if (map && map._loaded && typeof map.invalidateSize === 'function' && map._container && map._container.parentNode) {
+              try {
+                map.invalidateSize(false); // Use false to prevent bounds recalculation
+              } catch (e) {
+                console.warn('Map invalidateSize failed:', e);
+              }
             }
-          }, 100);
+          }, 250);
 
           resolve(map);
         })
