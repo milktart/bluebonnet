@@ -72,7 +72,7 @@ function editItem(type, id) {
   openEditSidebar();
 
   // Close tertiary sidebar when editing a different flight
-  if (type === 'flight' && currentFlightId && currentFlightId !== id) {
+  if (type === 'flight' && window.currentFlightId && window.currentFlightId !== id) {
     closeTertiarySidebar();
   }
 

@@ -859,3 +859,9 @@ async function removeVoucherAttachment(flightId, attachmentId) {
     console.error('Error removing attachment:', error);
   }
 }
+
+// Expose currentFlightId globally for cross-module access
+Object.defineProperty(window, 'currentFlightId', {
+  get: () => currentFlightId,
+  set: (value) => { currentFlightId = value; }
+});
