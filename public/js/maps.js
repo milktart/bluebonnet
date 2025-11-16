@@ -476,6 +476,17 @@ function initOverviewMap(tripData, mapElementId = 'tripMap', isPast = false) {
           // Wait for map to be fully ready before setting as currentMap
           map.whenReady(() => {
             window.currentMap = map;
+
+            // Force map to recalculate size after a delay to ensure proper rendering
+            setTimeout(() => {
+              try {
+                if (map._container) {
+                  map.invalidateSize(false);
+                }
+              } catch (e) {
+                // Silently ignore if map isn't ready
+              }
+            }, 500);
           });
 
           resolve(map);
