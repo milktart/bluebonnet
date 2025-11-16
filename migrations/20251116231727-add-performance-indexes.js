@@ -1,105 +1,121 @@
 module.exports = {
   async up(queryInterface) {
+    // Helper function to check if index exists
+    const indexExists = async (indexName) => {
+      const [results] = await queryInterface.sequelize.query(
+        `SELECT COUNT(*) as count FROM pg_indexes WHERE indexname = '${indexName}';`
+      );
+      return results[0].count > 0;
+    };
+
+    // Helper function to create index if it doesn't exist
+    const createIndexIfNotExists = async (tableName, fields, options) => {
+      const exists = await indexExists(options.name);
+      if (!exists) {
+        await queryInterface.addIndex(tableName, fields, options);
+      }
+    };
+
     // Trips indexes
-    await queryInterface.addIndex('trips', ['userId', 'departureDate'], {
+    await createIndexIfNotExists('trips', ['userId', 'departureDate'], {
       name: 'idx_trips_user_departure',
       concurrently: true,
     });
 
-    await queryInterface.addIndex('trips', ['userId'], {
+    await createIndexIfNotExists('trips', ['userId'], {
       name: 'idx_trips_user',
       concurrently: true,
     });
 
     // Flights indexes
-    await queryInterface.addIndex('flights', ['tripId', 'departureDateTime'], {
+    await createIndexIfNotExists('flights', ['tripId', 'departureDateTime'], {
       name: 'idx_flights_trip_departure',
       concurrently: true,
     });
 
-    await queryInterface.addIndex('flights', ['userId'], {
+    await createIndexIfNotExists('flights', ['userId'], {
       name: 'idx_flights_user',
       concurrently: true,
     });
 
-    await queryInterface.addIndex('flights', ['departureDateTime'], {
+    await createIndexIfNotExists('flights', ['departureDateTime'], {
       name: 'idx_flights_departure',
       concurrently: true,
     });
 
     // Hotels indexes
-    await queryInterface.addIndex('hotels', ['tripId', 'checkIn'], {
+    await createIndexIfNotExists('hotels', ['tripId', 'checkIn'], {
       name: 'idx_hotels_trip_checkin',
       concurrently: true,
     });
 
-    await queryInterface.addIndex('hotels', ['userId'], {
+    await createIndexIfNotExists('hotels', ['userId'], {
       name: 'idx_hotels_user',
       concurrently: true,
     });
 
     // Events indexes
-    await queryInterface.addIndex('events', ['tripId', 'startDateTime'], {
+    await createIndexIfNotExists('events', ['tripId', 'startDateTime'], {
       name: 'idx_events_trip_start',
       concurrently: true,
     });
 
-    await queryInterface.addIndex('events', ['userId'], {
+    await createIndexIfNotExists('events', ['userId'], {
       name: 'idx_events_user',
       concurrently: true,
     });
 
     // Transportation indexes
-    await queryInterface.addIndex('transportation', ['tripId'], {
+    await createIndexIfNotExists('transportation', ['tripId'], {
       name: 'idx_transportation_trip',
       concurrently: true,
     });
 
-    await queryInterface.addIndex('transportation', ['userId'], {
+    await createIndexIfNotExists('transportation', ['userId'], {
       name: 'idx_transportation_user',
       concurrently: true,
     });
 
     // Car rentals indexes
-    await queryInterface.addIndex('car_rentals', ['tripId'], {
+    await createIndexIfNotExists('car_rentals', ['tripId'], {
       name: 'idx_car_rentals_trip',
       concurrently: true,
     });
 
-    await queryInterface.addIndex('car_rentals', ['userId'], {
+    await createIndexIfNotExists('car_rentals', ['userId'], {
       name: 'idx_car_rentals_user',
       concurrently: true,
     });
 
     // Travel companions indexes
-    await queryInterface.addIndex('travel_companions', ['userId'], {
+    await createIndexIfNotExists('travel_companions', ['userId'], {
       name: 'idx_travel_companions_user',
       concurrently: true,
     });
 
-    await queryInterface.addIndex('travel_companions', ['linkedAccountId'], {
+    await createIndexIfNotExists('travel_companions', ['linkedAccountId'], {
       name: 'idx_travel_companions_linked_account',
       concurrently: true,
     });
 
     // Trip companions indexes
-    await queryInterface.addIndex('trip_companions', ['tripId'], {
+    await createIndexIfNotExists('trip_companions', ['tripId'], {
       name: 'idx_trip_companions_trip',
       concurrently: true,
     });
 
-    await queryInterface.addIndex('trip_companions', ['companionId'], {
+    await createIndexIfNotExists('trip_companions', ['companionId'], {
       name: 'idx_trip_companions_companion',
       concurrently: true,
     });
 
     // Vouchers indexes
-    await queryInterface.addIndex('vouchers', ['userId', 'status'], {
+    await createIndexIfNotExists('vouchers', ['userId', 'status'], {
       name: 'idx_vouchers_user_status',
       concurrently: true,
     });
 
-    await queryInterface.addIndex('vouchers', ['expirationDate'], {
+    await createIndexIfNotExists('vouchers', ['expirationDate'], {
       name: 'idx_vouchers_expiration',
       concurrently: true,
     });
