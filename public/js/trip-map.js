@@ -68,15 +68,6 @@ function initOverviewMap(tripData, mapElementId = 'tripMap', isPast = false) {
           map.whenReady(() => {
             // Update the global currentMap reference only when map is ready
             window.currentMap = map;
-
-            // Single map size recalculation to fix tile rendering
-            setTimeout(() => {
-              try {
-                map.invalidateSize(false);
-              } catch (e) {
-                console.warn('Map invalidateSize failed:', e);
-              }
-            }, 250);
           });
 
           resolve(map);

@@ -193,7 +193,16 @@ function highlightMapMarker(markerId, type) {
           iconSize: [16, 16],
           iconAnchor: [8, 8]
         })
-      }).addTo(currentMap);
+      });
+
+      // Use whenReady to ensure map panes are ready before adding marker
+      currentMap.whenReady(() => {
+        try {
+          movingMarker.addTo(currentMap);
+        } catch (e) {
+          console.warn('Failed to add marker to map:', e);
+        }
+      });
 
       let progress = 0;
 
@@ -452,9 +461,17 @@ function animateTripSegments(tripIndex, prefix = 'upcoming') {
               iconSize: [16, 16],
               iconAnchor: [8, 8]
             })
-          }).addTo(currentMap);
+          });
 
-          currentTripMarker = movingMarker;
+          // Use whenReady to ensure map panes are ready before adding marker
+          currentMap.whenReady(() => {
+            try {
+              movingMarker.addTo(currentMap);
+              currentTripMarker = movingMarker;
+            } catch (e) {
+              console.warn('Failed to add marker to map:', e);
+            }
+          });
         }
 
         const progressWithinSegment = (globalProgress - distanceSoFar) / segmentProgress;
