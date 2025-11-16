@@ -105,6 +105,24 @@ app.use((req, res, next) => {
 const { setSidebarFlag } = require('./middleware/sidebarContent');
 app.use(setSidebarFlag);
 
+// Test endpoint to check bundle files (for debugging)
+app.get('/debug/bundles', (req, res) => {
+  const distPath = path.join(__dirname, 'public/dist');
+  const result = {
+    __dirname,
+    distPath,
+    distExists: fs.existsSync(distPath),
+    bundleManifest,
+    files: []
+  };
+
+  if (fs.existsSync(distPath)) {
+    result.files = fs.readdirSync(distPath);
+  }
+
+  res.json(result);
+});
+
 // Routes
 app.use('/', require('./routes/index'));
 app.use('/auth', require('./routes/auth'));
