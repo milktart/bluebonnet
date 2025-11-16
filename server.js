@@ -18,6 +18,17 @@ app.set('views', path.join(__dirname, 'views'));
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// In development, disable caching for bundle files to ensure latest code is always loaded
+if (process.env.NODE_ENV === 'development') {
+  app.use('/dist', (req, res, next) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    next();
+  });
+}
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(methodOverride('_method'));
 
