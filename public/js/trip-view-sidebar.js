@@ -383,7 +383,7 @@ if (typeof window.closeTertiarySidebar === 'undefined') {
 // Expose functions globally for inline onclick handlers in templates
 window.closeSecondarySidebar = closeSecondarySidebar;
 window.openSecondarySidebar = openSecondarySidebar;
-window.showAddItemMenu = showAddItemMenu;
+// Note: showAddItemMenu is defined in trip.ejs template, don't override it
 window.showAddForm = showAddForm;
 window.showAddFormWithLayoverDates = showAddFormWithLayoverDates;
 window.editItem = editItem;
