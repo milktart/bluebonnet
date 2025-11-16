@@ -1,13 +1,13 @@
 services:
-  postgres:
+  dev_postgres:
     image: postgres:15-alpine
-    container_name: travel_planner_db
+    container_name: dev_travel_planner_db
     environment:
-      POSTGRES_DB: travel_planner
+      POSTGRES_DB: dev_travel_planner
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -19,26 +19,26 @@ services:
 
   app:
     build: .
-    container_name: travel_planner_app
+    container_name: dev_travel_planner_app
     ports:
-      - "3500:3000"
+      - "3501:3001"
     environment:
       NODE_ENV: development
-      DB_HOST: postgres
+      DB_HOST: dev_postgres
       DB_PORT: 5432
-      DB_NAME: travel_planner
+      DB_NAME: dev_travel_planner
       DB_USER: postgres
       DB_PASSWORD: postgres
     env_file:
       - .env
     depends_on:
-      postgres:
+      dev_postgres:
         condition: service_healthy
     restart: unless-stopped
     volumes:
       - ./:/app
       - /app/node_modules
-    command: npm run dev
+    command: sh -c "npm run build-js && npm run dev"
 
 volumes:
   postgres_data:

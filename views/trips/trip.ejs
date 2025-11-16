@@ -168,23 +168,12 @@
   </div>
 
   <!-- Scripts -->
+  <!-- External dependencies (CDN) -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="/js/datetime-formatter.js"></script>
-  <script src="/js/time-input-formatter.js"></script>
-  <script src="/js/map.js"></script>
-  <script src="/js/trip-view-utils.js"></script>
-  <script src="/js/trip-map.js"></script>
-  <script src="/js/preline.js"></script>
-  <script src="/js/main.js"></script>
-  <!-- Trip View Scripts -->
-  <script src="/js/trip-view-map.js"></script>
-  <script src="/js/trip-view-sidebar.js"></script>
-  <script src="/js/sidebar-loader.js"></script>
-  <script src="/js/async-form-handler.js"></script>
-  <script src="/js/trip-view-utils.js"></script>
-  <script src="/js/companion-selector.js"></script>
-  <script src="/js/voucher-sidebar-manager.js"></script>
-  <script src="/js/item-companions-loader.js"></script>
+
+  <!-- Bundled JavaScript (with code splitting and minification) -->
+  <script type="module" src="<%= getBundle('common') %>"></script>
+  <script type="module" src="<%= getBundle('trip-view') %>"></script>
 
   <script>
     // Trip data for map

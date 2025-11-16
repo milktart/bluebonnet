@@ -64,15 +64,21 @@ function initOverviewMap(tripData, mapElementId = 'tripMap', isPast = false) {
         .then((map) => {
           console.log('Map initialized successfully');
 
-          // Update the global currentMap reference
-          window.currentMap = map;
+          // Wait for map to be fully ready before setting as currentMap
+          map.whenReady(() => {
+            window.currentMap = map;
 
-          // Single map size recalculation to fix tile rendering without disrupting bounds
-          setTimeout(() => {
-            if (map && typeof map.invalidateSize === 'function') {
-              map.invalidateSize(false); // Use false to prevent bounds recalculation
-            }
-          }, 100);
+            // Force map to recalculate size after a delay to ensure proper rendering
+            setTimeout(() => {
+              try {
+                if (map._container) {
+                  map.invalidateSize(false);
+                }
+              } catch (e) {
+                // Silently ignore if map isn't ready
+              }
+            }, 500);
+          });
 
           resolve(map);
         })

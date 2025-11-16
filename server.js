@@ -5,6 +5,7 @@ const passport = require('passport');
 const flash = require('connect-flash');
 const methodOverride = require('method-override');
 const path = require('path');
+const fs = require('fs');
 const db = require('./models');
 const dateFormatter = require('./utils/dateFormatter');
 
@@ -17,6 +18,17 @@ app.set('views', path.join(__dirname, 'views'));
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// In development, disable caching for bundle files to ensure latest code is always loaded
+if (process.env.NODE_ENV === 'development') {
+  app.use('/dist', (req, res, next) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    next();
+  });
+}
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(methodOverride('_method'));
 
@@ -38,12 +50,52 @@ app.use(passport.session());
 // Flash messages
 app.use(flash());
 
+// Asset version for cache-busting (set once at server start)
+const ASSET_VERSION = Date.now();
+
+// Load bundle manifest for esbuild bundles
+let bundleManifest = {};
+try {
+  const manifestPath = path.join(__dirname, 'public/dist/manifest.json');
+  console.log('📂 Looking for manifest at:', manifestPath);
+  console.log('📂 Current working directory:', process.cwd());
+  console.log('📂 __dirname:', __dirname);
+
+  if (fs.existsSync(manifestPath)) {
+    bundleManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    console.log('✅ Loaded bundle manifest:', Object.keys(bundleManifest).join(', '));
+    console.log('📦 Bundle paths:', JSON.stringify(bundleManifest, null, 2));
+  } else {
+    console.warn('⚠️  Bundle manifest not found at:', manifestPath);
+    console.warn('⚠️  Run "npm run build-js" to generate bundles.');
+    // List what's in public/ directory
+    const publicPath = path.join(__dirname, 'public');
+    if (fs.existsSync(publicPath)) {
+      console.log('📂 Contents of public/:', fs.readdirSync(publicPath));
+    }
+  }
+} catch (error) {
+  console.error('❌ Error loading bundle manifest:', error.message);
+  console.error('❌ Stack:', error.stack);
+}
+
+// Helper function to get bundle path
+function getBundle(name) {
+  return bundleManifest[name] || `/js/entries/${name}.js`;
+}
+
 // Global variables and utility functions
 app.use((req, res, next) => {
   res.locals.success_msg = req.flash('success_msg');
   res.locals.error_msg = req.flash('error_msg');
   res.locals.error = req.flash('error');
   res.locals.user = req.user || null;
+
+  // Asset version for cache-busting
+  res.locals.assetVersion = ASSET_VERSION;
+
+  // Bundle paths for templates
+  res.locals.getBundle = getBundle;
 
   // Make date formatting utilities available to all EJS templates
   res.locals.formatDate = dateFormatter.formatDate;
@@ -64,6 +116,24 @@ app.use((req, res, next) => {
 const { setSidebarFlag } = require('./middleware/sidebarContent');
 app.use(setSidebarFlag);
 
+// Test endpoint to check bundle files (for debugging)
+app.get('/debug/bundles', (req, res) => {
+  const distPath = path.join(__dirname, 'public/dist');
+  const result = {
+    __dirname,
+    distPath,
+    distExists: fs.existsSync(distPath),
+    bundleManifest,
+    files: []
+  };
+
+  if (fs.existsSync(distPath)) {
+    result.files = fs.readdirSync(distPath);
+  }
+
+  res.json(result);
+});
+
 // Routes
 app.use('/', require('./routes/index'));
 app.use('/auth', require('./routes/auth'));
@@ -83,7 +153,7 @@ app.use('/vouchers', require('./routes/vouchers'));
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).render('404', { title: 'Page Not Found' });
+  res.status(404).render('404', { title: 'Page Not Found', req });
 });
 
 // Error handler

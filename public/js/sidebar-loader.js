@@ -253,6 +253,11 @@ async function handleEventEditFormSubmit(e) {
   }
 }
 
+// Expose functions globally for inline onclick handlers in templates
+window.loadSidebarContent = loadSidebarContent;
+window.goBackInSidebar = goBackInSidebar;
+window.handleEventEditFormSubmit = handleEventEditFormSubmit;
+
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
   // Close sidebar when clicking outside of it

@@ -72,7 +72,7 @@ function editItem(type, id) {
   openEditSidebar();
 
   // Close tertiary sidebar when editing a different flight
-  if (type === 'flight' && currentFlightId && currentFlightId !== id) {
+  if (type === 'flight' && window.currentFlightId && window.currentFlightId !== id) {
     closeTertiarySidebar();
   }
 
@@ -379,3 +379,11 @@ if (typeof window.closeTertiarySidebar === 'undefined') {
     }
   };
 }
+
+// Expose functions globally for inline onclick handlers in templates
+window.closeSecondarySidebar = closeSecondarySidebar;
+window.openSecondarySidebar = openSecondarySidebar;
+// Note: showAddItemMenu is defined in trip.ejs template, don't override it
+window.showAddForm = showAddForm;
+window.showAddFormWithLayoverDates = showAddFormWithLayoverDates;
+window.editItem = editItem;

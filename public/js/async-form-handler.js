@@ -154,3 +154,7 @@ function extractTripIdFromUrl() {
   const match = window.location.pathname.match(/\/trips\/([a-f0-9-]+)/);
   return match ? match[1] : null;
 }
+
+// Expose functions globally for cross-module access
+window.setupAsyncFormSubmission = setupAsyncFormSubmission;
+window.refreshTripView = refreshTripView;

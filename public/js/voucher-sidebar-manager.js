@@ -859,3 +859,20 @@ async function removeVoucherAttachment(flightId, attachmentId) {
     console.error('Error removing attachment:', error);
   }
 }
+
+// Expose currentFlightId globally for cross-module access
+Object.defineProperty(window, 'currentFlightId', {
+  get: () => currentFlightId,
+  set: (value) => { currentFlightId = value; }
+});
+
+// Expose the implementation for lazy loading wrapper
+window.openVoucherAttachmentPanelImpl = openVoucherAttachmentPanel;
+
+// Expose functions globally for inline onclick/onsubmit/onchange handlers in voucher panel
+window.switchVoucherTab = switchVoucherTab;
+window.submitVoucherAttachment = submitVoucherAttachment;
+window.toggleSelectAllVouchers = toggleSelectAllVouchers;
+window.submitNewVoucher = submitNewVoucher;
+window.onVoucherTypeChange = onVoucherTypeChange;
+window.removeVoucherFromFlight = removeVoucherFromFlight;

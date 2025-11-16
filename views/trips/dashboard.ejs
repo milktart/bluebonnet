@@ -1202,20 +1202,15 @@
   </div>
 
   <!-- Scripts -->
+  <!-- External dependencies (CDN) -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="/js/datetime-formatter.js"></script>
-  <script src="/js/time-input-formatter.js"></script>
-  <script src="/js/main.js"></script>
-  <script src="/js/map.js"></script>
-  <script src="/js/trip-view-utils.js"></script>
-  <script src="/js/trip-map.js"></script>
-  <script src="/js/sidebar-loader.js"></script>
-  <script src="/js/companions-manager.js"></script>
-  <script src="/js/voucher-sidebar-manager.js"></script>
 
-  <!-- Critical functions are now defined in the <head> section -->
+  <!-- Bundled JavaScript (with code splitting and minification) -->
+  <script type="module" src="<%= getBundle('common') %>"></script>
+  <script type="module" src="<%= getBundle('dashboard') %>"></script>
 
-  <script src="/js/trips-list.js"></script>
+  <!-- Additional standalone scripts -->
+  <script src="/js/trips-list.js?v=<%= assetVersion %>"></script>
   <script>
     // Handle accordion expansion to load trip items via AJAX
     window.loadTripItemsIfNeeded = async function(accordionId) {
@@ -1520,198 +1515,16 @@
       }
     }
 
-    // Notification center functionality
-    let notificationPollInterval = null;
-    let notificationPanelOpen = false;
+    // Initialize notification system for dashboard
+    document.addEventListener('DOMContentLoaded', () => {
+      // Make toggleNotificationCenter available globally for onclick handlers
+      window.toggleNotificationCenter = () => {
+        window.toggleNotificationCenter('dashboard-notification-panel', 'dashboard-notification-bell');
+      };
 
-    function toggleNotificationCenter() {
-      const panel = document.getElementById('dashboard-notification-panel');
-      notificationPanelOpen = !notificationPanelOpen;
-
-      if (notificationPanelOpen) {
-        panel.style.display = 'block';
-        loadNotifications();
-        // Start polling for new notifications every 30 seconds
-        if (notificationPollInterval) clearInterval(notificationPollInterval);
-        notificationPollInterval = setInterval(loadNotifications, 30000);
-      } else {
-        panel.style.display = 'none';
-        if (notificationPollInterval) clearInterval(notificationPollInterval);
-      }
-    }
-
-    // Close notification panel when clicking outside
-    document.addEventListener('click', (e) => {
-      const panel = document.getElementById('dashboard-notification-panel');
-      const bell = document.getElementById('dashboard-notification-bell');
-
-      if (!panel.contains(e.target) && e.target !== bell && !bell.contains(e.target)) {
-        if (notificationPanelOpen) {
-          toggleNotificationCenter();
-        }
-      }
+      // Initialize notification system
+      initializeNotifications('dashboard-notification-panel', 'dashboard-notification-bell');
     });
-
-    async function loadNotifications() {
-      try {
-        // Fetch unread count
-        const countRes = await fetch('/notifications/count/unread');
-        const countData = await countRes.json();
-        updateBadge(countData.unreadCount);
-
-        // Fetch notifications
-        const notifRes = await fetch('/notifications?limit=10');
-        const notifData = await notifRes.json();
-
-        if (notifData.success) {
-          renderNotifications(notifData.notifications || []);
-        }
-      } catch (error) {
-        console.error('Error loading notifications:', error);
-      }
-    }
-
-    function updateBadge(count) {
-      const badge = document.getElementById('dashboard-notification-badge');
-      const countSpan = document.getElementById('dashboard-unread-count');
-
-      if (count > 0) {
-        badge.style.display = 'flex';
-        countSpan.textContent = count > 99 ? '99+' : count;
-      } else {
-        badge.style.display = 'none';
-      }
-    }
-
-    function renderNotifications(notifications) {
-      const listContainer = document.getElementById('dashboard-notification-list');
-
-      if (!notifications || notifications.length === 0) {
-        listContainer.innerHTML = '<div class="p-4 text-center text-gray-500 text-sm">No notifications</div>';
-        return;
-      }
-
-      listContainer.innerHTML = notifications.map(notif => {
-        const isUnread = !notif.read;
-        const bgClass = isUnread ? 'bg-blue-50' : 'bg-white';
-        const timeAgo = getRelativeTime(notif.createdAt);
-
-        let actionButtons = '';
-
-        // Handle different notification types
-        if (notif.type === 'companion_request_received') {
-          actionButtons = `
-            <div class="flex gap-2 mt-2">
-              <button class="btn btn-sm btn-success flex-1" onclick="handleCompanionAction('${notif.id}', '${notif.relatedId}', 'accept')">
-                <i class="bi bi-check"></i> Accept
-              </button>
-              <button class="btn btn-sm btn-outline-danger flex-1" onclick="handleCompanionAction('${notif.id}', '${notif.relatedId}', 'decline')">
-                <i class="bi bi-x"></i> Decline
-              </button>
-            </div>
-          `;
-        } else if (notif.type === 'trip_invitation_received') {
-          actionButtons = `
-            <div class="flex gap-2 mt-2">
-              <button class="btn btn-sm btn-primary flex-1" onclick="handleTripAction('${notif.id}', '${notif.relatedId}', 'join')">
-                <i class="bi bi-check"></i> Join
-              </button>
-              <button class="btn btn-sm btn-outline-danger flex-1" onclick="handleTripAction('${notif.id}', '${notif.relatedId}', 'decline')">
-                <i class="bi bi-x"></i> Decline
-              </button>
-            </div>
-          `;
-        }
-
-        return `
-          <div class="${bgClass} p-3 hover:bg-gray-50 cursor-pointer transition-colors" onclick="markNotificationAsRead('${notif.id}')">
-            <div class="flex justify-between items-start mb-1">
-              <p class="text-sm font-medium text-gray-900">${notif.message}</p>
-              <button
-                class="text-gray-400 hover:text-gray-600 ml-2"
-                onclick="deleteNotification('${notif.id}'); event.stopPropagation();"
-              >
-                ×
-              </button>
-            </div>
-            <p class="text-xs text-gray-500">${timeAgo}</p>
-            ${actionButtons}
-          </div>
-        `;
-      }).join('');
-    }
-
-    function getRelativeTime(dateString) {
-      const date = new Date(dateString);
-      const now = new Date();
-      const seconds = Math.floor((now - date) / 1000);
-
-      if (seconds < 60) return 'just now';
-      if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
-      if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
-      if (seconds < 604800) return Math.floor(seconds / 86400) + 'd ago';
-      return date.toLocaleDateString();
-    }
-
-    async function markNotificationAsRead(notificationId) {
-      try {
-        await fetch(`/notifications/${notificationId}/read`, { method: 'PUT' });
-        loadNotifications();
-      } catch (error) {
-        console.error('Error marking notification as read:', error);
-      }
-    }
-
-    async function deleteNotification(notificationId) {
-      try {
-        await fetch(`/notifications/${notificationId}`, { method: 'DELETE' });
-        loadNotifications();
-      } catch (error) {
-        console.error('Error deleting notification:', error);
-      }
-    }
-
-    async function handleCompanionAction(notificationId, relationshipId, action) {
-      try {
-        const endpoint = action === 'accept' ? 'accept' : 'decline';
-        const permissionLevel = action === 'accept' ? 'view_travel' : null;
-
-        const response = await fetch(`/companion-relationships/${relationshipId}/${endpoint}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ permissionLevel })
-        });
-
-        if (response.ok) {
-          await markNotificationAsRead(notificationId);
-          loadNotifications();
-        }
-      } catch (error) {
-        console.error('Error handling companion action:', error);
-      }
-    }
-
-    async function handleTripAction(notificationId, invitationId, action) {
-      try {
-        const response = await fetch(`/trip-invitations/${invitationId}/respond`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ response: action })
-        });
-
-        if (response.ok) {
-          await markNotificationAsRead(notificationId);
-          loadNotifications();
-          // Refresh page after joining/declining a trip
-          setTimeout(() => location.reload(), 500);
-        }
-      } catch (error) {
-        console.error('Error handling trip action:', error);
-      }
-    }
-
-    // Load notifications on page load and provide global access to companion sidebar function
-    document.addEventListener('DOMContentLoaded', loadNotifications);
 
   </script>
 
