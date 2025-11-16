@@ -379,3 +379,10 @@ if (typeof window.closeTertiarySidebar === 'undefined') {
     }
   };
 }
+
+// Expose functions globally for inline onclick handlers in templates
+window.closeSecondarySidebar = closeSecondarySidebar;
+window.openSecondarySidebar = openSecondarySidebar;
+window.showAddItemMenu = showAddItemMenu;
+window.showAddForm = showAddForm;
+window.showAddFormWithLayoverDates = showAddFormWithLayoverDates;
