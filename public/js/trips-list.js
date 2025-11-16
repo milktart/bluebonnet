@@ -148,7 +148,7 @@ function getPointAtDistance(from, to, percent) {
 
 // Highlight map marker with animation
 function highlightMapMarker(markerId, type) {
-  if (!currentMap) return;
+  if (!currentMap || !currentMap._container || !currentMap._container.parentNode) return;
 
   if (markerId && currentMap.segmentLayers) {
     const segment = currentMap.segmentLayers.find(s => s.index === parseInt(markerId));
@@ -287,7 +287,7 @@ function getTripBounds(tripIndex, prefix = 'upcoming') {
 
 // Zoom to trip bounds
 function zoomToTripBounds(tripIndex, prefix = 'upcoming') {
-  if (!currentMap) return;
+  if (!currentMap || !currentMap._container || !currentMap._container.parentNode) return;
 
   if (!originalMapBounds && !originalMapZoom) {
     originalMapBounds = currentMap.getBounds();
@@ -333,7 +333,7 @@ function zoomToTripBounds(tripIndex, prefix = 'upcoming') {
 
 // Restore original map view
 function restoreOriginalZoom() {
-  if (!currentMap || !originalMapBounds || originalMapZoom === null) return;
+  if (!currentMap || !currentMap._container || !currentMap._container.parentNode || !originalMapBounds || originalMapZoom === null) return;
 
   currentMap.fitBounds(originalMapBounds, {
     maxZoom: originalMapZoom,
@@ -346,7 +346,7 @@ function restoreOriginalZoom() {
 
 // Animate trip segments sequentially
 function animateTripSegments(tripIndex, prefix = 'upcoming') {
-  if (!currentMap) return;
+  if (!currentMap || !currentMap._container || !currentMap._container.parentNode) return;
 
   if (activeTripAnimation) {
     clearInterval(activeTripAnimation);
