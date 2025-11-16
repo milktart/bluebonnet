@@ -8,6 +8,9 @@ RUN npm install
 
 COPY . .
 
+# Build JavaScript bundles
+RUN npm run build-js
+
 EXPOSE 3000
 
 CMD ["npm", "start"]
