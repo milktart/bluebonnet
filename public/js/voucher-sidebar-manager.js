@@ -865,3 +865,6 @@ Object.defineProperty(window, 'currentFlightId', {
   get: () => currentFlightId,
   set: (value) => { currentFlightId = value; }
 });
+
+// Expose the implementation for lazy loading wrapper
+window.openVoucherAttachmentPanelImpl = openVoucherAttachmentPanel;

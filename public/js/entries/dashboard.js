@@ -8,7 +8,8 @@ import '../maps.js';
 import '../trip-view-utils.js';
 import '../sidebar-loader.js';
 import '../companions.js';
-import '../voucher-sidebar-manager.js';
+// Voucher module is lazy-loaded on demand
+import '../voucher-lazy-loader.js';
 import '../trips-list.js';
 
 // Log bundle load
