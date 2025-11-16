@@ -13,7 +13,15 @@
     "build-js:watch": "node esbuild.config.js --watch",
     "build": "npm run build-css-prod && npm run build-js",
     "build:prod": "NODE_ENV=production npm run build",
-    "migrate": "node -e \"require('./models').sequelize.sync({alter: true})\""
+    "db:migrate": "sequelize-cli db:migrate",
+    "db:migrate:undo": "sequelize-cli db:migrate:undo",
+    "db:migrate:status": "sequelize-cli db:migrate:status",
+    "db:seed": "sequelize-cli db:seed:all",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{js,json,md,css}\"",
+    "format:check": "prettier --check \"**/*.{js,json,md,css}\"",
+    "prepare": "husky"
   },
   "keywords": [
     "travel",
@@ -26,6 +34,7 @@
     "autoprefixer": "^10.4.21",
     "axios": "^1.6.2",
     "bcrypt": "^5.1.1",
+    "compression": "^1.8.1",
     "connect-flash": "^0.1.1",
     "dotenv": "^16.3.1",
     "ejs": "^3.1.9",
@@ -42,12 +51,32 @@
     "postcss": "^8.5.6",
     "preline": "^3.2.3",
     "sequelize": "^6.35.2",
-    "vanilla-calendar-pro": "^3.0.5"
+    "vanilla-calendar-pro": "^3.0.5",
+    "winston": "^3.18.3",
+    "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.0.14",
     "esbuild": "^0.27.0",
+    "eslint": "^8.57.1",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-prettier": "^5.5.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6",
     "nodemon": "^3.0.2",
+    "prettier": "^3.6.2",
+    "sequelize-cli": "^6.6.3",
     "tailwindcss": "^4.0.14"
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,css}": [
+      "prettier --write"
+    ]
   }
 }

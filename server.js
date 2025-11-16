@@ -4,10 +4,23 @@ const session = require('express-session');
 const passport = require('passport');
 const flash = require('connect-flash');
 const methodOverride = require('method-override');
+const compression = require('compression');
 const path = require('path');
 const fs = require('fs');
 const db = require('./models');
 const dateFormatter = require('./utils/dateFormatter');
+const logger = require('./utils/logger');
+
+// Validate required environment variables
+const requiredEnvVars = ['SESSION_SECRET'];
+const missingVars = requiredEnvVars.filter((varName) => !process.env[varName]);
+
+if (missingVars.length > 0) {
+  logger.error('Missing required environment variables', { missingVars });
+  console.error(`ERROR: Missing required environment variables: ${missingVars.join(', ')}`);
+  console.error('Please create a .env file based on .env.example');
+  process.exit(1);
+}
 
 const app = express();
 
@@ -16,6 +29,7 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 // Middleware
+app.use(compression()); // Compress all responses
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -33,17 +47,20 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(methodOverride('_method'));
 
 // Session configuration
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    maxAge: 1000 * 60 * 60 * 24 // 24 hours
-  }
-}));
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 24, // 24 hours
+    },
+  })
+);
 
 // Passport middleware
 require('./config/passport')(passport);
+
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -57,26 +74,24 @@ const ASSET_VERSION = Date.now();
 let bundleManifest = {};
 try {
   const manifestPath = path.join(__dirname, 'public/dist/manifest.json');
-  console.log('📂 Looking for manifest at:', manifestPath);
-  console.log('📂 Current working directory:', process.cwd());
-  console.log('📂 __dirname:', __dirname);
+  logger.debug('Looking for manifest', { manifestPath, cwd: process.cwd(), dirname: __dirname });
 
   if (fs.existsSync(manifestPath)) {
     bundleManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-    console.log('✅ Loaded bundle manifest:', Object.keys(bundleManifest).join(', '));
-    console.log('📦 Bundle paths:', JSON.stringify(bundleManifest, null, 2));
+    logger.info('Loaded bundle manifest', { bundles: Object.keys(bundleManifest) });
+    logger.debug('Bundle paths', { bundleManifest });
   } else {
-    console.warn('⚠️  Bundle manifest not found at:', manifestPath);
-    console.warn('⚠️  Run "npm run build-js" to generate bundles.');
+    logger.warn('Bundle manifest not found - run "npm run build-js" to generate bundles', {
+      manifestPath,
+    });
     // List what's in public/ directory
     const publicPath = path.join(__dirname, 'public');
     if (fs.existsSync(publicPath)) {
-      console.log('📂 Contents of public/:', fs.readdirSync(publicPath));
+      logger.debug('Public directory contents', { files: fs.readdirSync(publicPath) });
     }
   }
 } catch (error) {
-  console.error('❌ Error loading bundle manifest:', error.message);
-  console.error('❌ Stack:', error.stack);
+  logger.error('Error loading bundle manifest', { error: error.message, stack: error.stack });
 }
 
 // Helper function to get bundle path
@@ -114,6 +129,7 @@ app.use((req, res, next) => {
 
 // Sidebar content middleware
 const { setSidebarFlag } = require('./middleware/sidebarContent');
+
 app.use(setSidebarFlag);
 
 // Test endpoint to check bundle files (for debugging)
@@ -124,7 +140,7 @@ app.get('/debug/bundles', (req, res) => {
     distPath,
     distExists: fs.existsSync(distPath),
     bundleManifest,
-    files: []
+    files: [],
   };
 
   if (fs.existsSync(distPath)) {
@@ -157,62 +173,72 @@ app.use((req, res) => {
 });
 
 // Error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
+app.use((err, req, res, _next) => {
+  logger.error('Unhandled error', {
+    error: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method,
+    userId: req.user?.id,
+  });
   res.status(500).render('error', {
     title: 'Error',
-    error: process.env.NODE_ENV === 'development' ? err : {}
+    error: process.env.NODE_ENV === 'development' ? err : {},
   });
 });
 
 const PORT = process.env.PORT || 3000;
 
 // Sync database and start server
-db.sequelize.sync({ alter: true }).then(async () => {
-  // Alter events table to make tripId nullable for standalone events
-  try {
-    await db.sequelize.query(`
+db.sequelize
+  .sync({ alter: true })
+  .then(async () => {
+    // Alter events table to make tripId nullable for standalone events
+    try {
+      await db.sequelize.query(`
       ALTER TABLE "events"
       ALTER COLUMN "tripId" DROP NOT NULL;
     `);
-    console.log('Events table constraint updated');
-  } catch (err) {
-    // Constraint might not exist yet or already be nullable, that's fine
-    console.log('Constraint update skipped (may not exist yet)');
-  }
+      logger.info('Events table constraint updated');
+    } catch (err) {
+      // Constraint might not exist yet or already be nullable, that's fine
+      logger.debug('Constraint update skipped', { reason: 'may not exist yet' });
+    }
 
-  // Add custom constraints and indexes for new companion system
-  try {
-    // Create indexes for performance on frequently queried columns
-    await db.sequelize.query(`
+    // Add custom constraints and indexes for new companion system
+    try {
+      // Create indexes for performance on frequently queried columns
+      await db.sequelize.query(`
       CREATE INDEX IF NOT EXISTS idx_companion_relationships_status
       ON companion_relationships(status);
     `);
 
-    await db.sequelize.query(`
+      await db.sequelize.query(`
       CREATE INDEX IF NOT EXISTS idx_trip_invitations_status
       ON trip_invitations(status);
     `);
 
-    await db.sequelize.query(`
+      await db.sequelize.query(`
       CREATE INDEX IF NOT EXISTS idx_item_companions_item
       ON item_companions(item_type, item_id);
     `);
 
-    await db.sequelize.query(`
+      await db.sequelize.query(`
       CREATE INDEX IF NOT EXISTS idx_notifications_read
       ON notifications(read);
     `);
 
-    console.log('Custom indexes for companion system created');
-  } catch (err) {
-    console.log('Some indexes may already exist:', err.message);
-  }
+      logger.info('Custom indexes for companion system created');
+    } catch (err) {
+      logger.debug('Some indexes may already exist', { error: err.message });
+    }
 
-  console.log('Database synced');
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    logger.info('Database synced');
+    app.listen(PORT, () => {
+      logger.info(`Server running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    logger.error('Unable to sync database', { error: err.message, stack: err.stack });
+    process.exit(1);
   });
-}).catch(err => {
-  console.error('Unable to sync database:', err);
-});
