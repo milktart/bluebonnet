@@ -150,6 +150,9 @@ function getPointAtDistance(from, to, percent) {
 function highlightMapMarker(markerId, type) {
   if (!currentMap || !currentMap._loaded || !currentMap._container || !currentMap._container.parentNode) return;
 
+  // Check if map panes are ready
+  if (!currentMap.getPane || !currentMap.getPane('overlayPane')) return;
+
   if (markerId && currentMap.segmentLayers) {
     const segment = currentMap.segmentLayers.find(s => s.index === parseInt(markerId));
     if (segment) {
@@ -195,14 +198,14 @@ function highlightMapMarker(markerId, type) {
         })
       });
 
-      // Use whenReady to ensure map panes are ready before adding marker
-      currentMap.whenReady(() => {
+      // Check if panes exist before adding marker
+      if (currentMap.getPane && currentMap.getPane('markerPane')) {
         try {
           movingMarker.addTo(currentMap);
         } catch (e) {
           console.warn('Failed to add marker to map:', e);
         }
-      });
+      }
 
       let progress = 0;
 
@@ -303,6 +306,12 @@ function getTripBounds(tripIndex, prefix = 'upcoming') {
 function zoomToTripBounds(tripIndex, prefix = 'upcoming') {
   if (!currentMap || !currentMap._loaded || !currentMap._container || !currentMap._container.parentNode) return;
 
+  // Check if map panes are ready
+  if (!currentMap.getPane || !currentMap.getPane('overlayPane')) {
+    console.warn('Map panes not ready yet');
+    return;
+  }
+
   if (!originalMapBounds && !originalMapZoom) {
     try {
       originalMapBounds = currentMap.getBounds();
@@ -358,6 +367,9 @@ function zoomToTripBounds(tripIndex, prefix = 'upcoming') {
 function restoreOriginalZoom() {
   if (!currentMap || !currentMap._loaded || !currentMap._container || !currentMap._container.parentNode || !originalMapBounds || originalMapZoom === null) return;
 
+  // Check if map panes are ready
+  if (!currentMap.getPane || !currentMap.getPane('overlayPane')) return;
+
   try {
     currentMap.fitBounds(originalMapBounds, {
       maxZoom: originalMapZoom,
@@ -374,6 +386,9 @@ function restoreOriginalZoom() {
 // Animate trip segments sequentially
 function animateTripSegments(tripIndex, prefix = 'upcoming') {
   if (!currentMap || !currentMap._loaded || !currentMap._container || !currentMap._container.parentNode) return;
+
+  // Check if map panes are ready
+  if (!currentMap.getPane || !currentMap.getPane('overlayPane')) return;
 
   if (activeTripAnimation) {
     clearInterval(activeTripAnimation);
@@ -463,15 +478,15 @@ function animateTripSegments(tripIndex, prefix = 'upcoming') {
             })
           });
 
-          // Use whenReady to ensure map panes are ready before adding marker
-          currentMap.whenReady(() => {
+          // Check if panes exist before adding marker
+          if (currentMap.getPane && currentMap.getPane('markerPane')) {
             try {
               movingMarker.addTo(currentMap);
               currentTripMarker = movingMarker;
             } catch (e) {
               console.warn('Failed to add marker to map:', e);
             }
-          });
+          }
         }
 
         const progressWithinSegment = (globalProgress - distanceSoFar) / segmentProgress;

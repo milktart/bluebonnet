@@ -475,8 +475,17 @@ function initOverviewMap(tripData, mapElementId = 'tripMap', isPast = false) {
 
           // Wait for map to be fully ready before setting as currentMap
           map.whenReady(() => {
-            // Update the global currentMap reference only when map is ready
-            window.currentMap = map;
+            // Double-check panes exist before setting as currentMap
+            if (map.getPane && map.getPane('overlayPane') && map.getPane('markerPane')) {
+              window.currentMap = map;
+            } else {
+              // Retry after a short delay if panes aren't ready
+              setTimeout(() => {
+                if (map.getPane && map.getPane('overlayPane') && map.getPane('markerPane')) {
+                  window.currentMap = map;
+                }
+              }, 100);
+            }
           });
 
           resolve(map);
