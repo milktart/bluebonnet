@@ -189,56 +189,28 @@ app.use((err, req, res, _next) => {
 
 const PORT = process.env.PORT || 3000;
 
-// Sync database and start server
+// Test database connection and start server
+// NOTE: Database schema is managed by migrations (npm run db:migrate)
+// Run migrations before starting the server in production
 db.sequelize
-  .sync({ alter: true })
-  .then(async () => {
-    // Alter events table to make tripId nullable for standalone events
-    try {
-      await db.sequelize.query(`
-      ALTER TABLE "events"
-      ALTER COLUMN "tripId" DROP NOT NULL;
-    `);
-      logger.info('Events table constraint updated');
-    } catch (err) {
-      // Constraint might not exist yet or already be nullable, that's fine
-      logger.debug('Constraint update skipped', { reason: 'may not exist yet' });
-    }
+  .authenticate()
+  .then(() => {
+    logger.info('Database connection established successfully');
 
-    // Add custom constraints and indexes for new companion system
-    try {
-      // Create indexes for performance on frequently queried columns
-      await db.sequelize.query(`
-      CREATE INDEX IF NOT EXISTS idx_companion_relationships_status
-      ON companion_relationships(status);
-    `);
-
-      await db.sequelize.query(`
-      CREATE INDEX IF NOT EXISTS idx_trip_invitations_status
-      ON trip_invitations(status);
-    `);
-
-      await db.sequelize.query(`
-      CREATE INDEX IF NOT EXISTS idx_item_companions_item
-      ON item_companions(item_type, item_id);
-    `);
-
-      await db.sequelize.query(`
-      CREATE INDEX IF NOT EXISTS idx_notifications_read
-      ON notifications(read);
-    `);
-
-      logger.info('Custom indexes for companion system created');
-    } catch (err) {
-      logger.debug('Some indexes may already exist', { error: err.message });
-    }
-
-    logger.info('Database synced');
     app.listen(PORT, () => {
-      logger.info(`Server running on port ${PORT}`);
+      logger.info(`Server running on port ${PORT}`, {
+        environment: process.env.NODE_ENV || 'development',
+        port: PORT,
+      });
+      logger.info('Run "npm run db:migrate" to apply pending database migrations');
     });
   })
   .catch((err) => {
-    logger.error('Unable to sync database', { error: err.message, stack: err.stack });
+    logger.error('Unable to connect to database', {
+      error: err.message,
+      stack: err.stack,
+      host: process.env.DB_HOST || 'localhost',
+      database: process.env.DB_NAME || 'dev_travel_planner',
+    });
     process.exit(1);
   });
