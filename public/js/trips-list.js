@@ -148,7 +148,7 @@ function getPointAtDistance(from, to, percent) {
 
 // Highlight map marker with animation
 function highlightMapMarker(markerId, type) {
-  if (!currentMap || !currentMap._container || !currentMap._container.parentNode) return;
+  if (!currentMap || !currentMap._loaded || !currentMap._container || !currentMap._container.parentNode) return;
 
   if (markerId && currentMap.segmentLayers) {
     const segment = currentMap.segmentLayers.find(s => s.index === parseInt(markerId));
@@ -168,7 +168,12 @@ function highlightMapMarker(markerId, type) {
         [endPoint.lat, endPoint.lng]
       );
 
-      const currentZoom = currentMap.getZoom();
+      let currentZoom = 10; // default zoom
+      try {
+        currentZoom = currentMap.getZoom();
+      } catch (e) {
+        console.warn('Failed to get zoom level:', e);
+      }
       const zoomFactor = Math.max(0.75, Math.pow(2, 4 - currentZoom));
       const durationMs = (distance / 6000) * 5000 * zoomFactor;
       const frameTime = 50;
@@ -287,11 +292,16 @@ function getTripBounds(tripIndex, prefix = 'upcoming') {
 
 // Zoom to trip bounds
 function zoomToTripBounds(tripIndex, prefix = 'upcoming') {
-  if (!currentMap || !currentMap._container || !currentMap._container.parentNode) return;
+  if (!currentMap || !currentMap._loaded || !currentMap._container || !currentMap._container.parentNode) return;
 
   if (!originalMapBounds && !originalMapZoom) {
-    originalMapBounds = currentMap.getBounds();
-    originalMapZoom = currentMap.getZoom();
+    try {
+      originalMapBounds = currentMap.getBounds();
+      originalMapZoom = currentMap.getZoom();
+    } catch (e) {
+      console.warn('Failed to get map bounds/zoom:', e);
+      return;
+    }
   }
 
   const bounds = getTripBounds(tripIndex, prefix);
@@ -328,17 +338,25 @@ function zoomToTripBounds(tripIndex, prefix = 'upcoming') {
     duration: 0.5
   };
 
-  currentMap.fitBounds(bounds, paddingOptions);
+  try {
+    currentMap.fitBounds(bounds, paddingOptions);
+  } catch (e) {
+    console.warn('Failed to fit bounds:', e);
+  }
 }
 
 // Restore original map view
 function restoreOriginalZoom() {
-  if (!currentMap || !currentMap._container || !currentMap._container.parentNode || !originalMapBounds || originalMapZoom === null) return;
+  if (!currentMap || !currentMap._loaded || !currentMap._container || !currentMap._container.parentNode || !originalMapBounds || originalMapZoom === null) return;
 
-  currentMap.fitBounds(originalMapBounds, {
-    maxZoom: originalMapZoom,
-    duration: 0.5
-  });
+  try {
+    currentMap.fitBounds(originalMapBounds, {
+      maxZoom: originalMapZoom,
+      duration: 0.5
+    });
+  } catch (e) {
+    console.warn('Failed to restore original zoom:', e);
+  }
 
   originalMapBounds = null;
   originalMapZoom = null;
@@ -346,7 +364,7 @@ function restoreOriginalZoom() {
 
 // Animate trip segments sequentially
 function animateTripSegments(tripIndex, prefix = 'upcoming') {
-  if (!currentMap || !currentMap._container || !currentMap._container.parentNode) return;
+  if (!currentMap || !currentMap._loaded || !currentMap._container || !currentMap._container.parentNode) return;
 
   if (activeTripAnimation) {
     clearInterval(activeTripAnimation);
@@ -382,7 +400,12 @@ function animateTripSegments(tripIndex, prefix = 'upcoming') {
     totalDistance += distance;
   });
 
-  const currentZoom = currentMap.getZoom();
+  let currentZoom = 10; // default zoom
+  try {
+    currentZoom = currentMap.getZoom();
+  } catch (e) {
+    console.warn('Failed to get zoom level:', e);
+  }
   const zoomFactor = Math.max(0.75, Math.pow(2, 4 - currentZoom));
   const totalDurationMs = (totalDistance / 6000) * 5000 * zoomFactor;
   const frameTime = 50;
