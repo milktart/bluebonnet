@@ -46,14 +46,26 @@ const ASSET_VERSION = Date.now();
 let bundleManifest = {};
 try {
   const manifestPath = path.join(__dirname, 'public/dist/manifest.json');
+  console.log('📂 Looking for manifest at:', manifestPath);
+  console.log('📂 Current working directory:', process.cwd());
+  console.log('📂 __dirname:', __dirname);
+
   if (fs.existsSync(manifestPath)) {
     bundleManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     console.log('✅ Loaded bundle manifest:', Object.keys(bundleManifest).join(', '));
+    console.log('📦 Bundle paths:', JSON.stringify(bundleManifest, null, 2));
   } else {
-    console.warn('⚠️  Bundle manifest not found. Run "npm run build-js" to generate bundles.');
+    console.warn('⚠️  Bundle manifest not found at:', manifestPath);
+    console.warn('⚠️  Run "npm run build-js" to generate bundles.');
+    // List what's in public/ directory
+    const publicPath = path.join(__dirname, 'public');
+    if (fs.existsSync(publicPath)) {
+      console.log('📂 Contents of public/:', fs.readdirSync(publicPath));
+    }
   }
 } catch (error) {
   console.error('❌ Error loading bundle manifest:', error.message);
+  console.error('❌ Stack:', error.stack);
 }
 
 // Helper function to get bundle path
