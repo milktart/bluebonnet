@@ -386,3 +386,4 @@ window.openSecondarySidebar = openSecondarySidebar;
 window.showAddItemMenu = showAddItemMenu;
 window.showAddForm = showAddForm;
 window.showAddFormWithLayoverDates = showAddFormWithLayoverDates;
+window.editItem = editItem;
