@@ -19,9 +19,17 @@ const userSocketMap = new Map(); // userId -> socketId mapping
 function initialize(server, sessionMiddleware, passport) {
   io = new Server(server, {
     cors: {
-      origin: process.env.CORS_ORIGIN || true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE'],
+      origin(origin, callback) {
+        // Allow requests with no origin (mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+
+        // If CORS_ORIGIN is set, use it; otherwise allow the request origin
+        const allowedOrigin = process.env.CORS_ORIGIN || origin;
+        callback(null, allowedOrigin);
+      },
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       credentials: true,
+      allowedHeaders: ['Content-Type', 'Authorization'],
     },
     // Allow all transports
     transports: ['websocket', 'polling'],
