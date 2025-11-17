@@ -1,14 +1,31 @@
 const express = require('express');
+const logger = require('../utils/logger');
+
 const router = express.Router();
-const tripController = require('../controllers/tripController');
 const { ensureAuthenticated } = require('../middleware/auth');
 
+// Mount API v1 routes
+const v1Routes = require('./api/v1');
+
+router.use('/v1', v1Routes);
+
+// Legacy API endpoints (kept for backward compatibility)
+// TODO: Migrate these to v1 endpoints and deprecate
 router.use(ensureAuthenticated);
 
 // API endpoint to fetch trip data (for async form refresh)
 router.get('/trips/:id', async (req, res) => {
   try {
-    const { Trip, Flight, Hotel, Transportation, CarRental, Event, TripCompanion, TravelCompanion } = require('../models');
+    const {
+      Trip,
+      Flight,
+      Hotel,
+      Transportation,
+      CarRental,
+      Event,
+      TripCompanion,
+      TravelCompanion,
+    } = require('../models');
 
     // Fetch the trip with all related data
     const trip = await Trip.findOne({
@@ -26,11 +43,11 @@ router.get('/trips/:id', async (req, res) => {
             {
               model: TravelCompanion,
               as: 'companion',
-              attributes: ['id', 'name', 'email']
-            }
-          ]
-        }
-      ]
+              attributes: ['id', 'name', 'email'],
+            },
+          ],
+        },
+      ],
     });
 
     if (!trip) {
@@ -40,7 +57,7 @@ router.get('/trips/:id', async (req, res) => {
     // Return the trip data as JSON
     res.json(trip);
   } catch (error) {
-    console.error(error);
+    logger.error('Error fetching trip data:', error);
     res.status(500).json({ error: 'Error fetching trip data' });
   }
 });
@@ -52,13 +69,13 @@ router.get('/trips/:id/companions', async (req, res) => {
 
     // Verify user owns the trip
     const trip = await Trip.findOne({
-      where: { id: req.params.id, userId: req.user.id }
+      where: { id: req.params.id, userId: req.user.id },
     });
 
     if (!trip) {
       return res.status(404).json({
         success: false,
-        error: 'Trip not found'
+        error: 'Trip not found',
       });
     }
 
@@ -69,35 +86,41 @@ router.get('/trips/:id/companions', async (req, res) => {
         {
           model: TravelCompanion,
           as: 'companion',
-          attributes: ['id', 'name', 'email']
-        }
-      ]
+          attributes: ['id', 'name', 'email'],
+        },
+      ],
     });
 
-    console.log('API /trips/:id/companions - Raw TripCompanion records:', companions.map(tc => ({
-      id: tc.id,
-      companionId: tc.companionId,
-      companion: tc.companion ? { id: tc.companion.id, name: tc.companion.name, email: tc.companion.email } : 'NULL'
-    })));
+    logger.debug('API /trips/:id/companions - Raw TripCompanion records:', {
+      companions: companions.map((tc) => ({
+        id: tc.id,
+        companionId: tc.companionId,
+        companion: tc.companion
+          ? { id: tc.companion.id, name: tc.companion.name, email: tc.companion.email }
+          : 'NULL',
+      })),
+    });
 
     // Transform to simpler format and sort: self first, then alphabetically by first name
     const companionList = companions
-      .filter(tc => tc.companion !== null) // Filter out records with null companion
-      .map(tc => ({
+      .filter((tc) => tc.companion !== null) // Filter out records with null companion
+      .map((tc) => ({
         id: tc.companion.id,
         name: tc.companion.name,
-        email: tc.companion.email
+        email: tc.companion.email,
       }));
 
-    console.log('API /trips/:id/companions - Mapped companion list:', companionList);
-    console.log('API /trips/:id/companions - Looking for self with email:', req.user.email);
+    logger.debug('API /trips/:id/companions - Mapped companion list:', { companionList });
+    logger.debug('API /trips/:id/companions - Looking for self with email:', {
+      email: req.user.email,
+    });
 
     // Separate self and others, sort others by first name
-    const selfCompanion = companionList.find(c => c.email === req.user.email);
-    console.log('API /trips/:id/companions - Found self:', selfCompanion);
+    const selfCompanion = companionList.find((c) => c.email === req.user.email);
+    logger.debug('API /trips/:id/companions - Found self:', { selfCompanion });
 
     const others = companionList
-      .filter(c => c.email !== req.user.email)
+      .filter((c) => c.email !== req.user.email)
       .sort((a, b) => {
         const firstNameA = a.name.split(' ')[0];
         const firstNameB = b.name.split(' ')[0];
@@ -107,17 +130,17 @@ router.get('/trips/:id/companions', async (req, res) => {
     // Combine: self first, then others
     const sortedCompanionList = selfCompanion ? [selfCompanion, ...others] : others;
 
-    console.log('API /trips/:id/companions - Final sorted list:', sortedCompanionList);
+    logger.debug('API /trips/:id/companions - Final sorted list:', { sortedCompanionList });
 
     res.json({
       success: true,
-      data: sortedCompanionList
+      data: sortedCompanionList,
     });
   } catch (error) {
-    console.error(error);
+    logger.error('Error fetching trip companions:', error);
     res.status(500).json({
       success: false,
-      error: 'Error fetching trip companions'
+      error: 'Error fetching trip companions',
     });
   }
 });
@@ -126,33 +149,33 @@ router.get('/trips/:id/companions', async (req, res) => {
 router.get('/items/:itemType/:itemId/companions', async (req, res) => {
   try {
     const { itemType, itemId } = req.params;
-    const { ItemCompanion, TravelCompanion, Flight, Hotel, Transportation, CarRental, Event } = require('../models');
+    const { ItemCompanion, TravelCompanion } = require('../models');
 
     // Fetch companions for this item
     const itemCompanions = await ItemCompanion.findAll({
       where: {
-        itemType: itemType,
-        itemId: itemId
+        itemType,
+        itemId,
       },
       include: [
         {
           model: TravelCompanion,
           as: 'companion',
-          attributes: ['id', 'name', 'email']
-        }
-      ]
+          attributes: ['id', 'name', 'email'],
+        },
+      ],
     });
 
-    const companionList = itemCompanions.map(ic => ({
+    const companionList = itemCompanions.map((ic) => ({
       id: ic.companion.id,
       name: ic.companion.name,
-      email: ic.companion.email
+      email: ic.companion.email,
     }));
 
     // Sort: self (current user) first, then alphabetically by first name
-    const selfCompanion = companionList.find(c => c.email === req.user.email);
+    const selfCompanion = companionList.find((c) => c.email === req.user.email);
     const others = companionList
-      .filter(c => c.email !== req.user.email)
+      .filter((c) => c.email !== req.user.email)
       .sort((a, b) => {
         const firstNameA = a.name.split(' ')[0];
         const firstNameB = b.name.split(' ')[0];
@@ -164,13 +187,13 @@ router.get('/items/:itemType/:itemId/companions', async (req, res) => {
 
     res.json({
       success: true,
-      data: sortedCompanionList
+      data: sortedCompanionList,
     });
   } catch (error) {
-    console.error(error);
+    logger.error('Error fetching item companions:', error);
     res.status(500).json({
       success: false,
-      error: 'Error fetching item companions'
+      error: 'Error fetching item companions',
     });
   }
 });
@@ -186,16 +209,22 @@ router.put('/items/:itemType/:itemId/companions', async (req, res) => {
     if (!Array.isArray(companionIds)) {
       return res.status(400).json({
         success: false,
-        error: 'companionIds must be an array'
+        error: 'companionIds must be an array',
       });
     }
 
     // Get the item to verify it belongs to the user
-    const itemModel = { flight: Flight, hotel: Hotel, transportation: Transportation, car_rental: CarRental, event: Event }[itemType];
+    const itemModel = {
+      flight: Flight,
+      hotel: Hotel,
+      transportation: Transportation,
+      car_rental: CarRental,
+      event: Event,
+    }[itemType];
     if (!itemModel) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid itemType'
+        error: 'Invalid itemType',
       });
     }
 
@@ -203,35 +232,35 @@ router.put('/items/:itemType/:itemId/companions', async (req, res) => {
     if (!item) {
       return res.status(404).json({
         success: false,
-        error: 'Item not found'
+        error: 'Item not found',
       });
     }
 
     // Get the item's trip and verify user owns it
     const { Trip } = require('../models');
     const trip = await Trip.findOne({
-      where: { id: item.tripId, userId: req.user.id }
+      where: { id: item.tripId, userId: req.user.id },
     });
 
     if (!trip) {
       return res.status(403).json({
         success: false,
-        error: 'Not authorized to modify this item'
+        error: 'Not authorized to modify this item',
       });
     }
 
     // Get existing companions
     const existingCompanions = await ItemCompanion.findAll({
-      where: { itemType, itemId }
+      where: { itemType, itemId },
     });
 
-    const existingIds = existingCompanions.map(ic => ic.companionId);
+    const existingIds = existingCompanions.map((ic) => ic.companionId);
 
     // Remove companions that are no longer in the list
     for (const existingId of existingIds) {
       if (!companionIds.includes(existingId)) {
         await ItemCompanion.destroy({
-          where: { itemType, itemId, companionId: existingId }
+          where: { itemType, itemId, companionId: existingId },
         });
       }
     }
@@ -245,20 +274,20 @@ router.put('/items/:itemType/:itemId/companions', async (req, res) => {
           companionId,
           status: 'attending',
           addedBy: req.user.id,
-          inheritedFromTrip: false
+          inheritedFromTrip: false,
         });
       }
     }
 
     res.json({
       success: true,
-      message: 'Item companions updated successfully'
+      message: 'Item companions updated successfully',
     });
   } catch (error) {
-    console.error(error);
+    logger.error('Error updating item companions:', error);
     res.status(500).json({
       success: false,
-      error: 'Error updating item companions'
+      error: 'Error updating item companions',
     });
   }
 });
