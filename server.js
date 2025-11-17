@@ -5,6 +5,7 @@ const passport = require('passport');
 const flash = require('connect-flash');
 const methodOverride = require('method-override');
 const compression = require('compression');
+const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const db = require('./models');
@@ -30,6 +31,23 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Middleware
 app.use(compression()); // Compress all responses
+
+// CORS configuration for Socket.IO and API requests
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true);
+
+      // Allow the request origin (works for same-origin and configured origins)
+      callback(null, origin);
+    },
+    credentials: true, // Allow cookies and authentication headers
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  })
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
