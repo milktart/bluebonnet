@@ -77,11 +77,6 @@ module.exports = {
       concurrently: true,
     });
 
-    await createIndexIfNotExists('car_rentals', ['userId'], {
-      name: 'idx_car_rentals_user',
-      concurrently: true,
-    });
-
     // Travel companions indexes
     await createIndexIfNotExists('travel_companions', ['userId'], {
       name: 'idx_travel_companions_user',
@@ -139,7 +134,6 @@ module.exports = {
 
     // Remove car rentals indexes
     await queryInterface.removeIndex('car_rentals', 'idx_car_rentals_trip');
-    await queryInterface.removeIndex('car_rentals', 'idx_car_rentals_user');
 
     // Remove travel companions indexes
     await queryInterface.removeIndex('travel_companions', 'idx_travel_companions_user');
