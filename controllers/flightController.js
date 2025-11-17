@@ -496,7 +496,7 @@ exports.getAddForm = async (req, res) => {
 
     // Get all airlines and airports for autocomplete
     const airlines = airportService.getAllAirlines();
-    const airports = require('../data/airports.json');
+    const airports = await airportService.getAllAirports();
 
     // Render form partial for sidebar (not modal)
     res.render('partials/flight-form', {
@@ -592,7 +592,7 @@ exports.getEditForm = async (req, res) => {
 
     // Get all airlines and airports for autocomplete
     const airlines = airportService.getAllAirlines();
-    const airports = require('../data/airports.json');
+    const airports = await airportService.getAllAirports();
 
     // Render form partial for sidebar (not modal)
     res.render('partials/flight-form', {
