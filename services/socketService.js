@@ -19,12 +19,17 @@ const userSocketMap = new Map(); // userId -> socketId mapping
 function initialize(server, sessionMiddleware, passport) {
   io = new Server(server, {
     cors: {
-      origin: process.env.CORS_ORIGIN || '*',
-      methods: ['GET', 'POST'],
+      origin: process.env.CORS_ORIGIN || true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE'],
+      credentials: true,
     },
+    // Allow all transports
+    transports: ['websocket', 'polling'],
     // Connection settings
     pingTimeout: 60000,
     pingInterval: 25000,
+    // Allow upgrades from polling to websocket
+    allowUpgrades: true,
   });
 
   // Wrap session middleware for Socket.IO
