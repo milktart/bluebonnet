@@ -32,6 +32,7 @@ db.ItemCompanion = require('./ItemCompanion')(sequelize);
 db.Notification = require('./Notification')(sequelize);
 db.Voucher = require('./Voucher')(sequelize, Sequelize);
 db.VoucherAttachment = require('./VoucherAttachment')(sequelize, Sequelize);
+db.Airport = require('./Airport')(sequelize, Sequelize);
 
 // Define associations
 Object.keys(db).forEach(modelName => {
