@@ -4,7 +4,6 @@
  * Reduces code duplication in flightController, hotelController, etc.
  */
 
-const logger = require('../../utils/logger');
 const geocodingService = require('../../services/geocodingService');
 const { localToUTC } = require('../../utils/timezoneHelper');
 /**
@@ -18,7 +17,7 @@ async function verifyTripOwnership(tripId, userId, Trip) {
   if (!tripId) return null;
 
   const trip = await Trip.findOne({
-    where: { id: tripId, userId: userId }
+    where: { id: tripId, userId },
   });
 
   return trip;
@@ -40,7 +39,7 @@ async function geocodeIfChanged(newLocation, oldLocation = null, oldCoords = nul
   }
 
   // Geocode the new location
-  return await geocodingService.geocodeLocation(newLocation);
+  return geocodingService.geocodeLocation(newLocation);
 }
 
 /**
@@ -61,7 +60,7 @@ async function geocodeOriginDestination({
   originCoordsOld = null,
   destNew,
   destOld = null,
-  destCoordsOld = null
+  destCoordsOld = null,
 }) {
   const originCoords = await geocodeIfChanged(originNew, originOld, originCoordsOld);
   const destCoords = await geocodeIfChanged(destNew, destOld, destCoordsOld);
@@ -164,18 +163,23 @@ async function geocodeWithAirportFallback(location, airportService, currentTimez
   // Check if location is or starts with a 3-letter airport code
   // Handles both "AUS" and "AUS - Austin, United States"
   const airportCodeMatch = location.trim().match(/^([A-Z]{3})(\s|$|-)/i);
-  const airportCode = airportCodeMatch ? airportCodeMatch[1].toUpperCase() :
-                      (location.length === 3 && /^[A-Z]{3}$/i.test(location.trim()) ? location.trim().toUpperCase() : null);
+  let airportCode = null;
+
+  if (airportCodeMatch) {
+    airportCode = airportCodeMatch[1].toUpperCase();
+  } else if (location.length === 3 && /^[A-Z]{3}$/i.test(location.trim())) {
+    airportCode = location.trim().toUpperCase();
+  }
 
   if (airportCode) {
-    const airportData = airportService.getAirportByCode(airportCode);
+    const airportData = await airportService.getAirportByCode(airportCode);
     if (airportData) {
-      // Use timezone from data/airports.json as source of truth
+      // Use timezone from database as source of truth
       const timezone = airportData.timezone || currentTimezone;
       return {
         coords: { lat: airportData.lat, lng: airportData.lng },
-        timezone: timezone,
-        formattedLocation: `${airportData.iata} - ${airportData.city}, ${airportData.country}`
+        timezone,
+        formattedLocation: `${airportData.iata} - ${airportData.city}, ${airportData.country}`,
       };
     }
   }
@@ -183,9 +187,9 @@ async function geocodeWithAirportFallback(location, airportService, currentTimez
   // Fallback to regular geocoding
   const coords = await geocodingService.geocodeLocation(location);
   return {
-    coords: coords,
+    coords,
     timezone: currentTimezone,
-    formattedLocation: location
+    formattedLocation: location,
   };
 }
 
@@ -198,5 +202,5 @@ module.exports = {
   verifyResourceOwnership,
   verifyResourceOwnershipViaTrip,
   convertToUTC,
-  geocodeWithAirportFallback
+  geocodeWithAirportFallback,
 };
