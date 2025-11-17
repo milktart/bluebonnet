@@ -327,9 +327,9 @@ function initializeNotifications(panelId = 'notification-panel', bellId = 'notif
 /**
  * Initialize WebSocket connection and event listeners
  */
-function initializeWebSocket() {
+async function initializeWebSocket() {
   try {
-    const socket = initializeSocket();
+    await initializeSocket();
 
     // Listen for new notifications
     onEvent('notification:new', (notification) => {

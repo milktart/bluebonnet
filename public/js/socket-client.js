@@ -12,12 +12,46 @@ let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 5;
 
 /**
- * Initialize WebSocket connection
- * @returns {object} Socket.IO client instance
+ * Wait for Socket.IO library to load
+ * @returns {Promise} Resolves when io is available
  */
-export function initializeSocket() {
+function waitForSocketIO() {
+  return new Promise((resolve, reject) => {
+    if (typeof io !== 'undefined') {
+      resolve();
+      return;
+    }
+
+    let attempts = 0;
+    const maxAttempts = 50; // 5 seconds max wait
+    const checkInterval = setInterval(() => {
+      attempts += 1;
+      if (typeof io !== 'undefined') {
+        clearInterval(checkInterval);
+        resolve();
+      } else if (attempts >= maxAttempts) {
+        clearInterval(checkInterval);
+        reject(new Error('Socket.IO library failed to load'));
+      }
+    }, 100);
+  });
+}
+
+/**
+ * Initialize WebSocket connection
+ * @returns {Promise<object>} Socket.IO client instance
+ */
+export async function initializeSocket() {
   if (socket && socket.connected) {
     return socket;
+  }
+
+  // Wait for Socket.IO library to load
+  try {
+    await waitForSocketIO();
+  } catch (error) {
+    console.error('Socket.IO library not loaded:', error);
+    throw error;
   }
 
   // Connect to Socket.IO server (same origin)
