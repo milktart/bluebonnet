@@ -44,13 +44,8 @@ module.exports = {
     });
 
     // Hotels indexes
-    await createIndexIfNotExists('hotels', ['tripId', 'checkIn'], {
+    await createIndexIfNotExists('hotels', ['tripId', 'checkInDateTime'], {
       name: 'idx_hotels_trip_checkin',
-      concurrently: true,
-    });
-
-    await createIndexIfNotExists('hotels', ['userId'], {
-      name: 'idx_hotels_user',
       concurrently: true,
     });
 
@@ -133,7 +128,6 @@ module.exports = {
 
     // Remove hotels indexes
     await queryInterface.removeIndex('hotels', 'idx_hotels_trip_checkin');
-    await queryInterface.removeIndex('hotels', 'idx_hotels_user');
 
     // Remove events indexes
     await queryInterface.removeIndex('events', 'idx_events_trip_start');
