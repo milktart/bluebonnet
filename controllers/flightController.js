@@ -530,7 +530,13 @@ exports.getAddForm = async (req, res) => {
 
     // Get all airlines and airports for autocomplete
     const airlines = airportService.getAllAirlines();
-    const airports = await airportService.getAllAirports();
+    const airportsArray = await airportService.getAllAirports();
+
+    // Convert airports array to object keyed by IATA code for frontend compatibility
+    const airports = {};
+    airportsArray.forEach((airport) => {
+      airports[airport.iata] = airport;
+    });
 
     // Render form partial for sidebar (not modal)
     res.render('partials/flight-form', {
@@ -639,7 +645,13 @@ exports.getEditForm = async (req, res) => {
 
     // Get all airlines and airports for autocomplete
     const airlines = airportService.getAllAirlines();
-    const airports = await airportService.getAllAirports();
+    const airportsArray = await airportService.getAllAirports();
+
+    // Convert airports array to object keyed by IATA code for frontend compatibility
+    const airports = {};
+    airportsArray.forEach((airport) => {
+      airports[airport.iata] = airport;
+    });
 
     // Render form partial for sidebar (not modal)
     res.render('partials/flight-form', {
