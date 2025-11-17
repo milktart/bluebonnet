@@ -1,3 +1,7 @@
+/* eslint-env browser */
+/* global L, formatDateTime */
+/* eslint-disable no-console, no-undef, no-continue, max-len */
+
 /**
  * Maps Module - Consolidated map functionality
  * Combines map.js, trip-map.js, and trip-view-map.js
@@ -112,99 +116,8 @@ async function initializeMap(tripData, isPast = false) {
       }
     }
 
-    // Process TRANSPORTATION - these create travel segments
-    if (tripData.transportation && Array.isArray(tripData.transportation)) {
-      for (const transport of tripData.transportation) {
-        if (!transport.origin || !transport.destination) continue;
-
-        // Use stored coordinates from database
-        const originLat = parseFloat(transport.originLat);
-        const originLng = parseFloat(transport.originLng);
-        const destLat = parseFloat(transport.destinationLat);
-        const destLng = parseFloat(transport.destinationLng);
-
-        if (!isNaN(originLat) && !isNaN(originLng)) {
-          allLocations.push({
-            name: transport.origin,
-            type: 'transportation',
-            details: `${transport.method} ${transport.journeyNumber || ''}`,
-            time: new Date(transport.departureDateTime),
-            lat: originLat,
-            lng: originLng
-          });
-          allCoords.push([originLat, originLng]);
-        }
-
-        if (!isNaN(destLat) && !isNaN(destLng)) {
-          allLocations.push({
-            name: transport.destination,
-            type: 'transportation',
-            details: `${transport.method} ${transport.journeyNumber || ''}`,
-            time: new Date(transport.arrivalDateTime),
-            lat: destLat,
-            lng: destLng
-          });
-          allCoords.push([destLat, destLng]);
-        }
-
-        // Add travel segment if both coords are valid
-        if (!isNaN(originLat) && !isNaN(originLng) && !isNaN(destLat) && !isNaN(destLng)) {
-          travelSegments.push({
-            type: 'transportation',
-            from: [originLat, originLng],
-            to: [destLat, destLng],
-            time: new Date(transport.departureDateTime),
-            color: '#fd7e14'
-          });
-        }
-      }
-    }
-
-    // Process HOTELS (points only)
-    if (tripData.hotels && Array.isArray(tripData.hotels)) {
-      for (const hotel of tripData.hotels) {
-        if (!hotel.address) continue;
-
-        // Use stored coordinates from database
-        const lat = parseFloat(hotel.lat);
-        const lng = parseFloat(hotel.lng);
-
-        if (!isNaN(lat) && !isNaN(lng)) {
-          allLocations.push({
-            name: hotel.hotelName,
-            type: 'hotel',
-            details: hotel.address,
-            time: new Date(hotel.checkInDateTime),
-            lat: lat,
-            lng: lng
-          });
-          allCoords.push([lat, lng]);
-        }
-      }
-    }
-
-    // Process CAR RENTALS (points only)
-    if (tripData.carRentals && Array.isArray(tripData.carRentals)) {
-      for (const rental of tripData.carRentals) {
-        if (!rental.pickupLocation) continue;
-
-        // Use stored coordinates from database
-        const pickupLat = parseFloat(rental.pickupLat);
-        const pickupLng = parseFloat(rental.pickupLng);
-
-        if (!isNaN(pickupLat) && !isNaN(pickupLng)) {
-          allLocations.push({
-            name: 'Car Pick-up',
-            type: 'carRental',
-            details: `${rental.company}`,
-            time: new Date(rental.pickupDateTime),
-            lat: pickupLat,
-            lng: pickupLng
-          });
-          allCoords.push([pickupLat, pickupLng]);
-        }
-      }
-    }
+    // NOTE: Transportation, hotels, and car rentals are intentionally excluded from the map
+    // Only flights (travel segments) and events (location markers) are displayed
 
     // Process EVENTS (points only)
     if (tripData.events && Array.isArray(tripData.events)) {
@@ -237,29 +150,21 @@ async function initializeMap(tripData, isPast = false) {
       travelSegments.forEach(segment => {
         if (segment.type === 'flight') {
           segment.color = '#084298';
-        } else if (segment.type === 'transportation') {
-          segment.color = '#e86c00';
         }
       });
     }
 
     // Define marker colors (darker for past trips)
+    // Only flights and events are displayed on the map
     const colorMap = isPast ? {
       flight: '#084298',
-      hotel: '#198754',
-      transportation: '#e86c00',
-      carRental: '#6c757d',
       event: '#dc3545'
     } : {
       flight: '#0d6efd',
-      hotel: '#198754',
-      transportation: '#fd7e14',
-      carRental: '#6c757d',
       event: '#dc3545'
     };
 
     // Store markers to add after polylines for proper z-ordering
-    const markersToAdd = [];
 
     // Draw individual travel segment lines and store references
     const segmentLayers = [];
@@ -528,7 +433,7 @@ function setupTimelineHoverEffects(map) {
     const marker = item.getAttribute('data-marker');
 
     item.addEventListener('mouseenter', function() {
-      const segment = map.segmentLayers.find(s => s.index === parseInt(marker));
+      const segment = map.segmentLayers.find(s => s.index === parseInt(marker, 10));
       if (segment && segment.polyline) {
         const coords = segment.polyline.getLatLngs();
 
@@ -565,7 +470,7 @@ function setupTimelineHoverEffects(map) {
     });
 
     item.addEventListener('mouseleave', function() {
-      const segment = map.segmentLayers.find(s => s.index === parseInt(marker));
+      const segment = map.segmentLayers.find(s => s.index === parseInt(marker, 10));
       if (segment && segment.polyline) {
         // Remove glow layers
         if (segment.glowLayer1) {
@@ -603,7 +508,7 @@ function setupTimelineHoverEffects(map) {
       tripItems.forEach(item => {
         const marker = item.getAttribute('data-marker');
         if (marker) {
-          const segment = map.segmentLayers.find(s => s.index === parseInt(marker));
+          const segment = map.segmentLayers.find(s => s.index === parseInt(marker, 10));
           if (segment && segment.polyline) {
             const coords = segment.polyline.getLatLngs();
 
@@ -649,7 +554,7 @@ function setupTimelineHoverEffects(map) {
       tripItems.forEach(item => {
         const marker = item.getAttribute('data-marker');
         if (marker) {
-          const segment = map.segmentLayers.find(s => s.index === parseInt(marker));
+          const segment = map.segmentLayers.find(s => s.index === parseInt(marker, 10));
           if (segment && segment.polyline) {
             if (segment.glowLayer1) {
               map.removeLayer(segment.glowLayer1);
@@ -712,7 +617,7 @@ function getPointAtDistance(from, to, percent) {
  * @param {number} markerId - ID of the marker to highlight
  * @param {string} type - Type of marker (flight, hotel, etc.)
  */
-function highlightMapMarker(markerId, type) {
+function highlightMapMarker(markerId, _type) {
   if (!window.currentMap) return;
 
   // Verify the map is still valid and in the DOM
@@ -845,14 +750,26 @@ if (typeof window !== 'undefined') {
 }
 
 // Export for modules
+/* eslint-disable no-undef */
 if (typeof module !== 'undefined' && module.exports) {
+/* eslint-enable no-undef */
   module.exports = {
+/* eslint-enable no-undef */
     initializeMap,
+/* eslint-enable no-undef */
     initOverviewMap,
+/* eslint-enable no-undef */
     setupTimelineHoverEffects,
+/* eslint-enable no-undef */
     highlightMapMarker,
+/* eslint-enable no-undef */
     unhighlightMapMarker,
+/* eslint-enable no-undef */
     calculateDistance,
+/* eslint-enable no-undef */
     getPointAtDistance
+/* eslint-enable no-undef */
   };
+/* eslint-enable no-undef */
 }
+/* eslint-enable no-undef */

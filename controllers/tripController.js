@@ -6,44 +6,85 @@ const { Op } = require('sequelize');
 
 exports.listTrips = async (req, res, options = {}) => {
   try {
-    // Get trips the user owns
-    const ownedTrips = await Trip.findAll({
-      where: { userId: req.user.id },
-      order: [['departureDate', 'ASC']],
-      include: [
-        { model: Flight, as: 'flights' },
-        { model: Hotel, as: 'hotels' },
-        { model: Transportation, as: 'transportation' },
-        { model: CarRental, as: 'carRentals' },
-        { model: Event, as: 'events' },
-        {
-          model: TripCompanion,
-          as: 'tripCompanions',
-          include: [
-            {
-              model: TravelCompanion,
-              as: 'companion',
-              include: [
-                {
-                  model: User,
-                  as: 'linkedAccount',
-                  attributes: ['id', 'firstName', 'lastName']
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    });
+    // Determine active tab from query parameter or options
+    const activeTab = req.query.tab || options.activeTab || 'upcoming';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of today
+
+    // Pagination parameters (only for past trips)
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = 20; // 20 trips per page for past trips
+    const offset = (page - 1) * limit;
+
+    // Build date filter based on active tab
+    let dateFilter = {};
+    let orderDirection = 'ASC';
+
+    if (activeTab === 'upcoming') {
+      // Upcoming: departureDate >= today
+      dateFilter = { departureDate: { [Op.gte]: today } };
+      orderDirection = 'ASC'; // Soonest first
+    } else if (activeTab === 'past') {
+      // Past: returnDate < today
+      dateFilter = { returnDate: { [Op.lt]: today } };
+      orderDirection = 'DESC'; // Most recent first
+    }
+    // 'all' tab has no date filter
+
+    // Common include structure for trips
+    const tripIncludes = [
+      { model: Flight, as: 'flights' },
+      { model: Hotel, as: 'hotels' },
+      { model: Transportation, as: 'transportation' },
+      { model: CarRental, as: 'carRentals' },
+      { model: Event, as: 'events' },
+      {
+        model: TripCompanion,
+        as: 'tripCompanions',
+        include: [
+          {
+            model: TravelCompanion,
+            as: 'companion',
+            include: [
+              {
+                model: User,
+                as: 'linkedAccount',
+                attributes: ['id', 'firstName', 'lastName']
+              }
+            ]
+          }
+        ]
+      }
+    ];
+
+    // Get trips the user owns (with pagination for past trips)
+    const ownedTripsQuery = {
+      where: { userId: req.user.id, ...dateFilter },
+      order: [['departureDate', orderDirection]],
+      include: tripIncludes
+    };
+
+    // Add pagination only for past trips tab
+    if (activeTab === 'past') {
+      ownedTripsQuery.limit = limit;
+      ownedTripsQuery.offset = offset;
+    }
+
+    const ownedTrips = await Trip.findAll(ownedTripsQuery);
+
+    // Get count for pagination (past trips only)
+    let totalPastTrips = 0;
+    if (activeTab === 'past') {
+      totalPastTrips = await Trip.count({
+        where: { userId: req.user.id, ...dateFilter }
+      });
+    }
 
     // Get trips where the user is a companion
-    const companionTrips = await Trip.findAll({
+    const companionTripsQuery = {
+      where: dateFilter,
       include: [
-        { model: Flight, as: 'flights' },
-        { model: Hotel, as: 'hotels' },
-        { model: Transportation, as: 'transportation' },
-        { model: CarRental, as: 'carRentals' },
-        { model: Event, as: 'events' },
+        ...tripIncludes,
         {
           model: TripCompanion,
           as: 'tripCompanions',
@@ -64,8 +105,16 @@ exports.listTrips = async (req, res, options = {}) => {
           ]
         }
       ],
-      order: [['departureDate', 'ASC']]
-    });
+      order: [['departureDate', orderDirection]]
+    };
+
+    // Add pagination for past companion trips
+    if (activeTab === 'past') {
+      companionTripsQuery.limit = limit;
+      companionTripsQuery.offset = offset;
+    }
+
+    const companionTrips = await Trip.findAll(companionTripsQuery);
 
     // Combine and deduplicate trips
     const allTrips = [...ownedTrips, ...companionTrips];
@@ -73,60 +122,57 @@ exports.listTrips = async (req, res, options = {}) => {
       index === self.findIndex(t => t.id === trip.id)
     );
 
-    // Get standalone items (not attached to any trip)
-    const standaloneFlights = await Flight.findAll({
-      where: { userId: req.user.id, tripId: null },
-      order: [['departureDateTime', 'ASC']]
-    });
+    // Get standalone items (not attached to any trip) - only for upcoming tab
+    let standaloneFlights = [];
+    let standaloneTransportation = [];
+    let standaloneEvents = [];
 
-    const standaloneTransportation = await Transportation.findAll({
-      where: { userId: req.user.id, tripId: null },
-      order: [['departureDateTime', 'ASC']]
-    });
+    if (activeTab === 'upcoming' || activeTab === 'all') {
+      standaloneFlights = await Flight.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['departureDateTime', 'ASC']]
+      });
 
-    const standaloneEvents = await Event.findAll({
-      where: { userId: req.user.id, tripId: null },
-      order: [['startDateTime', 'ASC']]
-    });
+      standaloneTransportation = await Transportation.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['departureDateTime', 'ASC']]
+      });
 
-    // Get pending trip invitations for the current user
-    const pendingInvitations = await TripInvitation.findAll({
-      where: {
-        invitedUserId: req.user.id,
-        status: 'pending'
-      },
-      include: [
-        {
-          model: Trip,
-          as: 'trip',
-          include: [
-            { model: Flight, as: 'flights' },
-            { model: Hotel, as: 'hotels' },
-            { model: Transportation, as: 'transportation' },
-            { model: CarRental, as: 'carRentals' },
-            { model: Event, as: 'events' },
-            {
-              model: TripCompanion,
-              as: 'tripCompanions',
-              include: [
-                {
-                  model: TravelCompanion,
-                  as: 'companion',
-                  include: [
-                    {
-                      model: User,
-                      as: 'linkedAccount',
-                      attributes: ['id', 'firstName', 'lastName']
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ],
-      order: [['createdAt', 'DESC']]
-    });
+      standaloneEvents = await Event.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['startDateTime', 'ASC']]
+      });
+    }
+
+    // Get pending trip invitations (only for upcoming tab)
+    let pendingInvitations = [];
+    if (activeTab === 'upcoming' || activeTab === 'all') {
+      pendingInvitations = await TripInvitation.findAll({
+        where: {
+          invitedUserId: req.user.id,
+          status: 'pending'
+        },
+        include: [
+          {
+            model: Trip,
+            as: 'trip',
+            include: tripIncludes
+          }
+        ],
+        order: [['createdAt', 'DESC']]
+      });
+    }
+
+    // Calculate pagination metadata for past trips
+    const totalPages = activeTab === 'past' ? Math.ceil(totalPastTrips / limit) : 1;
+    const pagination = {
+      currentPage: page,
+      totalPages,
+      totalTrips: totalPastTrips,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+      limit
+    };
 
     const renderData = {
       title: 'My Trips',
@@ -141,7 +187,8 @@ exports.listTrips = async (req, res, options = {}) => {
       openCertificateDetails: options.openCertificateDetails || null,
       openCompanionsSidebar: options.openCompanionsSidebar || false,
       showSettingsTab: options.showSettingsTab || false,
-      activeTab: options.activeTab || 'upcoming'
+      activeTab,
+      pagination
     };
 
     res.render('trips/dashboard', renderData);
@@ -940,7 +987,7 @@ exports.getTripSidebarHtml = async (req, res) => {
       markerParams.forEach(markerStr => {
         const [key, value] = markerStr.split('=');
         if (key && value) {
-          globalMarkerAssignments[decodeURIComponent(key)] = parseInt(decodeURIComponent(value));
+          globalMarkerAssignments[decodeURIComponent(key)] = parseInt(decodeURIComponent(value), 10);
         }
       });
     }
