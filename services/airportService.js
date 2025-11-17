@@ -1,67 +1,102 @@
-const airports = require('../data/airports.json');
+const { Airport } = require('../models');
+const { Op } = require('sequelize');
 const airlines = require('../data/airlines.json');
+const logger = require('../utils/logger');
 
 class AirportService {
   /**
    * Find airport by IATA code
    * @param {string} iataCode - 3-letter IATA airport code (e.g., "JFK")
-   * @returns {object|null} Airport object or null if not found
+   * @returns {Promise<object|null>} Airport object or null if not found
    */
-  getAirportByCode(iataCode) {
-    if (!iataCode || typeof iataCode !== 'string') return null;
+  async getAirportByCode(iataCode) {
+    try {
+      if (!iataCode || typeof iataCode !== 'string') return null;
 
-    const code = iataCode.toUpperCase().trim();
-    const airport = airports[code];
+      const code = iataCode.toUpperCase().trim();
+      const airport = await Airport.findByPk(code);
 
-    if (!airport) return null;
+      if (!airport) return null;
 
-    // Return normalized format for backward compatibility
-    return {
-      iata: code,
-      name: airport.airport_name,
-      city: airport.city_name,
-      country: airport.country_name,
-      lat: airport.latitude,
-      lng: airport.longitude,
-      ...airport // Include all additional properties
-    };
+      // Return normalized format for backward compatibility
+      return {
+        iata: airport.iata,
+        name: airport.name,
+        city: airport.city,
+        country: airport.country,
+        lat: airport.latitude,
+        lng: airport.longitude,
+        latitude: airport.latitude, // Legacy compatibility
+        longitude: airport.longitude, // Legacy compatibility
+        airport_name: airport.name, // Legacy compatibility
+        city_name: airport.city, // Legacy compatibility
+        country_name: airport.country, // Legacy compatibility
+        timezone: airport.timezone,
+      };
+    } catch (error) {
+      logger.error('Error fetching airport by code:', error);
+      return null;
+    }
   }
 
   /**
    * Search airports by name or city
    * @param {string} query - Search query
    * @param {number} limit - Maximum number of results
-   * @returns {array} Array of matching airports
+   * @returns {Promise<array>} Array of matching airports
    */
-  searchAirports(query, limit = 10) {
-    if (!query || typeof query !== 'string') return [];
+  async searchAirports(query, limit = 10) {
+    try {
+      if (!query || typeof query !== 'string') return [];
 
-    const searchTerm = query.toLowerCase().trim();
+      const searchTerm = query.toLowerCase().trim();
 
-    const results = [];
+      // Use database LIKE queries with indexes
+      const airports = await Airport.findAll({
+        where: {
+          [Op.or]: [
+            { name: { [Op.iLike]: `%${searchTerm}%` } },
+            { city: { [Op.iLike]: `%${searchTerm}%` } },
+            { iata: { [Op.iLike]: `%${searchTerm}%` } },
+          ],
+        },
+        limit,
+        order: [
+          // Prioritize exact IATA matches
+          [
+            Airport.sequelize.literal(
+              `CASE WHEN LOWER(iata) = '${searchTerm}' THEN 0 ELSE 1 END`
+            ),
+          ],
+          // Then exact city matches
+          [
+            Airport.sequelize.literal(
+              `CASE WHEN LOWER(city) = '${searchTerm}' THEN 0 ELSE 1 END`
+            ),
+          ],
+          ['name', 'ASC'],
+        ],
+      });
 
-    for (const [iataCode, airport] of Object.entries(airports)) {
-      if (
-        airport.airport_name.toLowerCase().includes(searchTerm) ||
-        airport.city_name.toLowerCase().includes(searchTerm) ||
-        iataCode.toLowerCase().includes(searchTerm)
-      ) {
-        // Return normalized format for backward compatibility
-        results.push({
-          iata: iataCode,
-          name: airport.airport_name,
-          city: airport.city_name,
-          country: airport.country_name,
-          lat: airport.latitude,
-          lng: airport.longitude,
-          ...airport // Include all additional properties
-        });
-
-        if (results.length >= limit) break;
-      }
+      // Return normalized format for backward compatibility
+      return airports.map((airport) => ({
+        iata: airport.iata,
+        name: airport.name,
+        city: airport.city,
+        country: airport.country,
+        lat: airport.latitude,
+        lng: airport.longitude,
+        latitude: airport.latitude,
+        longitude: airport.longitude,
+        airport_name: airport.name,
+        city_name: airport.city,
+        country_name: airport.country,
+        timezone: airport.timezone,
+      }));
+    } catch (error) {
+      logger.error('Error searching airports:', error);
+      return [];
     }
-
-    return results;
   }
 
   /**
@@ -73,7 +108,7 @@ class AirportService {
     if (!iataCode || typeof iataCode !== 'string') return null;
 
     const code = iataCode.toUpperCase().trim();
-    return airlines.find(airline => airline.iata === code) || null;
+    return airlines.find((airline) => airline.iata === code) || null;
   }
 
   /**
@@ -162,18 +197,42 @@ class AirportService {
 
   /**
    * Get all airports (for autocomplete, etc.)
-   * @returns {array} All airports
+   * WARNING: This method loads all airports and should be used sparingly
+   * Consider using searchAirports() with pagination instead
+   * @param {number} limit - Optional limit (default: no limit)
+   * @returns {Promise<array>} All airports
    */
-  getAllAirports() {
-    return Object.entries(airports).map(([iataCode, airport]) => ({
-      iata: iataCode,
-      name: airport.airport_name,
-      city: airport.city_name,
-      country: airport.country_name,
-      lat: airport.latitude,
-      lng: airport.longitude,
-      ...airport // Include all additional properties
-    }));
+  async getAllAirports(limit = null) {
+    try {
+      const query = {
+        order: [['name', 'ASC']],
+      };
+
+      if (limit) {
+        query.limit = limit;
+      }
+
+      const airports = await Airport.findAll(query);
+
+      // Return normalized format for backward compatibility
+      return airports.map((airport) => ({
+        iata: airport.iata,
+        name: airport.name,
+        city: airport.city,
+        country: airport.country,
+        lat: airport.latitude,
+        lng: airport.longitude,
+        latitude: airport.latitude,
+        longitude: airport.longitude,
+        airport_name: airport.name,
+        city_name: airport.city,
+        country_name: airport.country,
+        timezone: airport.timezone,
+      }));
+    } catch (error) {
+      logger.error('Error fetching all airports:', error);
+      return [];
+    }
   }
 
   /**
