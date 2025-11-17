@@ -1,10 +1,17 @@
 /**
+const logger = require('../utils/logger');
  * Base Controller Helpers
+const logger = require('../utils/logger');
  * Common CRUD patterns shared across all resource controllers
+const logger = require('../utils/logger');
  * Reduces code duplication in flightController, hotelController, etc.
+const logger = require('../utils/logger');
  */
+const logger = require('../utils/logger');
 
+const logger = require('../utils/logger');
 const geocodingService = require('../../services/geocodingService');
+const logger = require('../utils/logger');
 const { localToUTC } = require('../../utils/timezoneHelper');
 
 /**

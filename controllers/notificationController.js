@@ -1,7 +1,6 @@
 const db = require('../models');
 const logger = require('../utils/logger');
 const { Op } = require('sequelize');
-const logger = require('../utils/logger');
 
 exports.getNotifications = async (req, res) => {
   try {

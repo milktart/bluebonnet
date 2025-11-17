@@ -1,9 +1,7 @@
 const { Transportation, Trip } = require('../models');
 const logger = require('../utils/logger');
 const { utcToLocal } = require('../utils/timezoneHelper');
-const logger = require('../utils/logger');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
-const logger = require('../utils/logger');
 const {
   verifyTripOwnership,
   geocodeOriginDestination,
@@ -13,7 +11,6 @@ const {
   convertToUTC
 } = require('./helpers/resourceController');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
-const logger = require('../utils/logger');
 
 exports.createTransportation = async (req, res) => {
   try {

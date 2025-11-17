@@ -1,9 +1,7 @@
 const { Hotel, Trip } = require('../models');
 const logger = require('../utils/logger');
 const { utcToLocal } = require('../utils/timezoneHelper');
-const logger = require('../utils/logger');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
-const logger = require('../utils/logger');
 const {
   verifyTripOwnership,
   geocodeIfChanged,
@@ -13,7 +11,6 @@ const {
   convertToUTC
 } = require('./helpers/resourceController');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
-const logger = require('../utils/logger');
 
 exports.createHotel = async (req, res) => {
   try {

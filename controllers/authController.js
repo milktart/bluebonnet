@@ -1,9 +1,7 @@
 const bcrypt = require('bcrypt');
 const logger = require('../utils/logger');
 const { User, TravelCompanion, CompanionRelationship, Notification } = require('../models');
-const logger = require('../utils/logger');
 const { Op } = require('sequelize');
-const logger = require('../utils/logger');
 
 exports.getLogin = (req, res) => {
   res.render('login', { title: 'Login' });

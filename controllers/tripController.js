@@ -1,13 +1,9 @@
 const { Trip, Flight, Hotel, Transportation, CarRental, Event, TravelCompanion, TripCompanion, User, CompanionRelationship, TripInvitation, Notification, ItemCompanion } = require('../models');
 const logger = require('../utils/logger');
 const airportService = require('../services/airportService');
-const logger = require('../utils/logger');
 const { formatInTimezone } = require('../utils/timezoneHelper');
-const logger = require('../utils/logger');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
-const logger = require('../utils/logger');
 const { Op } = require('sequelize');
-const logger = require('../utils/logger');
 
 exports.listTrips = async (req, res, options = {}) => {
   try {

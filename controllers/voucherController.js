@@ -2,7 +2,6 @@ const db = require('../models');
 const logger = require('../utils/logger');
 const { Voucher, VoucherAttachment, Flight, User, TravelCompanion } = db;
 const { Sequelize } = require('sequelize');
-const logger = require('../utils/logger');
 
 // Create a new voucher
 exports.createVoucher = async (req, res) => {

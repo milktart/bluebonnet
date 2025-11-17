@@ -1,7 +1,6 @@
 const { Event, Trip } = require('../models');
 const logger = require('../utils/logger');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
-const logger = require('../utils/logger');
 const {
   verifyTripOwnership,
   geocodeIfChanged,
@@ -11,11 +10,8 @@ const {
   convertToUTC
 } = require('./helpers/resourceController');
 const { utcToLocal } = require('../utils/timezoneHelper');
-const logger = require('../utils/logger');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
-const logger = require('../utils/logger');
 const { formatDate, formatTime } = require('../utils/dateFormatter');
-const logger = require('../utils/logger');
 
 exports.createEvent = async (req, res) => {
   try {

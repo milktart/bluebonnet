@@ -1,9 +1,7 @@
 const { TravelCompanion, User, TripCompanion, Trip } = require('../models');
 const logger = require('../utils/logger');
 const { Op } = require('sequelize');
-const logger = require('../utils/logger');
 const { validationResult } = require('express-validator');
-const logger = require('../utils/logger');
 
 // Get all companions for current user
 exports.listCompanions = async (req, res) => {

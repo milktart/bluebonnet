@@ -1,9 +1,7 @@
 const bcrypt = require('bcrypt');
 const logger = require('../utils/logger');
 const { User, TravelCompanion, Voucher } = require('../models');
-const logger = require('../utils/logger');
 const { Sequelize } = require('sequelize');
-const logger = require('../utils/logger');
 
 exports.getAccountSettings = async (req, res) => {
   try {

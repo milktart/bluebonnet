@@ -1,11 +1,8 @@
 const { Flight, Trip, VoucherAttachment, Voucher } = require('../models');
 const logger = require('../utils/logger');
 const airportService = require('../services/airportService');
-const logger = require('../utils/logger');
 const { utcToLocal } = require('../utils/timezoneHelper');
-const logger = require('../utils/logger');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
-const logger = require('../utils/logger');
 const {
   verifyTripOwnership,
   redirectAfterSuccess,
@@ -15,7 +12,6 @@ const {
   geocodeWithAirportFallback
 } = require('./helpers/resourceController');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
-const logger = require('../utils/logger');
 
 exports.searchAirports = async (req, res) => {
   try {
