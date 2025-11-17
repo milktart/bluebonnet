@@ -83,11 +83,6 @@ module.exports = {
       concurrently: true,
     });
 
-    await createIndexIfNotExists('travel_companions', ['linkedAccountId'], {
-      name: 'idx_travel_companions_linked_account',
-      concurrently: true,
-    });
-
     // Trip companions indexes
     await createIndexIfNotExists('trip_companions', ['tripId'], {
       name: 'idx_trip_companions_trip',
@@ -137,7 +132,6 @@ module.exports = {
 
     // Remove travel companions indexes
     await queryInterface.removeIndex('travel_companions', 'idx_travel_companions_user');
-    await queryInterface.removeIndex('travel_companions', 'idx_travel_companions_linked_account');
 
     // Remove trip companions indexes
     await queryInterface.removeIndex('trip_companions', 'idx_trip_companions_trip');
