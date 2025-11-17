@@ -1,6 +1,9 @@
 const bcrypt = require('bcrypt');
+const logger = require('../utils/logger');
 const { User, TravelCompanion, Voucher } = require('../models');
+const logger = require('../utils/logger');
 const { Sequelize } = require('sequelize');
+const logger = require('../utils/logger');
 
 exports.getAccountSettings = async (req, res) => {
   try {
@@ -23,7 +26,7 @@ exports.getAccountSettings = async (req, res) => {
       linkedCompanions
     });
   } catch (error) {
-    console.error('Error loading account settings:', error);
+    logger.error('Error loading account settings:', error);
     req.flash('error_msg', 'Error loading account settings');
     res.redirect('/trips');
   }
@@ -66,7 +69,7 @@ exports.updateProfile = async (req, res) => {
     req.flash('success_msg', 'Profile updated successfully');
     res.redirect('/account');
   } catch (error) {
-    console.error('Profile update error:', error);
+    logger.error('Profile update error:', error);
     req.flash('error_msg', 'An error occurred while updating your profile');
     res.redirect('/account');
   }
@@ -103,7 +106,7 @@ exports.changePassword = async (req, res) => {
     req.flash('success_msg', 'Password changed successfully');
     res.redirect('/account');
   } catch (error) {
-    console.error('Password change error:', error);
+    logger.error('Password change error:', error);
     req.flash('error_msg', 'An error occurred while changing your password');
     res.redirect('/account');
   }
@@ -131,7 +134,7 @@ exports.getAccountSettingsSidebar = async (req, res) => {
       layout: false  // Don't use main layout, just render the partial
     });
   } catch (error) {
-    console.error('Error loading account settings sidebar:', error);
+    logger.error('Error loading account settings sidebar:', error);
     res.status(500).send('<div class="p-4"><p class="text-red-600">Error loading account settings. Please try again.</p></div>');
   }
 };
@@ -145,7 +148,7 @@ exports.getCompanionsSidebar = async (req, res) => {
       layout: false  // Don't use main layout, just render the partial
     });
   } catch (error) {
-    console.error('Error loading companions sidebar:', error);
+    logger.error('Error loading companions sidebar:', error);
     res.status(500).send('<div class="p-4"><p class="text-red-600">Error loading companions. Please try again.</p></div>');
   }
 };
@@ -182,7 +185,7 @@ exports.revokeCompanionAccess = async (req, res) => {
     req.flash('success_msg', successMsg);
     res.redirect('/account');
   } catch (error) {
-    console.error('Error revoking companion access:', error);
+    logger.error('Error revoking companion access:', error);
     const errorMsg = 'Error revoking companion access';
     if (req.get('X-Sidebar-Request') === 'true' || req.xhr) {
       return res.status(500).json({ success: false, error: errorMsg });
@@ -240,7 +243,7 @@ exports.getVouchers = async (req, res) => {
       vouchers: vouchersWithInfo
     });
   } catch (error) {
-    console.error('Error loading vouchers:', error);
+    logger.error('Error loading vouchers:', error);
     req.flash('error_msg', 'Error loading vouchers');
     res.redirect('/account');
   }
@@ -289,7 +292,7 @@ exports.getVouchersSidebar = async (req, res) => {
       layout: false
     });
   } catch (error) {
-    console.error('Error loading vouchers sidebar:', error);
+    logger.error('Error loading vouchers sidebar:', error);
     res.status(500).send('<div class="p-4"><p class="text-red-600">Error loading vouchers. Please try again.</p></div>');
   }
 };
@@ -330,7 +333,7 @@ exports.getVoucherDetails = async (req, res) => {
       layout: false
     });
   } catch (error) {
-    console.error('Error loading voucher details:', error);
+    logger.error('Error loading voucher details:', error);
     res.status(500).send('<div class="p-4"><p class="text-red-600">Error loading voucher details. Please try again.</p></div>');
   }
 };

@@ -1,6 +1,9 @@
 const bcrypt = require('bcrypt');
+const logger = require('../utils/logger');
 const { User, TravelCompanion, CompanionRelationship, Notification } = require('../models');
+const logger = require('../utils/logger');
 const { Op } = require('sequelize');
+const logger = require('../utils/logger');
 
 exports.getLogin = (req, res) => {
   res.render('login', { title: 'Login' });
@@ -95,7 +98,7 @@ exports.postRegister = async (req, res) => {
 
     res.redirect('/auth/login');
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     req.flash('error_msg', 'An error occurred during registration');
     res.redirect('/auth/register');
   }

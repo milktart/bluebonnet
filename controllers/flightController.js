@@ -1,7 +1,11 @@
 const { Flight, Trip, VoucherAttachment, Voucher } = require('../models');
+const logger = require('../utils/logger');
 const airportService = require('../services/airportService');
+const logger = require('../utils/logger');
 const { utcToLocal } = require('../utils/timezoneHelper');
+const logger = require('../utils/logger');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
+const logger = require('../utils/logger');
 const {
   verifyTripOwnership,
   redirectAfterSuccess,
@@ -11,6 +15,7 @@ const {
   geocodeWithAirportFallback
 } = require('./helpers/resourceController');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
+const logger = require('../utils/logger');
 
 exports.searchAirports = async (req, res) => {
   try {
@@ -34,7 +39,7 @@ exports.searchAirports = async (req, res) => {
 
     res.json({ success: true, data: results });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ success: false, message: 'Error searching airports' });
   }
 };
@@ -74,7 +79,7 @@ exports.searchFlight = async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ success: false, message: 'Error searching flight' });
   }
 };
@@ -176,7 +181,7 @@ exports.createFlight = async (req, res) => {
             companionIds = typeof companions === 'string' ? JSON.parse(companions) : companions;
             companionIds = Array.isArray(companionIds) ? companionIds : [];
           } catch (e) {
-            console.error('Error parsing companions:', e);
+            logger.error('Error parsing companions:', e);
             companionIds = [];
           }
         }
@@ -196,7 +201,7 @@ exports.createFlight = async (req, res) => {
         }
       }
     } catch (e) {
-      console.error('Error managing companions for flight:', e);
+      logger.error('Error managing companions for flight:', e);
       // Don't fail the flight creation due to companion errors
     }
 
@@ -208,9 +213,9 @@ exports.createFlight = async (req, res) => {
 
     redirectAfterSuccess(res, req, tripId, 'flights', 'Flight added successfully');
   } catch (error) {
-    console.error('ERROR in createFlight:', error);
-    console.error('Request body:', req.body);
-    console.error('Request params:', req.params);
+    logger.error('ERROR in createFlight:', error);
+    logger.error('Request body:', req.body);
+    logger.error('Request params:', req.params);
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
       return res.status(500).json({ success: false, error: error.message || 'Error adding flight' });
@@ -323,7 +328,7 @@ exports.updateFlight = async (req, res) => {
     }
 
     // Debug logging
-    console.log('Update flight - input data:', {
+    logger.info('Update flight - input data:', {
       flightId: req.params.id,
       airline,
       flightNumber,
@@ -335,7 +340,7 @@ exports.updateFlight = async (req, res) => {
       destinationTimezone
     });
 
-    console.log('Update flight - converted data:', {
+    logger.info('Update flight - converted data:', {
       departureDateTime: convertToUTC(departureDateTime, originTimezone),
       arrivalDateTime: convertToUTC(arrivalDateTime, destinationTimezone),
       originResult: { coords: originResult.coords, timezone: originResult.timezone },
@@ -382,7 +387,7 @@ exports.updateFlight = async (req, res) => {
       }
     }
 
-    console.log('Flight updated successfully:', { flightId: req.params.id });
+    logger.info('Flight updated successfully:', { flightId: req.params.id });
 
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
@@ -392,7 +397,7 @@ exports.updateFlight = async (req, res) => {
 
     redirectAfterSuccess(res, req, flight.tripId, 'flights', 'Flight updated successfully');
   } catch (error) {
-    console.error('ERROR in updateFlight:', {
+    logger.error('ERROR in updateFlight:', {
       message: error.message,
       stack: error.stack,
       name: error.name,
@@ -402,7 +407,7 @@ exports.updateFlight = async (req, res) => {
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
       const errorMessage = error.message || 'Error updating flight';
-      console.error('Returning error response:', errorMessage);
+      logger.error('Returning error response:', errorMessage);
       return res.status(500).json({ success: false, error: errorMessage });
     }
     req.flash('error_msg', 'Error updating flight');
@@ -446,7 +451,7 @@ exports.deleteFlight = async (req, res) => {
 
     redirectAfterSuccess(res, req, tripId, 'flights', 'Flight deleted successfully');
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
       return res.status(500).json({ success: false, error: 'Error deleting flight' });
@@ -477,7 +482,7 @@ exports.restoreFlight = async (req, res) => {
 
     res.json({ success: true, message: 'Flight restored successfully' });
   } catch (error) {
-    console.error('Error restoring flight:', error);
+    logger.error('Error restoring flight:', error);
     res.status(500).json({ success: false, error: 'Error restoring flight' });
   }
 };
@@ -507,7 +512,7 @@ exports.getAddForm = async (req, res) => {
       airports: airports
     });
   } catch (error) {
-    console.error('Error fetching add form:', error);
+    logger.error('Error fetching add form:', error);
     res.status(500).send('Error loading form');
   }
 };
@@ -562,11 +567,11 @@ exports.getEditForm = async (req, res) => {
           attachmentData.traveler = traveler ? traveler.toJSON() : null;
           voucherAttachmentsWithTravelers.push(attachmentData);
 
-          console.log('Attachment traveler data:', { travelerId: attachment.travelerId, travelerType: attachment.travelerType, travelerData: traveler });
+          logger.info('Attachment traveler data:', { travelerId: attachment.travelerId, travelerType: attachment.travelerType, travelerData: traveler });
         }
       } catch (travelerError) {
         // Log error but don't fail - allow form to render even if traveler data fetch fails
-        console.error('Error fetching traveler data for attachments:', travelerError);
+        logger.error('Error fetching traveler data for attachments:', travelerError);
         voucherAttachmentsWithTravelers = flight.voucherAttachments.map(att => att.toJSON());
       }
     }
@@ -611,8 +616,8 @@ exports.getEditForm = async (req, res) => {
       airports: airports
     });
   } catch (error) {
-    console.error('Error fetching edit form:', error);
-    console.error('Stack:', error.stack);
+    logger.error('Error fetching edit form:', error);
+    logger.error('Stack:', error.stack);
     res.status(500).send(`Error loading form: ${error.message}`);
   }
 };

@@ -1,6 +1,9 @@
 const { Transportation, Trip } = require('../models');
+const logger = require('../utils/logger');
 const { utcToLocal } = require('../utils/timezoneHelper');
+const logger = require('../utils/logger');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
+const logger = require('../utils/logger');
 const {
   verifyTripOwnership,
   geocodeOriginDestination,
@@ -10,6 +13,7 @@ const {
   convertToUTC
 } = require('./helpers/resourceController');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
+const logger = require('../utils/logger');
 
 exports.createTransportation = async (req, res) => {
   try {
@@ -76,7 +80,7 @@ exports.createTransportation = async (req, res) => {
             companionIds = typeof companions === 'string' ? JSON.parse(companions) : companions;
             companionIds = Array.isArray(companionIds) ? companionIds : [];
           } catch (e) {
-            console.error('Error parsing companions:', e);
+            logger.error('Error parsing companions:', e);
             companionIds = [];
           }
         }
@@ -96,7 +100,7 @@ exports.createTransportation = async (req, res) => {
         }
       }
     } catch (e) {
-      console.error('Error managing companions for transportation:', e);
+      logger.error('Error managing companions for transportation:', e);
       // Don't fail the transportation creation due to companion errors
     }
 
@@ -108,7 +112,7 @@ exports.createTransportation = async (req, res) => {
 
     redirectAfterSuccess(res, req, tripId, 'transportation', 'Transportation added successfully');
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
       return res.status(500).json({ success: false, error: 'Error adding transportation' });
@@ -181,7 +185,7 @@ exports.updateTransportation = async (req, res) => {
 
     redirectAfterSuccess(res, req, transportation.tripId, 'transportation', 'Transportation updated successfully');
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
       return res.status(500).json({ success: false, error: 'Error updating transportation' });
@@ -224,7 +228,7 @@ exports.deleteTransportation = async (req, res) => {
 
     redirectAfterSuccess(res, req, tripId, 'transportation', 'Transportation deleted successfully');
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
       return res.status(500).json({ success: false, error: 'Error deleting transportation' });
@@ -255,7 +259,7 @@ exports.restoreTransportation = async (req, res) => {
 
     res.json({ success: true, message: 'Transportation restored successfully' });
   } catch (error) {
-    console.error('Error restoring transportation:', error);
+    logger.error('Error restoring transportation:', error);
     res.status(500).json({ success: false, error: 'Error restoring transportation' });
   }
 };
@@ -279,7 +283,7 @@ exports.getAddForm = async (req, res) => {
       isModal: false  // This tells the partial to render for sidebar
     });
   } catch (error) {
-    console.error('Error fetching add form:', error);
+    logger.error('Error fetching add form:', error);
     res.status(500).send('Error loading form');
   }
 };
@@ -322,7 +326,7 @@ exports.getEditForm = async (req, res) => {
       isModal: false  // This tells the partial to render for sidebar
     });
   } catch (error) {
-    console.error('Error fetching edit form:', error);
+    logger.error('Error fetching edit form:', error);
     res.status(500).send('Error loading form');
   }
 };

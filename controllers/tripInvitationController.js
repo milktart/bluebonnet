@@ -1,4 +1,5 @@
 const db = require('../models');
+const logger = require('../utils/logger');
 
 exports.inviteCompanion = async (req, res) => {
   try {
@@ -105,7 +106,7 @@ exports.inviteCompanion = async (req, res) => {
       invitation,
     });
   } catch (error) {
-    console.error('Error inviting companion to trip:', error);
+    logger.error('Error inviting companion to trip:', error);
     return res.status(500).json({
       success: false,
       message: 'Error inviting companion to trip',
@@ -154,7 +155,7 @@ exports.getPendingInvitations = async (req, res) => {
       invitations,
     });
   } catch (error) {
-    console.error('Error fetching pending invitations:', error);
+    logger.error('Error fetching pending invitations:', error);
     return res.status(500).json({
       success: false,
       message: 'Error fetching pending invitations',
@@ -290,7 +291,7 @@ exports.respondToInvitation = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Error responding to invitation:', error);
+    logger.error('Error responding to invitation:', error);
     return res.status(500).json({
       success: false,
       message: 'Error responding to invitation',
@@ -389,7 +390,7 @@ exports.leaveTrip = async (req, res) => {
       message: 'Left trip',
     });
   } catch (error) {
-    console.error('Error leaving trip:', error);
+    logger.error('Error leaving trip:', error);
     return res.status(500).json({
       success: false,
       message: 'Error leaving trip',

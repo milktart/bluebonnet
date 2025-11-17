@@ -1,5 +1,7 @@
 const db = require('../models');
+const logger = require('../utils/logger');
 const { Op } = require('sequelize');
+const logger = require('../utils/logger');
 
 exports.getNotifications = async (req, res) => {
   try {
@@ -28,7 +30,7 @@ exports.getNotifications = async (req, res) => {
       notifications,
     });
   } catch (error) {
-    console.error('Error fetching notifications:', error);
+    logger.error('Error fetching notifications:', error);
     return res.status(500).json({
       success: false,
       message: 'Error fetching notifications',
@@ -52,7 +54,7 @@ exports.getUnreadCount = async (req, res) => {
       unreadCount: count,
     });
   } catch (error) {
-    console.error('Error fetching unread count:', error);
+    logger.error('Error fetching unread count:', error);
     return res.status(500).json({
       success: false,
       message: 'Error fetching unread count',
@@ -89,7 +91,7 @@ exports.markAsRead = async (req, res) => {
       notification,
     });
   } catch (error) {
-    console.error('Error marking notification as read:', error);
+    logger.error('Error marking notification as read:', error);
     return res.status(500).json({
       success: false,
       message: 'Error marking notification as read',
@@ -116,7 +118,7 @@ exports.markAllAsRead = async (req, res) => {
       message: 'All notifications marked as read',
     });
   } catch (error) {
-    console.error('Error marking all notifications as read:', error);
+    logger.error('Error marking all notifications as read:', error);
     return res.status(500).json({
       success: false,
       message: 'Error marking all notifications as read',
@@ -152,7 +154,7 @@ exports.deleteNotification = async (req, res) => {
       message: 'Notification deleted',
     });
   } catch (error) {
-    console.error('Error deleting notification:', error);
+    logger.error('Error deleting notification:', error);
     return res.status(500).json({
       success: false,
       message: 'Error deleting notification',
@@ -190,7 +192,7 @@ exports.getCompanionRequestNotifications = async (req, res) => {
       notifications,
     });
   } catch (error) {
-    console.error('Error fetching companion notifications:', error);
+    logger.error('Error fetching companion notifications:', error);
     return res.status(500).json({
       success: false,
       message: 'Error fetching companion notifications',
@@ -228,7 +230,7 @@ exports.getTripInvitationNotifications = async (req, res) => {
       notifications,
     });
   } catch (error) {
-    console.error('Error fetching trip notifications:', error);
+    logger.error('Error fetching trip notifications:', error);
     return res.status(500).json({
       success: false,
       message: 'Error fetching trip notifications',

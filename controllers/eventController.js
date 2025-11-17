@@ -1,5 +1,7 @@
 const { Event, Trip } = require('../models');
+const logger = require('../utils/logger');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
+const logger = require('../utils/logger');
 const {
   verifyTripOwnership,
   geocodeIfChanged,
@@ -9,8 +11,11 @@ const {
   convertToUTC
 } = require('./helpers/resourceController');
 const { utcToLocal } = require('../utils/timezoneHelper');
+const logger = require('../utils/logger');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
+const logger = require('../utils/logger');
 const { formatDate, formatTime } = require('../utils/dateFormatter');
+const logger = require('../utils/logger');
 
 exports.createEvent = async (req, res) => {
   try {
@@ -61,7 +66,7 @@ exports.createEvent = async (req, res) => {
       try {
         finalTimezone = await require('../services/geocodingService').inferTimezone(coords.lat, coords.lng);
       } catch (error) {
-        console.error('Error inferring timezone:', error);
+        logger.error('Error inferring timezone:', error);
         finalTimezone = 'UTC';
       }
     }
@@ -101,7 +106,7 @@ exports.createEvent = async (req, res) => {
             companionIds = typeof companions === 'string' ? JSON.parse(companions) : companions;
             companionIds = Array.isArray(companionIds) ? companionIds : [];
           } catch (e) {
-            console.error('Error parsing companions:', e);
+            logger.error('Error parsing companions:', e);
             companionIds = [];
           }
         }
@@ -121,7 +126,7 @@ exports.createEvent = async (req, res) => {
         }
       }
     } catch (e) {
-      console.error('Error managing companions for event:', e);
+      logger.error('Error managing companions for event:', e);
       // Don't fail the event creation due to companion errors
     }
 
@@ -133,9 +138,9 @@ exports.createEvent = async (req, res) => {
 
     redirectAfterSuccess(res, req, tripId, 'events', 'Event added successfully');
   } catch (error) {
-    console.error('ERROR in createEvent:', error);
-    console.error('Request body:', req.body);
-    console.error('Request params:', req.params);
+    logger.error('ERROR in createEvent:', error);
+    logger.error('Request body:', req.body);
+    logger.error('Request params:', req.params);
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
       return res.status(500).json({ success: false, error: error.message || 'Error adding event' });
@@ -206,7 +211,7 @@ exports.updateEvent = async (req, res) => {
       try {
         finalTimezone = await require('../services/geocodingService').inferTimezone(coords.lat, coords.lng);
       } catch (error) {
-        console.error('Error inferring timezone:', error);
+        logger.error('Error inferring timezone:', error);
         finalTimezone = event.timezone || 'UTC';
       }
     }
@@ -241,9 +246,9 @@ exports.updateEvent = async (req, res) => {
 
     redirectAfterSuccess(res, req, event.tripId, 'events', 'Event updated successfully');
   } catch (error) {
-    console.error('ERROR in updateEvent:', error);
-    console.error('Request body:', req.body);
-    console.error('Request params:', req.params);
+    logger.error('ERROR in updateEvent:', error);
+    logger.error('Request body:', req.body);
+    logger.error('Request params:', req.params);
     const isAsync = req.headers['x-async-request'] === 'true' || req.get('content-type') === 'application/json';
     if (isAsync) {
       return res.status(500).json({ success: false, error: error.message || 'Error updating event' });
@@ -285,7 +290,7 @@ exports.deleteEvent = async (req, res) => {
 
     redirectAfterSuccess(res, req, tripId, 'events', 'Event deleted successfully');
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
       return res.status(500).json({ success: false, error: 'Error deleting event' });
@@ -328,7 +333,7 @@ exports.getEventSidebar = async (req, res) => {
       endTime
     });
   } catch (error) {
-    console.error('ERROR fetching event sidebar:', error);
+    logger.error('ERROR fetching event sidebar:', error);
     res.status(500).send('<p class="text-red-600">Error loading event details</p>');
   }
 };
@@ -374,7 +379,7 @@ exports.getEventEditForm = async (req, res) => {
       endTime
     });
   } catch (error) {
-    console.error('ERROR fetching event edit form:', error);
+    logger.error('ERROR fetching event edit form:', error);
     res.status(500).send('<p class="text-red-600">Error loading edit form</p>');
   }
 };
@@ -395,7 +400,7 @@ exports.getAddForm = async (req, res) => {
       data: null
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).send('Error loading form');
   }
 };
@@ -443,7 +448,7 @@ exports.getEditForm = async (req, res) => {
       data: formattedData
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).send('Error loading form');
   }
 };
@@ -457,7 +462,7 @@ exports.getStandaloneForm = async (req, res) => {
       data: null
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).send('Error loading form');
   }
 };
@@ -483,7 +488,7 @@ exports.restoreEvent = async (req, res) => {
 
     res.json({ success: true, message: 'Event restored successfully' });
   } catch (error) {
-    console.error('Error restoring event:', error);
+    logger.error('Error restoring event:', error);
     res.status(500).json({ success: false, error: 'Error restoring event' });
   }
 };

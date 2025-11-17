@@ -1,5 +1,7 @@
 const { CarRental, Trip } = require('../models');
+const logger = require('../utils/logger');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
+const logger = require('../utils/logger');
 const {
   verifyTripOwnership,
   geocodeOriginDestination,
@@ -9,7 +11,9 @@ const {
   convertToUTC
 } = require('./helpers/resourceController');
 const { utcToLocal } = require('../utils/timezoneHelper');
+const logger = require('../utils/logger');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
+const logger = require('../utils/logger');
 
 exports.createCarRental = async (req, res) => {
   try {
@@ -70,7 +74,7 @@ exports.createCarRental = async (req, res) => {
             companionIds = typeof companions === 'string' ? JSON.parse(companions) : companions;
             companionIds = Array.isArray(companionIds) ? companionIds : [];
           } catch (e) {
-            console.error('Error parsing companions:', e);
+            logger.error('Error parsing companions:', e);
             companionIds = [];
           }
         }
@@ -90,7 +94,7 @@ exports.createCarRental = async (req, res) => {
         }
       }
     } catch (e) {
-      console.error('Error managing companions for car rental:', e);
+      logger.error('Error managing companions for car rental:', e);
       // Don't fail the car rental creation due to companion errors
     }
 
@@ -102,7 +106,7 @@ exports.createCarRental = async (req, res) => {
 
     redirectAfterSuccess(res, req, tripId, 'carRentals', 'Car rental added successfully');
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
       return res.status(500).json({ success: false, error: 'Error adding car rental' });
@@ -171,7 +175,7 @@ exports.updateCarRental = async (req, res) => {
 
     redirectAfterSuccess(res, req, carRental.tripId, 'carRentals', 'Car rental updated successfully');
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
       return res.status(500).json({ success: false, error: 'Error updating car rental' });
@@ -213,7 +217,7 @@ exports.deleteCarRental = async (req, res) => {
 
     redirectAfterSuccess(res, req, tripId, 'carRentals', 'Car rental deleted successfully');
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
       return res.status(500).json({ success: false, error: 'Error deleting car rental' });
@@ -245,7 +249,7 @@ exports.restoreCarRental = async (req, res) => {
 
     res.json({ success: true, message: 'Car rental restored successfully' });
   } catch (error) {
-    console.error('Error restoring car rental:', error);
+    logger.error('Error restoring car rental:', error);
     res.status(500).json({ success: false, error: 'Error restoring car rental' });
   }
 };
@@ -266,7 +270,7 @@ exports.getAddForm = async (req, res) => {
       data: null
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).send('Error loading form');
   }
 };
@@ -334,7 +338,7 @@ exports.getEditForm = async (req, res) => {
       data: formattedData
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).send('Error loading form');
   }
 };

@@ -1,6 +1,8 @@
 const db = require('../models');
+const logger = require('../utils/logger');
 const { Voucher, VoucherAttachment, Flight, User, TravelCompanion } = db;
 const { Sequelize } = require('sequelize');
+const logger = require('../utils/logger');
 
 // Create a new voucher
 exports.createVoucher = async (req, res) => {
@@ -80,7 +82,7 @@ exports.createVoucher = async (req, res) => {
       message: 'Voucher created successfully'
     });
   } catch (error) {
-    console.error('Error creating voucher:', error);
+    logger.error('Error creating voucher:', error);
     res.status(500).json({
       success: false,
       message: 'Error creating voucher',
@@ -154,7 +156,7 @@ exports.getUserVouchers = async (req, res) => {
       count: vouchersWithBalance.length
     });
   } catch (error) {
-    console.error('Error fetching user vouchers:', error);
+    logger.error('Error fetching user vouchers:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching vouchers',
@@ -225,7 +227,7 @@ exports.getVoucherById = async (req, res) => {
       data: voucherData
     });
   } catch (error) {
-    console.error('Error fetching voucher:', error);
+    logger.error('Error fetching voucher:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching voucher',
@@ -279,7 +281,7 @@ exports.updateVoucher = async (req, res) => {
       message: 'Voucher updated successfully'
     });
   } catch (error) {
-    console.error('Error updating voucher:', error);
+    logger.error('Error updating voucher:', error);
     res.status(500).json({
       success: false,
       message: 'Error updating voucher',
@@ -318,7 +320,7 @@ exports.deleteVoucher = async (req, res) => {
       message: 'Voucher deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting voucher:', error);
+    logger.error('Error deleting voucher:', error);
     res.status(500).json({
       success: false,
       message: 'Error deleting voucher',
@@ -389,7 +391,7 @@ exports.reissueRemainder = async (req, res) => {
       message: 'Voucher reissued successfully'
     });
   } catch (error) {
-    console.error('Error reissuing voucher:', error);
+    logger.error('Error reissuing voucher:', error);
     res.status(500).json({
       success: false,
       message: 'Error reissuing voucher',
@@ -459,7 +461,7 @@ exports.getAvailableVouchersForFlight = async (req, res) => {
       count: availableVouchers.length
     });
   } catch (error) {
-    console.error('Error fetching available vouchers:', error);
+    logger.error('Error fetching available vouchers:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching available vouchers',

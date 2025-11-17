@@ -1,5 +1,7 @@
 const db = require('../models');
+const logger = require('../utils/logger');
 const { Op } = require('sequelize');
+const logger = require('../utils/logger');
 
 exports.sendRequest = async (req, res) => {
   try {
@@ -78,7 +80,7 @@ exports.sendRequest = async (req, res) => {
       relationship,
     });
   } catch (error) {
-    console.error('Error sending companion request:', error);
+    logger.error('Error sending companion request:', error);
     return res.status(500).json({
       success: false,
       message: 'Error sending companion request',
@@ -128,7 +130,7 @@ exports.getPendingRequests = async (req, res) => {
       outgoing: outgoingRequests,
     });
   } catch (error) {
-    console.error('Error fetching pending requests:', error);
+    logger.error('Error fetching pending requests:', error);
     return res.status(500).json({
       success: false,
       message: 'Error fetching pending requests',
@@ -211,7 +213,7 @@ exports.acceptRequest = async (req, res) => {
       relationship,
     });
   } catch (error) {
-    console.error('Error accepting companion request:', error);
+    logger.error('Error accepting companion request:', error);
     return res.status(500).json({
       success: false,
       message: 'Error accepting companion request',
@@ -262,7 +264,7 @@ exports.declineRequest = async (req, res) => {
       message: 'Request declined',
     });
   } catch (error) {
-    console.error('Error declining companion request:', error);
+    logger.error('Error declining companion request:', error);
     return res.status(500).json({
       success: false,
       message: 'Error declining companion request',
@@ -319,7 +321,7 @@ exports.updatePermissionLevel = async (req, res) => {
       relationship,
     });
   } catch (error) {
-    console.error('Error updating permission level:', error);
+    logger.error('Error updating permission level:', error);
     return res.status(500).json({
       success: false,
       message: 'Error updating permission level',
@@ -369,7 +371,7 @@ exports.revokeRelationship = async (req, res) => {
       message: 'Relationship revoked',
     });
   } catch (error) {
-    console.error('Error revoking relationship:', error);
+    logger.error('Error revoking relationship:', error);
     return res.status(500).json({
       success: false,
       message: 'Error revoking relationship',
@@ -447,7 +449,7 @@ exports.getMutualCompanions = async (req, res) => {
       companions: Object.values(companions),
     });
   } catch (error) {
-    console.error('Error fetching mutual companions:', error);
+    logger.error('Error fetching mutual companions:', error);
     return res.status(500).json({
       success: false,
       message: 'Error fetching mutual companions',
@@ -482,7 +484,7 @@ exports.resendRequest = async (req, res) => {
       message: 'Request resent successfully',
     });
   } catch (error) {
-    console.error('Error resending request:', error);
+    logger.error('Error resending request:', error);
     return res.status(500).json({
       success: false,
       message: 'Error resending request',

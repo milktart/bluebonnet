@@ -1,6 +1,9 @@
 const { Hotel, Trip } = require('../models');
+const logger = require('../utils/logger');
 const { utcToLocal } = require('../utils/timezoneHelper');
+const logger = require('../utils/logger');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
+const logger = require('../utils/logger');
 const {
   verifyTripOwnership,
   geocodeIfChanged,
@@ -10,6 +13,7 @@ const {
   convertToUTC
 } = require('./helpers/resourceController');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
+const logger = require('../utils/logger');
 
 exports.createHotel = async (req, res) => {
   try {
@@ -52,7 +56,7 @@ exports.createHotel = async (req, res) => {
       try {
         finalTimezone = await require('../services/geocodingService').inferTimezone(coords.lat, coords.lng);
       } catch (error) {
-        console.error('Error inferring timezone:', error);
+        logger.error('Error inferring timezone:', error);
         finalTimezone = 'UTC';
       }
     }
@@ -84,7 +88,7 @@ exports.createHotel = async (req, res) => {
             companionIds = typeof companions === 'string' ? JSON.parse(companions) : companions;
             companionIds = Array.isArray(companionIds) ? companionIds : [];
           } catch (e) {
-            console.error('Error parsing companions:', e);
+            logger.error('Error parsing companions:', e);
             companionIds = [];
           }
         }
@@ -104,7 +108,7 @@ exports.createHotel = async (req, res) => {
         }
       }
     } catch (e) {
-      console.error('Error managing companions for hotel:', e);
+      logger.error('Error managing companions for hotel:', e);
       // Don't fail the hotel creation due to companion errors
     }
 
@@ -116,7 +120,7 @@ exports.createHotel = async (req, res) => {
 
     redirectAfterSuccess(res, req, tripId, 'hotels', 'Hotel added successfully');
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
       return res.status(500).json({ success: false, error: 'Error adding hotel' });
@@ -171,7 +175,7 @@ exports.updateHotel = async (req, res) => {
       try {
         finalTimezone = await require('../services/geocodingService').inferTimezone(coords.lat, coords.lng);
       } catch (error) {
-        console.error('Error inferring timezone:', error);
+        logger.error('Error inferring timezone:', error);
         finalTimezone = hotel.timezone || 'UTC';
       }
     }
@@ -198,7 +202,7 @@ exports.updateHotel = async (req, res) => {
 
     redirectAfterSuccess(res, req, hotel.tripId, 'hotels', 'Hotel updated successfully');
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
       return res.status(500).json({ success: false, error: 'Error updating hotel' });
@@ -240,7 +244,7 @@ exports.deleteHotel = async (req, res) => {
 
     redirectAfterSuccess(res, req, tripId, 'hotels', 'Hotel deleted successfully');
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
       return res.status(500).json({ success: false, error: 'Error deleting hotel' });
@@ -272,7 +276,7 @@ exports.restoreHotel = async (req, res) => {
 
     res.json({ success: true, message: 'Hotel restored successfully' });
   } catch (error) {
-    console.error('Error restoring hotel:', error);
+    logger.error('Error restoring hotel:', error);
     res.status(500).json({ success: false, error: 'Error restoring hotel' });
   }
 };
@@ -320,7 +324,7 @@ exports.getAddForm = async (req, res) => {
       isModal: false  // This tells the partial to render for sidebar
     });
   } catch (error) {
-    console.error('Error fetching add form:', error);
+    logger.error('Error fetching add form:', error);
     res.status(500).send('Error loading form');
   }
 };
@@ -364,7 +368,7 @@ exports.getEditForm = async (req, res) => {
       isModal: false  // This tells the partial to render for sidebar
     });
   } catch (error) {
-    console.error('Error fetching edit form:', error);
+    logger.error('Error fetching edit form:', error);
     res.status(500).send('Error loading form');
   }
 };

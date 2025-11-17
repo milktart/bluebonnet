@@ -49,7 +49,7 @@ function storeDeletedItem(session, itemType, itemId, itemData, itemName) {
       if (session[DELETED_ITEMS_KEY] && session[DELETED_ITEMS_KEY][key]) {
         delete session[DELETED_ITEMS_KEY][key];
         session.save((err) => {
-          if (err) console.error('Error saving session after timeout:', err);
+          if (err) logger.error('Error saving session after timeout:', err);
         });
       }
     }, DELETE_TIMEOUT)

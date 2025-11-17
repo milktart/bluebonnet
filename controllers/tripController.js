@@ -1,8 +1,13 @@
 const { Trip, Flight, Hotel, Transportation, CarRental, Event, TravelCompanion, TripCompanion, User, CompanionRelationship, TripInvitation, Notification, ItemCompanion } = require('../models');
+const logger = require('../utils/logger');
 const airportService = require('../services/airportService');
+const logger = require('../utils/logger');
 const { formatInTimezone } = require('../utils/timezoneHelper');
+const logger = require('../utils/logger');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
+const logger = require('../utils/logger');
 const { Op } = require('sequelize');
+const logger = require('../utils/logger');
 
 exports.listTrips = async (req, res, options = {}) => {
   try {
@@ -193,7 +198,7 @@ exports.listTrips = async (req, res, options = {}) => {
 
     res.render('trips/dashboard', renderData);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     req.flash('error_msg', 'Error loading trips');
     res.redirect('/');
   }
@@ -320,7 +325,7 @@ exports.createTrip = async (req, res) => {
     req.flash('success_msg', 'Trip created successfully');
     res.redirect(`/trips/${trip.id}`);
   } catch (error) {
-    console.error('Error creating trip:', error);
+    logger.error('Error creating trip:', error);
     req.flash('error_msg', 'Error creating trip');
     res.redirect('/');
   }
@@ -467,7 +472,7 @@ exports.viewTrip = async (req, res) => {
       tripStatus
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     req.flash('error_msg', 'Error loading trip');
     res.redirect('/');
   }
@@ -505,7 +510,7 @@ exports.getEditTrip = async (req, res) => {
 
     res.render('trips/edit', { title: 'Edit Trip', trip });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     req.flash('error_msg', 'Error loading trip');
     res.redirect('/');
   }
@@ -546,7 +551,7 @@ exports.getEditTripSidebar = async (req, res) => {
       layout: false  // Don't use main layout, just render the content
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Error loading trip' });
   }
 };
@@ -723,7 +728,7 @@ exports.updateTrip = async (req, res) => {
     req.flash('success_msg', 'Trip updated successfully');
     res.redirect(`/trips/${trip.id}`);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     req.flash('error_msg', 'Error updating trip');
     res.redirect(`/trips/${req.params.id}/edit`);
   }
@@ -744,7 +749,7 @@ exports.deleteTrip = async (req, res) => {
     req.flash('success_msg', 'Trip deleted successfully');
     res.redirect('/');
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     req.flash('error_msg', 'Error deleting trip');
     res.redirect('/');
   }
@@ -770,7 +775,7 @@ exports.getMapView = async (req, res) => {
 
     res.render('trips/map', { title: `${trip.name} - Map`, trip });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     req.flash('error_msg', 'Error loading map');
     res.redirect('/');
   }
@@ -802,7 +807,7 @@ exports.removeSelfFromTrip = async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Failed to remove from trip' });
   }
 };
@@ -859,7 +864,7 @@ exports.getTripDataJson = async (req, res) => {
       events: trip.events
     });
   } catch (error) {
-    console.error('Error fetching trip data:', error);
+    logger.error('Error fetching trip data:', error);
     res.status(500).json({ error: 'Failed to fetch trip data' });
   }
 };
@@ -1003,7 +1008,7 @@ exports.getTripSidebarHtml = async (req, res) => {
       globalMarkerAssignments
     });
   } catch (error) {
-    console.error('Error fetching sidebar HTML:', error);
+    logger.error('Error fetching sidebar HTML:', error);
     res.status(500).send('<p class="text-red-600">Error loading sidebar</p>');
   }
 };

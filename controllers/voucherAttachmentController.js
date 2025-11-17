@@ -1,4 +1,5 @@
 const db = require('../models');
+const logger = require('../utils/logger');
 const { VoucherAttachment, Voucher, Flight, User, TravelCompanion } = db;
 
 // Attach multiple vouchers to a flight
@@ -55,7 +56,7 @@ exports.attachMultipleVouchers = async (req, res) => {
 
       // Validate required fields for this attachment
       if (!voucherId || !travelerId || !travelerType) {
-        console.error('Missing required fields:', { voucherId, travelerId, travelerType });
+        logger.error('Missing required fields:', { voucherId, travelerId, travelerType });
         return res.status(400).json({
           success: false,
           message: `Each attachment must have voucherId, travelerId, and travelerType. Received: voucherId=${voucherId}, travelerId=${travelerId}, travelerType=${travelerType}`
@@ -243,7 +244,7 @@ exports.attachMultipleVouchers = async (req, res) => {
         }))
     });
   } catch (error) {
-    console.error('Error attaching multiple vouchers:', error);
+    logger.error('Error attaching multiple vouchers:', error);
     res.status(500).json({
       success: false,
       message: 'Error attaching vouchers',
@@ -431,7 +432,7 @@ exports.attachVoucher = async (req, res) => {
       message: 'Voucher attached to flight successfully'
     });
   } catch (error) {
-    console.error('Error attaching voucher:', error);
+    logger.error('Error attaching voucher:', error);
     res.status(500).json({
       success: false,
       message: 'Error attaching voucher',
@@ -488,7 +489,7 @@ exports.getFlightAttachments = async (req, res) => {
       count: augmentedAttachments.length
     });
   } catch (error) {
-    console.error('Error fetching flight attachments:', error);
+    logger.error('Error fetching flight attachments:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching flight attachments',
@@ -546,7 +547,7 @@ exports.updatePartialVoucherNumber = async (req, res) => {
       message: 'Partial voucher number updated successfully'
     });
   } catch (error) {
-    console.error('Error updating partial voucher number:', error);
+    logger.error('Error updating partial voucher number:', error);
     res.status(500).json({
       success: false,
       message: 'Error updating partial voucher number',
@@ -624,7 +625,7 @@ exports.removeAttachment = async (req, res) => {
       message: 'Voucher attachment removed successfully'
     });
   } catch (error) {
-    console.error('Error removing attachment:', error);
+    logger.error('Error removing attachment:', error);
     res.status(500).json({
       success: false,
       message: 'Error removing attachment',
@@ -734,7 +735,7 @@ exports.updateAttachment = async (req, res) => {
       message: 'Attachment updated successfully'
     });
   } catch (error) {
-    console.error('Error updating attachment:', error);
+    logger.error('Error updating attachment:', error);
     res.status(500).json({
       success: false,
       message: 'Error updating attachment',

@@ -1,6 +1,9 @@
 const { TravelCompanion, User, TripCompanion, Trip } = require('../models');
+const logger = require('../utils/logger');
 const { Op } = require('sequelize');
+const logger = require('../utils/logger');
 const { validationResult } = require('express-validator');
+const logger = require('../utils/logger');
 
 // Get all companions for current user
 exports.listCompanions = async (req, res) => {
@@ -22,7 +25,7 @@ exports.listCompanions = async (req, res) => {
       companions
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     req.flash('error_msg', 'Error loading companions');
     res.redirect('/');
   }
@@ -48,7 +51,7 @@ exports.listCompanionsSidebar = async (req, res) => {
       layout: false  // Don't use main layout, just render the partial
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).send('<div class="p-4"><p class="text-red-600">Error loading companions. Please try again.</p></div>');
   }
 };
@@ -80,7 +83,7 @@ exports.getCompanionsJson = async (req, res) => {
       }))
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ success: false, error: 'Error loading companions' });
   }
 };
@@ -97,7 +100,7 @@ exports.getCreateCompanionSidebar = (req, res) => {
       layout: false
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).send('<div class="p-4"><p class="text-red-600">Error loading form. Please try again.</p></div>');
   }
 };
@@ -163,7 +166,7 @@ exports.createCompanion = async (req, res) => {
     req.flash('success_msg', successMsg);
     res.redirect('/companions');
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     const errorMsg = 'Error adding travel companion';
     if (req.get('X-Sidebar-Request') === 'true' || req.xhr) {
       return res.status(500).json({ success: false, error: errorMsg });
@@ -208,7 +211,7 @@ exports.updateCompanionPermissions = async (req, res) => {
     req.flash('success_msg', successMsg);
     res.redirect('/companions');
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     const errorMsg = 'Error updating companion permissions';
     if (req.get('X-Sidebar-Request') === 'true' || req.xhr) {
       return res.status(500).json({ success: false, error: errorMsg });
@@ -267,7 +270,7 @@ exports.searchCompanions = async (req, res) => {
 
     res.json(results);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).json({ error: 'Search failed' });
   }
 };
@@ -299,7 +302,7 @@ exports.getEditCompanion = async (req, res) => {
       companion
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     req.flash('error_msg', 'Error loading companion');
     res.redirect('/companions');
   }
@@ -331,7 +334,7 @@ exports.getEditCompanionSidebar = async (req, res) => {
       layout: false
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).send('<div class="p-4"><p class="text-red-600">Error loading companion. Please try again.</p></div>');
   }
 };
@@ -419,7 +422,7 @@ exports.updateCompanion = async (req, res) => {
     req.flash('success_msg', successMsg);
     res.redirect('/companions');
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     const errorMsg = 'Error updating companion';
     if (req.get('X-Sidebar-Request') === 'true' || req.xhr) {
       return res.status(500).json({ success: false, error: errorMsg });
@@ -460,7 +463,7 @@ exports.deleteCompanion = async (req, res) => {
     req.flash('success_msg', successMsg);
     res.redirect('/companions');
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     const errorMsg = 'Error deleting companion';
     if (req.get('X-Sidebar-Request') === 'true' || req.xhr) {
       return res.status(500).json({ success: false, error: errorMsg });
@@ -501,7 +504,7 @@ exports.unlinkCompanion = async (req, res) => {
     req.flash('success_msg', successMsg);
     res.redirect('/companions');
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     const errorMsg = 'Error unlinking companion';
     if (req.get('X-Sidebar-Request') === 'true' || req.xhr) {
       return res.status(500).json({ success: false, error: errorMsg });
