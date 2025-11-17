@@ -55,7 +55,9 @@ export async function initializeSocket() {
   }
 
   // Connect to Socket.IO server (same origin)
+  // Note: Using polling transport until reverse proxy is configured for WebSocket
   socket = io({
+    transports: ['polling'], // Use polling-only until nginx/proxy supports WebSocket
     reconnection: true,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
