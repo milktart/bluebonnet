@@ -1,13 +1,14 @@
+const { Op } = require('sequelize');
 const db = require('../models');
 const logger = require('../utils/logger');
-const { Op } = require('sequelize');
+const socketService = require('../services/socketService');
 
 exports.getNotifications = async (req, res) => {
   try {
     const userId = req.user.id;
     const { read } = req.query;
 
-    let where = { userId };
+    const where = { userId };
     if (read !== undefined) {
       where.read = read === 'true';
     }
@@ -85,6 +86,9 @@ exports.markAsRead = async (req, res) => {
     notification.read = true;
     await notification.save();
 
+    // Emit WebSocket event for notification update
+    socketService.emitNotificationUpdate(userId, notificationId, { read: true });
+
     return res.json({
       success: true,
       notification,
@@ -147,6 +151,9 @@ exports.deleteNotification = async (req, res) => {
     }
 
     await notification.destroy();
+
+    // Emit WebSocket event for notification deletion
+    socketService.emitNotificationDeleted(userId, notificationId);
 
     return res.json({
       success: true,

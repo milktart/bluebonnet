@@ -1,10 +1,15 @@
 /**
  * Notification Center
  * Unified notification handling for dashboard and nav
+ * Phase 4 - Frontend Modernization: WebSocket Integration
  */
 
-let notificationPollInterval = null;
+/* eslint-disable no-use-before-define, no-console, max-len, no-new, no-unused-vars */
+
+import { initializeSocket, onEvent } from './socket-client.js';
+
 let notificationPanelOpen = false;
+let socketInitialized = false;
 
 /**
  * Toggle notification center panel visibility
@@ -23,12 +28,8 @@ function toggleNotificationCenter(panelId = 'notification-panel', bellId = 'noti
   if (notificationPanelOpen) {
     panel.style.display = 'block';
     loadNotifications(panelId);
-    // Start polling for new notifications every 30 seconds
-    if (notificationPollInterval) clearInterval(notificationPollInterval);
-    notificationPollInterval = setInterval(() => loadNotifications(panelId), 30000);
   } else {
     panel.style.display = 'none';
-    if (notificationPollInterval) clearInterval(notificationPollInterval);
   }
 }
 
@@ -37,7 +38,10 @@ function toggleNotificationCenter(panelId = 'notification-panel', bellId = 'noti
  * @param {string} panelId - ID of the notification panel element
  * @param {string} bellId - ID of the bell button element
  */
-function setupNotificationClickOutside(panelId = 'notification-panel', bellId = 'notification-bell') {
+function setupNotificationClickOutside(
+  panelId = 'notification-panel',
+  bellId = 'notification-bell'
+) {
   document.addEventListener('click', (e) => {
     const panel = document.getElementById(panelId);
     const bell = document.getElementById(bellId);
@@ -59,9 +63,13 @@ function setupNotificationClickOutside(panelId = 'notification-panel', bellId = 
 async function loadNotifications(panelId = 'notification-panel') {
   try {
     // Determine badge and list IDs based on panel ID
-    const badgeId = panelId.includes('dashboard') ? 'dashboard-notification-badge' : 'notification-badge';
+    const badgeId = panelId.includes('dashboard')
+      ? 'dashboard-notification-badge'
+      : 'notification-badge';
     const countId = panelId.includes('dashboard') ? 'dashboard-unread-count' : 'unread-count';
-    const listId = panelId.includes('dashboard') ? 'dashboard-notification-list' : 'notification-list';
+    const listId = panelId.includes('dashboard')
+      ? 'dashboard-notification-list'
+      : 'notification-list';
 
     // Fetch unread count
     const countRes = await fetch('/notifications/count/unread');
@@ -113,20 +121,22 @@ function renderNotifications(notifications, listId = 'notification-list') {
   }
 
   if (!notifications || notifications.length === 0) {
-    listContainer.innerHTML = '<div class="p-4 text-center text-gray-500 text-sm">No notifications</div>';
+    listContainer.innerHTML =
+      '<div class="p-4 text-center text-gray-500 text-sm">No notifications</div>';
     return;
   }
 
-  listContainer.innerHTML = notifications.map(notif => {
-    const isUnread = !notif.read;
-    const bgClass = isUnread ? 'bg-blue-50' : 'bg-white';
-    const timeAgo = getRelativeTime(notif.createdAt);
+  listContainer.innerHTML = notifications
+    .map((notif) => {
+      const isUnread = !notif.read;
+      const bgClass = isUnread ? 'bg-blue-50' : 'bg-white';
+      const timeAgo = getRelativeTime(notif.createdAt);
 
-    let actionButtons = '';
+      let actionButtons = '';
 
-    // Handle different notification types
-    if (notif.type === 'companion_request_received') {
-      actionButtons = `
+      // Handle different notification types
+      if (notif.type === 'companion_request_received') {
+        actionButtons = `
         <div class="flex gap-2 mt-2">
           <button class="btn btn-sm btn-success flex-1" onclick="handleCompanionAction('${notif.id}', '${notif.relatedId}', 'accept')">
             <i class="bi bi-check"></i> Accept
@@ -136,8 +146,8 @@ function renderNotifications(notifications, listId = 'notification-list') {
           </button>
         </div>
       `;
-    } else if (notif.type === 'trip_invitation_received') {
-      actionButtons = `
+      } else if (notif.type === 'trip_invitation_received') {
+        actionButtons = `
         <div class="flex gap-2 mt-2">
           <button class="btn btn-sm btn-primary flex-1" onclick="handleTripAction('${notif.id}', '${notif.relatedId}', 'join')">
             <i class="bi bi-check"></i> Join
@@ -147,9 +157,9 @@ function renderNotifications(notifications, listId = 'notification-list') {
           </button>
         </div>
       `;
-    }
+      }
 
-    return `
+      return `
       <div class="${bgClass} p-3 hover:bg-gray-50 cursor-pointer transition-colors" onclick="markNotificationAsRead('${notif.id}')">
         <div class="flex justify-between items-start mb-1">
           <p class="text-sm font-medium text-gray-900">${notif.message}</p>
@@ -164,7 +174,8 @@ function renderNotifications(notifications, listId = 'notification-list') {
         ${actionButtons}
       </div>
     `;
-  }).join('');
+    })
+    .join('');
 }
 
 /**
@@ -178,9 +189,9 @@ function getRelativeTime(dateString) {
   const seconds = Math.floor((now - date) / 1000);
 
   if (seconds < 60) return 'just now';
-  if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
-  if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
-  if (seconds < 604800) return Math.floor(seconds / 86400) + 'd ago';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
   return date.toLocaleDateString();
 }
 
@@ -256,7 +267,7 @@ async function handleCompanionAction(notificationId, relationshipId, action) {
     const response = await fetch(`/companion-relationships/${relationshipId}/${endpoint}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ permissionLevel })
+      body: JSON.stringify({ permissionLevel }),
     });
 
     if (response.ok) {
@@ -278,7 +289,7 @@ async function handleTripAction(notificationId, invitationId, action) {
     const response = await fetch(`/trip-invitations/${invitationId}/respond`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ response: action })
+      body: JSON.stringify({ response: action }),
     });
 
     if (response.ok) {
@@ -303,8 +314,99 @@ function initializeNotifications(panelId = 'notification-panel', bellId = 'notif
   // Load initial notifications
   loadNotifications(panelId);
 
+  // Initialize WebSocket for real-time notifications (only once)
+  if (!socketInitialized) {
+    initializeWebSocket();
+    socketInitialized = true;
+  }
+
   // Make toggle function available globally with correct IDs
   window[`toggle_${panelId}`] = () => toggleNotificationCenter(panelId, bellId);
+}
+
+/**
+ * Initialize WebSocket connection and event listeners
+ */
+function initializeWebSocket() {
+  try {
+    const socket = initializeSocket();
+
+    // Listen for new notifications
+    onEvent('notification:new', (notification) => {
+      console.log('📬 New notification received:', notification);
+
+      // Update badge counts
+      updateAllBadges();
+
+      // Reload notifications if panel is open
+      reloadOpenPanels();
+
+      // Optional: Show browser notification
+      if (Notification.permission === 'granted') {
+        new Notification('New Notification', {
+          body: notification.message,
+          icon: '/img/logo.png',
+        });
+      }
+    });
+
+    // Listen for notification updates (e.g., marked as read)
+    onEvent('notification:updated', (data) => {
+      console.log('🔄 Notification updated:', data);
+
+      // Update badge counts
+      updateAllBadges();
+
+      // Reload notifications if panel is open
+      reloadOpenPanels();
+    });
+
+    // Listen for notification deletions
+    onEvent('notification:deleted', (data) => {
+      console.log('🗑️ Notification deleted:', data);
+
+      // Update badge counts
+      updateAllBadges();
+
+      // Reload notifications if panel is open
+      reloadOpenPanels();
+    });
+
+    console.log('✅ Notification WebSocket initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize WebSocket:', error);
+    // Fallback: could implement polling here if needed
+  }
+}
+
+/**
+ * Update all notification badges
+ */
+async function updateAllBadges() {
+  try {
+    const countRes = await fetch('/notifications/count/unread');
+    const countData = await countRes.json();
+
+    updateBadge(countData.unreadCount, 'notification-badge', 'unread-count');
+    updateBadge(countData.unreadCount, 'dashboard-notification-badge', 'dashboard-unread-count');
+  } catch (error) {
+    console.error('Error updating badges:', error);
+  }
+}
+
+/**
+ * Reload notifications for all open panels
+ */
+function reloadOpenPanels() {
+  const dashboardPanel = document.getElementById('dashboard-notification-panel');
+  const navPanel = document.getElementById('notification-panel');
+
+  if (dashboardPanel && dashboardPanel.style.display !== 'none') {
+    loadNotifications('dashboard-notification-panel');
+  }
+  if (navPanel && navPanel.style.display !== 'none') {
+    loadNotifications('notification-panel');
+  }
 }
 
 // ============================================================================
@@ -319,7 +421,7 @@ export {
   deleteNotification,
   handleCompanionAction,
   handleTripAction,
-  initializeNotifications
+  initializeNotifications,
 };
 
 // Make functions available globally for backward compatibility

@@ -47,16 +47,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(methodOverride('_method'));
 
 // Session configuration
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || 'your-secret-key',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      maxAge: 1000 * 60 * 60 * 24, // 24 hours
-    },
-  })
-);
+const sessionMiddleware = session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24, // 24 hours
+  },
+});
+
+app.use(sessionMiddleware);
 
 // Passport middleware
 require('./config/passport')(passport);
@@ -197,13 +197,18 @@ db.sequelize
   .then(() => {
     logger.info('Database connection established successfully');
 
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       logger.info(`Server running on port ${PORT}`, {
         environment: process.env.NODE_ENV || 'development',
         port: PORT,
       });
       logger.info('Run "npm run db:migrate" to apply pending database migrations');
     });
+
+    // Initialize WebSocket server
+    const socketService = require('./services/socketService');
+    socketService.initialize(server, sessionMiddleware, passport);
+    logger.info('WebSocket server initialized');
   })
   .catch((err) => {
     logger.error('Unable to connect to database', {
