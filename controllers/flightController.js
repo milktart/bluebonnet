@@ -9,7 +9,7 @@ const {
   redirectAfterError,
   verifyResourceOwnership,
   convertToUTC,
-  geocodeWithAirportFallback
+  geocodeWithAirportFallback,
 } = require('./helpers/resourceController');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 
@@ -21,16 +21,16 @@ exports.searchAirports = async (req, res) => {
       return res.json({ success: true, data: [] });
     }
 
-    const airports = airportService.searchAirports(query, 10);
+    const airports = await airportService.searchAirports(query, 10);
 
-    const results = airports.map(airport => ({
+    const results = airports.map((airport) => ({
       iata: airport.iata,
       name: airport.name,
       city: airport.city,
       country: airport.country,
       timezone: airport.timezone,
       label: `${airport.iata} - ${airport.city}, ${airport.country}`,
-      value: airport.iata
+      value: airport.iata,
     }));
 
     res.json({ success: true, data: results });
@@ -47,7 +47,7 @@ exports.searchFlight = async (req, res) => {
     if (!flightNumber) {
       return res.json({
         success: false,
-        message: 'Please provide a flight number'
+        message: 'Please provide a flight number',
       });
     }
 
@@ -57,7 +57,7 @@ exports.searchFlight = async (req, res) => {
     if (!airlineCode) {
       return res.json({
         success: false,
-        message: 'Could not identify airline from flight number. Please enter details manually.'
+        message: 'Could not identify airline from flight number. Please enter details manually.',
       });
     }
 
@@ -69,11 +69,10 @@ exports.searchFlight = async (req, res) => {
       success: true,
       data: {
         airline: airlineName || airlineCode,
-        flightNumber: flightNumber.trim().toUpperCase()
+        flightNumber: flightNumber.trim().toUpperCase(),
       },
-      message: 'Airline identified. Please enter origin and destination airport codes.'
+      message: 'Airline identified. Please enter origin and destination airport codes.',
     });
-
   } catch (error) {
     logger.error(error);
     res.status(500).json({ success: false, message: 'Error searching flight' });
@@ -83,22 +82,24 @@ exports.searchFlight = async (req, res) => {
 exports.createFlight = async (req, res) => {
   try {
     const { tripId } = req.params;
-    let {
-      airline,
+    const {
       flightNumber,
-      departureDateTime,
-      arrivalDateTime,
       departureDate,
       departureTime,
       arrivalDate,
       arrivalTime,
+      pnr,
+      seat,
+      companions,
+    } = req.body;
+    let {
+      airline,
+      departureDateTime,
+      arrivalDateTime,
       origin,
       originTimezone,
       destination,
       destinationTimezone,
-      pnr,
-      seat,
-      companions
     } = req.body;
 
     // Handle both combined and separate date/time fields
@@ -130,16 +131,28 @@ exports.createFlight = async (req, res) => {
     }
 
     // Sanitize timezone inputs (handle "undefined" string from forms)
-    if (!originTimezone || originTimezone === 'undefined' || (typeof originTimezone === 'string' && originTimezone.trim() === '')) {
+    if (
+      !originTimezone ||
+      originTimezone === 'undefined' ||
+      (typeof originTimezone === 'string' && originTimezone.trim() === '')
+    ) {
       originTimezone = null;
     }
-    if (!destinationTimezone || destinationTimezone === 'undefined' || (typeof destinationTimezone === 'string' && destinationTimezone.trim() === '')) {
+    if (
+      !destinationTimezone ||
+      destinationTimezone === 'undefined' ||
+      (typeof destinationTimezone === 'string' && destinationTimezone.trim() === '')
+    ) {
       destinationTimezone = null;
     }
 
     // Geocode origin and destination with airport fallback
     const originResult = await geocodeWithAirportFallback(origin, airportService, originTimezone);
-    const destResult = await geocodeWithAirportFallback(destination, airportService, destinationTimezone);
+    const destResult = await geocodeWithAirportFallback(
+      destination,
+      airportService,
+      destinationTimezone
+    );
 
     // Update locations and timezones if airport data was found
     origin = originResult.formattedLocation;
@@ -163,7 +176,7 @@ exports.createFlight = async (req, res) => {
       destinationLat: destResult.coords?.lat,
       destinationLng: destResult.coords?.lng,
       pnr,
-      seat
+      seat,
     });
 
     // Add companions to this flight
@@ -214,7 +227,9 @@ exports.createFlight = async (req, res) => {
     logger.error('Request params:', req.params);
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
-      return res.status(500).json({ success: false, error: error.message || 'Error adding flight' });
+      return res
+        .status(500)
+        .json({ success: false, error: error.message || 'Error adding flight' });
     }
     redirectAfterError(res, req, req.params.tripId, 'Error adding flight');
   }
@@ -222,22 +237,24 @@ exports.createFlight = async (req, res) => {
 
 exports.updateFlight = async (req, res) => {
   try {
-    let {
-      airline,
+    const {
       flightNumber,
-      departureDateTime,
-      arrivalDateTime,
       departureDate,
       departureTime,
       arrivalDate,
       arrivalTime,
+      pnr,
+      seat,
+      companions,
+    } = req.body;
+    let {
+      airline,
+      departureDateTime,
+      arrivalDateTime,
       origin,
       originTimezone,
       destination,
       destinationTimezone,
-      pnr,
-      seat,
-      companions
     } = req.body;
 
     // Handle both combined and separate date/time fields
@@ -250,7 +267,7 @@ exports.updateFlight = async (req, res) => {
 
     // Find flight with trip
     const flight = await Flight.findByPk(req.params.id, {
-      include: [{ model: Trip, as: 'trip', required: false }]
+      include: [{ model: Trip, as: 'trip', required: false }],
     });
 
     // Verify ownership
@@ -271,15 +288,24 @@ exports.updateFlight = async (req, res) => {
     }
 
     // Sanitize timezone inputs (handle "undefined" string from forms)
-    if (!originTimezone || originTimezone === 'undefined' || (typeof originTimezone === 'string' && originTimezone.trim() === '')) {
+    if (
+      !originTimezone ||
+      originTimezone === 'undefined' ||
+      (typeof originTimezone === 'string' && originTimezone.trim() === '')
+    ) {
       originTimezone = null;
     }
-    if (!destinationTimezone || destinationTimezone === 'undefined' || (typeof destinationTimezone === 'string' && destinationTimezone.trim() === '')) {
+    if (
+      !destinationTimezone ||
+      destinationTimezone === 'undefined' ||
+      (typeof destinationTimezone === 'string' && destinationTimezone.trim() === '')
+    ) {
       destinationTimezone = null;
     }
 
     // Geocode origin and destination if they changed
-    let originResult, destResult;
+    let originResult;
+    let destResult;
 
     if (origin !== flight.origin) {
       originResult = await geocodeWithAirportFallback(origin, airportService, originTimezone);
@@ -298,19 +324,27 @@ exports.updateFlight = async (req, res) => {
       originResult = {
         coords: { lat: flight.originLat, lng: flight.originLng },
         timezone: originTimezone,
-        formattedLocation: flight.origin
+        formattedLocation: flight.origin,
       };
     }
 
     if (destination !== flight.destination) {
-      destResult = await geocodeWithAirportFallback(destination, airportService, destinationTimezone);
+      destResult = await geocodeWithAirportFallback(
+        destination,
+        airportService,
+        destinationTimezone
+      );
       destination = destResult.formattedLocation;
       if (!destinationTimezone) destinationTimezone = destResult.timezone;
     } else {
       // Destination unchanged, but we might need to detect timezone for old flights
       if (!destinationTimezone && !flight.destinationTimezone) {
         // Try to detect timezone from airport code in existing destination
-        destResult = await geocodeWithAirportFallback(destination, airportService, destinationTimezone);
+        destResult = await geocodeWithAirportFallback(
+          destination,
+          airportService,
+          destinationTimezone
+        );
         destinationTimezone = destResult.timezone;
       } else {
         destinationTimezone = destinationTimezone || flight.destinationTimezone;
@@ -319,7 +353,7 @@ exports.updateFlight = async (req, res) => {
       destResult = {
         coords: { lat: flight.destinationLat, lng: flight.destinationLng },
         timezone: destinationTimezone,
-        formattedLocation: flight.destination
+        formattedLocation: flight.destination,
       };
     }
 
@@ -333,14 +367,14 @@ exports.updateFlight = async (req, res) => {
       departureDateTime,
       arrivalDateTime,
       originTimezone,
-      destinationTimezone
+      destinationTimezone,
     });
 
     logger.info('Update flight - converted data:', {
       departureDateTime: convertToUTC(departureDateTime, originTimezone),
       arrivalDateTime: convertToUTC(arrivalDateTime, destinationTimezone),
       originResult: { coords: originResult.coords, timezone: originResult.timezone },
-      destResult: { coords: destResult.coords, timezone: destResult.timezone }
+      destResult: { coords: destResult.coords, timezone: destResult.timezone },
     });
 
     await flight.update({
@@ -357,7 +391,7 @@ exports.updateFlight = async (req, res) => {
       destinationLat: destResult.coords?.lat,
       destinationLng: destResult.coords?.lng,
       pnr,
-      seat
+      seat,
     });
 
     // Update companions for this flight
@@ -398,7 +432,7 @@ exports.updateFlight = async (req, res) => {
       stack: error.stack,
       name: error.name,
       flightId: req.params.id,
-      requestBody: req.body
+      requestBody: req.body,
     });
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
@@ -415,7 +449,7 @@ exports.deleteFlight = async (req, res) => {
   try {
     // Find flight with trip
     const flight = await Flight.findByPk(req.params.id, {
-      include: [{ model: Trip, as: 'trip', required: false }]
+      include: [{ model: Trip, as: 'trip', required: false }],
     });
 
     // Verify ownership
@@ -427,7 +461,7 @@ exports.deleteFlight = async (req, res) => {
       return redirectAfterError(res, req, null, 'Flight not found');
     }
 
-    const tripId = flight.tripId;
+    const { tripId } = flight;
     const flightData = flight.get({ plain: true });
     const flightName = `${flight.airline} ${flight.flightNumber}`;
 
@@ -500,12 +534,12 @@ exports.getAddForm = async (req, res) => {
 
     // Render form partial for sidebar (not modal)
     res.render('partials/flight-form', {
-      tripId: tripId,
+      tripId,
       isEditing: false,
       data: null,
-      isModal: false,  // This tells the partial to render for sidebar
-      airlines: airlines,
-      airports: airports
+      isModal: false, // This tells the partial to render for sidebar
+      airlines,
+      airports,
     });
   } catch (error) {
     logger.error('Error fetching add form:', error);
@@ -530,11 +564,20 @@ exports.getEditForm = async (req, res) => {
             {
               model: Voucher,
               as: 'voucher',
-              attributes: ['id', 'type', 'issuer', 'voucherNumber', 'currency', 'totalValue', 'usedAmount', 'status']
-            }
-          ]
-        }
-      ]
+              attributes: [
+                'id',
+                'type',
+                'issuer',
+                'voucherNumber',
+                'currency',
+                'totalValue',
+                'usedAmount',
+                'status',
+              ],
+            },
+          ],
+        },
+      ],
     });
 
     // Verify ownership first
@@ -550,11 +593,11 @@ exports.getEditForm = async (req, res) => {
           let traveler = null;
           if (attachment.travelerType === 'USER') {
             traveler = await User.findByPk(attachment.travelerId, {
-              attributes: ['id', 'firstName', 'lastName', 'email']
+              attributes: ['id', 'firstName', 'lastName', 'email'],
             });
           } else if (attachment.travelerType === 'COMPANION') {
             traveler = await TravelCompanion.findByPk(attachment.travelerId, {
-              attributes: ['id', 'name', 'email']
+              attributes: ['id', 'name', 'email'],
             });
           }
 
@@ -563,12 +606,16 @@ exports.getEditForm = async (req, res) => {
           attachmentData.traveler = traveler ? traveler.toJSON() : null;
           voucherAttachmentsWithTravelers.push(attachmentData);
 
-          logger.info('Attachment traveler data:', { travelerId: attachment.travelerId, travelerType: attachment.travelerType, travelerData: traveler });
+          logger.info('Attachment traveler data:', {
+            travelerId: attachment.travelerId,
+            travelerType: attachment.travelerType,
+            travelerData: traveler,
+          });
         }
       } catch (travelerError) {
         // Log error but don't fail - allow form to render even if traveler data fetch fails
         logger.error('Error fetching traveler data for attachments:', travelerError);
-        voucherAttachmentsWithTravelers = flight.voucherAttachments.map(att => att.toJSON());
+        voucherAttachmentsWithTravelers = flight.voucherAttachments.map((att) => att.toJSON());
       }
     }
 
@@ -599,17 +646,17 @@ exports.getEditForm = async (req, res) => {
       tripId: flight.tripId || '', // Use tripId if available, empty string otherwise
       trip: flight.trip ? { id: flight.trip.id } : { id: flight.tripId }, // Pass trip object for voucher panel
       isEditing: true,
-      isOwner: true,  // User is owner since we already verified ownership above
+      isOwner: true, // User is owner since we already verified ownership above
       data: {
         ...flightData,
         departureDate,
         departureTime,
         arrivalDate,
-        arrivalTime
+        arrivalTime,
       },
-      isModal: false,  // This tells the partial to render for sidebar
-      airlines: airlines,
-      airports: airports
+      isModal: false, // This tells the partial to render for sidebar
+      airlines,
+      airports,
     });
   } catch (error) {
     logger.error('Error fetching edit form:', error);
