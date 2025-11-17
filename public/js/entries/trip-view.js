@@ -12,19 +12,23 @@ import '../async-form-handler.js';
 
 // Lazy-loaded modules (loaded on demand)
 import { autoLoadPreline } from '../lazy/preline-loader.js';
-import { autoLoadMaps } from '../lazy/maps-loader.js';
+import { loadMaps } from '../lazy/maps-loader.js';
 import { autoLoadCompanions } from '../lazy/companions-loader.js';
 
 // Voucher module is lazy-loaded on demand
 import '../voucher-lazy-loader.js';
 
 // Auto-detect and lazy load modules as needed
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // Lazy load Preline if UI components exist
   autoLoadPreline();
 
-  // Lazy load maps when map containers are in viewport
-  autoLoadMaps();
+  // Load maps eagerly on trip view page (needed for initOverviewMap)
+  // Check if map container exists before loading
+  const hasMap = document.querySelector('#tripMap, [id*="map"]');
+  if (hasMap) {
+    await loadMaps();
+  }
 
   // Lazy load companions when companion UI is detected
   autoLoadCompanions();
