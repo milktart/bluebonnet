@@ -262,14 +262,24 @@ function initializeFlightForm() {
 
   function handleOriginBlur() {
     const value = this.value.trim().toUpperCase();
-    if (value.length === 3 && /^[A-Z]{3}$/.test(value)) {
+    // Try to extract and validate airport code from any format
+    const code = extractAirportCode(value);
+    if (code) {
+      updateAirportFromCode(this);
+    } else if (value.length === 3 && /^[A-Z]{3}$/.test(value)) {
+      // If it's exactly 3 letters, treat it as a code
       updateAirportFromCode(this);
     }
   }
 
   function handleDestinationBlur() {
     const value = this.value.trim().toUpperCase();
-    if (value.length === 3 && /^[A-Z]{3}$/.test(value)) {
+    // Try to extract and validate airport code from any format
+    const code = extractAirportCode(value);
+    if (code) {
+      updateAirportFromCode(this);
+    } else if (value.length === 3 && /^[A-Z]{3}$/.test(value)) {
+      // If it's exactly 3 letters, treat it as a code
       updateAirportFromCode(this);
     }
   }
@@ -306,6 +316,28 @@ function initializeFlightForm() {
     destinationInput.addEventListener('blur', handleDestinationBlur);
     // Reformat on initial load
     reformatAirportField(destinationInput);
+  }
+
+  // Add form submit handler to clean airport values before submission
+  const flightForm = document.getElementById('<%= isAddMode ? "addFlightForm" : "editFlightForm" %>');
+  if (flightForm) {
+    flightForm.addEventListener('submit', function(e) {
+      // Clean up origin field
+      if (originInput && originInput.value) {
+        const originCode = extractAirportCode(originInput.value.trim().toUpperCase());
+        if (originCode) {
+          originInput.value = originCode;
+        }
+      }
+
+      // Clean up destination field
+      if (destinationInput && destinationInput.value) {
+        const destCode = extractAirportCode(destinationInput.value.trim().toUpperCase());
+        if (destCode) {
+          destinationInput.value = destCode;
+        }
+      }
+    });
   }
 }
 
