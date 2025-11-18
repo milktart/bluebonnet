@@ -178,14 +178,7 @@
 </div>
 
 <script>
-// Auto-populate airline and airport based on IATA codes
-const airports = <%- JSON.stringify(airports || {}) %>;
-
-// Make airports data available globally for search
-if (typeof window !== 'undefined') {
-  window.flightFormAirports = airports;
-}
-
+// Initialize flight form with AJAX-based airport autocomplete
 function initializeFlightForm() {
   function updateAirline() {
     const flightNumberInput = document.querySelector('input[name="flightNumber"]');
@@ -229,34 +222,42 @@ function initializeFlightForm() {
     return match ? match[1] : null;
   }
 
-  function updateAirportFromCode(input) {
+  async function updateAirportFromCode(input) {
     const value = input.value.trim().toUpperCase();
     const code = extractAirportCode(value);
 
-    if (!code) {
+    if (!code || code.length !== 3) {
       return;
     }
 
-    const airport = airports[code];
+    try {
+      // Search for the airport using AJAX
+      const response = await fetch(`/flights/airports/search?query=${encodeURIComponent(code)}`);
+      const result = await response.json();
 
-    if (airport) {
-      // Keep only the airport code, no formatting
-      input.value = code;
+      if (result.success && result.data && result.data.length > 0) {
+        const airport = result.data[0]; // Get first match
 
-      // Update timezone hidden field if it exists
-      if (input.name === 'origin') {
-        const timezoneField = document.getElementById('originTimezone') ||
-                              document.getElementById('edit_flight_originTimezone');
-        if (timezoneField) {
-          timezoneField.value = airport.timezone || '';
-        }
-      } else if (input.name === 'destination') {
-        const timezoneField = document.getElementById('destinationTimezone') ||
-                              document.getElementById('edit_flight_destinationTimezone');
-        if (timezoneField) {
-          timezoneField.value = airport.timezone || '';
+        // Keep only the airport code, no formatting
+        input.value = airport.iata;
+
+        // Update timezone hidden field if it exists
+        if (input.name === 'origin') {
+          const timezoneField = document.getElementById('originTimezone') ||
+                                document.getElementById('edit_flight_originTimezone');
+          if (timezoneField) {
+            timezoneField.value = airport.timezone || '';
+          }
+        } else if (input.name === 'destination') {
+          const timezoneField = document.getElementById('destinationTimezone') ||
+                                document.getElementById('edit_flight_destinationTimezone');
+          if (timezoneField) {
+            timezoneField.value = airport.timezone || '';
+          }
         }
       }
+    } catch (error) {
+      console.error('Error fetching airport data:', error);
     }
   }
 
@@ -291,6 +292,87 @@ function initializeFlightForm() {
     }
   }
 
+  // Setup AJAX autocomplete for airport inputs
+  function setupAirportAutocomplete(input) {
+    let searchTimeout;
+    const comboboxWrapper = input.closest('[data-hs-combobox]');
+    if (!comboboxWrapper) return;
+
+    const dropdown = comboboxWrapper.querySelector('[data-hs-combobox-output]');
+    const itemsWrapper = dropdown?.querySelector('[data-hs-combobox-output-items-wrapper]');
+    if (!itemsWrapper) return;
+
+    // Clear default template
+    itemsWrapper.innerHTML = '';
+
+    input.addEventListener('input', function() {
+      const query = this.value.trim();
+
+      // Clear timeout
+      clearTimeout(searchTimeout);
+
+      if (query.length < 2) {
+        dropdown.classList.add('hidden');
+        return;
+      }
+
+      // Debounce search
+      searchTimeout = setTimeout(async () => {
+        try {
+          const response = await fetch(`/flights/airports/search?query=${encodeURIComponent(query)}`);
+          const result = await response.json();
+
+          if (result.success && result.data && result.data.length > 0) {
+            // Clear previous results
+            itemsWrapper.innerHTML = '';
+
+            // Add new results
+            result.data.forEach((airport) => {
+              const item = document.createElement('div');
+              item.className = 'cursor-pointer py-2 px-4 w-full text-sm text-gray-800 hover:bg-gray-100 rounded-lg focus:outline-none focus:bg-gray-100';
+              item.setAttribute('tabindex', '0');
+              item.setAttribute('data-airport-iata', airport.iata);
+              item.setAttribute('data-airport-timezone', airport.timezone || '');
+              item.innerHTML = `<span>${airport.label}</span>`;
+
+              // Handle selection
+              item.addEventListener('click', function() {
+                input.value = airport.iata;
+
+                // Update timezone
+                const timezoneField = input.name === 'origin'
+                  ? (document.getElementById('originTimezone') || document.getElementById('edit_flight_originTimezone'))
+                  : (document.getElementById('destinationTimezone') || document.getElementById('edit_flight_destinationTimezone'));
+
+                if (timezoneField) {
+                  timezoneField.value = airport.timezone || '';
+                }
+
+                dropdown.classList.add('hidden');
+              });
+
+              itemsWrapper.appendChild(item);
+            });
+
+            dropdown.classList.remove('hidden');
+          } else {
+            dropdown.classList.add('hidden');
+          }
+        } catch (error) {
+          console.error('Error searching airports:', error);
+          dropdown.classList.add('hidden');
+        }
+      }, 300);
+    });
+
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!comboboxWrapper.contains(e.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
+  }
+
   // Set up event listeners
   const flightNumberInput = document.querySelector('input[name="flightNumber"]');
   if (flightNumberInput) {
@@ -306,6 +388,8 @@ function initializeFlightForm() {
   if (originInput) {
     originInput.removeEventListener('blur', handleOriginBlur);
     originInput.addEventListener('blur', handleOriginBlur);
+    // Setup AJAX autocomplete
+    setupAirportAutocomplete(originInput);
     // Reformat on initial load
     reformatAirportField(originInput);
   }
@@ -314,6 +398,8 @@ function initializeFlightForm() {
   if (destinationInput) {
     destinationInput.removeEventListener('blur', handleDestinationBlur);
     destinationInput.addEventListener('blur', handleDestinationBlur);
+    // Setup AJAX autocomplete
+    setupAirportAutocomplete(destinationInput);
     // Reformat on initial load
     reformatAirportField(destinationInput);
   }
