@@ -1,10 +1,13 @@
 /**
  * WebSocket Client
  * Manages Socket.IO connection and real-time events
- * Phase 4 - Frontend Modernization: Replace polling with WebSockets
+ * Phase 4 - Frontend Modernization: Replace polling with WebSockets & Event Bus
  */
 
 /* global io */
+/* eslint-disable no-console */
+
+import { eventBus, EventTypes } from './eventBus.js';
 
 // Import Socket.IO client library (loaded via CDN in base template)
 let socket = null;
@@ -69,6 +72,9 @@ export async function initializeSocket() {
     console.log('✅ WebSocket connected:', socket.id);
     reconnectAttempts = 0;
 
+    // Emit event bus notification
+    eventBus.emit(EventTypes.SOCKET_CONNECTED, { socketId: socket.id });
+
     // Emit any queued events after reconnection
     if (window.socketEventQueue && window.socketEventQueue.length > 0) {
       window.socketEventQueue.forEach((event) => {
@@ -80,11 +86,17 @@ export async function initializeSocket() {
 
   socket.on('disconnect', (reason) => {
     console.log('🔌 WebSocket disconnected:', reason);
+
+    // Emit event bus notification
+    eventBus.emit(EventTypes.SOCKET_DISCONNECTED, { reason });
   });
 
   socket.on('connect_error', (error) => {
     reconnectAttempts += 1;
     console.error('❌ WebSocket connection error:', error.message);
+
+    // Emit event bus notification
+    eventBus.emit(EventTypes.SOCKET_ERROR, { error: error.message, attempts: reconnectAttempts });
 
     if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
       console.error('Max reconnection attempts reached. Falling back to polling.');
@@ -94,10 +106,16 @@ export async function initializeSocket() {
 
   socket.on('reconnect', (attemptNumber) => {
     console.log(`🔄 WebSocket reconnected after ${attemptNumber} attempts`);
+
+    // Emit event bus notification
+    eventBus.emit(EventTypes.SOCKET_RECONNECTED, { attemptNumber });
   });
 
   socket.on('reconnect_failed', () => {
     console.error('❌ WebSocket reconnection failed');
+
+    // Emit event bus notification
+    eventBus.emit(EventTypes.SOCKET_ERROR, { error: 'Reconnection failed' });
   });
 
   return socket;

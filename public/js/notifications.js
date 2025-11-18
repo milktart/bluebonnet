@@ -1,12 +1,13 @@
 /**
  * Notification Center
  * Unified notification handling for dashboard and nav
- * Phase 4 - Frontend Modernization: WebSocket Integration
+ * Phase 4 - Frontend Modernization: WebSocket Integration & Event Bus
  */
 
 /* eslint-disable no-use-before-define, no-console, max-len, no-new, no-unused-vars */
 
 import { initializeSocket, onEvent } from './socket-client.js';
+import { eventBus, EventTypes } from './eventBus.js';
 
 let notificationPanelOpen = false;
 let socketInitialized = false;
@@ -106,6 +107,9 @@ function updateBadge(count, badgeId = 'notification-badge', countId = 'unread-co
   } else {
     badge.style.display = 'none';
   }
+
+  // Emit event bus notification
+  eventBus.emit(EventTypes.NOTIFICATION_COUNT_CHANGED, { count, badgeId });
 }
 
 /**
@@ -203,6 +207,9 @@ async function markNotificationAsRead(notificationId) {
   try {
     await fetch(`/notifications/${notificationId}/read`, { method: 'PUT' });
 
+    // Emit event bus notification
+    eventBus.emit(EventTypes.NOTIFICATION_READ, { notificationId });
+
     // Reload notifications for all open panels
     const dashboardPanel = document.getElementById('dashboard-notification-panel');
     const navPanel = document.getElementById('notification-panel');
@@ -231,6 +238,9 @@ async function markNotificationAsRead(notificationId) {
 async function deleteNotification(notificationId) {
   try {
     await fetch(`/notifications/${notificationId}`, { method: 'DELETE' });
+
+    // Emit event bus notification
+    eventBus.emit(EventTypes.NOTIFICATION_DELETED, { notificationId });
 
     // Reload notifications for all open panels
     const dashboardPanel = document.getElementById('dashboard-notification-panel');
@@ -334,6 +344,9 @@ async function initializeWebSocket() {
     // Listen for new notifications
     onEvent('notification:new', (notification) => {
       console.log('📬 New notification received:', notification);
+
+      // Emit event bus notification
+      eventBus.emit(EventTypes.NOTIFICATION_RECEIVED, notification);
 
       // Update badge counts
       updateAllBadges();
