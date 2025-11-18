@@ -104,7 +104,9 @@ function editItem(type, id) {
             initializeItemCompanions();
           }
           initFlightDateTimePickers();
-          initAirportSearch();
+          if (typeof initializeAirportAutocomplete === 'function') {
+            initializeAirportAutocomplete();
+          }
         })
         .catch(error => {
           console.error('Error loading flight form:', error);
@@ -269,7 +271,9 @@ function showAddForm(type) {
             setupAsyncFormSubmission('addFlightForm');
           }
           initFlightDateTimePickers();
-          initAirportSearch();
+          if (typeof initializeAirportAutocomplete === 'function') {
+            initializeAirportAutocomplete();
+          }
         })
         .catch(error => console.error('Error loading flight form:', error));
       break;

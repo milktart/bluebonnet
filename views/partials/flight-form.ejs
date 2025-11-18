@@ -39,13 +39,13 @@
       </div>
     </div>
 
-    <!-- Origin & Destination - Preline Combobox -->
+    <!-- Origin & Destination - AJAX Autocomplete -->
     <div class="grid grid-cols-2 gap-3">
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Origin</label>
-        <div class="relative" data-hs-combobox='{"groupingType": "default", "preventSelection": false, "isOpenOnFocus": true}'>
+        <div class="relative" data-airport-autocomplete>
           <div class="relative">
-            <input class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9" type="text" name="origin" id="<%= isAddMode ? 'originInput' : 'edit_flight_origin' %>" placeholder="AUS" value="<%= data?.origin || '' %>" data-hs-combobox-input autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required>
+            <input class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9" type="text" name="origin" id="<%= isAddMode ? 'originInput' : 'edit_flight_origin' %>" placeholder="AUS" value="<%= data?.origin || '' %>" data-airport-input autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required>
             <div class="absolute right-2 top-2.5 pointer-events-none">
               <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="8"></circle>
@@ -53,28 +53,15 @@
               </svg>
             </div>
           </div>
-          <div class="absolute z-50 w-full max-h-72 p-1 bg-white border border-gray-200 rounded-lg shadow-md hidden" data-hs-combobox-output>
-            <div data-hs-combobox-output-items-wrapper>
-              <div class="cursor-pointer py-2 px-4 w-full text-sm text-gray-800 hover:bg-gray-100 rounded-lg focus:outline-none focus:bg-gray-100" data-hs-combobox-output-item tabindex="0">
-                <div class="flex justify-between items-center w-full">
-                  <span data-hs-combobox-search-text></span>
-                  <span class="hidden hs-combobox-selected:block">
-                    <svg class="flex-shrink-0 w-3.5 h-3.5 text-blue-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="20,6 9,17 4,12"></polyline>
-                    </svg>
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <div class="absolute z-50 w-full max-h-72 p-1 bg-white border border-gray-200 rounded-lg shadow-md overflow-y-auto hidden" data-airport-dropdown></div>
         </div>
         <input type="hidden" name="originTimezone" id="<%= isAddMode ? 'originTimezone' : 'edit_flight_originTimezone' %>" value="<%= data?.originTimezone || '' %>">
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Destination</label>
-        <div class="relative" data-hs-combobox='{"groupingType": "default", "preventSelection": false, "isOpenOnFocus": true}'>
+        <div class="relative" data-airport-autocomplete>
           <div class="relative">
-            <input class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9" type="text" name="destination" id="<%= isAddMode ? 'destinationInput' : 'edit_flight_destination' %>" placeholder="AMS" value="<%= data?.destination || '' %>" data-hs-combobox-input autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required>
+            <input class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 pr-9" type="text" name="destination" id="<%= isAddMode ? 'destinationInput' : 'edit_flight_destination' %>" placeholder="AMS" value="<%= data?.destination || '' %>" data-airport-input autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required>
             <div class="absolute right-2 top-2.5 pointer-events-none">
               <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="8"></circle>
@@ -82,20 +69,7 @@
               </svg>
             </div>
           </div>
-          <div class="absolute z-50 w-full max-h-72 p-1 bg-white border border-gray-200 rounded-lg shadow-md hidden" data-hs-combobox-output>
-            <div data-hs-combobox-output-items-wrapper>
-              <div class="cursor-pointer py-2 px-4 w-full text-sm text-gray-800 hover:bg-gray-100 rounded-lg focus:outline-none focus:bg-gray-100" data-hs-combobox-output-item tabindex="0">
-                <div class="flex justify-between items-center w-full">
-                  <span data-hs-combobox-search-text></span>
-                  <span class="hidden hs-combobox-selected:block">
-                    <svg class="flex-shrink-0 w-3.5 h-3.5 text-blue-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="20,6 9,17 4,12"></polyline>
-                    </svg>
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <div class="absolute z-50 w-full max-h-72 p-1 bg-white border border-gray-200 rounded-lg shadow-md overflow-y-auto hidden" data-airport-dropdown></div>
         </div>
         <input type="hidden" name="destinationTimezone" id="<%= isAddMode ? 'destinationTimezone' : 'edit_flight_destinationTimezone' %>" value="<%= data?.destinationTimezone || '' %>">
       </div>
@@ -178,13 +152,11 @@
 </div>
 
 <script>
-// Auto-populate airline and airport based on IATA codes
-const airports = <%- JSON.stringify(airports || {}) %>;
-
-// Make airports data available globally for search
-if (typeof window !== 'undefined') {
-  window.flightFormAirports = airports;
-}
+// Load airport autocomplete module
+const autocompleteScript = document.createElement('script');
+autocompleteScript.src = '/js/airport-autocomplete.js';
+autocompleteScript.type = 'module';
+document.head.appendChild(autocompleteScript);
 
 function initializeFlightForm() {
   function updateAirline() {
@@ -229,34 +201,48 @@ function initializeFlightForm() {
     return match ? match[1] : null;
   }
 
-  function updateAirportFromCode(input) {
+  async function updateAirportFromCode(input) {
     const value = input.value.trim().toUpperCase();
     const code = extractAirportCode(value);
 
-    if (!code) {
+    if (!code || code.length !== 3) {
       return;
     }
 
-    const airport = airports[code];
+    try {
+      // Fetch airport data from API
+      const response = await fetch(`/api/v1/airports/${code}`);
 
-    if (airport) {
-      // Keep only the airport code, no formatting
-      input.value = code;
+      if (!response.ok) {
+        console.warn(`Airport ${code} not found`);
+        return;
+      }
 
-      // Update timezone hidden field if it exists
-      if (input.name === 'origin') {
-        const timezoneField = document.getElementById('originTimezone') ||
-                              document.getElementById('edit_flight_originTimezone');
-        if (timezoneField) {
-          timezoneField.value = airport.timezone || '';
-        }
-      } else if (input.name === 'destination') {
-        const timezoneField = document.getElementById('destinationTimezone') ||
-                              document.getElementById('edit_flight_destinationTimezone');
-        if (timezoneField) {
-          timezoneField.value = airport.timezone || '';
+      const data = await response.json();
+
+      if (data.success && data.airport) {
+        const airport = data.airport;
+
+        // Keep only the airport code, no formatting
+        input.value = code;
+
+        // Update timezone hidden field if it exists
+        if (input.name === 'origin') {
+          const timezoneField = document.getElementById('originTimezone') ||
+                                document.getElementById('edit_flight_originTimezone');
+          if (timezoneField) {
+            timezoneField.value = airport.timezone || '';
+          }
+        } else if (input.name === 'destination') {
+          const timezoneField = document.getElementById('destinationTimezone') ||
+                                document.getElementById('edit_flight_destinationTimezone');
+          if (timezoneField) {
+            timezoneField.value = airport.timezone || '';
+          }
         }
       }
+    } catch (error) {
+      console.error('Error fetching airport data:', error);
     }
   }
 
@@ -291,6 +277,87 @@ function initializeFlightForm() {
     }
   }
 
+  // Setup AJAX autocomplete for airport inputs
+  function setupAirportAutocomplete(input) {
+    let searchTimeout;
+    const comboboxWrapper = input.closest('[data-hs-combobox]');
+    if (!comboboxWrapper) return;
+
+    const dropdown = comboboxWrapper.querySelector('[data-hs-combobox-output]');
+    const itemsWrapper = dropdown?.querySelector('[data-hs-combobox-output-items-wrapper]');
+    if (!itemsWrapper) return;
+
+    // Clear default template
+    itemsWrapper.innerHTML = '';
+
+    input.addEventListener('input', function() {
+      const query = this.value.trim();
+
+      // Clear timeout
+      clearTimeout(searchTimeout);
+
+      if (query.length < 2) {
+        dropdown.classList.add('hidden');
+        return;
+      }
+
+      // Debounce search
+      searchTimeout = setTimeout(async () => {
+        try {
+          const response = await fetch(`/flights/airports/search?query=${encodeURIComponent(query)}`);
+          const result = await response.json();
+
+          if (result.success && result.data && result.data.length > 0) {
+            // Clear previous results
+            itemsWrapper.innerHTML = '';
+
+            // Add new results
+            result.data.forEach((airport) => {
+              const item = document.createElement('div');
+              item.className = 'cursor-pointer py-2 px-4 w-full text-sm text-gray-800 hover:bg-gray-100 rounded-lg focus:outline-none focus:bg-gray-100';
+              item.setAttribute('tabindex', '0');
+              item.setAttribute('data-airport-iata', airport.iata);
+              item.setAttribute('data-airport-timezone', airport.timezone || '');
+              item.innerHTML = `<span>${airport.label}</span>`;
+
+              // Handle selection
+              item.addEventListener('click', function() {
+                input.value = airport.iata;
+
+                // Update timezone
+                const timezoneField = input.name === 'origin'
+                  ? (document.getElementById('originTimezone') || document.getElementById('edit_flight_originTimezone'))
+                  : (document.getElementById('destinationTimezone') || document.getElementById('edit_flight_destinationTimezone'));
+
+                if (timezoneField) {
+                  timezoneField.value = airport.timezone || '';
+                }
+
+                dropdown.classList.add('hidden');
+              });
+
+              itemsWrapper.appendChild(item);
+            });
+
+            dropdown.classList.remove('hidden');
+          } else {
+            dropdown.classList.add('hidden');
+          }
+        } catch (error) {
+          console.error('Error searching airports:', error);
+          dropdown.classList.add('hidden');
+        }
+      }, 300);
+    });
+
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!comboboxWrapper.contains(e.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
+  }
+
   // Set up event listeners
   const flightNumberInput = document.querySelector('input[name="flightNumber"]');
   if (flightNumberInput) {
@@ -306,6 +373,8 @@ function initializeFlightForm() {
   if (originInput) {
     originInput.removeEventListener('blur', handleOriginBlur);
     originInput.addEventListener('blur', handleOriginBlur);
+    // Setup AJAX autocomplete
+    setupAirportAutocomplete(originInput);
     // Reformat on initial load
     reformatAirportField(originInput);
   }
@@ -314,6 +383,8 @@ function initializeFlightForm() {
   if (destinationInput) {
     destinationInput.removeEventListener('blur', handleDestinationBlur);
     destinationInput.addEventListener('blur', handleDestinationBlur);
+    // Setup AJAX autocomplete
+    setupAirportAutocomplete(destinationInput);
     // Reformat on initial load
     reformatAirportField(destinationInput);
   }
