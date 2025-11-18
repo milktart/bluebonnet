@@ -11,6 +11,9 @@ import '../companions.js';
 // Voucher module is lazy-loaded on demand
 import '../voucher-lazy-loader.js';
 import '../trips-list.js';
+// Event delegation handlers
+import '../dashboard-handlers.js';
 
 // Log bundle load
+// eslint-disable-next-line no-console
 console.log('✅ Dashboard bundle loaded');
