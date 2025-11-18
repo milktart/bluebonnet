@@ -88,6 +88,11 @@ app.use(passport.session());
 // Flash messages
 app.use(flash());
 
+// Request logging middleware (Phase 3)
+const requestLogger = require('./middleware/requestLogger');
+
+app.use(requestLogger);
+
 // Asset version for cache-busting (set once at server start)
 const ASSET_VERSION = Date.now();
 
@@ -171,42 +176,34 @@ app.get('/debug/bundles', (req, res) => {
   res.json(result);
 });
 
+// Rate limiting middleware (Phase 3)
+const { authLimiter, apiLimiter, formLimiter } = require('./middleware/rateLimiter');
+
 // Routes
 app.use('/', require('./routes/index'));
-app.use('/auth', require('./routes/auth'));
+app.use('/auth', authLimiter, require('./routes/auth')); // Rate limit auth routes
 app.use('/account', require('./routes/account'));
 app.use('/companions', require('./routes/companions'));
 app.use('/companion-relationships', require('./routes/companionRelationships'));
-app.use('/api', require('./routes/api'));
+app.use('/api', apiLimiter, require('./routes/api')); // Rate limit API routes
 app.use('/trips', require('./routes/trips'));
 app.use('/trip-invitations', require('./routes/tripInvitations'));
 app.use('/notifications', require('./routes/notifications'));
-app.use('/flights', require('./routes/flights'));
-app.use('/hotels', require('./routes/hotels'));
-app.use('/transportation', require('./routes/transportation'));
-app.use('/car-rentals', require('./routes/carRentals'));
-app.use('/events', require('./routes/events'));
+app.use('/flights', formLimiter, require('./routes/flights')); // Rate limit form submissions
+app.use('/hotels', formLimiter, require('./routes/hotels'));
+app.use('/transportation', formLimiter, require('./routes/transportation'));
+app.use('/car-rentals', formLimiter, require('./routes/carRentals'));
+app.use('/events', formLimiter, require('./routes/events'));
 app.use('/vouchers', require('./routes/vouchers'));
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).render('404', { title: 'Page Not Found', req });
-});
+// Error handling middleware (Phase 3)
+const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 
-// Error handler
-app.use((err, req, res, _next) => {
-  logger.error('Unhandled error', {
-    error: err.message,
-    stack: err.stack,
-    path: req.path,
-    method: req.method,
-    userId: req.user?.id,
-  });
-  res.status(500).render('error', {
-    title: 'Error',
-    error: process.env.NODE_ENV === 'development' ? err : {},
-  });
-});
+// 404 handler - must come after all routes
+app.use(notFoundHandler);
+
+// Error handler - must be last
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 

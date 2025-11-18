@@ -1,0 +1,170 @@
+/**
+ * Error Handler Middleware
+ * Phase 3 - Backend Architecture: Middleware Enhancements
+ *
+ * Provides consistent error handling across the application
+ */
+
+/* eslint-disable max-classes-per-file */
+
+const logger = require('../utils/logger');
+
+/**
+ * Custom Application Error class
+ * Operational errors that should be handled gracefully
+ */
+class AppError extends Error {
+  constructor(message, statusCode = 500, isOperational = true) {
+    super(message);
+    this.statusCode = statusCode;
+    this.isOperational = isOperational;
+    this.name = this.constructor.name;
+
+    // Capture stack trace
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+/**
+ * Common error types with predefined status codes
+ */
+class ValidationError extends AppError {
+  constructor(message) {
+    super(message, 400);
+  }
+}
+
+class AuthenticationError extends AppError {
+  constructor(message = 'Authentication required') {
+    super(message, 401);
+  }
+}
+
+class AuthorizationError extends AppError {
+  constructor(message = 'Access denied') {
+    super(message, 403);
+  }
+}
+
+class NotFoundError extends AppError {
+  constructor(resource = 'Resource') {
+    super(`${resource} not found`, 404);
+  }
+}
+
+class ConflictError extends AppError {
+  constructor(message) {
+    super(message, 409);
+  }
+}
+
+/**
+ * Error Handler Middleware
+ * Handles all errors in the application
+ */
+const errorHandler = (err, req, res, next) => {
+  // Set defaults
+  err.statusCode = err.statusCode || 500;
+  err.message = err.message || 'Internal Server Error';
+
+  // Log error with context
+  const errorContext = {
+    error: err.message,
+    statusCode: err.statusCode,
+    stack: err.stack,
+    path: req.path,
+    method: req.method,
+    userId: req.user?.id,
+    isOperational: err.isOperational,
+  };
+
+  if (err.statusCode >= 500) {
+    logger.error('Server error occurred:', errorContext);
+  } else {
+    logger.warn('Client error occurred:', errorContext);
+  }
+
+  // Check if response already sent
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  // Determine if we should show detailed errors
+  const showDetails = process.env.NODE_ENV !== 'production' || err.isOperational;
+
+  // Handle specific error types
+  if (err.name === 'SequelizeValidationError') {
+    err.statusCode = 400;
+    err.message = err.errors.map((e) => e.message).join(', ');
+  } else if (err.name === 'SequelizeUniqueConstraintError') {
+    err.statusCode = 409;
+    err.message = 'A record with this value already exists';
+  } else if (err.name === 'SequelizeForeignKeyConstraintError') {
+    err.statusCode = 400;
+    err.message = 'Invalid reference to related record';
+  }
+
+  // Check if this is an AJAX/API request
+  const isAjax = req.xhr || req.headers['x-async-request'] === 'true';
+  const isApiRequest = req.path.startsWith('/api/');
+
+  if (isAjax || isApiRequest) {
+    // Return JSON for AJAX/API requests
+    return res.status(err.statusCode).json({
+      success: false,
+      error: showDetails ? err.message : 'An error occurred',
+      ...(showDetails && { stack: err.stack }),
+    });
+  }
+
+  // Render error page for traditional requests
+  if (!err.isOperational && process.env.NODE_ENV === 'production') {
+    // Don't leak error details in production for non-operational errors
+    return res.status(500).render('error', {
+      title: 'Error',
+      error: {
+        message: 'Something went wrong. Please try again later.',
+        status: 500,
+      },
+    });
+  }
+
+  // Show detailed error page in development or for operational errors
+  res.status(err.statusCode).render('error', {
+    title: 'Error',
+    error: {
+      message: err.message,
+      status: err.statusCode,
+      ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
+    },
+  });
+};
+
+/**
+ * 404 Not Found Handler
+ * Catches all requests that don't match any routes
+ */
+const notFoundHandler = (req, res, next) => {
+  const error = new NotFoundError('Page');
+  next(error);
+};
+
+/**
+ * Async handler wrapper
+ * Wraps async route handlers to catch errors automatically
+ */
+const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+module.exports = {
+  AppError,
+  ValidationError,
+  AuthenticationError,
+  AuthorizationError,
+  NotFoundError,
+  ConflictError,
+  errorHandler,
+  notFoundHandler,
+  asyncHandler,
+};
