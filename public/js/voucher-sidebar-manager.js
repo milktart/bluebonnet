@@ -753,8 +753,8 @@ async function refreshFlightAttachments(flightId) {
       if (typeof initFlightDateTimePickers === 'function') {
         initFlightDateTimePickers();
       }
-      if (typeof initAirportSearch === 'function') {
-        initAirportSearch();
+      if (typeof initializeAirportAutocomplete === 'function') {
+        initializeAirportAutocomplete();
       }
     } else {
       console.error('Could not find secondary-sidebar-content container');

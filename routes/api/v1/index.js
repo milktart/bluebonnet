@@ -10,9 +10,11 @@ const router = express.Router();
 
 // Import v1 route modules
 const tripsRoutes = require('./trips');
+const airportsRoutes = require('./airports');
 
 // Mount route modules
 router.use('/trips', tripsRoutes);
+router.use('/airports', airportsRoutes);
 
 // API health check
 router.get('/health', (req, res) => {

@@ -1,7 +1,8 @@
 /**
  * Trip View - Utilities
- * Airport search and helper functions
+ * Helper functions for trip view
  * Note: Date/time formatting functions are in datetime-formatter.js
+ * Note: Airport autocomplete is now in airport-autocomplete.js (AJAX-based)
  */
 
 function lookupAirline(flightNumber, airlineFieldId = null) {
@@ -30,75 +31,6 @@ function lookupAirline(flightNumber, airlineFieldId = null) {
   } else {
     airlineField.value = '';
   }
-}
-
-// Note: airportsData is declared globally in view.ejs
-
-function formatAirportDisplay(code, airport) {
-  return `${code} - ${airport.airport_name}, ${airport.city_name}, ${airport.country_name}`;
-}
-
-function searchAirports(query) {
-  if (!query || query.length < 2) return [];
-
-  const lowerQuery = query.toLowerCase();
-  const results = [];
-
-  // Use flight form airports if available (full dataset), otherwise use limited airportsData
-  const airportSource = (typeof window !== 'undefined' && window.flightFormAirports) ? window.flightFormAirports : airportsData;
-
-  console.log('Using airport source with', Object.keys(airportSource).length, 'airports');
-
-  Object.entries(airportSource).forEach(([code, airport]) => {
-    const airportName = airport.airport_name || '';
-    const cityName = airport.city_name || '';
-    const countryName = airport.country_name || '';
-    const searchText = `${code} ${airportName} ${cityName} ${countryName}`.toLowerCase();
-
-    if (searchText.includes(lowerQuery)) {
-      results.push({
-        code: code,
-        airport: airport,
-        display: formatAirportDisplay(code, airport),
-        relevance: calculateRelevance(lowerQuery, code, airport)
-      });
-    }
-  });
-
-  results.sort((a, b) => b.relevance - a.relevance);
-  return results.slice(0, 10);
-}
-
-function calculateRelevance(query, code, airport) {
-  let score = 0;
-  const lowerCode = code.toLowerCase();
-  const lowerAirportName = airport.airport_name.toLowerCase();
-  const lowerCityName = airport.city_name.toLowerCase();
-  const lowerCountryName = airport.country_name.toLowerCase();
-
-  if (lowerCode === query) {
-    score += 1000;
-  } else if (lowerCode.startsWith(query)) {
-    score += 900;
-  } else if (lowerCityName === query) {
-    score += 800;
-  } else if (lowerCityName.startsWith(query)) {
-    score += 700;
-  } else if (lowerAirportName.startsWith(query)) {
-    score += 600;
-  } else if (lowerCityName.includes(query)) {
-    score += 500;
-  } else if (lowerAirportName.includes(query)) {
-    score += 400;
-  } else if (lowerCountryName.includes(query)) {
-    score += 300;
-  }
-
-  if (lowerCode === query) score += 500;
-  if (lowerCityName === query) score += 400;
-  if (lowerAirportName === query) score += 300;
-
-  return score;
 }
 
 function formatTimeInput(input) {
@@ -142,149 +74,7 @@ function initFlightDateTimePickers() {
   }
 }
 
-function initAirportSearch() {
-  // Find all inputs with name="origin" or name="destination" and initialize them
-  const originInputs = document.querySelectorAll('input[name="origin"]');
-  const destinationInputs = document.querySelectorAll('input[name="destination"]');
-
-  console.log('Found ' + originInputs.length + ' origin inputs');
-  console.log('Found ' + destinationInputs.length + ' destination inputs');
-
-  originInputs.forEach(input => {
-    const container = input.closest('[data-hs-combobox]');
-    if (container) {
-      initCustomComboboxByInput(input);
-    }
-  });
-
-  destinationInputs.forEach(input => {
-    const container = input.closest('[data-hs-combobox]');
-    if (container) {
-      initCustomComboboxByInput(input);
-    }
-  });
-}
-
-function initCustomComboboxByInput(input) {
-  if (!input) return;
-
-  const container = input.closest('[data-hs-combobox]');
-  if (!container) return;
-
-  const dropdown = container.querySelector('[data-hs-combobox-output]');
-  if (!dropdown) return;
-
-  const itemsWrapper = dropdown.querySelector('[data-hs-combobox-output-items-wrapper]');
-  if (!itemsWrapper) return;
-
-  attachAirportSearchListeners(input, dropdown, itemsWrapper);
-}
-
-function initCustomCombobox(inputId) {
-  const input = document.getElementById(inputId);
-  if (!input) return;
-
-  const container = input.closest('[data-hs-combobox]');
-  if (!container) return;
-
-  const dropdown = container.querySelector('[data-hs-combobox-output]');
-  if (!dropdown) return;
-
-  const itemsWrapper = dropdown.querySelector('[data-hs-combobox-output-items-wrapper]');
-  if (!itemsWrapper) return;
-
-  attachAirportSearchListeners(input, dropdown, itemsWrapper);
-}
-
-function attachAirportSearchListeners(input, dropdown, itemsWrapper) {
-
-  input.addEventListener('input', function() {
-    const query = this.value;
-    console.log('Airport search query:', query);
-
-    if (query.length < 2) {
-      dropdown.classList.add('hidden');
-      return;
-    }
-
-    const results = searchAirports(query);
-    console.log('Airport search results:', results.length);
-    itemsWrapper.innerHTML = '';
-
-    // Ensure wrapper has proper overflow handling
-    itemsWrapper.className = 'overflow-y-auto max-h-64';
-
-    if (results.length === 0) {
-      itemsWrapper.innerHTML = '<div class="py-2 px-4 text-sm text-gray-500">No airports found</div>';
-    } else {
-      results.forEach(result => {
-        const item = document.createElement('div');
-        item.className = 'cursor-pointer py-2 px-4 w-full text-sm text-gray-800 hover:bg-gray-100 rounded-lg focus:outline-none focus:bg-gray-100';
-        item.setAttribute('data-hs-combobox-output-item', '');
-        item.setAttribute('tabindex', '0');
-
-        item.innerHTML = `
-          <div class="flex justify-between items-center w-full min-w-0">
-            <div class="min-w-0 flex-1">
-              <div class="font-medium truncate">${result.code}</div>
-              <div class="text-xs text-gray-500 truncate">${result.airport.airport_name}</div>
-              <div class="text-xs text-gray-400 truncate">${result.airport.city_name}, ${result.airport.country_name}</div>
-            </div>
-          </div>
-        `;
-
-        item.addEventListener('click', function() {
-          input.value = result.display;
-          dropdown.classList.add('hidden');
-          const event = new Event('change', { bubbles: true });
-          input.dispatchEvent(event);
-        });
-
-        itemsWrapper.appendChild(item);
-      });
-    }
-
-    dropdown.classList.remove('hidden');
-  });
-
-  input.addEventListener('focus', function() {
-    if (this.value.length >= 2) {
-      dropdown.classList.remove('hidden');
-    }
-  });
-
-  input.addEventListener('blur', function() {
-    setTimeout(() => {
-      dropdown.classList.add('hidden');
-    }, 200);
-  });
-
-  input.addEventListener('keydown', function(e) {
-    const items = dropdown.querySelectorAll('[data-hs-combobox-output-item]');
-    const activeItem = dropdown.querySelector('[data-hs-combobox-output-item].bg-gray-100');
-
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      let nextItem = activeItem ? activeItem.nextElementSibling : items[0];
-      if (!nextItem) nextItem = items[0];
-      items.forEach(item => item.classList.remove('bg-gray-100'));
-      if (nextItem) nextItem.classList.add('bg-gray-100');
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      let prevItem = activeItem ? activeItem.previousElementSibling : items[items.length - 1];
-      if (!prevItem) prevItem = items[items.length - 1];
-      items.forEach(item => item.classList.remove('bg-gray-100'));
-      if (prevItem) prevItem.classList.add('bg-gray-100');
-    } else if (e.key === 'Enter' && activeItem) {
-      e.preventDefault();
-      activeItem.click();
-    } else if (e.key === 'Escape') {
-      dropdown.classList.add('hidden');
-    }
-  });
-}
-
-// === Additional Trip Utility Functions (from trip-utils.js) ===
+// === Additional Trip Utility Functions ===
 
 /**
  * Extract flight number without airline code
@@ -346,7 +136,5 @@ if (typeof window !== 'undefined') {
   window.formatDateTimeLocal = formatDateTimeLocal;
   window.getLatestDate = getLatestDate;
   window.initFlightDateTimePickers = initFlightDateTimePickers;
-  window.initAirportSearch = initAirportSearch;
-  window.searchAirports = searchAirports;
   window.lookupAirline = lookupAirline;
 }
