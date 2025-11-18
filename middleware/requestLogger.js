@@ -12,14 +12,22 @@ const logger = require('../utils/logger');
  * Logs all HTTP requests with response time and status code
  */
 const requestLogger = (req, res, next) => {
-  // Skip logging for static assets and health checks
+  // Skip logging for static assets, health checks, and common browser-requested assets
+  const skipPaths = [
+    '/css/',
+    '/js/',
+    '/images/',
+    '/dist/',
+    '/health',
+    '/favicon.ico',
+    '/apple-touch-icon.png',
+    '/apple-touch-icon-precomposed.png',
+    '/robots.txt',
+    '/sitemap.xml',
+  ];
+
   if (
-    req.path.startsWith('/css/') ||
-    req.path.startsWith('/js/') ||
-    req.path.startsWith('/images/') ||
-    req.path.startsWith('/dist/') ||
-    req.path === '/health' ||
-    req.path === '/favicon.ico'
+    skipPaths.some((path) => (path.endsWith('/') ? req.path.startsWith(path) : req.path === path))
   ) {
     return next();
   }

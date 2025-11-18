@@ -67,21 +67,35 @@ const errorHandler = (err, req, res, next) => {
   err.statusCode = err.statusCode || 500;
   err.message = err.message || 'Internal Server Error';
 
-  // Log error with context
-  const errorContext = {
-    error: err.message,
-    statusCode: err.statusCode,
-    stack: err.stack,
-    path: req.path,
-    method: req.method,
-    userId: req.user?.id,
-    isOperational: err.isOperational,
-  };
+  // Common browser-requested assets that result in expected 404s
+  const commonMissingAssets = [
+    '/favicon.ico',
+    '/apple-touch-icon.png',
+    '/apple-touch-icon-precomposed.png',
+    '/robots.txt',
+    '/sitemap.xml',
+  ];
 
-  if (err.statusCode >= 500) {
-    logger.error('Server error occurred:', errorContext);
-  } else {
-    logger.warn('Client error occurred:', errorContext);
+  // Skip logging common, expected 404s
+  const isCommon404 = err.statusCode === 404 && commonMissingAssets.includes(req.path);
+
+  // Log error with context (skip common 404s)
+  if (!isCommon404) {
+    const errorContext = {
+      error: err.message,
+      statusCode: err.statusCode,
+      stack: err.stack,
+      path: req.path,
+      method: req.method,
+      userId: req.user?.id,
+      isOperational: err.isOperational,
+    };
+
+    if (err.statusCode >= 500) {
+      logger.error('Server error occurred:', errorContext);
+    } else {
+      logger.warn('Client error occurred:', errorContext);
+    }
   }
 
   // Check if response already sent
