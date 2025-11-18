@@ -10,6 +10,10 @@ import '../trip-view-sidebar.js';
 import '../sidebar-loader.js';
 import '../async-form-handler.js';
 
+// Event delegation handlers
+import '../dashboard-handlers.js'; // For sidebar, notification, and navigation
+import '../shared-handlers.js'; // For trip-specific actions
+
 // Lazy-loaded modules (loaded on demand)
 import { autoLoadPreline } from '../lazy/preline-loader.js';
 import { loadMaps } from '../lazy/maps-loader.js';

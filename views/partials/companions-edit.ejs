@@ -3,14 +3,14 @@
   <!-- Header with Back Arrow -->
   <div class="flex items-center justify-between mb-6 gap-2">
     <div class="flex items-center gap-2 min-w-0">
-      <button onclick="goBackInSidebar()" class="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors flex-shrink-0" title="Go back">
+      <button data-action="goBackInSidebar" class="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors flex-shrink-0" title="Go back">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
         </svg>
       </button>
       <h2 class="text-lg font-bold text-gray-900 truncate">Edit Companion</h2>
     </div>
-    <button onclick="closeSecondarySidebar()" class="text-gray-400 hover:text-gray-600 flex-shrink-0">
+    <button data-action="closeSecondarySidebar" class="text-gray-400 hover:text-gray-600 flex-shrink-0">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
       </svg>
@@ -102,7 +102,7 @@
         <span class="material-symbols-outlined mr-2" style="font-size: 18px;">check</span>
         Update Companion
       </button>
-      <button type="button" onclick="goBackInSidebar()" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
+      <button type="button" data-action="goBackInSidebar" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
         Cancel
       </button>
       <button type="button" onclick="deleteCompanionSidebar('<%= companion.id %>')" class="ml-auto inline-flex items-center px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors">

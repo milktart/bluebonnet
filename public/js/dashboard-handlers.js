@@ -28,6 +28,24 @@ function handleOpenSecondarySidebar(_element, _event) {
 }
 
 /**
+ * Close tertiary sidebar
+ */
+function handleCloseTertiarySidebar(_element, _event) {
+  if (typeof window.closeTertiarySidebar === 'function') {
+    window.closeTertiarySidebar();
+  }
+}
+
+/**
+ * Go back in sidebar history
+ */
+function handleGoBackInSidebar(_element, _event) {
+  if (typeof window.goBackInSidebar === 'function') {
+    window.goBackInSidebar();
+  }
+}
+
+/**
  * Show create trip form
  */
 function handleShowCreateTripForm(_element, _event) {
@@ -216,6 +234,8 @@ function registerDashboardHandlers() {
   registerHandlers({
     closeSecondarySidebar: handleCloseSecondarySidebar,
     openSecondarySidebar: handleOpenSecondarySidebar,
+    closeTertiarySidebar: handleCloseTertiarySidebar,
+    goBackInSidebar: handleGoBackInSidebar,
     showCreateTripForm: handleShowCreateTripForm,
     showCreateEventForm: handleShowCreateEventForm,
     removeCompanionFromTrip: handleRemoveCompanionFromTrip,

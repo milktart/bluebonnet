@@ -17,7 +17,7 @@
         <h1 class="text-3xl font-bold text-gray-900">Travel Vouchers & Credits</h1>
         <p class="text-gray-600 mt-1">Manage your travel credits, gift cards, and vouchers</p>
       </div>
-      <button data-action="showAddVoucherModal" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+      <button onclick="showAddVoucherModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
         <span class="material-symbols-outlined" style="font-size: 20px;">add</span>
         Add Voucher
       </button>
@@ -45,7 +45,7 @@
     <div class="mb-6 flex gap-4 flex-wrap">
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-        <select data-on-change="filterItems" id="statusFilter" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white">
+        <select onchange="filterVouchers()" id="statusFilter" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white">
           <option value="">All Statuses</option>
           <option value="OPEN">Open</option>
           <option value="PARTIALLY_USED">Partially Used</option>
@@ -57,7 +57,7 @@
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
-        <select data-on-change="filterItems" id="typeFilter" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white">
+        <select onchange="filterVouchers()" id="typeFilter" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white">
           <option value="">All Types</option>
           <option value="TRAVEL_CREDIT">Travel Credit</option>
           <option value="UPGRADE_CERT">Upgrade Certificate</option>
@@ -74,43 +74,43 @@
         <table id="vouchersTable" class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg shadow-xs">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100" data-action="sortTable" data-column="voucherNumber">
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onclick="sortTable('voucherNumber')">
                 <div class="flex items-center gap-2">
                   Voucher Number
                   <span class="material-symbols-outlined text-xs sort-indicator" style="font-size: 16px; display: none;">unfold_more</span>
                 </div>
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100" data-action="sortTable" data-column="issuer">
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onclick="sortTable('issuer')">
                 <div class="flex items-center gap-2">
                   Issuer
                   <span class="material-symbols-outlined text-xs sort-indicator" style="font-size: 16px; display: none;">unfold_more</span>
                 </div>
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100" data-action="sortTable" data-column="type">
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onclick="sortTable('type')">
                 <div class="flex items-center gap-2">
                   Type
                   <span class="material-symbols-outlined text-xs sort-indicator" style="font-size: 16px; display: none;">unfold_more</span>
                 </div>
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100" data-action="sortTable" data-column="status">
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onclick="sortTable('status')">
                 <div class="flex items-center gap-2">
                   Status
                   <span class="material-symbols-outlined text-xs sort-indicator" style="font-size: 16px; display: none;">unfold_more</span>
                 </div>
               </th>
-              <th class="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100" data-action="sortTable" data-column="totalValue">
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onclick="sortTable('totalValue')">
                 <div class="flex items-center justify-end gap-2">
                   Amount
                   <span class="material-symbols-outlined text-xs sort-indicator" style="font-size: 16px; display: none;">unfold_more</span>
                 </div>
               </th>
-              <th class="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100" data-action="sortTable" data-column="usagePercent">
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onclick="sortTable('usagePercent')">
                 <div class="flex items-center justify-end gap-2">
                   Usage
                   <span class="material-symbols-outlined text-xs sort-indicator" style="font-size: 16px; display: none;">unfold_more</span>
                 </div>
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100" data-action="sortTable" data-column="expirationDate">
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onclick="sortTable('expirationDate')">
                 <div class="flex items-center gap-2">
                   Expiration
                   <span class="material-symbols-outlined text-xs sort-indicator" style="font-size: 16px; display: none;">unfold_more</span>
@@ -163,15 +163,15 @@
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div class="flex gap-2">
-                    <button data-action="editVoucher" data-voucher-id="<%= voucher.id %>" class="text-blue-600 hover:text-blue-900" title="Edit">
+                    <button onclick="editVoucher('<%= voucher.id %>')" class="text-blue-600 hover:text-blue-900" title="Edit">
                       <span class="material-symbols-outlined" style="font-size: 18px;">edit</span>
                     </button>
                     <% if ((voucher.status === 'OPEN' || voucher.status === 'PARTIALLY_USED') && voucher.remainingBalance > 0) { %>
-                      <button data-action="reissueRemainder" data-voucher-id="<%= voucher.id %>" data-remaining-balance="<%= voucher.remainingBalance.toFixed(2) %>" class="text-yellow-600 hover:text-yellow-900" title="Reissue Remainder">
+                      <button onclick="reissueRemainder('<%= voucher.id %>', '<%= voucher.remainingBalance.toFixed(2) %>')" class="text-yellow-600 hover:text-yellow-900" title="Reissue Remainder">
                         <span class="material-symbols-outlined" style="font-size: 18px;">assignment</span>
                       </button>
                     <% } %>
-                    <button data-action="deleteVoucher" data-voucher-id="<%= voucher.id %>" data-voucher-number="<%= voucher.voucherNumber %>" class="text-red-600 hover:text-red-900" title="Delete">
+                    <button onclick="deleteVoucher('<%= voucher.id %>', '<%= voucher.voucherNumber %>')" class="text-red-600 hover:text-red-900" title="Delete">
                       <span class="material-symbols-outlined" style="font-size: 18px;">delete</span>
                     </button>
                   </div>
@@ -185,7 +185,7 @@
       <div class="text-center py-12 bg-white rounded-lg border border-gray-200">
         <span class="material-symbols-outlined text-gray-400" style="font-size: 48px; display: block; margin-bottom: 1rem;">card_giftcard</span>
         <p class="text-gray-600 mb-4">No vouchers found</p>
-        <button data-action="showAddVoucherModal" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+        <button onclick="showAddVoucherModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
           Add Your First Voucher
         </button>
       </div>
@@ -197,7 +197,7 @@
     <div class="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto">
       <div class="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
         <h2 id="modalTitle" class="text-xl font-bold text-gray-900">Add New Voucher</h2>
-        <button data-action="closeVoucherModal" class="text-gray-400 hover:text-gray-600">
+        <button onclick="closeVoucherModal()" class="text-gray-400 hover:text-gray-600">
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
@@ -261,7 +261,7 @@
           <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
             Save Voucher
           </button>
-          <button type="button" data-action="closeVoucherModal" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+          <button type="button" onclick="closeVoucherModal()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
             Cancel
           </button>
         </div>

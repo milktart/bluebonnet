@@ -327,7 +327,7 @@
           <!-- Header -->
           <div class="flex items-center justify-between mb-6 pb-6 border-b border-gray-200">
             <h2 class="text-lg font-bold text-gray-900">Add New Voucher</h2>
-            <button onclick="closeTertiarySidebar()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+            <button data-action="closeTertiarySidebar" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
               </svg>
@@ -411,7 +411,7 @@
             <button onclick="submitCreateVoucher()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors">
               Create Voucher
             </button>
-            <button onclick="closeTertiarySidebar()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium text-sm transition-colors">
+            <button data-action="closeTertiarySidebar" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium text-sm transition-colors">
               Cancel
             </button>
           </div>

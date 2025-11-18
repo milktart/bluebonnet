@@ -3,7 +3,7 @@
   <!-- Header with Close Button -->
   <div class="flex items-center justify-between mb-6 gap-2">
     <h2 class="text-lg font-bold text-gray-900 truncate">Account Settings</h2>
-    <button onclick="closeSecondarySidebar()" class="text-gray-400 hover:text-gray-600 flex-shrink-0">
+    <button data-action="closeSecondarySidebar" class="text-gray-400 hover:text-gray-600 flex-shrink-0">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
       </svg>
@@ -42,7 +42,7 @@
             <span class="material-symbols-outlined mr-2" style="font-size: 18px;">check</span>
             Update Profile
           </button>
-          <button type="button" onclick="closeSecondarySidebar()" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors">
+          <button type="button" data-action="closeSecondarySidebar" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors">
             Cancel
           </button>
         </div>
@@ -77,7 +77,7 @@
             <span class="material-symbols-outlined mr-2" style="font-size: 18px;">lock</span>
             Change Password
           </button>
-          <button type="button" onclick="closeSecondarySidebar()" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors">
+          <button type="button" data-action="closeSecondarySidebar" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors">
             Cancel
           </button>
         </div>

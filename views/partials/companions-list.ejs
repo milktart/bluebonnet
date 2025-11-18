@@ -3,7 +3,7 @@
   <!-- Header with Close Button -->
   <div class="flex items-center justify-between mb-6">
     <h2 class="text-lg font-bold text-gray-900">Travel Companions</h2>
-    <button onclick="closeSecondarySidebar()" class="text-gray-400 hover:text-gray-600">
+    <button data-action="closeSecondarySidebar" class="text-gray-400 hover:text-gray-600">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
       </svg>
@@ -93,7 +93,7 @@
 
     <!-- Add Companion Button -->
     <div class="mt-6">
-      <button onclick="loadSidebarContent('/companions/sidebar/create')" class="block w-full px-4 py-2 text-center text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors">
+      <button data-action="loadSidebarContent" data-url="/companions/sidebar/create" class="block w-full px-4 py-2 text-center text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors">
         <span class="material-symbols-outlined inline mr-2" style="font-size: 16px;">person_add</span>
         Add New Companion
       </button>
