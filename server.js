@@ -29,6 +29,10 @@ const app = express();
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// Trust proxy - required for rate limiting behind reverse proxy/load balancer
+// This allows Express to trust X-Forwarded-* headers
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(compression()); // Compress all responses
 
