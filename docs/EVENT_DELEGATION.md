@@ -394,13 +394,15 @@ After converting handlers:
 
 ### Progress Tracking
 
-Files converted: 1/145
+Files converted: 2/145
 
 - ✅ `views/partials/flash.ejs` (3 handlers)
+- ✅ `views/trips/dashboard.ejs` (25+ handlers)
+
+Total: 28+ handlers converted
 
 Files remaining:
 
-- ⏳ `views/trips/dashboard.ejs` (26 handlers)
 - ⏳ `views/account/vouchers.ejs` (17 handlers)
 - ⏳ `views/trips/trip.ejs` (16 handlers)
 - ⏳ And 30+ more files...
