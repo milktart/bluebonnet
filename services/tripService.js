@@ -2,6 +2,7 @@
  * Trip Service
  * Business logic for trip management
  * Phase 3 - Service Layer Pattern
+ * Phase 6 - Performance (Caching)
  */
 
 const { Op } = require('sequelize');
@@ -19,6 +20,7 @@ const {
   ItemCompanion,
 } = require('../models');
 const logger = require('../utils/logger');
+const cacheService = require('./cacheService');
 
 class TripService extends BaseService {
   constructor() {
@@ -70,6 +72,15 @@ class TripService extends BaseService {
    */
   async getUserTrips(userId, options = {}) {
     const { filter = 'upcoming', page = 1, limit = 20 } = options;
+
+    // Try to get from cache first
+    const cached = await cacheService.getCachedUserTrips(userId, filter, page);
+    if (cached) {
+      logger.debug('Cache HIT: User trips', { userId, filter, page });
+      return cached;
+    }
+
+    logger.debug('Cache MISS: User trips', { userId, filter, page });
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -153,12 +164,17 @@ class TripService extends BaseService {
       hasPrevPage: filter === 'past' && page > 1,
     };
 
-    return {
+    const result = {
       ownedTrips,
       companionTrips,
       standalone: standaloneItems,
       pagination,
     };
+
+    // Cache the result
+    await cacheService.cacheUserTrips(userId, filter, page, result);
+
+    return result;
   }
 
   /**
@@ -234,6 +250,10 @@ class TripService extends BaseService {
     const trip = await this.create(tripData);
     logger.info('Trip created:', { tripId: trip.id, userId });
 
+    // Invalidate user caches
+    await cacheService.invalidateUserTrips(userId);
+    await cacheService.invalidateTripStats(userId);
+
     return trip;
   }
 
@@ -253,6 +273,11 @@ class TripService extends BaseService {
 
     await this.update(trip, data);
     logger.info('Trip updated:', { tripId, userId });
+
+    // Invalidate caches
+    await cacheService.invalidateUserTrips(userId);
+    await cacheService.invalidateTripDetails(tripId);
+    await cacheService.invalidateTripStats(userId);
 
     return trip;
   }
@@ -283,6 +308,11 @@ class TripService extends BaseService {
     await this.delete(trip);
     logger.info('Trip deleted:', { tripId, userId });
 
+    // Invalidate caches
+    await cacheService.invalidateUserTrips(userId);
+    await cacheService.invalidateTripDetails(tripId);
+    await cacheService.invalidateTripStats(userId);
+
     return true;
   }
 
@@ -292,6 +322,15 @@ class TripService extends BaseService {
    * @returns {Promise<Object>}
    */
   async getTripStatistics(userId) {
+    // Try to get from cache first
+    const cached = await cacheService.getCachedTripStats(userId);
+    if (cached) {
+      logger.debug('Cache HIT: Trip statistics', { userId });
+      return cached;
+    }
+
+    logger.debug('Cache MISS: Trip statistics', { userId });
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -306,12 +345,17 @@ class TripService extends BaseService {
       }),
     ]);
 
-    return {
+    const result = {
       totalTrips,
       upcomingTrips,
       pastTrips,
       activeTrips,
     };
+
+    // Cache the result
+    await cacheService.cacheTripStats(userId, result);
+
+    return result;
   }
 
   /**
