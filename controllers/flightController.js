@@ -528,24 +528,13 @@ exports.getAddForm = async (req, res) => {
       return res.status(403).send('Unauthorized');
     }
 
-    // Get all airlines and airports for autocomplete
-    const airlines = airportService.getAllAirlines();
-    const airportsArray = await airportService.getAllAirports();
-
-    // Convert airports array to object keyed by IATA code for frontend compatibility
-    const airports = {};
-    airportsArray.forEach((airport) => {
-      airports[airport.iata] = airport;
-    });
-
     // Render form partial for sidebar (not modal)
+    // Airport and airline data will be loaded via AJAX
     res.render('partials/flight-form', {
       tripId,
       isEditing: false,
       data: null,
       isModal: false, // This tells the partial to render for sidebar
-      airlines,
-      airports,
     });
   } catch (error) {
     logger.error('Error fetching add form:', error);
@@ -643,17 +632,8 @@ exports.getEditForm = async (req, res) => {
     const arrivalDate = arrivalDateTime[0] || '';
     const arrivalTime = arrivalDateTime[1] || '';
 
-    // Get all airlines and airports for autocomplete
-    const airlines = airportService.getAllAirlines();
-    const airportsArray = await airportService.getAllAirports();
-
-    // Convert airports array to object keyed by IATA code for frontend compatibility
-    const airports = {};
-    airportsArray.forEach((airport) => {
-      airports[airport.iata] = airport;
-    });
-
     // Render form partial for sidebar (not modal)
+    // Airport and airline data will be loaded via AJAX
     res.render('partials/flight-form', {
       tripId: flight.tripId || '', // Use tripId if available, empty string otherwise
       trip: flight.trip ? { id: flight.trip.id } : { id: flight.tripId }, // Pass trip object for voucher panel
@@ -667,8 +647,6 @@ exports.getEditForm = async (req, res) => {
         arrivalTime,
       },
       isModal: false, // This tells the partial to render for sidebar
-      airlines,
-      airports,
     });
   } catch (error) {
     logger.error('Error fetching edit form:', error);
