@@ -17,6 +17,20 @@ services:
       timeout: 5s
       retries: 5
 
+  dev_redis:
+    image: redis:7-alpine
+    container_name: dev_travel_planner_redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   app:
     build: .
     container_name: dev_travel_planner_app
@@ -29,16 +43,23 @@ services:
       DB_NAME: dev_travel_planner
       DB_USER: postgres
       DB_PASSWORD: postgres
+      REDIS_ENABLED: "true"
+      REDIS_HOST: dev_redis
+      REDIS_PORT: 6379
     env_file:
       - .env
     depends_on:
       dev_postgres:
         condition: service_healthy
+      dev_redis:
+        condition: service_healthy
     restart: unless-stopped
     volumes:
       - ./:/app
-      - /app/node_modules
+      - node_modules:/app/node_modules
     command: sh -c "npm run build-js && npm run dev"
 
 volumes:
   postgres_data:
+  redis_data:
+  node_modules:
