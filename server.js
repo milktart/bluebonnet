@@ -212,7 +212,7 @@ app.get('/health', async (req, res) => {
 
   // Check database connection
   try {
-    await sequelize.authenticate();
+    await db.sequelize.authenticate();
     health.database = 'connected';
   } catch (error) {
     health.database = 'disconnected';
