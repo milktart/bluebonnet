@@ -560,6 +560,15 @@
             Create first trip
           </button>
         </div>
+
+      <script>
+        // Initialize empty data structures for no-trips state
+        window.allTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
+        window.upcomingTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
+        window.pastTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
+        window.globalMarkerAssignments = {};
+      </script>
+
       <% } else { %>
 
       <%
@@ -1214,28 +1223,6 @@
     </div>
   </div>
 
-  <% } %>
-
-  <!-- Scripts -->
-  <!-- External dependencies (CDN) -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <!-- Bundled JavaScript (with code splitting and minification) -->
-  <script type="module" src="<%= getBundle('common') %>"></script>
-  <script type="module" src="<%= getBundle('dashboard') %>"></script>
-
-  <!-- Additional standalone scripts -->
-  <script src="/js/trips-list.js?v=<%= assetVersion %>"></script>
-
-  <% if (trips.length === 0) { %>
-  <script>
-    // Initialize empty data structures for no-trips state
-    window.allTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
-    window.upcomingTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
-    window.pastTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
-    window.globalMarkerAssignments = {};
-  </script>
-  <% } else { %>
   <script>
     // Handle accordion expansion to load trip items via AJAX
     window.loadTripItemsIfNeeded = async function(accordionId) {
@@ -1553,6 +1540,17 @@
 
   </script>
   <% } %>
+
+  <!-- Scripts -->
+  <!-- External dependencies (CDN) -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Bundled JavaScript (with code splitting and minification) -->
+  <script type="module" src="<%= getBundle('common') %>"></script>
+  <script type="module" src="<%= getBundle('dashboard') %>"></script>
+
+  <!-- Additional standalone scripts -->
+  <script src="/js/trips-list.js?v=<%= assetVersion %>"></script>
 
 </body>
 </html>
