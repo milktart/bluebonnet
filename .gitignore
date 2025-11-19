@@ -3,6 +3,8 @@ node_modules/
 
 # Environment variables
 .env
+public/dist/manifest.json
+docker-compose.yml
 
 # Logs
 logs
