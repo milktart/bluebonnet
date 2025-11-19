@@ -50,10 +50,15 @@ module.exports = {
     timezone: '+00:00',
     dialectOptions: {
       timezone: 'Etc/GMT-0',
-      ssl: {
-        require: true,
-        rejectUnauthorized: false,
-      },
+      // Only require SSL if host is not localhost (for Docker deployments)
+      ...(process.env.DB_HOST && process.env.DB_HOST !== 'postgres' && process.env.DB_HOST !== 'localhost'
+        ? {
+            ssl: {
+              require: true,
+              rejectUnauthorized: false,
+            },
+          }
+        : {}),
     },
     pool: {
       max: 10,

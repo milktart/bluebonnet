@@ -1,13 +1,13 @@
 services:
-  dev_postgres:
+  postgres:
     image: postgres:15-alpine
-    container_name: dev_travel_planner_db
+    container_name: prod_travel_planner_db
     environment:
-      POSTGRES_DB: dev_travel_planner
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${DB_NAME:-prod_travel_planner}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -17,13 +17,14 @@ services:
       timeout: 5s
       retries: 5
 
-  dev_redis:
+  redis:
     image: redis:7-alpine
-    container_name: dev_travel_planner_redis
+    container_name: prod_travel_planner_redis
     ports:
-      - "6380:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -32,34 +33,32 @@ services:
       retries: 5
 
   app:
-    build: .
-    container_name: dev_travel_planner_app
+    image: bluebonnet-app-prod
+    container_name: prod_travel_planner_app
     ports:
-      - "3501:3001"
+      - "3500:3000"
     environment:
-      NODE_ENV: development
-      DB_HOST: dev_postgres
+      NODE_ENV: production
+      DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: dev_travel_planner
-      DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_NAME: ${DB_NAME:-prod_travel_planner}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
       REDIS_ENABLED: "true"
-      REDIS_HOST: dev_redis
+      REDIS_HOST: redis
       REDIS_PORT: 6379
+      LOG_LEVEL: ${LOG_LEVEL:-warn}
     env_file:
       - .env
     depends_on:
-      dev_postgres:
+      postgres:
         condition: service_healthy
-      dev_redis:
+      redis:
         condition: service_healthy
     restart: unless-stopped
-    volumes:
-      - ./:/app
-      - node_modules:/app/node_modules
-    command: sh -c "npm run build-js && npm run dev"
 
 volumes:
   postgres_data:
+    name: prod_postgres_data
   redis_data:
-  node_modules:
+    name: prod_redis_data
