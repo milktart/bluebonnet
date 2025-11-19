@@ -1214,8 +1214,6 @@
     </div>
   </div>
 
-  <% } %>
-
   <!-- Scripts -->
   <!-- External dependencies (CDN) -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -1226,6 +1224,16 @@
 
   <!-- Additional standalone scripts -->
   <script src="/js/trips-list.js?v=<%= assetVersion %>"></script>
+
+  <% if (trips.length === 0) { %>
+  <script>
+    // Initialize empty data structures for no-trips state
+    window.allTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
+    window.upcomingTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
+    window.pastTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
+    window.globalMarkerAssignments = {};
+  </script>
+  <% } else { %>
   <script>
     // Handle accordion expansion to load trip items via AJAX
     window.loadTripItemsIfNeeded = async function(accordionId) {
@@ -1542,6 +1550,7 @@
     });
 
   </script>
+  <% } %>
 
 </body>
 </html>
