@@ -9,10 +9,12 @@ const logger = require('./logger');
 
 // Redis configuration
 const redisConfig = {
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+  socket: {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+  },
   password: process.env.REDIS_PASSWORD || undefined,
-  db: parseInt(process.env.REDIS_DB, 10) || 0,
+  database: parseInt(process.env.REDIS_DB, 10) || 0,
 };
 
 // Only enable Redis in production or if explicitly configured
@@ -41,8 +43,8 @@ async function initRedis() {
 
     client.on('connect', () => {
       logger.info('Redis client connected', {
-        host: redisConfig.host,
-        port: redisConfig.port,
+        host: redisConfig.socket.host,
+        port: redisConfig.socket.port,
       });
     });
 
