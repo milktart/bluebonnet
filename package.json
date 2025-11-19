@@ -18,6 +18,7 @@
     "db:migrate:status": "sequelize-cli db:migrate:status",
     "db:seed": "sequelize-cli db:seed:all",
     "db:sync": "node scripts/sync-database.js",
+    "db:seed-airports": "node scripts/seed-airports.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"**/*.{js,json,md,css}\"",
