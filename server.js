@@ -200,6 +200,46 @@ app.get('/debug/bundles', (req, res) => {
   res.json(result);
 });
 
+// Health check endpoint (Phase 7 - DevOps)
+app.get('/health', async (req, res) => {
+  const health = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+    version: require('./package.json').version,
+  };
+
+  // Check database connection
+  try {
+    await sequelize.authenticate();
+    health.database = 'connected';
+  } catch (error) {
+    health.database = 'disconnected';
+    health.status = 'degraded';
+    logger.error('Health check: Database connection failed', { error: error.message });
+  }
+
+  // Check Redis connection
+  try {
+    const redisClient = redis.getClient();
+    if (redisClient && redis.isAvailable()) {
+      await redisClient.ping();
+      health.redis = 'connected';
+    } else {
+      health.redis = 'disabled';
+    }
+  } catch (error) {
+    health.redis = 'disconnected';
+    health.status = 'degraded';
+    logger.error('Health check: Redis connection failed', { error: error.message });
+  }
+
+  // Return appropriate status code
+  const statusCode = health.status === 'ok' ? 200 : 503;
+  res.status(statusCode).json(health);
+});
+
 // Rate limiting middleware (Phase 3)
 const { authLimiter, apiLimiter, formLimiter } = require('./middleware/rateLimiter');
 
