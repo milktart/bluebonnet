@@ -2,6 +2,7 @@ const { Airport } = require('../models');
 const { Op } = require('sequelize');
 const airlines = require('../data/airlines.json');
 const logger = require('../utils/logger');
+const cacheService = require('./cacheService');
 
 class AirportService {
   /**
@@ -14,12 +15,20 @@ class AirportService {
       if (!iataCode || typeof iataCode !== 'string') return null;
 
       const code = iataCode.toUpperCase().trim();
+
+      // Try to get from cache first
+      const cached = await cacheService.getCachedAirportByCode(code);
+      if (cached) {
+        return cached;
+      }
+
+      // Cache miss - fetch from database
       const airport = await Airport.findByPk(code);
 
       if (!airport) return null;
 
       // Return normalized format for backward compatibility
-      return {
+      const result = {
         iata: airport.iata,
         name: airport.name,
         city: airport.city,
@@ -33,6 +42,11 @@ class AirportService {
         country_name: airport.country, // Legacy compatibility
         timezone: airport.timezone,
       };
+
+      // Cache the result
+      await cacheService.cacheAirportByCode(code, result);
+
+      return result;
     } catch (error) {
       logger.error('Error fetching airport by code:', error);
       return null;
@@ -51,6 +65,13 @@ class AirportService {
 
       const searchTerm = query.toLowerCase().trim();
 
+      // Try to get from cache first
+      const cached = await cacheService.getCachedAirportSearch(searchTerm, limit);
+      if (cached) {
+        return cached;
+      }
+
+      // Cache miss - fetch from database
       // Use database LIKE queries with indexes
       const airports = await Airport.findAll({
         where: {
@@ -79,7 +100,7 @@ class AirportService {
       });
 
       // Return normalized format for backward compatibility
-      return airports.map((airport) => ({
+      const results = airports.map((airport) => ({
         iata: airport.iata,
         name: airport.name,
         city: airport.city,
@@ -93,6 +114,11 @@ class AirportService {
         country_name: airport.country,
         timezone: airport.timezone,
       }));
+
+      // Cache the results
+      await cacheService.cacheAirportSearch(searchTerm, limit, results);
+
+      return results;
     } catch (error) {
       logger.error('Error searching airports:', error);
       return [];

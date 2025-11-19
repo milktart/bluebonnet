@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
+const RedisStore = require('connect-redis').default;
 const passport = require('passport');
 const flash = require('connect-flash');
 const methodOverride = require('method-override');
@@ -11,6 +12,7 @@ const fs = require('fs');
 const db = require('./models');
 const dateFormatter = require('./utils/dateFormatter');
 const logger = require('./utils/logger');
+const redis = require('./utils/redis');
 
 // Validate required environment variables
 const requiredEnvVars = ['SESSION_SECRET'];
@@ -69,18 +71,36 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(methodOverride('_method'));
 
 // Session configuration
-const sessionMiddleware = session({
+// Initialize session store (Redis if available, otherwise memory store)
+let sessionStore;
+const redisClient = redis.getClient();
+
+if (redisClient && redis.isAvailable()) {
+  // Use Redis for session storage in production
+  sessionStore = new RedisStore({
+    client: redisClient,
+    prefix: 'sess:',
+  });
+  logger.info('Using Redis for session storage');
+} else {
+  // Fall back to memory store in development
+  logger.info('Using memory store for sessions (not recommended for production)');
+}
+
+const sessionConfig = {
+  store: sessionStore,
   secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    maxAge: 1000 * 60 * 60 * 24, // 24 hours
+    maxAge: parseInt(process.env.SESSION_MAX_AGE, 10) || 1000 * 60 * 60 * 24, // 24 hours default
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production', // Use secure cookies in production (HTTPS)
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Allow cross-site in production
   },
-});
+};
 
+const sessionMiddleware = session(sessionConfig);
 app.use(sessionMiddleware);
 
 // Passport middleware
@@ -211,18 +231,25 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
-// Test database connection and start server
-// NOTE: Database schema is managed by migrations (npm run db:migrate)
-// Run migrations before starting the server in production
-db.sequelize
-  .authenticate()
-  .then(() => {
+// Initialize application
+// 1. Initialize Redis (if enabled)
+// 2. Test database connection
+// 3. Start server
+async function initializeApp() {
+  try {
+    // Initialize Redis
+    await redis.initRedis();
+
+    // Test database connection
+    await db.sequelize.authenticate();
     logger.info('Database connection established successfully');
 
+    // Start server
     const server = app.listen(PORT, () => {
       logger.info(`Server running on port ${PORT}`, {
         environment: process.env.NODE_ENV || 'development',
         port: PORT,
+        redis: redis.isAvailable() ? 'enabled' : 'disabled',
       });
       logger.info('Run "npm run db:migrate" to apply pending database migrations');
     });
@@ -231,13 +258,24 @@ db.sequelize
     const socketService = require('./services/socketService');
     socketService.initialize(server, sessionMiddleware, passport);
     logger.info('WebSocket server initialized');
-  })
-  .catch((err) => {
-    logger.error('Unable to connect to database', {
+
+    // Graceful shutdown handler
+    process.on('SIGTERM', async () => {
+      logger.info('SIGTERM received, shutting down gracefully');
+      await redis.disconnect();
+      server.close(() => {
+        logger.info('Server closed');
+        process.exit(0);
+      });
+    });
+  } catch (err) {
+    logger.error('Application initialization failed', {
       error: err.message,
       stack: err.stack,
-      host: process.env.DB_HOST || 'localhost',
-      database: process.env.DB_NAME || 'dev_travel_planner',
     });
     process.exit(1);
-  });
+  }
+}
+
+// Start the application
+initializeApp();
