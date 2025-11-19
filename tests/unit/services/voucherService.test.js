@@ -100,12 +100,12 @@ describe('VoucherService', () => {
 
       expect(result.id).toBe(mockVoucherId);
       expect(result.status).toBe('OPEN');
-      expect(Voucher.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          userId: mockUserId,
-          status: 'OPEN',
-        })
-      );
+      expect(Voucher.create).toHaveBeenCalled();
+
+      // Verify the call includes userId and status
+      const callArgs = Voucher.create.mock.calls[0][0];
+      expect(callArgs.userId).toBe(mockUserId);
+      expect(callArgs.status).toBe('OPEN');
     });
 
     it('should create voucher with PARTIALLY_USED status', async () => {
@@ -291,9 +291,13 @@ describe('VoucherService', () => {
         id: mockVoucherId,
         totalValue: 100,
         usedAmount: 0,
+        status: 'OPEN',
         getRemainingBalance: jest.fn().mockReturnValue(100),
+        update: jest.fn().mockResolvedValue(true),
       };
 
+      // First call returns voucher for attachVoucherToFlight
+      // Second call returns voucher for updateVoucherUsage
       Voucher.findByPk = jest.fn().mockResolvedValue(mockVoucher);
 
       VoucherAttachment.create = jest.fn().mockResolvedValue({
@@ -302,8 +306,6 @@ describe('VoucherService', () => {
         flightId: mockFlightId,
         amountUsed: 50,
       });
-
-      Voucher.prototype.update = jest.fn().mockResolvedValue(true);
 
       const result = await voucherService.attachVoucherToFlight(
         mockVoucherId,
@@ -316,6 +318,7 @@ describe('VoucherService', () => {
       expect(result.voucherId).toBe(mockVoucherId);
       expect(result.flightId).toBe(mockFlightId);
       expect(VoucherAttachment.create).toHaveBeenCalled();
+      expect(mockVoucher.update).toHaveBeenCalled();
     });
 
     it('should throw error if voucher not found', async () => {

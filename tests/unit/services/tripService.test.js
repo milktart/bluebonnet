@@ -164,12 +164,12 @@ describe('TripService', () => {
 
       expect(result.id).toBe(mockTripId);
       expect(result.name).toBe(tripData.name);
-      expect(Trip.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          userId: mockUserId,
-          name: tripData.name,
-        })
-      );
+      expect(Trip.create).toHaveBeenCalled();
+
+      // Verify the call includes userId
+      const callArgs = Trip.create.mock.calls[0][0];
+      expect(callArgs.userId).toBe(mockUserId);
+      expect(callArgs.name).toBe(tripData.name);
     });
   });
 
