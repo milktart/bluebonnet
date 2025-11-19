@@ -8,6 +8,7 @@ const { Op } = require('sequelize');
 const BaseService = require('./BaseService');
 const { Voucher, VoucherAttachment } = require('../models');
 const logger = require('../utils/logger');
+const cacheService = require('./cacheService');
 
 class VoucherService extends BaseService {
   constructor() {
@@ -22,6 +23,16 @@ class VoucherService extends BaseService {
    */
   async getUserVouchers(userId, filters = {}) {
     logger.debug(`${this.modelName}: Getting vouchers for user ${userId}`, { filters });
+
+    // Try to get from cache first (only if no filters)
+    if (Object.keys(filters).length === 0) {
+      const cached = await cacheService.getCachedUserVouchers(userId);
+      if (cached) {
+        logger.debug('Cache HIT: User vouchers', { userId });
+        return cached;
+      }
+      logger.debug('Cache MISS: User vouchers', { userId });
+    }
 
     const where = { userId };
 
@@ -56,6 +67,11 @@ class VoucherService extends BaseService {
         ['createdAt', 'DESC'],
       ],
     });
+
+    // Cache the result (only if no filters)
+    if (Object.keys(filters).length === 0) {
+      await cacheService.cacheUserVouchers(userId, vouchers);
+    }
 
     return vouchers;
   }
@@ -111,6 +127,9 @@ class VoucherService extends BaseService {
       userId,
     });
 
+    // Invalidate cache
+    await cacheService.invalidateUserVouchers(userId);
+
     return voucher;
   }
 
@@ -152,6 +171,9 @@ class VoucherService extends BaseService {
     await this.update(voucher, data);
     logger.info(`${this.modelName}: Voucher updated`, { voucherId, userId });
 
+    // Invalidate cache
+    await cacheService.invalidateUserVouchers(userId);
+
     return voucher;
   }
 
@@ -183,6 +205,9 @@ class VoucherService extends BaseService {
 
     await this.delete(voucher);
     logger.info(`${this.modelName}: Voucher deleted`, { voucherId, userId });
+
+    // Invalidate cache
+    await cacheService.invalidateUserVouchers(userId);
 
     return true;
   }
@@ -274,6 +299,9 @@ class VoucherService extends BaseService {
       status,
     });
 
+    // Invalidate cache
+    await cacheService.invalidateUserVouchers(voucher.userId);
+
     return voucher;
   }
 
@@ -327,6 +355,9 @@ class VoucherService extends BaseService {
       newVoucherId: newVoucher.id,
       remainingBalance,
     });
+
+    // Invalidate cache
+    await cacheService.invalidateUserVouchers(userId);
 
     return newVoucher;
   }

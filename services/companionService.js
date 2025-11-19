@@ -2,12 +2,14 @@
  * Companion Service
  * Business logic for travel companion management
  * Phase 3 - Service Layer Pattern
+ * Phase 6 - Performance (Caching)
  */
 
 const { Op } = require('sequelize');
 const BaseService = require('./BaseService');
 const { TravelCompanion, User, Trip, TripCompanion } = require('../models');
 const logger = require('../utils/logger');
+const cacheService = require('./cacheService');
 
 class CompanionService extends BaseService {
   constructor() {
@@ -23,6 +25,16 @@ class CompanionService extends BaseService {
   async getUserCompanions(userId, options = {}) {
     logger.debug(`${this.modelName}: Getting companions for user ${userId}`);
 
+    // Try to get from cache first (only if no custom options)
+    if (Object.keys(options).length === 0) {
+      const cached = await cacheService.getCachedUserCompanions(userId);
+      if (cached) {
+        logger.debug('Cache HIT: User companions', { userId });
+        return cached;
+      }
+      logger.debug('Cache MISS: User companions', { userId });
+    }
+
     const companions = await TravelCompanion.findAll({
       where: { createdBy: userId },
       include: [
@@ -35,6 +47,11 @@ class CompanionService extends BaseService {
       order: [['name', 'ASC']],
       ...options,
     });
+
+    // Cache the result (only if no custom options)
+    if (Object.keys(options).length === 0) {
+      await cacheService.cacheUserCompanions(userId, companions);
+    }
 
     return companions;
   }
@@ -83,6 +100,9 @@ class CompanionService extends BaseService {
       linked: !!linkedUser,
     });
 
+    // Invalidate cache
+    await cacheService.invalidateUserCompanions(userId);
+
     return companion;
   }
 
@@ -120,6 +140,9 @@ class CompanionService extends BaseService {
     await this.update(companion, data);
     logger.info(`${this.modelName}: Companion updated`, { companionId, userId });
 
+    // Invalidate cache
+    await cacheService.invalidateUserCompanions(userId);
+
     return companion;
   }
 
@@ -153,6 +176,9 @@ class CompanionService extends BaseService {
 
     await this.delete(companion);
     logger.info(`${this.modelName}: Companion deleted`, { companionId, userId });
+
+    // Invalidate cache
+    await cacheService.invalidateUserCompanions(userId);
 
     return true;
   }
