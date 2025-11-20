@@ -1,0 +1,17 @@
+node_modules/
+coverage/
+dist/
+public/dist/
+build/
+.next/
+out/
+*.log
+.env*
+!.env.example
+.DS_Store
+*.sqlite
+*.db
+migrations/
+.husky/
+.git/
+scripts/archive/
