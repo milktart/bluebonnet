@@ -20,7 +20,7 @@ Travel Planner is a full-stack web application built with Node.js, Express, Post
 
 ### Tech Stack
 
-- **Backend**: Node.js 18, Express.js
+- **Backend**: Node.js 20 LTS, Express.js
 - **Database**: PostgreSQL 15
 - **Cache**: Redis 7
 - **View Engine**: EJS (Server-side rendering)

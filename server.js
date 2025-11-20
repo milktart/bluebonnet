@@ -292,7 +292,6 @@ async function initializeApp() {
         port: PORT,
         redis: redis.isAvailable() ? 'enabled' : 'disabled',
       });
-      logger.info('Run "npm run db:migrate" to apply pending database migrations');
     });
 
     // Initialize WebSocket server

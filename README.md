@@ -19,7 +19,7 @@ A comprehensive travel planning application built with Node.js, Express, and Pos
 
 **Requirements:**
 
-- Node.js 18+
+- Node.js 20+ LTS
 - PostgreSQL 15+
 - npm or yarn
 
