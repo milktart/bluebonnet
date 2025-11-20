@@ -37,6 +37,9 @@ CLEANUP_SUMMARY.md
 dist/
 build/
 
+# Test coverage
+coverage/
+
 # Database
 *.sqlite
 *.db
