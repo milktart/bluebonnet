@@ -214,6 +214,10 @@ Optional variables:
 - `SLOW_REQUEST_THRESHOLD` - Log requests slower than X ms (default: 3000)
 - `REDIS_ENABLED` - Enable Redis caching (default: false in dev, true in production)
 - `SESSION_MAX_AGE` - Session cookie max age in ms (default: 24 hours)
+- `POOL_ACQUIRE_TIMEOUT` - Database pool connection acquire timeout in ms (default: 30000)
+- `POOL_IDLE_TIMEOUT` - Database pool connection idle timeout in ms (default: 10000)
+- `SOCKET_PING_TIMEOUT` - WebSocket ping timeout in ms (default: 60000)
+- `SOCKET_PING_INTERVAL` - WebSocket ping interval in ms (default: 25000)
 
 ## UI/Formatting Standards
 

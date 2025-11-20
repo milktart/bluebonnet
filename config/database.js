@@ -1,12 +1,18 @@
 require('dotenv').config();
 
+// Database configuration defaults
+const DB_HOST_DEFAULT = 'localhost';
+const DB_PORT_DEFAULT = 5432;
+const POOL_ACQUIRE_TIMEOUT = parseInt(process.env.POOL_ACQUIRE_TIMEOUT, 10) || 30000;
+const POOL_IDLE_TIMEOUT = parseInt(process.env.POOL_IDLE_TIMEOUT, 10) || 10000;
+
 module.exports = {
   development: {
     username: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
     database: process.env.DB_NAME || 'dev_travel_planner',
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
+    host: process.env.DB_HOST || DB_HOST_DEFAULT,
+    port: process.env.DB_PORT || DB_PORT_DEFAULT,
     dialect: 'postgres',
     logging: false, // Set to console.log for debugging
     timezone: '+00:00',
@@ -16,16 +22,16 @@ module.exports = {
     pool: {
       max: 5,
       min: 0,
-      acquire: 30000,
-      idle: 10000,
+      acquire: POOL_ACQUIRE_TIMEOUT,
+      idle: POOL_IDLE_TIMEOUT,
     },
   },
   test: {
     username: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
     database: process.env.DB_NAME || 'test_travel_planner',
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
+    host: process.env.DB_HOST || DB_HOST_DEFAULT,
+    port: process.env.DB_PORT || DB_PORT_DEFAULT,
     dialect: 'postgres',
     logging: false,
     timezone: '+00:00',
@@ -35,8 +41,8 @@ module.exports = {
     pool: {
       max: 5,
       min: 0,
-      acquire: 30000,
-      idle: 10000,
+      acquire: POOL_ACQUIRE_TIMEOUT,
+      idle: POOL_IDLE_TIMEOUT,
     },
   },
   production: {
@@ -44,7 +50,7 @@ module.exports = {
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     host: process.env.DB_HOST,
-    port: process.env.DB_PORT || 5432,
+    port: process.env.DB_PORT || DB_PORT_DEFAULT,
     dialect: 'postgres',
     logging: false,
     timezone: '+00:00',
@@ -65,8 +71,8 @@ module.exports = {
     pool: {
       max: 10,
       min: 2,
-      acquire: 30000,
-      idle: 10000,
+      acquire: POOL_ACQUIRE_TIMEOUT,
+      idle: POOL_IDLE_TIMEOUT,
     },
   },
 };
