@@ -15,9 +15,9 @@ async function ensureCompanionsInitialized() {
     // Load companions module if not already loaded
     await loadCompanions();
 
-    // Now that module is loaded, call the initialization function
+    // Now that module is loaded, call the initialization function and wait for it to complete
     if (typeof window.initializeItemCompanions === 'function') {
-      window.initializeItemCompanions();
+      await window.initializeItemCompanions();
     }
   } catch (error) {
     console.error('Error initializing companions:', error);
@@ -291,6 +291,8 @@ function showAddForm(type) {
           if (typeof setupAsyncFormSubmission === 'function') {
             setupAsyncFormSubmission('addFlightForm');
           }
+          // Ensure companions are loaded before initializing
+          await ensureCompanionsInitialized();
           initFlightDateTimePickers();
           if (typeof initializeAirportAutocomplete === 'function') {
             initializeAirportAutocomplete();
