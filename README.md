@@ -58,8 +58,9 @@ Docker Compose includes:
 - Node.js app (port 3500)
 - PostgreSQL (port 5432)
 - Redis (port 6379)
-- Auto-sync database on startup
+- **Automatic database initialization** (creates tables and seeds airport data on first run)
 - Volume mounts for development
+- Persistent data storage
 
 ## Environment Variables
 
