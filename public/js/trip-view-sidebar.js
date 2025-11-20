@@ -3,6 +3,27 @@
  * Manages secondary sidebar visibility and add item menu
  */
 
+// Import companions lazy loader to ensure companions are loaded when needed
+import { loadCompanions } from './lazy/companions-loader.js';
+
+/**
+ * Ensure companions module is loaded and initialize item companions
+ * This is needed because companions are lazy-loaded, but item forms need them immediately
+ */
+async function ensureCompanionsInitialized() {
+  try {
+    // Load companions module if not already loaded
+    await loadCompanions();
+
+    // Now that module is loaded, call the initialization function
+    if (typeof window.initializeItemCompanions === 'function') {
+      window.initializeItemCompanions();
+    }
+  } catch (error) {
+    console.error('Error initializing companions:', error);
+  }
+}
+
 /**
  * Execute scripts from loaded HTML content
  * @param {Element} container - The container with the loaded HTML
@@ -89,7 +110,7 @@ function editItem(type, id) {
           }
           return response.text();
         })
-        .then((html) => {
+        .then(async (html) => {
           formContainer.innerHTML = html;
           executeLoadedScripts(formContainer);
 
@@ -100,9 +121,8 @@ function editItem(type, id) {
           if (typeof setupAsyncFormSubmission === 'function') {
             setupAsyncFormSubmission('editFlightForm');
           }
-          if (typeof initializeItemCompanions === 'function') {
-            initializeItemCompanions();
-          }
+          // Ensure companions are loaded before initializing
+          await ensureCompanionsInitialized();
           initFlightDateTimePickers();
           if (typeof initializeAirportAutocomplete === 'function') {
             initializeAirportAutocomplete();
@@ -117,16 +137,15 @@ function editItem(type, id) {
       // Fetch form via AJAX
       fetch(`/hotels/${id}/form`)
         .then((response) => response.text())
-        .then((html) => {
+        .then(async (html) => {
           formContainer.innerHTML = html;
           executeLoadedScripts(formContainer);
           // Call form initialization directly
           if (typeof setupAsyncFormSubmission === 'function') {
             setupAsyncFormSubmission('editHotelForm');
           }
-          if (typeof initializeItemCompanions === 'function') {
-            initializeItemCompanions();
-          }
+          // Ensure companions are loaded before initializing
+          await ensureCompanionsInitialized();
           initFlightDateTimePickers();
         })
         .catch((error) => console.error('Error loading hotel form:', error));
@@ -135,16 +154,15 @@ function editItem(type, id) {
       // Fetch form via AJAX
       fetch(`/transportation/${id}/form`)
         .then((response) => response.text())
-        .then((html) => {
+        .then(async (html) => {
           formContainer.innerHTML = html;
           executeLoadedScripts(formContainer);
           // Call form initialization directly
           if (typeof setupAsyncFormSubmission === 'function') {
             setupAsyncFormSubmission('editTransportationForm');
           }
-          if (typeof initializeItemCompanions === 'function') {
-            initializeItemCompanions();
-          }
+          // Ensure companions are loaded before initializing
+          await ensureCompanionsInitialized();
           initFlightDateTimePickers();
         })
         .catch((error) => console.error('Error loading transportation form:', error));
@@ -159,7 +177,7 @@ function editItem(type, id) {
           }
           return response.text();
         })
-        .then((html) => {
+        .then(async (html) => {
           if (!html || html.trim().length === 0) {
             console.error('Car rental form response is empty');
             formContainer.innerHTML =
@@ -171,9 +189,8 @@ function editItem(type, id) {
             if (typeof setupAsyncFormSubmission === 'function') {
               setupAsyncFormSubmission('editCarRentalForm');
             }
-            if (typeof initializeItemCompanions === 'function') {
-              initializeItemCompanions();
-            }
+            // Ensure companions are loaded before initializing
+            await ensureCompanionsInitialized();
             initFlightDateTimePickers();
           }
         })
@@ -186,7 +203,7 @@ function editItem(type, id) {
       // Fetch form via AJAX
       fetch(`/events/${id}/form`)
         .then((response) => response.text())
-        .then((html) => {
+        .then(async (html) => {
           formContainer.innerHTML = html;
           executeLoadedScripts(formContainer);
           // Call form initialization directly
@@ -199,9 +216,8 @@ function editItem(type, id) {
           if (typeof initializeTimeInputs === 'function') {
             initializeTimeInputs();
           }
-          if (typeof initializeItemCompanions === 'function') {
-            initializeItemCompanions();
-          }
+          // Ensure companions are loaded before initializing
+          await ensureCompanionsInitialized();
           initFlightDateTimePickers();
         })
         .catch((error) => console.error('Error loading event form:', error));
@@ -237,16 +253,15 @@ function showAddFormWithLayoverDates(
     });
     fetch(`/hotels/trips/${tripId}/form?${params.toString()}`)
       .then((response) => response.text())
-      .then((html) => {
+      .then(async (html) => {
         formContainer.innerHTML = html;
         executeLoadedScripts(formContainer);
         // Call form initialization directly
         if (typeof setupAsyncFormSubmission === 'function') {
           setupAsyncFormSubmission('addHotelForm');
         }
-        if (typeof initializeItemCompanions === 'function') {
-          initializeItemCompanions();
-        }
+        // Ensure companions are loaded before initializing
+        await ensureCompanionsInitialized();
         initFlightDateTimePickers();
       })
       .catch((error) => console.error('Error loading hotel form:', error));
@@ -265,7 +280,7 @@ function showAddForm(type) {
       // Fetch form via AJAX
       fetch(`/flights/trips/${tripId}/form`)
         .then((response) => response.text())
-        .then((html) => {
+        .then(async (html) => {
           formContainer.innerHTML = html;
           executeLoadedScripts(formContainer);
 
@@ -287,16 +302,15 @@ function showAddForm(type) {
       // Fetch form via AJAX
       fetch(`/hotels/trips/${tripId}/form`)
         .then((response) => response.text())
-        .then((html) => {
+        .then(async (html) => {
           formContainer.innerHTML = html;
           executeLoadedScripts(formContainer);
           // Call form initialization directly
           if (typeof setupAsyncFormSubmission === 'function') {
             setupAsyncFormSubmission('addHotelForm');
           }
-          if (typeof initializeItemCompanions === 'function') {
-            initializeItemCompanions();
-          }
+          // Ensure companions are loaded before initializing
+          await ensureCompanionsInitialized();
           initFlightDateTimePickers();
         })
         .catch((error) => console.error('Error loading hotel form:', error));
@@ -305,16 +319,15 @@ function showAddForm(type) {
       // Fetch form via AJAX
       fetch(`/transportation/trips/${tripId}/form`)
         .then((response) => response.text())
-        .then((html) => {
+        .then(async (html) => {
           formContainer.innerHTML = html;
           executeLoadedScripts(formContainer);
           // Call form initialization directly
           if (typeof setupAsyncFormSubmission === 'function') {
             setupAsyncFormSubmission('addTransportationForm');
           }
-          if (typeof initializeItemCompanions === 'function') {
-            initializeItemCompanions();
-          }
+          // Ensure companions are loaded before initializing
+          await ensureCompanionsInitialized();
           initFlightDateTimePickers();
         })
         .catch((error) => console.error('Error loading transportation form:', error));
@@ -324,16 +337,15 @@ function showAddForm(type) {
       // Fetch form via AJAX
       fetch(`/car-rentals/trips/${tripId}/form`)
         .then((response) => response.text())
-        .then((html) => {
+        .then(async (html) => {
           formContainer.innerHTML = html;
           executeLoadedScripts(formContainer);
           // Call form initialization directly
           if (typeof setupAsyncFormSubmission === 'function') {
             setupAsyncFormSubmission('addCarRentalForm');
           }
-          if (typeof initializeItemCompanions === 'function') {
-            initializeItemCompanions();
-          }
+          // Ensure companions are loaded before initializing
+          await ensureCompanionsInitialized();
           initFlightDateTimePickers();
         })
         .catch((error) => console.error('Error loading car rental form:', error));
@@ -342,7 +354,7 @@ function showAddForm(type) {
       // Fetch form via AJAX
       fetch(`/events/trips/${tripId}/form`)
         .then((response) => response.text())
-        .then((html) => {
+        .then(async (html) => {
           formContainer.innerHTML = html;
           executeLoadedScripts(formContainer);
           // Call form initialization directly
@@ -355,9 +367,8 @@ function showAddForm(type) {
           if (typeof initializeTimeInputs === 'function') {
             initializeTimeInputs();
           }
-          if (typeof initializeItemCompanions === 'function') {
-            initializeItemCompanions();
-          }
+          // Ensure companions are loaded before initializing
+          await ensureCompanionsInitialized();
           initFlightDateTimePickers();
         })
         .catch((error) => console.error('Error loading event form:', error));
