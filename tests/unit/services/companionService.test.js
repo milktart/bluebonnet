@@ -176,11 +176,7 @@ describe('CompanionService', () => {
     it('should return null when companion not found', async () => {
       TravelCompanion.findByPk = jest.fn().mockResolvedValue(null);
 
-      const result = await companionService.updateCompanion(
-        'non-existent',
-        {},
-        mockUserId
-      );
+      const result = await companionService.updateCompanion('non-existent', {}, mockUserId);
 
       expect(result).toBeNull();
     });
@@ -212,9 +208,9 @@ describe('CompanionService', () => {
       TravelCompanion.findByPk = jest.fn().mockResolvedValue(mockCompanion);
       TripCompanion.count = jest.fn().mockResolvedValue(3); // Used in 3 trips
 
-      await expect(
-        companionService.deleteCompanion(mockCompanionId, mockUserId)
-      ).rejects.toThrow('associated with 3 trip(s)');
+      await expect(companionService.deleteCompanion(mockCompanionId, mockUserId)).rejects.toThrow(
+        'associated with 3 trip(s)'
+      );
     });
 
     it('should return false when companion not found', async () => {
@@ -393,10 +389,7 @@ describe('CompanionService', () => {
       TravelCompanion.findByPk = jest.fn().mockResolvedValue(mockCompanion);
       User.findByPk = jest.fn().mockResolvedValue(mockUser);
 
-      const result = await companionService.linkCompanionToAccount(
-        mockCompanionId,
-        mockUser.id
-      );
+      const result = await companionService.linkCompanionToAccount(mockCompanionId, mockUser.id);
 
       expect(mockCompanion.update).toHaveBeenCalledWith({ userId: mockUser.id });
     });

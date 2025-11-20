@@ -98,9 +98,7 @@ describe('Airports API - Integration Tests', () => {
     });
 
     it('should handle service errors gracefully', async () => {
-      airportService.searchAirports = jest
-        .fn()
-        .mockRejectedValue(new Error('Database error'));
+      airportService.searchAirports = jest.fn().mockRejectedValue(new Error('Database error'));
 
       const response = await request(app).get('/api/v1/airports/search?q=aus');
 
@@ -173,9 +171,7 @@ describe('Airports API - Integration Tests', () => {
     });
 
     it('should handle service errors gracefully', async () => {
-      airportService.getAirportByCode = jest
-        .fn()
-        .mockRejectedValue(new Error('Database error'));
+      airportService.getAirportByCode = jest.fn().mockRejectedValue(new Error('Database error'));
 
       const response = await request(app).get('/api/v1/airports/AUS');
 

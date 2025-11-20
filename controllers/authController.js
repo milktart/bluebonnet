@@ -103,7 +103,7 @@ exports.postRegister = async (req, res) => {
   }
 };
 
-exports.logout = (req, res) => {
+exports.logout = (req, res, next) => {
   req.logout((err) => {
     if (err) {
       return next(err);

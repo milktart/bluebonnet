@@ -1,3 +1,4 @@
+/* eslint-env jest */
 // tests/setup.js - Test configuration and global setup
 
 // Set test environment

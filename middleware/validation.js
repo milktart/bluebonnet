@@ -49,7 +49,7 @@ module.exports = {
         throw new Error('Valid departure date is required');
       }
       const date = new Date(value);
-      if (isNaN(date.getTime())) {
+      if (Number.isNaN(date.getTime())) {
         throw new Error('Valid departure date is required');
       }
       return true;
@@ -61,7 +61,7 @@ module.exports = {
         throw new Error('Valid return date is required');
       }
       const date = new Date(value);
-      if (isNaN(date.getTime())) {
+      if (Number.isNaN(date.getTime())) {
         throw new Error('Valid return date is required');
       }
       return true;

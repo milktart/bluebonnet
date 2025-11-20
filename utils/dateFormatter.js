@@ -17,7 +17,7 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 function formatDate(date) {
   if (!date) return '';
   const d = new Date(date);
-  if (isNaN(d.getTime())) return '';
+  if (Number.isNaN(d.getTime())) return '';
 
   const day = String(d.getDate()).padStart(2, '0');
   const month = MONTHS[d.getMonth()];
@@ -34,7 +34,7 @@ function formatDate(date) {
 function formatTime(dateString) {
   if (!dateString) return '';
   const date = new Date(dateString);
-  if (isNaN(date.getTime())) return '';
+  if (Number.isNaN(date.getTime())) return '';
 
   const hours = String(date.getHours()).padStart(2, '0');
   const minutes = String(date.getMinutes()).padStart(2, '0');
