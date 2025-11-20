@@ -1,5 +1,6 @@
 const db = require('../models');
 const logger = require('../utils/logger');
+
 const { VoucherAttachment, Voucher, Flight, User, TravelCompanion } = db;
 
 // Attach multiple vouchers to a flight
@@ -7,16 +8,13 @@ exports.attachMultipleVouchers = async (req, res) => {
   try {
     const { flightId } = req.params;
     const userId = req.user.id;
-    const {
-      attachments,
-      notes
-    } = req.body;
+    const { attachments, notes } = req.body;
 
     // Validate required fields
     if (!attachments || !Array.isArray(attachments) || attachments.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: attachments array'
+        message: 'Missing required fields: attachments array',
       });
     }
 
@@ -26,15 +24,15 @@ exports.attachMultipleVouchers = async (req, res) => {
         {
           model: db.Trip,
           as: 'trip',
-          attributes: ['id', 'userId']
-        }
-      ]
+          attributes: ['id', 'userId'],
+        },
+      ],
     });
 
     if (!flight) {
       return res.status(404).json({
         success: false,
-        message: 'Flight not found'
+        message: 'Flight not found',
       });
     }
 
@@ -42,12 +40,17 @@ exports.attachMultipleVouchers = async (req, res) => {
     if (flight.trip.userId !== userId) {
       return res.status(403).json({
         success: false,
-        message: 'Unauthorized: You do not own this trip'
+        message: 'Unauthorized: You do not own this trip',
       });
     }
 
     // Certificate types
-    const certificateTypes = ['UPGRADE_CERT', 'REGIONAL_UPGRADE_CERT', 'GLOBAL_UPGRADE_CERT', 'COMPANION_CERT'];
+    const certificateTypes = [
+      'UPGRADE_CERT',
+      'REGIONAL_UPGRADE_CERT',
+      'GLOBAL_UPGRADE_CERT',
+      'COMPANION_CERT',
+    ];
     const createdAttachments = [];
 
     // Process each attachment
@@ -59,7 +62,7 @@ exports.attachMultipleVouchers = async (req, res) => {
         logger.error('Missing required fields:', { voucherId, travelerId, travelerType });
         return res.status(400).json({
           success: false,
-          message: `Each attachment must have voucherId, travelerId, and travelerType. Received: voucherId=${voucherId}, travelerId=${travelerId}, travelerType=${travelerType}`
+          message: `Each attachment must have voucherId, travelerId, and travelerType. Received: voucherId=${voucherId}, travelerId=${travelerId}, travelerType=${travelerType}`,
         });
       }
 
@@ -67,7 +70,7 @@ exports.attachMultipleVouchers = async (req, res) => {
       if (voucherId === 'undefined' || travelerId === 'undefined' || travelerType === 'undefined') {
         return res.status(400).json({
           success: false,
-          message: `Invalid attachment data - received "undefined" as string. voucherId=${voucherId}, travelerId=${travelerId}, travelerType=${travelerType}`
+          message: `Invalid attachment data - received "undefined" as string. voucherId=${voucherId}, travelerId=${travelerId}, travelerType=${travelerType}`,
         });
       }
 
@@ -75,7 +78,7 @@ exports.attachMultipleVouchers = async (req, res) => {
       if (!['USER', 'COMPANION'].includes(travelerType)) {
         return res.status(400).json({
           success: false,
-          message: 'travelerType must be either USER or COMPANION'
+          message: 'travelerType must be either USER or COMPANION',
         });
       }
 
@@ -86,7 +89,7 @@ exports.attachMultipleVouchers = async (req, res) => {
         if (!traveler) {
           return res.status(404).json({
             success: false,
-            message: `Traveler (User) ${travelerId} not found`
+            message: `Traveler (User) ${travelerId} not found`,
           });
         }
       } else if (travelerType === 'COMPANION') {
@@ -94,7 +97,7 @@ exports.attachMultipleVouchers = async (req, res) => {
         if (!traveler) {
           return res.status(404).json({
             success: false,
-            message: `Traveler (Companion) ${travelerId} not found`
+            message: `Traveler (Companion) ${travelerId} not found`,
           });
         }
       }
@@ -105,7 +108,7 @@ exports.attachMultipleVouchers = async (req, res) => {
       if (!voucher) {
         return res.status(404).json({
           success: false,
-          message: `Voucher ${voucherId} not found`
+          message: `Voucher ${voucherId} not found`,
         });
       }
 
@@ -113,22 +116,26 @@ exports.attachMultipleVouchers = async (req, res) => {
       if (voucher.userId && voucher.userId !== userId) {
         return res.status(403).json({
           success: false,
-          message: `Unauthorized: You do not own voucher ${voucherId}`
+          message: `Unauthorized: You do not own voucher ${voucherId}`,
         });
       }
 
       // Validate voucher can be attached
-      if (voucher.status === 'USED' || voucher.status === 'EXPIRED' || voucher.status === 'CANCELLED') {
+      if (
+        voucher.status === 'USED' ||
+        voucher.status === 'EXPIRED' ||
+        voucher.status === 'CANCELLED'
+      ) {
         return res.status(400).json({
           success: false,
-          message: `Cannot attach voucher ${voucherId} with status: ${voucher.status}`
+          message: `Cannot attach voucher ${voucherId} with status: ${voucher.status}`,
         });
       }
 
       if (voucher.getIsExpired()) {
         return res.status(400).json({
           success: false,
-          message: `Voucher ${voucherId} is expired`
+          message: `Voucher ${voucherId} is expired`,
         });
       }
 
@@ -137,7 +144,7 @@ exports.attachMultipleVouchers = async (req, res) => {
         if (!attachmentValue || attachmentValue <= 0) {
           return res.status(400).json({
             success: false,
-            message: `Attachment value must be greater than 0 for voucher ${voucherId}`
+            message: `Attachment value must be greater than 0 for voucher ${voucherId}`,
           });
         }
 
@@ -145,7 +152,7 @@ exports.attachMultipleVouchers = async (req, res) => {
         if (attachmentValue > remainingBalance) {
           return res.status(400).json({
             success: false,
-            message: `Attachment value for voucher ${voucherId} exceeds remaining balance (${remainingBalance})`
+            message: `Attachment value for voucher ${voucherId} exceeds remaining balance (${remainingBalance})`,
           });
         }
       }
@@ -158,7 +165,7 @@ exports.attachMultipleVouchers = async (req, res) => {
         travelerType,
         attachmentValue: attachmentValue || null,
         notes,
-        attachmentDate: new Date()
+        attachmentDate: new Date(),
       });
 
       // Update voucher based on type
@@ -191,7 +198,7 @@ exports.attachMultipleVouchers = async (req, res) => {
             pinCode: voucher.pinCode,
             notes: `Partial split from ${voucher.voucherNumber}`,
             parentVoucherId: voucher.id, // Track parent voucher
-            userId: userId
+            userId,
           });
 
           // Mark attachment with info about the new partial voucher
@@ -216,19 +223,27 @@ exports.attachMultipleVouchers = async (req, res) => {
     // Fetch all created attachments with related data
     const populatedAttachments = await VoucherAttachment.findAll({
       where: {
-        id: createdAttachments.map(a => a.id)
+        id: createdAttachments.map((a) => a.id),
       },
       include: [
         {
           model: Voucher,
-          as: 'voucher'
+          as: 'voucher',
         },
         {
           model: Flight,
           as: 'flight',
-          attributes: ['id', 'flightNumber', 'airline', 'departureDateTime', 'arrivalDateTime', 'origin', 'destination']
-        }
-      ]
+          attributes: [
+            'id',
+            'flightNumber',
+            'airline',
+            'departureDateTime',
+            'arrivalDateTime',
+            'origin',
+            'destination',
+          ],
+        },
+      ],
     });
 
     res.status(201).json({
@@ -236,19 +251,19 @@ exports.attachMultipleVouchers = async (req, res) => {
       data: populatedAttachments,
       message: `${populatedAttachments.length} voucher(s) attached to flight successfully`,
       partialVouchers: populatedAttachments
-        .filter(att => att.notes && att.notes.includes('New partial credit created:'))
-        .map(att => ({
+        .filter((att) => att.notes && att.notes.includes('New partial credit created:'))
+        .map((att) => ({
           attachmentId: att.id,
           originalVoucherId: att.voucherId,
-          notes: att.notes
-        }))
+          notes: att.notes,
+        })),
     });
   } catch (error) {
     logger.error('Error attaching multiple vouchers:', error);
     res.status(500).json({
       success: false,
       message: 'Error attaching vouchers',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -258,19 +273,13 @@ exports.attachVoucher = async (req, res) => {
   try {
     const { flightId } = req.params;
     const userId = req.user.id;
-    const {
-      voucherId,
-      travelerId,
-      travelerType,
-      attachmentValue,
-      notes
-    } = req.body;
+    const { voucherId, travelerId, travelerType, attachmentValue, notes } = req.body;
 
     // Validate required fields
     if (!voucherId || !travelerId || !travelerType) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: voucherId, travelerId, travelerType'
+        message: 'Missing required fields: voucherId, travelerId, travelerType',
       });
     }
 
@@ -278,7 +287,7 @@ exports.attachVoucher = async (req, res) => {
     if (!['USER', 'COMPANION'].includes(travelerType)) {
       return res.status(400).json({
         success: false,
-        message: 'travelerType must be either USER or COMPANION'
+        message: 'travelerType must be either USER or COMPANION',
       });
     }
 
@@ -288,15 +297,15 @@ exports.attachVoucher = async (req, res) => {
         {
           model: db.Trip,
           as: 'trip',
-          attributes: ['id', 'userId']
-        }
-      ]
+          attributes: ['id', 'userId'],
+        },
+      ],
     });
 
     if (!flight) {
       return res.status(404).json({
         success: false,
-        message: 'Flight not found'
+        message: 'Flight not found',
       });
     }
 
@@ -304,7 +313,7 @@ exports.attachVoucher = async (req, res) => {
     if (flight.trip.userId !== userId) {
       return res.status(403).json({
         success: false,
-        message: 'Unauthorized: You do not own this trip'
+        message: 'Unauthorized: You do not own this trip',
       });
     }
 
@@ -314,7 +323,7 @@ exports.attachVoucher = async (req, res) => {
     if (!voucher) {
       return res.status(404).json({
         success: false,
-        message: 'Voucher not found'
+        message: 'Voucher not found',
       });
     }
 
@@ -322,34 +331,43 @@ exports.attachVoucher = async (req, res) => {
     if (voucher.userId && voucher.userId !== userId) {
       return res.status(403).json({
         success: false,
-        message: 'Unauthorized: You do not own this voucher'
+        message: 'Unauthorized: You do not own this voucher',
       });
     }
 
     // Validate voucher can be attached
-    if (voucher.status === 'USED' || voucher.status === 'EXPIRED' || voucher.status === 'CANCELLED') {
+    if (
+      voucher.status === 'USED' ||
+      voucher.status === 'EXPIRED' ||
+      voucher.status === 'CANCELLED'
+    ) {
       return res.status(400).json({
         success: false,
-        message: `Cannot attach voucher with status: ${voucher.status}`
+        message: `Cannot attach voucher with status: ${voucher.status}`,
       });
     }
 
     if (voucher.getIsExpired()) {
       return res.status(400).json({
         success: false,
-        message: 'Cannot attach expired voucher'
+        message: 'Cannot attach expired voucher',
       });
     }
 
     // Certificate types (UPGRADE_CERT, REGIONAL_UPGRADE_CERT, GLOBAL_UPGRADE_CERT, COMPANION_CERT) don't require attachment value
-    const certificateTypes = ['UPGRADE_CERT', 'REGIONAL_UPGRADE_CERT', 'GLOBAL_UPGRADE_CERT', 'COMPANION_CERT'];
+    const certificateTypes = [
+      'UPGRADE_CERT',
+      'REGIONAL_UPGRADE_CERT',
+      'GLOBAL_UPGRADE_CERT',
+      'COMPANION_CERT',
+    ];
 
     if (!certificateTypes.includes(voucher.type)) {
       // For credit/card types, validate attachment value
       if (!attachmentValue || attachmentValue <= 0) {
         return res.status(400).json({
           success: false,
-          message: 'Attachment value must be greater than 0 for this voucher type'
+          message: 'Attachment value must be greater than 0 for this voucher type',
         });
       }
 
@@ -357,7 +375,7 @@ exports.attachVoucher = async (req, res) => {
       if (attachmentValue > remainingBalance) {
         return res.status(400).json({
           success: false,
-          message: `Attachment value (${attachmentValue}) exceeds remaining balance (${remainingBalance})`
+          message: `Attachment value (${attachmentValue}) exceeds remaining balance (${remainingBalance})`,
         });
       }
     }
@@ -369,7 +387,7 @@ exports.attachVoucher = async (req, res) => {
       if (!traveler) {
         return res.status(404).json({
           success: false,
-          message: 'Traveler (User) not found'
+          message: 'Traveler (User) not found',
         });
       }
     } else if (travelerType === 'COMPANION') {
@@ -377,7 +395,7 @@ exports.attachVoucher = async (req, res) => {
       if (!traveler) {
         return res.status(404).json({
           success: false,
-          message: 'Traveler (Companion) not found'
+          message: 'Traveler (Companion) not found',
         });
       }
     }
@@ -390,7 +408,7 @@ exports.attachVoucher = async (req, res) => {
       travelerType,
       attachmentValue,
       notes,
-      attachmentDate: new Date()
+      attachmentDate: new Date(),
     });
 
     // Update voucher based on type
@@ -416,27 +434,35 @@ exports.attachVoucher = async (req, res) => {
       include: [
         {
           model: Voucher,
-          as: 'voucher'
+          as: 'voucher',
         },
         {
           model: Flight,
           as: 'flight',
-          attributes: ['id', 'flightNumber', 'airline', 'departureDateTime', 'arrivalDateTime', 'origin', 'destination']
-        }
-      ]
+          attributes: [
+            'id',
+            'flightNumber',
+            'airline',
+            'departureDateTime',
+            'arrivalDateTime',
+            'origin',
+            'destination',
+          ],
+        },
+      ],
     });
 
     res.status(201).json({
       success: true,
       data: populatedAttachment,
-      message: 'Voucher attached to flight successfully'
+      message: 'Voucher attached to flight successfully',
     });
   } catch (error) {
     logger.error('Error attaching voucher:', error);
     res.status(500).json({
       success: false,
       message: 'Error attaching voucher',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -452,14 +478,31 @@ exports.getFlightAttachments = async (req, res) => {
         {
           model: Voucher,
           as: 'voucher',
-          attributes: ['id', 'type', 'issuer', 'voucherNumber', 'currency', 'totalValue', 'usedAmount', 'status']
+          attributes: [
+            'id',
+            'type',
+            'issuer',
+            'voucherNumber',
+            'currency',
+            'totalValue',
+            'usedAmount',
+            'status',
+          ],
         },
         {
           model: Flight,
           as: 'flight',
-          attributes: ['id', 'flightNumber', 'airline', 'departureDateTime', 'arrivalDateTime', 'origin', 'destination']
-        }
-      ]
+          attributes: [
+            'id',
+            'flightNumber',
+            'airline',
+            'departureDateTime',
+            'arrivalDateTime',
+            'origin',
+            'destination',
+          ],
+        },
+      ],
     });
 
     // Augment with traveler info
@@ -469,12 +512,12 @@ exports.getFlightAttachments = async (req, res) => {
 
         if (att.travelerType === 'USER') {
           const user = await User.findByPk(att.travelerId, {
-            attributes: ['id', 'firstName', 'lastName', 'email']
+            attributes: ['id', 'firstName', 'lastName', 'email'],
           });
           attData.traveler = user;
         } else if (att.travelerType === 'COMPANION') {
           const companion = await TravelCompanion.findByPk(att.travelerId, {
-            attributes: ['id', 'name', 'email']
+            attributes: ['id', 'name', 'email'],
           });
           attData.traveler = companion;
         }
@@ -486,14 +529,14 @@ exports.getFlightAttachments = async (req, res) => {
     res.json({
       success: true,
       data: augmentedAttachments,
-      count: augmentedAttachments.length
+      count: augmentedAttachments.length,
     });
   } catch (error) {
     logger.error('Error fetching flight attachments:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching flight attachments',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -508,7 +551,7 @@ exports.updatePartialVoucherNumber = async (req, res) => {
     if (!newVoucherNumber || !newVoucherNumber.trim()) {
       return res.status(400).json({
         success: false,
-        message: 'New voucher number is required'
+        message: 'New voucher number is required',
       });
     }
 
@@ -517,7 +560,7 @@ exports.updatePartialVoucherNumber = async (req, res) => {
     if (!voucher) {
       return res.status(404).json({
         success: false,
-        message: 'Partial voucher not found'
+        message: 'Partial voucher not found',
       });
     }
 
@@ -525,7 +568,7 @@ exports.updatePartialVoucherNumber = async (req, res) => {
     if (voucher.userId !== userId) {
       return res.status(403).json({
         success: false,
-        message: 'Unauthorized: You do not own this voucher'
+        message: 'Unauthorized: You do not own this voucher',
       });
     }
 
@@ -533,7 +576,7 @@ exports.updatePartialVoucherNumber = async (req, res) => {
     if (!voucher.parentVoucherId || !voucher.voucherNumber.includes('-PARTIAL')) {
       return res.status(400).json({
         success: false,
-        message: 'This is not a partial voucher that needs a new number'
+        message: 'This is not a partial voucher that needs a new number',
       });
     }
 
@@ -544,14 +587,14 @@ exports.updatePartialVoucherNumber = async (req, res) => {
     res.json({
       success: true,
       data: voucher,
-      message: 'Partial voucher number updated successfully'
+      message: 'Partial voucher number updated successfully',
     });
   } catch (error) {
     logger.error('Error updating partial voucher number:', error);
     res.status(500).json({
       success: false,
       message: 'Error updating partial voucher number',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -568,14 +611,14 @@ exports.removeAttachment = async (req, res) => {
     if (!attachment) {
       return res.status(404).json({
         success: false,
-        message: 'Attachment not found'
+        message: 'Attachment not found',
       });
     }
 
     if (attachment.flightId !== flightId) {
       return res.status(400).json({
         success: false,
-        message: 'Attachment does not belong to this flight'
+        message: 'Attachment does not belong to this flight',
       });
     }
 
@@ -585,21 +628,26 @@ exports.removeAttachment = async (req, res) => {
         {
           model: db.Trip,
           as: 'trip',
-          attributes: ['id', 'userId']
-        }
-      ]
+          attributes: ['id', 'userId'],
+        },
+      ],
     });
 
     if (flight.trip.userId !== userId) {
       return res.status(403).json({
         success: false,
-        message: 'Unauthorized: You do not own this trip'
+        message: 'Unauthorized: You do not own this trip',
       });
     }
 
     // Get voucher to update its used amount
     const voucher = await Voucher.findByPk(attachment.voucherId);
-    const certificateTypes = ['UPGRADE_CERT', 'REGIONAL_UPGRADE_CERT', 'GLOBAL_UPGRADE_CERT', 'COMPANION_CERT'];
+    const certificateTypes = [
+      'UPGRADE_CERT',
+      'REGIONAL_UPGRADE_CERT',
+      'GLOBAL_UPGRADE_CERT',
+      'COMPANION_CERT',
+    ];
 
     // Remove attachment
     await attachment.destroy();
@@ -622,14 +670,14 @@ exports.removeAttachment = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Voucher attachment removed successfully'
+      message: 'Voucher attachment removed successfully',
     });
   } catch (error) {
     logger.error('Error removing attachment:', error);
     res.status(500).json({
       success: false,
       message: 'Error removing attachment',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -646,14 +694,14 @@ exports.updateAttachment = async (req, res) => {
     if (!attachment) {
       return res.status(404).json({
         success: false,
-        message: 'Attachment not found'
+        message: 'Attachment not found',
       });
     }
 
     if (attachment.flightId !== flightId) {
       return res.status(400).json({
         success: false,
-        message: 'Attachment does not belong to this flight'
+        message: 'Attachment does not belong to this flight',
       });
     }
 
@@ -663,15 +711,15 @@ exports.updateAttachment = async (req, res) => {
         {
           model: db.Trip,
           as: 'trip',
-          attributes: ['id', 'userId']
-        }
-      ]
+          attributes: ['id', 'userId'],
+        },
+      ],
     });
 
     if (flight.trip.userId !== userId) {
       return res.status(403).json({
         success: false,
-        message: 'Unauthorized: You do not own this trip'
+        message: 'Unauthorized: You do not own this trip',
       });
     }
 
@@ -682,7 +730,7 @@ exports.updateAttachment = async (req, res) => {
     if (newValue <= 0) {
       return res.status(400).json({
         success: false,
-        message: 'Attachment value must be greater than 0'
+        message: 'Attachment value must be greater than 0',
       });
     }
 
@@ -694,7 +742,7 @@ exports.updateAttachment = async (req, res) => {
     if (potentialUsed > voucher.totalValue) {
       return res.status(400).json({
         success: false,
-        message: `New attachment value would exceed voucher total value`
+        message: `New attachment value would exceed voucher total value`,
       });
     }
 
@@ -719,27 +767,27 @@ exports.updateAttachment = async (req, res) => {
       include: [
         {
           model: Voucher,
-          as: 'voucher'
+          as: 'voucher',
         },
         {
           model: Flight,
           as: 'flight',
-          attributes: ['id', 'flightNumber', 'airline', 'departureDateTime', 'arrivalDateTime']
-        }
-      ]
+          attributes: ['id', 'flightNumber', 'airline', 'departureDateTime', 'arrivalDateTime'],
+        },
+      ],
     });
 
     res.json({
       success: true,
       data: updatedAttachment,
-      message: 'Attachment updated successfully'
+      message: 'Attachment updated successfully',
     });
   } catch (error) {
     logger.error('Error updating attachment:', error);
     res.status(500).json({
       success: false,
       message: 'Error updating attachment',
-      error: error.message
+      error: error.message,
     });
   }
 };

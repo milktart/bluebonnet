@@ -13,14 +13,14 @@ function setupAsyncFormSubmission(formId) {
 
   console.log('[setupAsyncFormSubmission] Setting up form:', formId);
 
-  form.addEventListener('submit', async function(e) {
+  form.addEventListener('submit', async function (e) {
     e.preventDefault();
     console.log('[Form Submit] Form submitted:', formId);
 
     // Convert FormData to object
     const formData = new FormData(form);
     const data = Object.fromEntries(formData);
-    const action = form.action;
+    const { action } = form;
     const isUpdate = formData.get('_method') === 'PUT' || form.method.toUpperCase() === 'PUT';
     console.log('[Form Submit] Is update:', isUpdate, 'Action:', action);
 
@@ -29,9 +29,9 @@ function setupAsyncFormSubmission(formId) {
         method: isUpdate ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Async-Request': 'true'
+          'X-Async-Request': 'true',
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       });
 
       let result;
@@ -41,7 +41,7 @@ function setupAsyncFormSubmission(formId) {
         result = JSON.parse(responseText);
       } catch (e) {
         console.error('Failed to parse JSON response:', e);
-        alert('Server error: ' + responseText.substring(0, 200));
+        alert(`Server error: ${responseText.substring(0, 200)}`);
         return;
       }
 
@@ -54,11 +54,11 @@ function setupAsyncFormSubmission(formId) {
         // Refresh the trip view async without page reload
         await refreshTripView();
       } else {
-        alert('Error saving: ' + (result.error || result.message || 'Unknown error'));
+        alert(`Error saving: ${result.error || result.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error submitting form:', error);
-      alert('Error saving: ' + error.message);
+      alert(`Error saving: ${error.message}`);
     }
   });
 }
@@ -81,8 +81,8 @@ async function refreshTripView() {
     const dataResponse = await fetch(`/trips/${tripId}/api`, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
     });
 
     if (!dataResponse.ok) {
@@ -105,7 +105,7 @@ async function refreshTripView() {
         window.currentMap.remove();
         window.currentMap = null;
       }
-      initOverviewMap(tripData, 'tripMap').then(map => {
+      initOverviewMap(tripData, 'tripMap').then((map) => {
         window.currentMap = map;
         if (typeof setupTimelineHoverEffects === 'function') {
           setupTimelineHoverEffects(map);
@@ -117,8 +117,8 @@ async function refreshTripView() {
     const sidebarResponse = await fetch(`/trips/${tripId}/sidebar`, {
       method: 'GET',
       headers: {
-        'Content-Type': 'text/html'
-      }
+        'Content-Type': 'text/html',
+      },
     });
 
     if (sidebarResponse.ok) {

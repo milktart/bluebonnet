@@ -128,7 +128,12 @@ function formatLayoverDisplay(duration, airportCode) {
  * Legacy function for backward compatibility
  * Calculate layover and return with airport code
  */
-function calculateLayover(flight1ArrivalTime, flight1Destination, flight2DepartureTime, flight2Origin) {
+function calculateLayover(
+  flight1ArrivalTime,
+  flight1Destination,
+  flight2DepartureTime,
+  flight2Origin
+) {
   if (!flight1ArrivalTime || !flight2DepartureTime) return null;
 
   const duration = calculateLayoverDuration(flight1ArrivalTime, flight2DepartureTime);
@@ -163,5 +168,5 @@ module.exports = {
   calculateLayoverDuration,
   formatLayoverDisplay,
   calculateLayover,
-  getLayoverText
+  getLayoverText,
 };

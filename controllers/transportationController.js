@@ -8,7 +8,7 @@ const {
   redirectAfterSuccess,
   redirectAfterError,
   verifyResourceOwnership,
-  convertToUTC
+  convertToUTC,
 } = require('./helpers/resourceController');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 
@@ -26,7 +26,7 @@ exports.createTransportation = async (req, res) => {
       arrivalDateTime,
       confirmationNumber,
       seat,
-      companions
+      companions,
     } = req.body;
 
     // Verify trip ownership if tripId provided
@@ -44,7 +44,7 @@ exports.createTransportation = async (req, res) => {
     // Geocode origin and destination
     const { originCoords, destCoords } = await geocodeOriginDestination({
       originNew: origin,
-      destNew: destination
+      destNew: destination,
     });
 
     const transportation = await Transportation.create({
@@ -63,7 +63,7 @@ exports.createTransportation = async (req, res) => {
       departureDateTime: convertToUTC(departureDateTime, originTimezone),
       arrivalDateTime: convertToUTC(arrivalDateTime, destinationTimezone),
       confirmationNumber,
-      seat
+      seat,
     });
 
     // Add companions to this transportation
@@ -93,7 +93,12 @@ exports.createTransportation = async (req, res) => {
           );
         } else {
           // Fallback: auto-add trip-level companions
-          await itemCompanionHelper.autoAddTripCompanions('transportation', transportation.id, tripId, req.user.id);
+          await itemCompanionHelper.autoAddTripCompanions(
+            'transportation',
+            transportation.id,
+            tripId,
+            req.user.id
+          );
         }
       }
     } catch (e) {
@@ -130,12 +135,12 @@ exports.updateTransportation = async (req, res) => {
       departureDateTime,
       arrivalDateTime,
       confirmationNumber,
-      seat
+      seat,
     } = req.body;
 
     // Find transportation with trip
     const transportation = await Transportation.findByPk(req.params.id, {
-      include: [{ model: Trip, as: 'trip', required: false }]
+      include: [{ model: Trip, as: 'trip', required: false }],
     });
 
     // Verify ownership
@@ -154,7 +159,7 @@ exports.updateTransportation = async (req, res) => {
       originCoordsOld: { lat: transportation.originLat, lng: transportation.originLng },
       destNew: destination,
       destOld: transportation.destination,
-      destCoordsOld: { lat: transportation.destinationLat, lng: transportation.destinationLng }
+      destCoordsOld: { lat: transportation.destinationLat, lng: transportation.destinationLng },
     });
 
     await transportation.update({
@@ -171,7 +176,7 @@ exports.updateTransportation = async (req, res) => {
       departureDateTime: convertToUTC(departureDateTime, originTimezone),
       arrivalDateTime: convertToUTC(arrivalDateTime, destinationTimezone),
       confirmationNumber,
-      seat
+      seat,
     });
 
     // Check if this is an async request
@@ -180,7 +185,13 @@ exports.updateTransportation = async (req, res) => {
       return res.json({ success: true, message: 'Transportation updated successfully' });
     }
 
-    redirectAfterSuccess(res, req, transportation.tripId, 'transportation', 'Transportation updated successfully');
+    redirectAfterSuccess(
+      res,
+      req,
+      transportation.tripId,
+      'transportation',
+      'Transportation updated successfully'
+    );
   } catch (error) {
     logger.error(error);
     const isAsync = req.headers['x-async-request'] === 'true';
@@ -196,7 +207,7 @@ exports.deleteTransportation = async (req, res) => {
   try {
     // Find transportation with trip
     const transportation = await Transportation.findByPk(req.params.id, {
-      include: [{ model: Trip, as: 'trip', required: false }]
+      include: [{ model: Trip, as: 'trip', required: false }],
     });
 
     // Verify ownership
@@ -208,19 +219,29 @@ exports.deleteTransportation = async (req, res) => {
       return redirectAfterError(res, req, null, 'Transportation not found');
     }
 
-    const tripId = transportation.tripId;
+    const { tripId } = transportation;
     const transportationData = transportation.get({ plain: true });
     const transportationName = `${transportation.method} (${transportation.origin} → ${transportation.destination})`;
 
     // Store the deleted transportation in session for potential restoration
-    storeDeletedItem(req.session, 'transportation', transportation.id, transportationData, transportationName);
+    storeDeletedItem(
+      req.session,
+      'transportation',
+      transportation.id,
+      transportationData,
+      transportationName
+    );
 
     await transportation.destroy();
 
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
-      return res.json({ success: true, message: 'Transportation deleted successfully', itemId: transportation.id });
+      return res.json({
+        success: true,
+        message: 'Transportation deleted successfully',
+        itemId: transportation.id,
+      });
     }
 
     redirectAfterSuccess(res, req, tripId, 'transportation', 'Transportation deleted successfully');
@@ -243,7 +264,9 @@ exports.restoreTransportation = async (req, res) => {
     const deletedItem = retrieveDeletedItem(req.session, 'transportation', id);
 
     if (!deletedItem) {
-      return res.status(404).json({ success: false, error: 'Transportation not found in undo history' });
+      return res
+        .status(404)
+        .json({ success: false, error: 'Transportation not found in undo history' });
     }
 
     // Verify user owns the transportation
@@ -274,10 +297,10 @@ exports.getAddForm = async (req, res) => {
 
     // Render form partial for sidebar (not modal)
     res.render('partials/transportation-form', {
-      tripId: tripId,
+      tripId,
       isEditing: false,
       data: null,
-      isModal: false  // This tells the partial to render for sidebar
+      isModal: false, // This tells the partial to render for sidebar
     });
   } catch (error) {
     logger.error('Error fetching add form:', error);
@@ -292,7 +315,7 @@ exports.getEditForm = async (req, res) => {
 
     // Fetch the transportation
     const transportation = await Transportation.findByPk(id, {
-      include: [{ model: Trip, as: 'trip', required: false }]
+      include: [{ model: Trip, as: 'trip', required: false }],
     });
 
     // Verify ownership
@@ -302,8 +325,14 @@ exports.getEditForm = async (req, res) => {
 
     // Convert UTC times to local timezone for display
     // utcToLocal returns "YYYY-MM-DDTHH:mm" format, so we split it into date and time
-    const departureDateTimeLocal = utcToLocal(transportation.departureDateTime, transportation.originTimezone || 'UTC');
-    const arrivalDateTimeLocal = utcToLocal(transportation.arrivalDateTime, transportation.destinationTimezone || 'UTC');
+    const departureDateTimeLocal = utcToLocal(
+      transportation.departureDateTime,
+      transportation.originTimezone || 'UTC'
+    );
+    const arrivalDateTimeLocal = utcToLocal(
+      transportation.arrivalDateTime,
+      transportation.destinationTimezone || 'UTC'
+    );
 
     // Split the combined datetime into separate date and time fields for form input
     const [departureDate, departureTime] = departureDateTimeLocal.split('T');
@@ -318,9 +347,9 @@ exports.getEditForm = async (req, res) => {
         departureDate,
         departureTime,
         arrivalDate,
-        arrivalTime
+        arrivalTime,
       },
-      isModal: false  // This tells the partial to render for sidebar
+      isModal: false, // This tells the partial to render for sidebar
     });
   } catch (error) {
     logger.error('Error fetching edit form:', error);

@@ -35,7 +35,7 @@ async function openVoucherAttachmentPanel(flightId, tripId, flightDetails) {
   try {
     const [vouchersResponse, companionsResponse] = await Promise.all([
       fetch(`/vouchers/available-for-flight/${flightId}`),
-      fetch(`/api/trips/${tripId}/companions`)
+      fetch(`/api/trips/${tripId}/companions`),
     ]);
 
     const vouchersResult = await vouchersResponse.json();
@@ -114,46 +114,64 @@ function renderVoucherPanel(companions) {
                 </tr>
               </thead>
               <tbody>
-                ${availableVouchers.length === 0 ? `
+                ${
+                  availableVouchers.length === 0
+                    ? `
                   <tr>
                     <td colspan="5" class="px-3 py-4 text-center text-gray-600">No vouchers available</td>
                   </tr>
-                ` : availableVouchers.sort((a, b) => {
-                  // Sort by expiration date - soonest expiring at top
-                  if (!a.expirationDate && !b.expirationDate) return 0;
-                  if (!a.expirationDate) return 1; // No expiration goes to bottom
-                  if (!b.expirationDate) return -1;
-                  return new Date(a.expirationDate) - new Date(b.expirationDate);
-                }).map(voucher => {
-                  // Calculate remaining balance
-                  let remaining, remainingDisplay, balanceDisplay;
+                `
+                    : availableVouchers
+                        .sort((a, b) => {
+                          // Sort by expiration date - soonest expiring at top
+                          if (!a.expirationDate && !b.expirationDate) return 0;
+                          if (!a.expirationDate) return 1; // No expiration goes to bottom
+                          if (!b.expirationDate) return -1;
+                          return new Date(a.expirationDate) - new Date(b.expirationDate);
+                        })
+                        .map((voucher) => {
+                          // Calculate remaining balance
+                          let remaining;
+                          let remainingDisplay;
+                          let balanceDisplay;
 
-                  if (!voucher.totalValue) {
-                    // Certificate type
-                    remaining = null;
-                    remainingDisplay = 'N/A';
-                    balanceDisplay = '<span class="text-purple-600 font-medium">Certificate</span>';
-                  } else {
-                    // Credit/Card type
-                    const usedAmount = voucher.usedAmount || 0;
-                    remaining = parseFloat(voucher.totalValue) - parseFloat(usedAmount);
-                    remainingDisplay = remaining.toFixed(2);
-                    balanceDisplay = `<span class="text-gray-900 font-medium">${voucher.currency} ${remainingDisplay}</span>`;
-                  }
+                          if (!voucher.totalValue) {
+                            // Certificate type
+                            remaining = null;
+                            remainingDisplay = 'N/A';
+                            balanceDisplay =
+                              '<span class="text-purple-600 font-medium">Certificate</span>';
+                          } else {
+                            // Credit/Card type
+                            const usedAmount = voucher.usedAmount || 0;
+                            remaining = parseFloat(voucher.totalValue) - parseFloat(usedAmount);
+                            remainingDisplay = remaining.toFixed(2);
+                            balanceDisplay = `<span class="text-gray-900 font-medium">${voucher.currency} ${remainingDisplay}</span>`;
+                          }
 
-                  const expirationText = voucher.expirationDate
-                    ? new Date(voucher.expirationDate).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})
-                    : 'No expiration';
+                          const expirationText = voucher.expirationDate
+                            ? new Date(voucher.expirationDate).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })
+                            : 'No expiration';
 
-                  const voucherType = voucher.type.replace(/_/g, ' ');
-                  const typeColor =
-                    voucher.type === 'TRAVEL_CREDIT' ? 'bg-green-100 text-green-800' :
-                    voucher.type === 'UPGRADE_CERT' || voucher.type === 'REGIONAL_UPGRADE_CERT' || voucher.type === 'GLOBAL_UPGRADE_CERT' ? 'bg-purple-100 text-purple-800' :
-                    voucher.type === 'COMPANION_CERT' ? 'bg-pink-100 text-pink-800' :
-                    voucher.type === 'GIFT_CARD' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-gray-100 text-gray-800';
+                          const voucherType = voucher.type.replace(/_/g, ' ');
+                          const typeColor =
+                            voucher.type === 'TRAVEL_CREDIT'
+                              ? 'bg-green-100 text-green-800'
+                              : voucher.type === 'UPGRADE_CERT' ||
+                                  voucher.type === 'REGIONAL_UPGRADE_CERT' ||
+                                  voucher.type === 'GLOBAL_UPGRADE_CERT'
+                                ? 'bg-purple-100 text-purple-800'
+                                : voucher.type === 'COMPANION_CERT'
+                                  ? 'bg-pink-100 text-pink-800'
+                                  : voucher.type === 'GIFT_CARD'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-gray-100 text-gray-800';
 
-                  return `<tr class="border-b border-gray-200 hover:bg-gray-50">
+                          return `<tr class="border-b border-gray-200 hover:bg-gray-50">
                     <td class="px-3 py-3 text-left">
                       <input type="checkbox" class="voucher-checkbox rounded border-gray-300" value="${voucher.id}" data-voucher-id="${voucher.id}" data-balance="${remaining}" data-currency="${voucher.currency}" data-type="${voucher.type}">
                     </td>
@@ -168,7 +186,9 @@ function renderVoucherPanel(companions) {
                     <td class="px-3 py-3 text-left">${balanceDisplay}</td>
                     <td class="px-3 py-3 text-left text-gray-600 text-xs">${expirationText}</td>
                   </tr>`;
-                }).join('')}
+                        })
+                        .join('')
+                }
               </tbody>
             </table>
           </div>
@@ -287,13 +307,13 @@ function renderVoucherPanel(companions) {
     // Add event listeners to checkboxes after rendering
     setTimeout(() => {
       const voucherCheckboxes = document.querySelectorAll('.voucher-checkbox');
-      voucherCheckboxes.forEach(checkbox => {
+      voucherCheckboxes.forEach((checkbox) => {
         checkbox.addEventListener('change', () => {
           updateSelectedVouchersInfo();
           // Update select-all checkbox state
           const selectAllCheckbox = document.getElementById('selectAllVouchers');
-          const allChecked = Array.from(voucherCheckboxes).every(cb => cb.checked);
-          const someChecked = Array.from(voucherCheckboxes).some(cb => cb.checked);
+          const allChecked = Array.from(voucherCheckboxes).every((cb) => cb.checked);
+          const someChecked = Array.from(voucherCheckboxes).some((cb) => cb.checked);
           selectAllCheckbox.checked = allChecked;
           selectAllCheckbox.indeterminate = someChecked && !allChecked;
         });
@@ -307,13 +327,13 @@ function renderVoucherPanel(companions) {
  */
 function switchVoucherTab(tabName) {
   // Hide all tabs
-  document.querySelectorAll('.voucher-tab').forEach(tab => {
+  document.querySelectorAll('.voucher-tab').forEach((tab) => {
     tab.classList.add('hidden');
     tab.classList.remove('active');
   });
 
   // Remove active class from all buttons
-  document.querySelectorAll('.tab-button').forEach(btn => {
+  document.querySelectorAll('.tab-button').forEach((btn) => {
     btn.classList.remove('active-tab', 'border-blue-600', 'text-blue-600');
   });
 
@@ -338,7 +358,7 @@ function toggleSelectAllVouchers() {
   const selectAllCheckbox = document.getElementById('selectAllVouchers');
   const voucherCheckboxes = document.querySelectorAll('.voucher-checkbox');
 
-  voucherCheckboxes.forEach(checkbox => {
+  voucherCheckboxes.forEach((checkbox) => {
     checkbox.checked = selectAllCheckbox.checked;
   });
 
@@ -365,37 +385,47 @@ function updateSelectedVouchersInfo() {
     // Get companions data - stored in renderVoucherPanel context
     const companionOptions = window.currentCompanions || [];
     // userId is defined globally in trip.ejs as window.userId
-    const userId = window.userId;
+    const { userId } = window;
 
     // Populate details container with traveler and amount fields for each selected voucher
-    voucherDetailsContainer.innerHTML = selectedCheckboxes.map(checkbox => {
-      const voucherId = checkbox.dataset.voucherId;
-      const issuer = checkbox.closest('tr').querySelector('td:nth-child(2) span:first-child').textContent;
-      const voucherNumber = checkbox.closest('tr').querySelector('td:nth-child(2) span:last-child').textContent;
-      const voucherType = checkbox.dataset.type;
-      let balance = checkbox.dataset.balance;
-      const currency = checkbox.dataset.currency;
-      const certificateTypes = ['UPGRADE_CERT', 'REGIONAL_UPGRADE_CERT', 'GLOBAL_UPGRADE_CERT', 'COMPANION_CERT'];
+    voucherDetailsContainer.innerHTML = selectedCheckboxes
+      .map((checkbox) => {
+        const { voucherId } = checkbox.dataset;
+        const issuer = checkbox
+          .closest('tr')
+          .querySelector('td:nth-child(2) span:first-child').textContent;
+        const voucherNumber = checkbox
+          .closest('tr')
+          .querySelector('td:nth-child(2) span:last-child').textContent;
+        const voucherType = checkbox.dataset.type;
+        const { balance } = checkbox.dataset;
+        const { currency } = checkbox.dataset;
+        const certificateTypes = [
+          'UPGRADE_CERT',
+          'REGIONAL_UPGRADE_CERT',
+          'GLOBAL_UPGRADE_CERT',
+          'COMPANION_CERT',
+        ];
 
-      // Build traveler select HTML
-      let travelerSelectHtml = `
+        // Build traveler select HTML
+        let travelerSelectHtml = `
         <select id="traveler-${voucherId}" class="voucher-traveler-select w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white" data-voucher-id="${voucherId}" required>
           <option value="">Select traveler...</option>
           <option value="${userId}:USER">You</option>
       `;
 
-      if (companionOptions && companionOptions.length > 0) {
-        travelerSelectHtml += `<optgroup label="Travel Companions">`;
-        companionOptions.forEach(c => {
-          travelerSelectHtml += `<option value="${c.id}:COMPANION">${c.name}</option>`;
-        });
-        travelerSelectHtml += `</optgroup>`;
-      }
+        if (companionOptions && companionOptions.length > 0) {
+          travelerSelectHtml += `<optgroup label="Travel Companions">`;
+          companionOptions.forEach((c) => {
+            travelerSelectHtml += `<option value="${c.id}:COMPANION">${c.name}</option>`;
+          });
+          travelerSelectHtml += `</optgroup>`;
+        }
 
-      travelerSelectHtml += `</select>`;
+        travelerSelectHtml += `</select>`;
 
-      if (certificateTypes.includes(voucherType)) {
-        return `
+        if (certificateTypes.includes(voucherType)) {
+          return `
           <div class="p-3 bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-lg">
             <div class="flex items-start justify-between mb-2">
               <div>
@@ -409,7 +439,7 @@ function updateSelectedVouchersInfo() {
             </div>
           </div>
         `;
-      } else {
+        }
         // Ensure balance is a valid number - default to 999999 if invalid
         let numBalance = 0;
         if (balance && balance !== 'null' && balance !== 'undefined') {
@@ -440,8 +470,8 @@ function updateSelectedVouchersInfo() {
             </div>
           </div>
         `;
-      }
-    }).join('');
+      })
+      .join('');
   } else {
     selectedVouchersInfo.classList.add('hidden');
     voucherDetailsSection.classList.add('hidden');
@@ -455,7 +485,12 @@ function updateSelectedVouchersInfo() {
 function onVoucherTypeChange(event) {
   const voucherType = event.target.value;
   const valueFields = document.getElementById('newValueFields');
-  const certificateTypes = ['UPGRADE_CERT', 'REGIONAL_UPGRADE_CERT', 'GLOBAL_UPGRADE_CERT', 'COMPANION_CERT'];
+  const certificateTypes = [
+    'UPGRADE_CERT',
+    'REGIONAL_UPGRADE_CERT',
+    'GLOBAL_UPGRADE_CERT',
+    'COMPANION_CERT',
+  ];
 
   if (certificateTypes.includes(voucherType)) {
     valueFields.style.display = 'none';
@@ -475,7 +510,12 @@ async function submitVoucherAttachment(event) {
   const selectedCheckboxesNodeList = document.querySelectorAll('.voucher-checkbox:checked');
   const selectedCheckboxes = Array.from(selectedCheckboxesNodeList);
   const notes = document.getElementById('attachmentNotes').value;
-  const certificateTypes = ['UPGRADE_CERT', 'REGIONAL_UPGRADE_CERT', 'GLOBAL_UPGRADE_CERT', 'COMPANION_CERT'];
+  const certificateTypes = [
+    'UPGRADE_CERT',
+    'REGIONAL_UPGRADE_CERT',
+    'GLOBAL_UPGRADE_CERT',
+    'COMPANION_CERT',
+  ];
 
   // Validate
   if (selectedCheckboxes.length === 0) {
@@ -487,7 +527,7 @@ async function submitVoucherAttachment(event) {
   const attachments = [];
 
   for (const checkbox of selectedCheckboxes) {
-    let voucherId = checkbox.dataset.voucherId;
+    const { voucherId } = checkbox.dataset;
     const voucherType = checkbox.dataset.type;
 
     // Validate voucherId
@@ -500,7 +540,9 @@ async function submitVoucherAttachment(event) {
     // Get traveler for this specific voucher
     const travelerSelect = document.getElementById(`traveler-${voucherId}`);
     if (!travelerSelect || !travelerSelect.value) {
-      const issuer = checkbox.closest('tr').querySelector('td:nth-child(2) span:first-child').textContent;
+      const issuer = checkbox
+        .closest('tr')
+        .querySelector('td:nth-child(2) span:first-child').textContent;
       alert(`Please select a traveler for ${issuer}`);
       return;
     }
@@ -508,7 +550,12 @@ async function submitVoucherAttachment(event) {
     const [travelerId, travelerType] = travelerSelect.value.split(':');
 
     // Validate travelerId and travelerType
-    if (!travelerId || !travelerType || travelerId === 'undefined' || travelerType === 'undefined') {
+    if (
+      !travelerId ||
+      !travelerType ||
+      travelerId === 'undefined' ||
+      travelerType === 'undefined'
+    ) {
       alert('Error: Traveler information is invalid. Please select a traveler again.');
       return;
     }
@@ -519,7 +566,9 @@ async function submitVoucherAttachment(event) {
     if (!certificateTypes.includes(voucherType)) {
       const amountInput = document.getElementById(`amount-${voucherId}`);
       if (!amountInput || !amountInput.value) {
-        const issuer = checkbox.closest('tr').querySelector('td:nth-child(2) span:first-child').textContent;
+        const issuer = checkbox
+          .closest('tr')
+          .querySelector('td:nth-child(2) span:first-child').textContent;
         alert(`Please enter an amount for ${issuer}`);
         return;
       }
@@ -530,7 +579,7 @@ async function submitVoucherAttachment(event) {
       voucherId,
       travelerId,
       travelerType,
-      attachmentValue
+      attachmentValue,
     });
   }
 
@@ -540,16 +589,16 @@ async function submitVoucherAttachment(event) {
   // Send all attachments in a single request
   const payload = {
     attachments,
-    notes
+    notes,
   };
 
   try {
     const response = await fetch(`/vouchers/flights/${currentFlightId}/attach-multiple`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
 
     const result = await response.json();
@@ -566,16 +615,18 @@ async function submitVoucherAttachment(event) {
 
           if (newNumber && newNumber.trim()) {
             // Extract the voucher ID from the notes
-            const voucherIdMatch = partialVoucher.notes.match(/New partial credit created: ([a-f0-9-]+)/);
+            const voucherIdMatch = partialVoucher.notes.match(
+              /New partial credit created: ([a-f0-9-]+)/
+            );
             if (voucherIdMatch) {
               const newVoucherId = voucherIdMatch[1];
               try {
                 await fetch(`/vouchers/${newVoucherId}/partial-number`, {
                   method: 'PATCH',
                   headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                   },
-                  body: JSON.stringify({ newVoucherNumber: newNumber.trim() })
+                  body: JSON.stringify({ newVoucherNumber: newNumber.trim() }),
                 });
               } catch (error) {
                 console.error('Error updating partial voucher number:', error);
@@ -595,7 +646,9 @@ async function submitVoucherAttachment(event) {
 
           // Fetch companions data
           const companionsResponse = await fetch(`/api/trips/${currentTripId}/companions`);
-          const companionsResult = companionsResponse.ok ? await companionsResponse.json() : { success: false, data: [] };
+          const companionsResult = companionsResponse.ok
+            ? await companionsResponse.json()
+            : { success: false, data: [] };
 
           // Re-render the voucher panel with updated data
           renderVoucherPanel(companionsResult.success ? companionsResult.data : []);
@@ -611,7 +664,7 @@ async function submitVoucherAttachment(event) {
       refreshFlightAttachments(currentFlightId);
     } else {
       console.error('Error attaching vouchers:', result.message);
-      alert('Error attaching vouchers: ' + result.message);
+      alert(`Error attaching vouchers: ${result.message}`);
     }
   } catch (error) {
     console.error('Error attaching vouchers:', error);
@@ -628,7 +681,12 @@ async function submitNewVoucher(event) {
   const voucherType = document.getElementById('voucherType').value;
   const issuer = document.getElementById('newIssuer').value;
   const voucherNumber = document.getElementById('newVoucherNumber').value;
-  const certificateTypes = ['UPGRADE_CERT', 'REGIONAL_UPGRADE_CERT', 'GLOBAL_UPGRADE_CERT', 'COMPANION_CERT'];
+  const certificateTypes = [
+    'UPGRADE_CERT',
+    'REGIONAL_UPGRADE_CERT',
+    'GLOBAL_UPGRADE_CERT',
+    'COMPANION_CERT',
+  ];
   const ownerBoundTypes = ['TRAVEL_CREDIT', 'COMPANION_CERT', 'GIFT_CARD'];
 
   let totalValue = null;
@@ -652,16 +710,16 @@ async function submitNewVoucher(event) {
     associatedAccount: document.getElementById('newAssociatedAccount').value || null,
     pinCode: document.getElementById('newPinCode').value || null,
     notes: document.getElementById('newNotes').value || null,
-    userId: userId  // userId is a global const defined in trip.ejs
+    userId, // userId is a global const defined in trip.ejs
   };
 
   try {
     const response = await fetch('/vouchers', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
 
     const result = await response.json();
@@ -679,7 +737,9 @@ async function submitNewVoucher(event) {
 
             // Fetch companions data for the panel
             const companionsResponse = await fetch(`/api/trips/${currentTripId}/companions`);
-            const companionsResult = companionsResponse.ok ? await companionsResponse.json() : { success: false, data: [] };
+            const companionsResult = companionsResponse.ok
+              ? await companionsResponse.json()
+              : { success: false, data: [] };
 
             // Re-render the attach tab with updated vouchers and companions
             renderVoucherPanel(companionsResult.success ? companionsResult.data : []);
@@ -733,7 +793,7 @@ async function refreshFlightAttachments(flightId) {
 
       // Execute any scripts in the loaded content
       const scripts = container.querySelectorAll('script');
-      scripts.forEach(script => {
+      scripts.forEach((script) => {
         const newScript = document.createElement('script');
         if (script.src) {
           newScript.src = script.src;
@@ -818,7 +878,7 @@ async function removeVoucherAttachment(flightId, attachmentId) {
 
   try {
     const response = await fetch(`/vouchers/flights/${flightId}/attachments/${attachmentId}`, {
-      method: 'DELETE'
+      method: 'DELETE',
     });
 
     const result = await response.json();
@@ -840,7 +900,9 @@ async function removeVoucherAttachment(flightId, attachmentId) {
 
             // Fetch companions data
             const companionsResponse = await fetch(`/api/trips/${currentTripId}/companions`);
-            const companionsResult = companionsResponse.ok ? await companionsResponse.json() : { success: false, data: [] };
+            const companionsResult = companionsResponse.ok
+              ? await companionsResponse.json()
+              : { success: false, data: [] };
 
             // Re-render the voucher panel with updated data
             renderVoucherPanel(companionsResult.success ? companionsResult.data : []);
@@ -863,7 +925,9 @@ async function removeVoucherAttachment(flightId, attachmentId) {
 // Expose currentFlightId globally for cross-module access
 Object.defineProperty(window, 'currentFlightId', {
   get: () => currentFlightId,
-  set: (value) => { currentFlightId = value; }
+  set: (value) => {
+    currentFlightId = value;
+  },
 });
 
 // Expose the implementation for lazy loading wrapper

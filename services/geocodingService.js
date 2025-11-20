@@ -40,7 +40,7 @@ async function geocodeLocation(locationName) {
     const now = Date.now();
     const timeSinceLastRequest = now - lastRequestTime;
     if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-      await new Promise(resolve =>
+      await new Promise((resolve) =>
         setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLastRequest)
       );
     }
@@ -53,19 +53,19 @@ async function geocodeLocation(locationName) {
       params: {
         format: 'json',
         q: trimmedLocation,
-        limit: 1
+        limit: 1,
       },
       headers: {
-        'User-Agent': USER_AGENT
+        'User-Agent': USER_AGENT,
       },
-      timeout: GEOCODING_TIMEOUT
+      timeout: GEOCODING_TIMEOUT,
     });
 
     if (response.data && response.data.length > 0) {
       const result = response.data[0];
       const coords = {
         lat: parseFloat(result.lat),
-        lng: parseFloat(result.lon)
+        lng: parseFloat(result.lon),
       };
 
       // Cache the result
@@ -73,12 +73,11 @@ async function geocodeLocation(locationName) {
 
       logger.info(`Geocoded ${trimmedLocation} to:`, coords);
       return coords;
-    } else {
-      logger.info(`No geocoding results for: ${trimmedLocation}`);
-      // Cache null result to avoid repeated failed lookups
-      geocodeCache.set(trimmedLocation, null);
-      return null;
     }
+    logger.info(`No geocoding results for: ${trimmedLocation}`);
+    // Cache null result to avoid repeated failed lookups
+    geocodeCache.set(trimmedLocation, null);
+    return null;
   } catch (error) {
     logger.error(`Geocoding error for "${trimmedLocation}":`, error.message);
     // Don't cache errors, as they might be temporary
@@ -122,7 +121,7 @@ async function reverseGeocode(lat, lng) {
     const now = Date.now();
     const timeSinceLastRequest = now - lastRequestTime;
     if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-      await new Promise(resolve =>
+      await new Promise((resolve) =>
         setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLastRequest)
       );
     }
@@ -134,20 +133,20 @@ async function reverseGeocode(lat, lng) {
     const response = await axios.get(`${NOMINATIM_BASE_URL}/reverse`, {
       params: {
         format: 'json',
-        lat: lat,
-        lon: lng
+        lat,
+        lon: lng,
       },
       headers: {
-        'User-Agent': USER_AGENT
+        'User-Agent': USER_AGENT,
       },
-      timeout: GEOCODING_TIMEOUT
+      timeout: GEOCODING_TIMEOUT,
     });
 
     if (response.data && response.data.address) {
       const countryCode = response.data.address.country_code?.toUpperCase();
       const result = {
         country_code: countryCode,
-        timezone: getTimezoneForCountry(countryCode, lat, lng)
+        timezone: getTimezoneForCountry(countryCode, lat, lng),
       };
 
       geocodeCache.set(cacheKey, result);
@@ -193,62 +192,62 @@ function getTimezoneForCountry(countryCode, lat, lng) {
   // Country code to primary timezone mapping
   const countryTimezones = {
     // Americas
-    'US': 'America/New_York',
-    'CA': 'America/Toronto',
-    'MX': 'America/Mexico_City',
-    'BR': 'America/Sao_Paulo',
-    'AR': 'America/Argentina/Buenos_Aires',
-    'CL': 'America/Santiago',
-    'CO': 'America/Bogota',
-    'PE': 'America/Lima',
+    US: 'America/New_York',
+    CA: 'America/Toronto',
+    MX: 'America/Mexico_City',
+    BR: 'America/Sao_Paulo',
+    AR: 'America/Argentina/Buenos_Aires',
+    CL: 'America/Santiago',
+    CO: 'America/Bogota',
+    PE: 'America/Lima',
 
     // Europe
-    'GB': 'Europe/London',
-    'IE': 'Europe/Dublin',
-    'FR': 'Europe/Paris',
-    'DE': 'Europe/Berlin',
-    'IT': 'Europe/Rome',
-    'ES': 'Europe/Madrid',
-    'NL': 'Europe/Amsterdam',
-    'BE': 'Europe/Brussels',
-    'CH': 'Europe/Zurich',
-    'AT': 'Europe/Vienna',
-    'SE': 'Europe/Stockholm',
-    'NO': 'Europe/Oslo',
-    'DK': 'Europe/Copenhagen',
-    'FI': 'Europe/Helsinki',
-    'PL': 'Europe/Warsaw',
-    'CZ': 'Europe/Prague',
-    'RU': 'Europe/Moscow',
+    GB: 'Europe/London',
+    IE: 'Europe/Dublin',
+    FR: 'Europe/Paris',
+    DE: 'Europe/Berlin',
+    IT: 'Europe/Rome',
+    ES: 'Europe/Madrid',
+    NL: 'Europe/Amsterdam',
+    BE: 'Europe/Brussels',
+    CH: 'Europe/Zurich',
+    AT: 'Europe/Vienna',
+    SE: 'Europe/Stockholm',
+    NO: 'Europe/Oslo',
+    DK: 'Europe/Copenhagen',
+    FI: 'Europe/Helsinki',
+    PL: 'Europe/Warsaw',
+    CZ: 'Europe/Prague',
+    RU: 'Europe/Moscow',
 
     // Asia
-    'JP': 'Asia/Tokyo',
-    'CN': 'Asia/Shanghai',
-    'IN': 'Asia/Kolkata',
-    'SG': 'Asia/Singapore',
-    'TH': 'Asia/Bangkok',
-    'MY': 'Asia/Kuala_Lumpur',
-    'PH': 'Asia/Manila',
-    'KR': 'Asia/Seoul',
-    'ID': 'Asia/Jakarta',
-    'VN': 'Asia/Ho_Chi_Minh',
-    'HK': 'Asia/Hong_Kong',
+    JP: 'Asia/Tokyo',
+    CN: 'Asia/Shanghai',
+    IN: 'Asia/Kolkata',
+    SG: 'Asia/Singapore',
+    TH: 'Asia/Bangkok',
+    MY: 'Asia/Kuala_Lumpur',
+    PH: 'Asia/Manila',
+    KR: 'Asia/Seoul',
+    ID: 'Asia/Jakarta',
+    VN: 'Asia/Ho_Chi_Minh',
+    HK: 'Asia/Hong_Kong',
 
     // Middle East
-    'AE': 'Asia/Dubai',
-    'SA': 'Asia/Riyadh',
-    'IL': 'Asia/Jerusalem',
-    'TR': 'Europe/Istanbul',
+    AE: 'Asia/Dubai',
+    SA: 'Asia/Riyadh',
+    IL: 'Asia/Jerusalem',
+    TR: 'Europe/Istanbul',
 
     // Africa
-    'ZA': 'Africa/Johannesburg',
-    'EG': 'Africa/Cairo',
-    'NG': 'Africa/Lagos',
-    'KE': 'Africa/Nairobi',
+    ZA: 'Africa/Johannesburg',
+    EG: 'Africa/Cairo',
+    NG: 'Africa/Lagos',
+    KE: 'Africa/Nairobi',
 
     // Oceania
-    'AU': 'Australia/Sydney',
-    'NZ': 'Pacific/Auckland'
+    AU: 'Australia/Sydney',
+    NZ: 'Pacific/Auckland',
   };
 
   if (countryCode && countryTimezones[countryCode]) {
@@ -274,5 +273,5 @@ module.exports = {
   inferTimezone,
   getTimezoneForCountry,
   clearCache,
-  getCacheSize
+  getCacheSize,
 };

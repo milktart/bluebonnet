@@ -3,7 +3,13 @@ const { body, validationResult } = require('express-validator');
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    req.flash('error_msg', errors.array().map(e => e.msg).join(', '));
+    req.flash(
+      'error_msg',
+      errors
+        .array()
+        .map((e) => e.msg)
+        .join(', ')
+    );
     return res.redirect('back');
   }
   next();
@@ -20,19 +26,23 @@ module.exports = {
       return true;
     }),
     body('firstName').notEmpty().trim().withMessage('First name is required'),
-    body('lastName').notEmpty().trim().isLength({ min: 1, max: 1 }).withMessage('Last initial must be exactly one character'),
-    handleValidationErrors
+    body('lastName')
+      .notEmpty()
+      .trim()
+      .isLength({ min: 1, max: 1 })
+      .withMessage('Last initial must be exactly one character'),
+    handleValidationErrors,
   ],
 
   validateLogin: [
     body('email').isEmail().normalizeEmail().withMessage('Invalid email address'),
     body('password').notEmpty().withMessage('Password is required'),
-    handleValidationErrors
+    handleValidationErrors,
   ],
 
   validateTrip: [
     body('name').notEmpty().trim().withMessage('Trip name is required'),
-    body('departureDate').custom(value => {
+    body('departureDate').custom((value) => {
       // Handle ISO format "YYYY-MM-DD" from HTML date input
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!dateRegex.test(value)) {
@@ -44,7 +54,7 @@ module.exports = {
       }
       return true;
     }),
-    body('returnDate').custom(value => {
+    body('returnDate').custom((value) => {
       // Handle ISO format "YYYY-MM-DD" from HTML date input
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!dateRegex.test(value)) {
@@ -57,25 +67,31 @@ module.exports = {
       return true;
     }),
     body('purpose').isIn(['business', 'pleasure', 'other']).withMessage('Invalid purpose'),
-    handleValidationErrors
+    handleValidationErrors,
   ],
 
   validateProfileUpdate: [
     body('email').isEmail().normalizeEmail().withMessage('Invalid email address'),
     body('firstName').notEmpty().trim().withMessage('First name is required'),
-    body('lastName').notEmpty().trim().isLength({ min: 1, max: 1 }).withMessage('Last initial must be exactly one character'),
-    handleValidationErrors
+    body('lastName')
+      .notEmpty()
+      .trim()
+      .isLength({ min: 1, max: 1 })
+      .withMessage('Last initial must be exactly one character'),
+    handleValidationErrors,
   ],
 
   validatePasswordChange: [
     body('currentPassword').notEmpty().withMessage('Current password is required'),
-    body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters'),
+    body('newPassword')
+      .isLength({ min: 6 })
+      .withMessage('New password must be at least 6 characters'),
     body('confirmPassword').custom((value, { req }) => {
       if (value !== req.body.newPassword) {
         throw new Error('New passwords do not match');
       }
       return true;
     }),
-    handleValidationErrors
-  ]
+    handleValidationErrors,
+  ],
 };

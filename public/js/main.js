@@ -1,7 +1,7 @@
 // Main JavaScript for Travel Planner
 
 // Handle browser back/forward button navigation
-window.addEventListener('popstate', function(e) {
+window.addEventListener('popstate', function (e) {
   const path = window.location.pathname;
 
   // Handle dashboard tab navigation
@@ -51,7 +51,7 @@ window.addEventListener('popstate', function(e) {
     // Extract voucher ID and load details
     const voucherId = path.split('/').pop();
     if (typeof loadCertificateDetails === 'function') {
-      setTimeout(function() {
+      setTimeout(function () {
         loadCertificateDetails(voucherId);
       }, 100);
     }
@@ -66,9 +66,9 @@ window.addEventListener('popstate', function(e) {
 });
 
 // Auto-hide alerts after 5 seconds
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
-  alerts.forEach(alert => {
+  alerts.forEach((alert) => {
     setTimeout(() => {
       const bsAlert = new bootstrap.Alert(alert);
       bsAlert.close();
@@ -77,8 +77,8 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Confirm delete actions
-document.querySelectorAll('form[onsubmit*="confirm"]').forEach(form => {
-  form.addEventListener('submit', function(e) {
+document.querySelectorAll('form[onsubmit*="confirm"]').forEach((form) => {
+  form.addEventListener('submit', function (e) {
     if (!confirm(this.getAttribute('onsubmit').match(/'([^']+)'/)[1])) {
       e.preventDefault();
     }
@@ -89,13 +89,15 @@ document.querySelectorAll('form[onsubmit*="confirm"]').forEach(form => {
 // Handles dynamically added inputs as well (excludes time inputs managed by time-input-formatter.js)
 function initializeDateTimePickerClosing() {
   // Select all date inputs (not time, as those are managed by time-input-formatter.js)
-  const dateTimeInputs = document.querySelectorAll('input[type="date"]:not([data-time-input]), input[type="datetime-local"]');
+  const dateTimeInputs = document.querySelectorAll(
+    'input[type="date"]:not([data-time-input]), input[type="datetime-local"]'
+  );
 
-  dateTimeInputs.forEach(input => {
+  dateTimeInputs.forEach((input) => {
     // Only add listener if not already added
     if (!input.dataset.datePickerInitialized) {
       // Use 'change' event to close the picker
-      input.addEventListener('change', function() {
+      input.addEventListener('change', function () {
         // Blur the input to close the date/time picker
         this.blur();
       });
@@ -119,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
     childList: true,
     subtree: true,
     attributes: false,
-    characterData: false
+    characterData: false,
   });
 });
 
@@ -128,14 +130,14 @@ const departureDateInput = document.getElementById('departureDate');
 const returnDateInput = document.getElementById('returnDate');
 
 if (departureDateInput && returnDateInput) {
-  departureDateInput.addEventListener('change', function() {
+  departureDateInput.addEventListener('change', function () {
     returnDateInput.min = this.value;
     if (returnDateInput.value && returnDateInput.value < this.value) {
       returnDateInput.value = this.value;
     }
   });
 
-  returnDateInput.addEventListener('change', function() {
+  returnDateInput.addEventListener('change', function () {
     if (this.value < departureDateInput.value) {
       alert('Return date must be after departure date');
       this.value = departureDateInput.value;
@@ -144,17 +146,20 @@ if (departureDateInput && returnDateInput) {
 }
 
 // Form validation
-(function() {
-  'use strict';
+(function () {
   const forms = document.querySelectorAll('.needs-validation');
-  Array.from(forms).forEach(form => {
-    form.addEventListener('submit', event => {
-      if (!form.checkValidity()) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-      form.classList.add('was-validated');
-    }, false);
+  Array.from(forms).forEach((form) => {
+    form.addEventListener(
+      'submit',
+      (event) => {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      },
+      false
+    );
   });
 })();
 
@@ -171,19 +176,19 @@ function convertUTCToLocal(utcDateString, timezone) {
 async function searchFlight() {
   const flightNumber = document.getElementById('flightSearch').value;
   const flightDate = document.getElementById('flightDate').value;
-  
+
   if (!flightNumber) {
     showAlert('Please enter a flight number', 'warning');
     return;
   }
 
   showLoading(true);
-  
+
   try {
-    const url = `/flights/search?flightNumber=${encodeURIComponent(flightNumber)}${flightDate ? '&date=' + flightDate : ''}`;
+    const url = `/flights/search?flightNumber=${encodeURIComponent(flightNumber)}${flightDate ? `&date=${flightDate}` : ''}`;
     const response = await fetch(url);
     const data = await response.json();
-    
+
     if (data.success) {
       populateFlightForm(data.data);
       showAlert('Flight details loaded successfully!', 'success');
@@ -200,28 +205,28 @@ async function searchFlight() {
 
 function populateFlightForm(flightData) {
   const fields = {
-    'airline': flightData.airline,
-    'flightNumber': flightData.flightNumber,
-    'origin': flightData.origin,
-    'originTimezone': flightData.originTimezone,
-    'destination': flightData.destination,
-    'destinationTimezone': flightData.destinationTimezone
+    airline: flightData.airline,
+    flightNumber: flightData.flightNumber,
+    origin: flightData.origin,
+    originTimezone: flightData.originTimezone,
+    destination: flightData.destination,
+    destinationTimezone: flightData.destinationTimezone,
   };
-  
-  Object.keys(fields).forEach(key => {
+
+  Object.keys(fields).forEach((key) => {
     const element = document.querySelector(`[name="${key}"]`);
     if (element && fields[key]) {
       element.value = fields[key];
     }
   });
-  
+
   if (flightData.departureDateTime) {
     const depElement = document.querySelector('[name="departureDateTime"]');
     if (depElement) {
       depElement.value = new Date(flightData.departureDateTime).toISOString().slice(0, 16);
     }
   }
-  
+
   if (flightData.arrivalDateTime) {
     const arrElement = document.querySelector('[name="arrivalDateTime"]');
     if (arrElement) {
@@ -238,7 +243,7 @@ function showAlert(message, type = 'info') {
     ${message}
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
   `;
-  
+
   const container = document.querySelector('main .container, main .container-fluid');
   if (container) {
     container.insertBefore(alertDiv, container.firstChild);
@@ -298,7 +303,8 @@ function showDeleteNotification(itemName, itemType, itemId, restoreUrl, onUndoCa
 
   // Create the notification
   const notification = document.createElement('div');
-  notification.className = 'bg-red-50 border-l-4 border-red-500 p-4 rounded-md shadow-lg max-w-md mx-auto flex items-center justify-between';
+  notification.className =
+    'bg-red-50 border-l-4 border-red-500 p-4 rounded-md shadow-lg max-w-md mx-auto flex items-center justify-between';
   notification.innerHTML = `
     <div class="flex items-center">
       <svg class="w-5 h-5 text-red-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
@@ -331,7 +337,8 @@ function showDeleteNotification(itemName, itemType, itemId, restoreUrl, onUndoCa
         }
         // Show success message
         const successMsg = document.createElement('div');
-        successMsg.className = 'bg-green-50 border-l-4 border-green-500 p-4 rounded-md shadow-lg max-w-md mx-auto';
+        successMsg.className =
+          'bg-green-50 border-l-4 border-green-500 p-4 rounded-md shadow-lg max-w-md mx-auto';
         successMsg.innerHTML = `
           <div class="flex items-center">
             <svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
@@ -345,11 +352,11 @@ function showDeleteNotification(itemName, itemType, itemId, restoreUrl, onUndoCa
           successMsg.remove();
         }, 3000);
       } else {
-        alert('Failed to restore ' + itemName);
+        alert(`Failed to restore ${itemName}`);
       }
     } catch (error) {
       console.error('Error restoring:', error);
-      alert('Error restoring ' + itemName);
+      alert(`Error restoring ${itemName}`);
     }
   });
 

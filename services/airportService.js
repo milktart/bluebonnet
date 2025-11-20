@@ -1,5 +1,5 @@
-const { Airport } = require('../models');
 const { Op } = require('sequelize');
+const { Airport } = require('../models');
 const airlines = require('../data/airlines.json');
 const logger = require('../utils/logger');
 const cacheService = require('./cacheService');
@@ -84,17 +84,9 @@ class AirportService {
         limit,
         order: [
           // Prioritize exact IATA matches
-          [
-            Airport.sequelize.literal(
-              `CASE WHEN LOWER(iata) = '${searchTerm}' THEN 0 ELSE 1 END`
-            ),
-          ],
+          [Airport.sequelize.literal(`CASE WHEN LOWER(iata) = '${searchTerm}' THEN 0 ELSE 1 END`)],
           // Then exact city matches
-          [
-            Airport.sequelize.literal(
-              `CASE WHEN LOWER(city) = '${searchTerm}' THEN 0 ELSE 1 END`
-            ),
-          ],
+          [Airport.sequelize.literal(`CASE WHEN LOWER(city) = '${searchTerm}' THEN 0 ELSE 1 END`)],
           ['name', 'ASC'],
         ],
       });

@@ -7,7 +7,7 @@
 function initializeTimeInputs() {
   const timeInputs = document.querySelectorAll('input[data-time-input]');
 
-  timeInputs.forEach(input => {
+  timeInputs.forEach((input) => {
     // Only initialize if not already initialized
     if (!input.dataset.timeInputInitialized) {
       input.addEventListener('keydown', handleTimeKeydown);
@@ -20,28 +20,33 @@ function initializeTimeInputs() {
 
 function handleTimeKeydown(e) {
   // Allow: backspace, delete, tab, escape, enter
-  if ([8, 9, 27, 13, 46].indexOf(e.keyCode) !== -1 ||
-      // Allow: Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+A
-      (e.keyCode === 65 && e.ctrlKey === true) ||
-      (e.keyCode === 67 && e.ctrlKey === true) ||
-      (e.keyCode === 86 && e.ctrlKey === true) ||
-      (e.keyCode === 88 && e.ctrlKey === true) ||
-      // Allow: home, end, left, right
-      (e.keyCode >= 35 && e.keyCode <= 40)) {
+  if (
+    [8, 9, 27, 13, 46].indexOf(e.keyCode) !== -1 ||
+    // Allow: Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+A
+    (e.keyCode === 65 && e.ctrlKey === true) ||
+    (e.keyCode === 67 && e.ctrlKey === true) ||
+    (e.keyCode === 86 && e.ctrlKey === true) ||
+    (e.keyCode === 88 && e.ctrlKey === true) ||
+    // Allow: home, end, left, right
+    (e.keyCode >= 35 && e.keyCode <= 40)
+  ) {
     return;
   }
 
   // Ensure that it is a number and stop the keypress
-  if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) &&
-      (e.keyCode < 96 || e.keyCode > 105) &&
-      e.keyCode !== 186) { // 186 is semicolon (for colon)
+  if (
+    (e.shiftKey || e.keyCode < 48 || e.keyCode > 57) &&
+    (e.keyCode < 96 || e.keyCode > 105) &&
+    e.keyCode !== 186
+  ) {
+    // 186 is semicolon (for colon)
     e.preventDefault();
   }
 }
 
 function handleTimeKeyup(e) {
   const input = e.target;
-  let value = input.value;
+  const { value } = input;
   const cursorPos = input.selectionStart;
 
   // Remove any non-numeric characters except colon
@@ -67,7 +72,7 @@ function handleTimeKeyup(e) {
   // Auto-insert colon after 2 characters (hours)
   let formatted = cleanValue;
   if (formatted.length >= 2) {
-    formatted = formatted.slice(0, 2) + ':' + formatted.slice(2);
+    formatted = `${formatted.slice(0, 2)}:${formatted.slice(2)}`;
   }
 
   // Validate hours (00-23)
@@ -108,24 +113,24 @@ function handleTimeKeyup(e) {
 
 function handleTimeBlur(e) {
   const input = e.target;
-  let value = input.value.trim();
+  const value = input.value.trim();
 
   // Auto-correct incomplete time on blur
   if (value.length === 1) {
-    input.value = '0' + value + ':00';
+    input.value = `0${value}:00`;
   } else if (value.length === 2) {
-    input.value = value + ':00';
+    input.value = `${value}:00`;
   } else if (value.length === 4) {
     // Has colon, but incomplete minutes
     const parts = value.split(':');
     if (parts.length === 2) {
-      input.value = parts[0].padStart(2, '0') + ':' + parts[1].padEnd(2, '0');
+      input.value = `${parts[0].padStart(2, '0')}:${parts[1].padEnd(2, '0')}`;
     }
   } else if (value.length === 5) {
     // Valid format, just ensure padding
     const parts = value.split(':');
     if (parts.length === 2) {
-      input.value = parts[0].padStart(2, '0') + ':' + parts[1].padStart(2, '0');
+      input.value = `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
     }
   }
 
@@ -171,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
     childList: true,
     subtree: true,
     attributes: false,
-    characterData: false
+    characterData: false,
   });
 });
 

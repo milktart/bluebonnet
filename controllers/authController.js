@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
+const { Op } = require('sequelize');
 const logger = require('../utils/logger');
 const { User, TravelCompanion, CompanionRelationship, Notification } = require('../models');
-const { Op } = require('sequelize');
 
 exports.getLogin = (req, res) => {
   res.render('login', { title: 'Login' });
@@ -29,21 +29,21 @@ exports.postRegister = async (req, res) => {
       password: hashedPassword,
       firstName,
       lastName,
-      linkedAt: new Date()
+      linkedAt: new Date(),
     });
 
     // Auto-link any existing travel companions with this email
     const companionsToLink = await TravelCompanion.findAll({
       where: {
         email: email.toLowerCase(),
-        userId: null // Only link companions that aren't already linked
-      }
+        userId: null, // Only link companions that aren't already linked
+      },
     });
 
     if (companionsToLink.length > 0) {
       // Link all companions to this new user account
       await Promise.all(
-        companionsToLink.map(companion =>
+        companionsToLink.map((companion) =>
           companion.update({ userId: newUser.id, linkedAt: new Date() })
         )
       );
@@ -53,8 +53,8 @@ exports.postRegister = async (req, res) => {
       const pendingRequests = await CompanionRelationship.findAll({
         where: {
           companionUserId: newUser.id,
-          status: 'pending'
-        }
+          status: 'pending',
+        },
       });
 
       // For each pending request, create notifications
@@ -67,7 +67,7 @@ exports.postRegister = async (req, res) => {
           relatedType: 'companion_relationship',
           message: `You have a pending travel companion request`,
           read: false,
-          actionRequired: true
+          actionRequired: true,
         });
       }
 
@@ -76,8 +76,8 @@ exports.postRegister = async (req, res) => {
         where: {
           companionUserId: newUser.id,
           status: 'accepted',
-          permissionLevel: 'manage_travel'
-        }
+          permissionLevel: 'manage_travel',
+        },
       });
 
       // Downgrade manage_travel to view_travel since user now has an account
@@ -87,7 +87,8 @@ exports.postRegister = async (req, res) => {
       }
 
       const companionCount = companionsToLink.length;
-      req.flash('success_msg',
+      req.flash(
+        'success_msg',
         `Registration successful! ${companionCount} travel companion${companionCount > 1 ? 's' : ''} automatically linked to your account. Please log in.`
       );
     } else {

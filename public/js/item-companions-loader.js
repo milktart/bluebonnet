@@ -26,7 +26,7 @@ async function loadItemCompanions(itemType, itemId, tripId) {
 
     if (itemId) {
       // Existing item - fetch item companions
-      console.log('Fetching item companions from /api/items/' + itemType + '/' + itemId + '/companions');
+      console.log(`Fetching item companions from /api/items/${itemType}/${itemId}/companions`);
       const response = await fetch(`/api/items/${itemType}/${itemId}/companions`);
       if (response.ok) {
         const data = await response.json();
@@ -35,7 +35,7 @@ async function loadItemCompanions(itemType, itemId, tripId) {
       }
     } else if (tripId) {
       // New item - fetch trip-level companions that will be auto-added
-      console.log('Fetching trip companions from /api/trips/' + tripId + '/companions');
+      console.log(`Fetching trip companions from /api/trips/${tripId}/companions`);
       const response = await fetch(`/api/trips/${tripId}/companions`);
       if (response.ok) {
         const data = await response.json();
@@ -46,7 +46,6 @@ async function loadItemCompanions(itemType, itemId, tripId) {
 
     // Display companions
     displayItemCompanions(companions);
-
   } catch (error) {
     console.error('Error loading companions:', error);
     container.innerHTML = '<div class="text-red-500 text-sm">Error loading companions</div>';
@@ -63,12 +62,15 @@ function displayItemCompanions(companions) {
   console.log('displayItemCompanions called with:', companions);
 
   if (!companions || companions.length === 0) {
-    container.innerHTML = '<div class="text-center text-gray-500 text-sm py-2">No companions added to this item</div>';
+    container.innerHTML =
+      '<div class="text-center text-gray-500 text-sm py-2">No companions added to this item</div>';
     updateCompanionIdsForSubmission([]);
     return;
   }
 
-  container.innerHTML = companions.map(c => `
+  container.innerHTML = companions
+    .map(
+      (c) => `
     <div class="companion-badge inline-flex items-center gap-2 bg-blue-100 text-blue-900 px-3 py-2 rounded-lg text-sm mr-2 mb-2" data-companion-id="${c.id}">
       <span class="truncate">${c.name || c.email}</span>
       <button
@@ -81,9 +83,11 @@ function displayItemCompanions(companions) {
         ×
       </button>
     </div>
-  `).join('');
+  `
+    )
+    .join('');
 
-  updateCompanionIdsForSubmission(companions.map(c => c.id));
+  updateCompanionIdsForSubmission(companions.map((c) => c.id));
 }
 
 /**
@@ -95,8 +99,8 @@ async function removeCompanionFromItem(companionId) {
   const badge = document.querySelector(`[data-companion-id="${companionId}"]`);
   if (!badge) return;
 
-  const itemType = window.itemType;
-  const itemId = window.itemId;
+  const { itemType } = window;
+  const { itemId } = window;
   const isNewItem = !itemId;
 
   if (!itemType) {
@@ -108,17 +112,17 @@ async function removeCompanionFromItem(companionId) {
     // Get current companion IDs (excluding the one being removed)
     const currentBadges = document.querySelectorAll('.companion-badge');
     const companionIds = Array.from(currentBadges)
-      .filter(b => b.dataset.companionId !== companionId)
-      .map(b => b.dataset.companionId);
+      .filter((b) => b.dataset.companionId !== companionId)
+      .map((b) => b.dataset.companionId);
 
     // For existing items, send update to server
     if (!isNewItem) {
       const response = await fetch(`/api/items/${itemType}/${itemId}/companions`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ companionIds })
+        body: JSON.stringify({ companionIds }),
       });
 
       if (!response.ok) {
@@ -135,7 +139,8 @@ async function removeCompanionFromItem(companionId) {
     // Check if no companions left
     const container = document.getElementById('itemCompanions');
     if (container.children.length === 0) {
-      container.innerHTML = '<div class="text-center text-gray-500 text-sm py-2">No companions added to this item</div>';
+      container.innerHTML =
+        '<div class="text-center text-gray-500 text-sm py-2">No companions added to this item</div>';
     }
 
     updateCompanionIdsForSubmission(companionIds);
@@ -154,7 +159,9 @@ function updateCompanionIdsForSubmission(companionIds = null) {
 
   if (!companionIds) {
     // Get IDs from current badges
-    ids = Array.from(document.querySelectorAll('.companion-badge')).map(b => b.dataset.companionId);
+    ids = Array.from(document.querySelectorAll('.companion-badge')).map(
+      (b) => b.dataset.companionId
+    );
   }
 
   const input = document.getElementById('itemCompanionsJson');
@@ -169,9 +176,9 @@ function updateCompanionIdsForSubmission(companionIds = null) {
  * Called from form templates when they load
  */
 function initializeItemCompanions() {
-  const itemType = window.itemType;
-  const itemId = window.itemId;
-  const tripId = window.tripId;
+  const { itemType } = window;
+  const { itemId } = window;
+  const { tripId } = window;
 
   console.log('initializeItemCompanions called with:', { itemType, itemId, tripId });
 
@@ -185,7 +192,7 @@ function initializeItemCompanions() {
   // Add form submission debugging
   const form = document.querySelector('form');
   if (form) {
-    form.addEventListener('submit', function(e) {
+    form.addEventListener('submit', function (e) {
       const companionsInput = document.getElementById('itemCompanionsJson');
       if (companionsInput) {
         console.log('Form submitting with companions field:', companionsInput.value);
@@ -223,35 +230,42 @@ function initializeCompanionSearch() {
         const companions = await response.json();
 
         if (!Array.isArray(companions) || companions.length === 0) {
-          searchResults.innerHTML = '<div class="px-3 py-2 text-gray-500 text-sm">No companions found</div>';
+          searchResults.innerHTML =
+            '<div class="px-3 py-2 text-gray-500 text-sm">No companions found</div>';
           searchResults.classList.remove('hidden');
           return;
         }
 
         // Get current companion IDs to filter out already added ones
         const currentBadges = document.querySelectorAll('.companion-badge');
-        const addedIds = new Set(Array.from(currentBadges).map(b => b.dataset.companionId));
+        const addedIds = new Set(Array.from(currentBadges).map((b) => b.dataset.companionId));
 
         // Filter out companions already added to this item
-        const availableCompanions = companions.filter(c => !addedIds.has(c.id));
+        const availableCompanions = companions.filter((c) => !addedIds.has(c.id));
 
         if (availableCompanions.length === 0) {
-          searchResults.innerHTML = '<div class="px-3 py-2 text-gray-500 text-sm">All matching companions are already added</div>';
+          searchResults.innerHTML =
+            '<div class="px-3 py-2 text-gray-500 text-sm">All matching companions are already added</div>';
           searchResults.classList.remove('hidden');
           return;
         }
 
-        searchResults.innerHTML = availableCompanions.map(c => `
+        searchResults.innerHTML = availableCompanions
+          .map(
+            (c) => `
           <div class="px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0" onclick="addCompanionToItem('${c.id}', '${c.name.replace(/'/g, "\\'")}', '${c.email.replace(/'/g, "\\'")}'); return false;">
             <div class="font-medium text-gray-900 text-sm">${c.name}</div>
             <div class="text-xs text-gray-500">${c.email}</div>
           </div>
-        `).join('');
+        `
+          )
+          .join('');
 
         searchResults.classList.remove('hidden');
       } catch (error) {
         console.error('Error searching companions:', error);
-        searchResults.innerHTML = '<div class="px-3 py-2 text-red-500 text-sm">Error searching companions</div>';
+        searchResults.innerHTML =
+          '<div class="px-3 py-2 text-red-500 text-sm">Error searching companions</div>';
         searchResults.classList.remove('hidden');
       }
     }, 300);
@@ -269,8 +283,8 @@ function initializeCompanionSearch() {
  * Add a companion to the item
  */
 async function addCompanionToItem(companionId, companionName, companionEmail) {
-  const itemType = window.itemType;
-  const itemId = window.itemId;
+  const { itemType } = window;
+  const { itemId } = window;
   const isNewItem = !itemId;
 
   if (!itemType) {
@@ -281,7 +295,7 @@ async function addCompanionToItem(companionId, companionName, companionEmail) {
   try {
     // Get current companion IDs
     const currentBadges = document.querySelectorAll('.companion-badge');
-    const companionIds = Array.from(currentBadges).map(b => b.dataset.companionId);
+    const companionIds = Array.from(currentBadges).map((b) => b.dataset.companionId);
     companionIds.push(companionId);
 
     // Only send to server for existing items
@@ -289,9 +303,9 @@ async function addCompanionToItem(companionId, companionName, companionEmail) {
       const response = await fetch(`/api/items/${itemType}/${itemId}/companions`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ companionIds })
+        body: JSON.stringify({ companionIds }),
       });
 
       if (!response.ok) {
@@ -313,7 +327,8 @@ async function addCompanionToItem(companionId, companionName, companionEmail) {
 
     // Create new badge
     const badge = document.createElement('div');
-    badge.className = 'companion-badge inline-flex items-center gap-2 bg-blue-100 text-blue-900 px-3 py-2 rounded-lg text-sm mr-2 mb-2';
+    badge.className =
+      'companion-badge inline-flex items-center gap-2 bg-blue-100 text-blue-900 px-3 py-2 rounded-lg text-sm mr-2 mb-2';
     badge.dataset.companionId = companionId;
     badge.innerHTML = `
       <span class="truncate">${companionName || companionEmail}</span>

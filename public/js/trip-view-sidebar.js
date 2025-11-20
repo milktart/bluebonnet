@@ -9,7 +9,7 @@
  */
 function executeLoadedScripts(container) {
   const scripts = container.querySelectorAll('script');
-  scripts.forEach(script => {
+  scripts.forEach((script) => {
     const newScript = document.createElement('script');
     if (script.src) {
       newScript.src = script.src;
@@ -83,13 +83,13 @@ function editItem(type, id) {
     case 'flight':
       // Fetch form via AJAX
       fetch(`/flights/${id}/form`)
-        .then(response => {
+        .then((response) => {
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
           return response.text();
         })
-        .then(html => {
+        .then((html) => {
           formContainer.innerHTML = html;
           executeLoadedScripts(formContainer);
 
@@ -108,7 +108,7 @@ function editItem(type, id) {
             initializeAirportAutocomplete();
           }
         })
-        .catch(error => {
+        .catch((error) => {
           console.error('Error loading flight form:', error);
           formContainer.innerHTML = `<p class="text-red-600">Error loading form: ${error.message}</p>`;
         });
@@ -116,8 +116,8 @@ function editItem(type, id) {
     case 'hotel':
       // Fetch form via AJAX
       fetch(`/hotels/${id}/form`)
-        .then(response => response.text())
-        .then(html => {
+        .then((response) => response.text())
+        .then((html) => {
           formContainer.innerHTML = html;
           executeLoadedScripts(formContainer);
           // Call form initialization directly
@@ -129,13 +129,13 @@ function editItem(type, id) {
           }
           initFlightDateTimePickers();
         })
-        .catch(error => console.error('Error loading hotel form:', error));
+        .catch((error) => console.error('Error loading hotel form:', error));
       break;
     case 'transportation':
       // Fetch form via AJAX
       fetch(`/transportation/${id}/form`)
-        .then(response => response.text())
-        .then(html => {
+        .then((response) => response.text())
+        .then((html) => {
           formContainer.innerHTML = html;
           executeLoadedScripts(formContainer);
           // Call form initialization directly
@@ -147,22 +147,23 @@ function editItem(type, id) {
           }
           initFlightDateTimePickers();
         })
-        .catch(error => console.error('Error loading transportation form:', error));
+        .catch((error) => console.error('Error loading transportation form:', error));
       break;
     case 'carRental':
     case 'car-rental':
       // Fetch form via AJAX
       fetch(`/car-rentals/${id}/form`)
-        .then(response => {
+        .then((response) => {
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
           return response.text();
         })
-        .then(html => {
+        .then((html) => {
           if (!html || html.trim().length === 0) {
             console.error('Car rental form response is empty');
-            formContainer.innerHTML = '<p class="text-red-600">Error loading form: empty response</p>';
+            formContainer.innerHTML =
+              '<p class="text-red-600">Error loading form: empty response</p>';
           } else {
             formContainer.innerHTML = html;
             executeLoadedScripts(formContainer);
@@ -176,7 +177,7 @@ function editItem(type, id) {
             initFlightDateTimePickers();
           }
         })
-        .catch(error => {
+        .catch((error) => {
           console.error('Error loading car rental form:', error);
           formContainer.innerHTML = `<p class="text-red-600">Error loading form: ${error.message}</p>`;
         });
@@ -184,8 +185,8 @@ function editItem(type, id) {
     case 'event':
       // Fetch form via AJAX
       fetch(`/events/${id}/form`)
-        .then(response => response.text())
-        .then(html => {
+        .then((response) => response.text())
+        .then((html) => {
           formContainer.innerHTML = html;
           executeLoadedScripts(formContainer);
           // Call form initialization directly
@@ -203,7 +204,7 @@ function editItem(type, id) {
           }
           initFlightDateTimePickers();
         })
-        .catch(error => console.error('Error loading event form:', error));
+        .catch((error) => console.error('Error loading event form:', error));
       break;
   }
 }
@@ -215,7 +216,12 @@ function editItem(type, id) {
  * @param {string} departureDateTime - ISO string of departure time
  * @param {string} destinationTimezone - IANA timezone string (e.g., "America/New_York")
  */
-function showAddFormWithLayoverDates(type, arrivalDateTime, departureDateTime, destinationTimezone) {
+function showAddFormWithLayoverDates(
+  type,
+  arrivalDateTime,
+  departureDateTime,
+  destinationTimezone
+) {
   const formContainer = document.getElementById('secondary-sidebar-content');
   if (!formContainer) return;
 
@@ -227,11 +233,11 @@ function showAddFormWithLayoverDates(type, arrivalDateTime, departureDateTime, d
     const params = new URLSearchParams({
       checkInDateTime: arrivalDateTime,
       checkOutDateTime: departureDateTime,
-      destinationTimezone: destinationTimezone || 'UTC'
+      destinationTimezone: destinationTimezone || 'UTC',
     });
     fetch(`/hotels/trips/${tripId}/form?${params.toString()}`)
-      .then(response => response.text())
-      .then(html => {
+      .then((response) => response.text())
+      .then((html) => {
         formContainer.innerHTML = html;
         executeLoadedScripts(formContainer);
         // Call form initialization directly
@@ -243,7 +249,7 @@ function showAddFormWithLayoverDates(type, arrivalDateTime, departureDateTime, d
         }
         initFlightDateTimePickers();
       })
-      .catch(error => console.error('Error loading hotel form:', error));
+      .catch((error) => console.error('Error loading hotel form:', error));
   }
 }
 
@@ -258,8 +264,8 @@ function showAddForm(type) {
     case 'flight':
       // Fetch form via AJAX
       fetch(`/flights/trips/${tripId}/form`)
-        .then(response => response.text())
-        .then(html => {
+        .then((response) => response.text())
+        .then((html) => {
           formContainer.innerHTML = html;
           executeLoadedScripts(formContainer);
 
@@ -275,13 +281,13 @@ function showAddForm(type) {
             initializeAirportAutocomplete();
           }
         })
-        .catch(error => console.error('Error loading flight form:', error));
+        .catch((error) => console.error('Error loading flight form:', error));
       break;
     case 'hotel':
       // Fetch form via AJAX
       fetch(`/hotels/trips/${tripId}/form`)
-        .then(response => response.text())
-        .then(html => {
+        .then((response) => response.text())
+        .then((html) => {
           formContainer.innerHTML = html;
           executeLoadedScripts(formContainer);
           // Call form initialization directly
@@ -293,13 +299,13 @@ function showAddForm(type) {
           }
           initFlightDateTimePickers();
         })
-        .catch(error => console.error('Error loading hotel form:', error));
+        .catch((error) => console.error('Error loading hotel form:', error));
       break;
     case 'transportation':
       // Fetch form via AJAX
       fetch(`/transportation/trips/${tripId}/form`)
-        .then(response => response.text())
-        .then(html => {
+        .then((response) => response.text())
+        .then((html) => {
           formContainer.innerHTML = html;
           executeLoadedScripts(formContainer);
           // Call form initialization directly
@@ -311,14 +317,14 @@ function showAddForm(type) {
           }
           initFlightDateTimePickers();
         })
-        .catch(error => console.error('Error loading transportation form:', error));
+        .catch((error) => console.error('Error loading transportation form:', error));
       break;
     case 'carRental':
     case 'car-rental':
       // Fetch form via AJAX
       fetch(`/car-rentals/trips/${tripId}/form`)
-        .then(response => response.text())
-        .then(html => {
+        .then((response) => response.text())
+        .then((html) => {
           formContainer.innerHTML = html;
           executeLoadedScripts(formContainer);
           // Call form initialization directly
@@ -330,13 +336,13 @@ function showAddForm(type) {
           }
           initFlightDateTimePickers();
         })
-        .catch(error => console.error('Error loading car rental form:', error));
+        .catch((error) => console.error('Error loading car rental form:', error));
       break;
     case 'event':
       // Fetch form via AJAX
       fetch(`/events/trips/${tripId}/form`)
-        .then(response => response.text())
-        .then(html => {
+        .then((response) => response.text())
+        .then((html) => {
           formContainer.innerHTML = html;
           executeLoadedScripts(formContainer);
           // Call form initialization directly
@@ -354,7 +360,7 @@ function showAddForm(type) {
           }
           initFlightDateTimePickers();
         })
-        .catch(error => console.error('Error loading event form:', error));
+        .catch((error) => console.error('Error loading event form:', error));
       break;
   }
 }
@@ -364,7 +370,7 @@ function showAddForm(type) {
  * When tertiary sidebar opens, secondary should maintain its state but position may change
  */
 if (typeof window.openTertiarySidebar === 'undefined') {
-  window.openTertiarySidebar = function() {
+  window.openTertiarySidebar = function () {
     const tertiarySidebar = document.getElementById('tertiary-sidebar');
     if (tertiarySidebar) {
       tertiarySidebar.classList.add('open');
@@ -376,7 +382,7 @@ if (typeof window.openTertiarySidebar === 'undefined') {
  * Override closeTertiarySidebar
  */
 if (typeof window.closeTertiarySidebar === 'undefined') {
-  window.closeTertiarySidebar = function() {
+  window.closeTertiarySidebar = function () {
     const tertiarySidebar = document.getElementById('tertiary-sidebar');
     if (tertiarySidebar) {
       tertiarySidebar.classList.remove('open');

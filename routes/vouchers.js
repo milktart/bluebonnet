@@ -1,4 +1,5 @@
 const express = require('express');
+
 const router = express.Router();
 const voucherController = require('../controllers/voucherController');
 const voucherAttachmentController = require('../controllers/voucherAttachmentController');
@@ -21,9 +22,18 @@ router.get('/available-for-flight/:flightId', voucherController.getAvailableVouc
 
 // Flight Voucher Attachment Routes
 router.post('/flights/:flightId/attach', voucherAttachmentController.attachVoucher);
-router.post('/flights/:flightId/attach-multiple', voucherAttachmentController.attachMultipleVouchers);
+router.post(
+  '/flights/:flightId/attach-multiple',
+  voucherAttachmentController.attachMultipleVouchers
+);
 router.get('/flights/:flightId/attachments', voucherAttachmentController.getFlightAttachments);
-router.put('/flights/:flightId/attachments/:attachmentId', voucherAttachmentController.updateAttachment);
-router.delete('/flights/:flightId/attachments/:attachmentId', voucherAttachmentController.removeAttachment);
+router.put(
+  '/flights/:flightId/attachments/:attachmentId',
+  voucherAttachmentController.updateAttachment
+);
+router.delete(
+  '/flights/:flightId/attachments/:attachmentId',
+  voucherAttachmentController.removeAttachment
+);
 
 module.exports = router;

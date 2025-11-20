@@ -51,7 +51,9 @@ module.exports = {
     dialectOptions: {
       timezone: 'Etc/GMT-0',
       // Only require SSL if host is not localhost (for Docker deployments)
-      ...(process.env.DB_HOST && process.env.DB_HOST !== 'postgres' && process.env.DB_HOST !== 'localhost'
+      ...(process.env.DB_HOST &&
+      process.env.DB_HOST !== 'postgres' &&
+      process.env.DB_HOST !== 'localhost'
         ? {
             ssl: {
               require: true,

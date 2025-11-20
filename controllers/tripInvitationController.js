@@ -127,13 +127,7 @@ exports.getPendingInvitations = async (req, res) => {
         {
           model: db.Trip,
           as: 'trip',
-          attributes: [
-            'id',
-            'destination',
-            'startDate',
-            'endDate',
-            'userId',
-          ],
+          attributes: ['id', 'destination', 'startDate', 'endDate', 'userId'],
           include: [
             {
               model: db.User,
@@ -212,7 +206,7 @@ exports.respondToInvitation = async (req, res) => {
 
     if (response === 'join') {
       // Add user as companion to trip
-      const trip = invitation.trip;
+      const { trip } = invitation;
 
       // Create a travel companion record for this user
       const travelCompanion = await db.TravelCompanion.findOrCreate({
@@ -267,29 +261,28 @@ exports.respondToInvitation = async (req, res) => {
         message: 'Joined trip',
         invitation,
       });
-    } else {
-      // Decline invitation
-      invitation.status = 'declined';
-      invitation.respondedAt = new Date();
-      await invitation.save();
-
-      // Create notification for trip owner
-      await db.Notification.create({
-        userId: invitation.trip.userId,
-        type: 'trip_invitation_declined',
-        relatedId: invitation.id,
-        relatedType: 'trip_invitation',
-        message: `${req.user.firstName} ${req.user.lastName} declined your trip invitation to ${invitation.trip.destination}`,
-        read: false,
-        actionRequired: false,
-      });
-
-      return res.json({
-        success: true,
-        message: 'Declined invitation',
-        invitation,
-      });
     }
+    // Decline invitation
+    invitation.status = 'declined';
+    invitation.respondedAt = new Date();
+    await invitation.save();
+
+    // Create notification for trip owner
+    await db.Notification.create({
+      userId: invitation.trip.userId,
+      type: 'trip_invitation_declined',
+      relatedId: invitation.id,
+      relatedType: 'trip_invitation',
+      message: `${req.user.firstName} ${req.user.lastName} declined your trip invitation to ${invitation.trip.destination}`,
+      read: false,
+      actionRequired: false,
+    });
+
+    return res.json({
+      success: true,
+      message: 'Declined invitation',
+      invitation,
+    });
   } catch (error) {
     logger.error('Error responding to invitation:', error);
     return res.status(500).json({
@@ -324,7 +317,7 @@ exports.leaveTrip = async (req, res) => {
     // Find travel companion for this user
     const travelCompanion = await db.TravelCompanion.findOne({
       where: {
-        userId: userId,
+        userId,
         createdBy: trip.userId,
       },
     });

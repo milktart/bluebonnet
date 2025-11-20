@@ -36,8 +36,13 @@ function formatDateTime(dateString) {
 
 // Helper function to validate timezone string
 function validateTimezone(timezone) {
-  return timezone && typeof timezone === 'string' && timezone.trim() &&
-         timezone !== 'undefined' && timezone !== 'null' ? timezone.trim() : null;
+  return timezone &&
+    typeof timezone === 'string' &&
+    timezone.trim() &&
+    timezone !== 'undefined' &&
+    timezone !== 'null'
+    ? timezone.trim()
+    : null;
 }
 
 // Helper function to extract UTC date parts
@@ -47,7 +52,7 @@ function getUTCDateParts(date) {
     month: String(date.getUTCMonth() + 1).padStart(2, '0'),
     day: String(date.getUTCDate()).padStart(2, '0'),
     hours: String(date.getUTCHours()).padStart(2, '0'),
-    minutes: String(date.getUTCMinutes()).padStart(2, '0')
+    minutes: String(date.getUTCMinutes()).padStart(2, '0'),
   };
 }
 
@@ -60,7 +65,9 @@ function formatDateForInput(date, timezone) {
 
   const validTimezone = validateTimezone(timezone);
 
-  let year, month, day;
+  let year;
+  let month;
+  let day;
 
   if (validTimezone) {
     try {
@@ -68,15 +75,22 @@ function formatDateForInput(date, timezone) {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
-        timeZone: validTimezone
+        timeZone: validTimezone,
       });
       const parts = formatter.formatToParts(d);
-      year = parts.find(p => p.type === 'year').value;
-      month = parts.find(p => p.type === 'month').value;
-      day = parts.find(p => p.type === 'day').value;
-      console.log('[formatDateForInput] UTC:', date, 'timezone:', validTimezone, 'local:', `${year}-${month}-${day}`);
+      year = parts.find((p) => p.type === 'year').value;
+      month = parts.find((p) => p.type === 'month').value;
+      day = parts.find((p) => p.type === 'day').value;
+      console.log(
+        '[formatDateForInput] UTC:',
+        date,
+        'timezone:',
+        validTimezone,
+        'local:',
+        `${year}-${month}-${day}`
+      );
     } catch (e) {
-      console.warn('[formatDateForInput] Invalid timezone "' + validTimezone + '", using UTC:', e);
+      console.warn(`[formatDateForInput] Invalid timezone "${validTimezone}", using UTC:`, e);
       const utcParts = getUTCDateParts(d);
       ({ year, month, day } = utcParts);
     }
@@ -99,7 +113,8 @@ function formatTimeForInput(date, timezone) {
 
   const validTimezone = validateTimezone(timezone);
 
-  let hours, minutes;
+  let hours;
+  let minutes;
 
   if (validTimezone) {
     try {
@@ -107,12 +122,14 @@ function formatTimeForInput(date, timezone) {
         hour: '2-digit',
         minute: '2-digit',
         hour12: false,
-        timeZone: validTimezone
+        timeZone: validTimezone,
       });
       const parts = formatter.formatToParts(d);
-      hours = parts.find(p => p.type === 'hour').value;
-      minutes = parts.find(p => p.type === 'minute').value;
-      console.log(`[formatTimeForInput] UTC: ${date}, timezone: ${validTimezone}, local: ${hours}:${minutes}`);
+      hours = parts.find((p) => p.type === 'hour').value;
+      minutes = parts.find((p) => p.type === 'minute').value;
+      console.log(
+        `[formatTimeForInput] UTC: ${date}, timezone: ${validTimezone}, local: ${hours}:${minutes}`
+      );
     } catch (e) {
       console.warn(`[formatTimeForInput] Invalid timezone "${validTimezone}", using UTC:`, e);
       const utcParts = getUTCDateParts(d);
@@ -135,10 +152,10 @@ function applyDateTimeFormatting() {
   const formatters = {
     date: formatDate,
     time: formatTime,
-    datetime: formatDateTime
+    datetime: formatDateTime,
   };
 
-  document.querySelectorAll('[data-datetime]').forEach(el => {
+  document.querySelectorAll('[data-datetime]').forEach((el) => {
     const datetime = el.getAttribute('data-datetime');
     const format = el.getAttribute('data-format') || 'datetime';
     const formatter = formatters[format];
@@ -194,7 +211,12 @@ function formatLayoverDisplay(duration, airportCode) {
 }
 
 // Legacy function for backward compatibility
-function calculateLayover(flight1ArrivalTime, flight1Destination, flight2DepartureTime, flight2Origin) {
+function calculateLayover(
+  flight1ArrivalTime,
+  flight1Destination,
+  flight2DepartureTime,
+  flight2Origin
+) {
   if (!flight1ArrivalTime || !flight2DepartureTime) return null;
 
   const duration = calculateLayoverDuration(flight1ArrivalTime, flight2DepartureTime);
@@ -221,5 +243,13 @@ if (typeof window !== 'undefined') {
 
 // Export for modules
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { formatDate, formatTime, formatDateTime, formatDateForInput, formatTimeForInput, calculateLayover, formatLayoverDisplay };
+  module.exports = {
+    formatDate,
+    formatTime,
+    formatDateTime,
+    formatDateForInput,
+    formatTimeForInput,
+    calculateLayover,
+    formatLayoverDisplay,
+  };
 }

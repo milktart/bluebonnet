@@ -39,7 +39,6 @@ function localToUTC(datetimeLocal, timezone) {
     }
 
     return localMoment.utc().toDate();
-
   } catch (error) {
     logger.error('Error converting local to UTC:', error, { datetimeLocal, timezone });
     // Fallback: treat as UTC
@@ -76,7 +75,6 @@ function utcToLocal(utcDate, timezone) {
 
     // Return in UTC if no timezone specified
     return m.format('YYYY-MM-DDTHH:mm');
-
   } catch (error) {
     logger.error('Error converting UTC to local:', error, { utcDate, timezone });
     return moment.utc(utcDate).format('YYYY-MM-DDTHH:mm');
@@ -106,7 +104,6 @@ function formatInTimezone(utcDate, timezone, format = 'DD MMM YYYY HH:mm') {
     }
 
     return m.format(format);
-
   } catch (error) {
     logger.error('Error formatting in timezone:', error);
     return '';
@@ -116,5 +113,5 @@ function formatInTimezone(utcDate, timezone, format = 'DD MMM YYYY HH:mm') {
 module.exports = {
   localToUTC,
   utcToLocal,
-  formatInTimezone
+  formatInTimezone,
 };

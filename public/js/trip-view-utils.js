@@ -7,8 +7,9 @@
 
 function lookupAirline(flightNumber, airlineFieldId = null) {
   // Find the airline field - try the provided ID first, then look for any airline field
-  let airlineField = airlineFieldId ? document.getElementById(airlineFieldId) :
-                     document.getElementById('airline') || document.getElementById('editAirline');
+  const airlineField = airlineFieldId
+    ? document.getElementById(airlineFieldId)
+    : document.getElementById('airline') || document.getElementById('editAirline');
 
   if (!airlineField) return;
 
@@ -24,7 +25,7 @@ function lookupAirline(flightNumber, airlineFieldId = null) {
   }
 
   const airlineCode = airlineCodeMatch[1];
-  const airline = airlineData.find(a => a.iata === airlineCode);
+  const airline = airlineData.find((a) => a.iata === airlineCode);
 
   if (airline) {
     airlineField.value = airline.name;
@@ -35,12 +36,12 @@ function lookupAirline(flightNumber, airlineFieldId = null) {
 
 function formatTimeInput(input) {
   if (input && input.value) {
-    let timeValue = input.value.replace(/[^\d]/g, '');
+    const timeValue = input.value.replace(/[^\d]/g, '');
 
     if (timeValue.length === 3) {
-      input.value = '0' + timeValue[0] + ':' + timeValue.slice(1);
+      input.value = `0${timeValue[0]}:${timeValue.slice(1)}`;
     } else if (timeValue.length === 4) {
-      input.value = timeValue.slice(0, 2) + ':' + timeValue.slice(2);
+      input.value = `${timeValue.slice(0, 2)}:${timeValue.slice(2)}`;
     }
   }
 }
@@ -50,25 +51,35 @@ function initFlightDateTimePickers() {
   const arrivalTimeInput = document.getElementById('flightArrivalTime');
 
   if (departureTimeInput) {
-    departureTimeInput.addEventListener('blur', function(e) {
+    departureTimeInput.addEventListener('blur', function (e) {
       formatTimeInput(this);
     });
 
-    departureTimeInput.addEventListener('keydown', function(e) {
-      if (e.key !== 'Backspace' && e.key !== 'Delete' && this.value.length === 2 && !this.value.includes(':')) {
-        this.value = this.value + ':';
+    departureTimeInput.addEventListener('keydown', function (e) {
+      if (
+        e.key !== 'Backspace' &&
+        e.key !== 'Delete' &&
+        this.value.length === 2 &&
+        !this.value.includes(':')
+      ) {
+        this.value += ':';
       }
     });
   }
 
   if (arrivalTimeInput) {
-    arrivalTimeInput.addEventListener('blur', function(e) {
+    arrivalTimeInput.addEventListener('blur', function (e) {
       formatTimeInput(this);
     });
 
-    arrivalTimeInput.addEventListener('keydown', function(e) {
-      if (e.key !== 'Backspace' && e.key !== 'Delete' && this.value.length === 2 && !this.value.includes(':')) {
-        this.value = this.value + ':';
+    arrivalTimeInput.addEventListener('keydown', function (e) {
+      if (
+        e.key !== 'Backspace' &&
+        e.key !== 'Delete' &&
+        this.value.length === 2 &&
+        !this.value.includes(':')
+      ) {
+        this.value += ':';
       }
     });
   }
@@ -125,7 +136,7 @@ function formatDateTimeLocal(date) {
  */
 function getLatestDate(items, dateField) {
   if (!items || items.length === 0) return null;
-  const dates = items.map(item => new Date(item[dateField]));
+  const dates = items.map((item) => new Date(item[dateField]));
   return new Date(Math.max(...dates));
 }
 

@@ -2,6 +2,7 @@ node_modules/
 coverage/
 dist/
 public/dist/
+public/data/
 build/
 .next/
 out/
@@ -15,3 +16,6 @@ migrations/
 .husky/
 .git/
 scripts/archive/
+# Exclude specific public JS files that may cause issues
+public/js/lib/
+public/js/preline.js

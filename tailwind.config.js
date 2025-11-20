@@ -1,10 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    "./views/**/*.ejs",
-    "./public/**/*.{js,html}",
-    "./node_modules/preline/dist/*.js",
-  ],
+  content: ['./views/**/*.ejs', './public/**/*.{js,html}', './node_modules/preline/dist/*.js'],
   theme: {
     extend: {
       colors: {
@@ -20,9 +16,9 @@ module.exports = {
           800: '#27272a',
           900: '#18181b',
           950: '#09090b',
-        }
-      }
+        },
+      },
     },
   },
   plugins: [],
-}
+};

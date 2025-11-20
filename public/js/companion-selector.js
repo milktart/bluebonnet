@@ -79,8 +79,8 @@ class CompanionSelector {
         const companions = await response.json();
 
         // Filter out already selected companions
-        this.currentResults = companions.filter(c =>
-          !this.selectedCompanions.some(sc => sc.id === c.id)
+        this.currentResults = companions.filter(
+          (c) => !this.selectedCompanions.some((sc) => sc.id === c.id)
         );
 
         this.displayResults(this.currentResults, query);
@@ -99,7 +99,7 @@ class CompanionSelector {
       noResults.textContent = 'No companions found';
       this.dropdown.appendChild(noResults);
     } else {
-      companions.forEach(companion => {
+      companions.forEach((companion) => {
         const item = this.createDropdownItem(companion);
         this.dropdown.appendChild(item);
       });
@@ -111,7 +111,8 @@ class CompanionSelector {
   createDropdownItem(companion) {
     const item = document.createElement('button');
     item.type = 'button';
-    item.className = 'w-full text-left cursor-pointer py-2 px-4 hover:bg-gray-100 rounded-lg focus:outline-none focus:bg-gray-100 transition-colors';
+    item.className =
+      'w-full text-left cursor-pointer py-2 px-4 hover:bg-gray-100 rounded-lg focus:outline-none focus:bg-gray-100 transition-colors';
 
     const mainInfo = document.createElement('div');
     mainInfo.innerHTML = `
@@ -161,7 +162,7 @@ class CompanionSelector {
   }
 
   removeCompanion(companionId) {
-    this.selectedCompanions = this.selectedCompanions.filter(c => c.id !== companionId);
+    this.selectedCompanions = this.selectedCompanions.filter((c) => c.id !== companionId);
     this.updateSelectedDisplay();
     this.updateHiddenInput();
   }
@@ -169,9 +170,10 @@ class CompanionSelector {
   updateSelectedDisplay() {
     this.selectedContainer.innerHTML = '';
 
-    this.selectedCompanions.forEach(companion => {
+    this.selectedCompanions.forEach((companion) => {
       const badge = document.createElement('div');
-      badge.className = 'inline-flex items-center gap-2 bg-blue-100 text-blue-900 px-3 py-2 rounded-lg text-sm mr-2 mb-2';
+      badge.className =
+        'inline-flex items-center gap-2 bg-blue-100 text-blue-900 px-3 py-2 rounded-lg text-sm mr-2 mb-2';
 
       const nameSpan = document.createElement('span');
       nameSpan.textContent = companion.name;
@@ -201,7 +203,7 @@ class CompanionSelector {
   }
 
   updateHiddenInput() {
-    const companionIds = this.selectedCompanions.map(c => c.id);
+    const companionIds = this.selectedCompanions.map((c) => c.id);
     this.hiddenInput.value = JSON.stringify(companionIds);
   }
 
@@ -289,7 +291,7 @@ class CompanionSelector {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name, email, phone })
+        body: JSON.stringify({ name, email, phone }),
       });
 
       if (response.ok) {
@@ -301,7 +303,7 @@ class CompanionSelector {
         this.hideDropdown();
       } else {
         const errorData = await response.text();
-        alert('Failed to add companion: ' + errorData);
+        alert(`Failed to add companion: ${errorData}`);
       }
     } catch (error) {
       console.error('Error adding companion:', error);

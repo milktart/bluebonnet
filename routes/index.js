@@ -1,4 +1,5 @@
 const express = require('express');
+
 const router = express.Router();
 const { ensureAuthenticated } = require('../middleware/auth');
 const tripController = require('../controllers/tripController');
@@ -67,7 +68,11 @@ router.get('/manage/companions', ensureAuthenticated, (req, res) => {
 
 // GET certificate details within manage
 router.get('/manage/certificates/:voucherId', ensureAuthenticated, (req, res) => {
-  tripController.listTrips(req, res, { openSettingsSidebar: true, openCertificatesSidebar: true, openCertificateDetails: req.params.voucherId });
+  tripController.listTrips(req, res, {
+    openSettingsSidebar: true,
+    openCertificatesSidebar: true,
+    openCertificateDetails: req.params.voucherId,
+  });
 });
 
 module.exports = router;

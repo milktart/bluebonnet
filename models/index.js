@@ -4,12 +4,7 @@ const config = require('../config/database');
 const env = process.env.NODE_ENV || 'development';
 const dbConfig = config[env];
 
-const sequelize = new Sequelize(
-  dbConfig.database,
-  dbConfig.username,
-  dbConfig.password,
-  dbConfig
-);
+const sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, dbConfig);
 
 const db = {};
 
@@ -35,7 +30,7 @@ db.VoucherAttachment = require('./VoucherAttachment')(sequelize, Sequelize);
 db.Airport = require('./Airport')(sequelize, Sequelize);
 
 // Define associations
-Object.keys(db).forEach(modelName => {
+Object.keys(db).forEach((modelName) => {
   if (db[modelName].associate) {
     db[modelName].associate(db);
   }
