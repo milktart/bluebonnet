@@ -340,6 +340,18 @@ async function warmUpUserCache(userId, services) {
   }
 }
 
+/**
+ * Invalidate all airport caches
+ * Useful after seeding airport data
+ * @returns {Promise<number>} Number of keys deleted
+ */
+async function invalidateAirportCaches() {
+  const pattern = 'airports:*';
+  const count = await redis.deletePattern(pattern);
+  logger.info('Invalidated all airport caches', { count });
+  return count;
+}
+
 module.exports = {
   TTL,
   // Airport caching
@@ -347,6 +359,7 @@ module.exports = {
   getCachedAirportSearch,
   cacheAirportByCode,
   getCachedAirportByCode,
+  invalidateAirportCaches,
   // Trip caching
   cacheUserTrips,
   getCachedUserTrips,
