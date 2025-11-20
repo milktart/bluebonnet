@@ -1,5 +1,5 @@
 /* eslint-env browser */
-/* global L, formatDateTime, MAP_TILE_URL */
+/* global L, formatDateTime */
 /* eslint-disable no-console, no-undef, no-continue, max-len */
 
 /**
@@ -67,7 +67,9 @@ async function initializeMap(tripData, isPast = false) {
 
     // Add map tiles (configurable via MAP_TILE_URL global variable)
     const tileUrl =
-      typeof window !== 'undefined' && window.MAP_TILE_URL ? window.MAP_TILE_URL : DEFAULT_MAP_TILE_URL;
+      typeof window !== 'undefined' && window.MAP_TILE_URL
+        ? window.MAP_TILE_URL
+        : DEFAULT_MAP_TILE_URL;
     L.tileLayer(tileUrl, {
       attribution: '',
     }).addTo(map);
