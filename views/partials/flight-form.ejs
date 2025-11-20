@@ -121,10 +121,17 @@
 
     <!-- Set context for companion loading -->
     <script>
+      console.log('[FLIGHT FORM] Setting window variables:', {
+        itemType: 'flight',
+        itemId: '<%= data?.id || "" %>',
+        tripId: '<%= tripId %>',
+        timestamp: new Date().toISOString()
+      });
       window.itemType = 'flight';
       window.itemId = '<%= data?.id || "" %>';
       window.tripId = '<%= tripId %>';
       // Companions are initialized by parent script (trip-view-sidebar.js) via ensureCompanionsInitialized()
+      console.log('[FLIGHT FORM] Waiting for parent script to call ensureCompanionsInitialized()');
     </script>
 
     <!-- Buttons -->
