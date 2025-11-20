@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for production optimization
 # Stage 1: Build dependencies and assets
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -23,7 +23,7 @@ RUN npm run build
 RUN npm prune --production
 
 # Stage 2: Production image
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 
 # Add non-root user for security
 RUN addgroup -g 1001 -S nodejs && \

@@ -7,6 +7,10 @@
 const { Server } = require('socket.io');
 const logger = require('../utils/logger');
 
+// WebSocket configuration
+const SOCKET_PING_TIMEOUT = parseInt(process.env.SOCKET_PING_TIMEOUT, 10) || 60000;
+const SOCKET_PING_INTERVAL = parseInt(process.env.SOCKET_PING_INTERVAL, 10) || 25000;
+
 let io = null;
 const userSocketMap = new Map(); // userId -> socketId mapping
 
@@ -34,8 +38,8 @@ function initialize(server, sessionMiddleware, passport) {
     // Allow all transports
     transports: ['websocket', 'polling'],
     // Connection settings
-    pingTimeout: 60000,
-    pingInterval: 25000,
+    pingTimeout: SOCKET_PING_TIMEOUT,
+    pingInterval: SOCKET_PING_INTERVAL,
     // Allow upgrades from polling to websocket
     allowUpgrades: true,
   });

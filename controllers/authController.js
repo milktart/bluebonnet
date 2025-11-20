@@ -1,5 +1,4 @@
 const bcrypt = require('bcrypt');
-const { Op } = require('sequelize');
 const logger = require('../utils/logger');
 const { User, TravelCompanion, CompanionRelationship, Notification } = require('../models');
 
