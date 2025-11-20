@@ -18,6 +18,7 @@ A comprehensive travel planning application built with Node.js, Express, and Pos
 ### Local Development
 
 **Requirements:**
+
 - Node.js 18+
 - PostgreSQL 15+
 - npm or yarn
@@ -55,6 +56,7 @@ open http://localhost:3500
 ```
 
 Docker Compose includes:
+
 - Node.js app (port 3500)
 - PostgreSQL (port 5432)
 - Redis (port 6379)
@@ -169,6 +171,7 @@ The application follows a clean MVC architecture:
 ### Three-Sidebar Layout
 
 Dashboard and trip detail pages use a consistent three-sidebar pattern:
+
 - **Primary sidebar** - Always visible, fixed width
 - **Secondary sidebar** - On-demand content (forms, details)
 - **Tertiary sidebar** - Additional context (maps, vouchers)
@@ -220,6 +223,7 @@ User authentication uses Passport.js with local strategy:
 ### Travel Companions
 
 The companions system allows users to:
+
 - Create companion profiles
 - Send companion requests with permission levels (view/manage)
 - Invite companions to trips with custom edit permissions
@@ -229,6 +233,7 @@ The companions system allows users to:
 ### Voucher Tracking
 
 Manage travel credits and vouchers:
+
 - Multiple voucher types (credits, upgrades, gift cards)
 - Attach vouchers to specific flight segments
 - Assign to trip owner or companions
@@ -247,6 +252,7 @@ Manage travel credits and vouchers:
 
 Comprehensive testing documentation available:
 
+- **[CLAUDE.md#testing-policy](CLAUDE.md#testing-policy)** - Testing policy and requirements for new code
 - **[TESTING_GUIDE.md](TESTING_GUIDE.md)** - Manual testing procedures (36+ test cases)
 - **[API_ENDPOINTS.md](API_ENDPOINTS.md)** - API reference with examples
 
@@ -257,7 +263,15 @@ npm test                # All tests
 npm run test:unit       # Unit tests only
 npm run test:integration # Integration tests
 npm run test:coverage   # Coverage report
+npm run test:watch      # Watch mode for TDD
 ```
+
+**Testing Requirements:**
+
+- All new services must have ≥80% test coverage
+- All new utilities must have ≥90% test coverage
+- All new API endpoints must have ≥70% test coverage
+- See [Testing Policy](CLAUDE.md#testing-policy) for full requirements
 
 ## Deployment
 
@@ -287,7 +301,7 @@ curl http://localhost:3500/health
 
 ## Documentation
 
-- **[xCLAUDE.md](xCLAUDE.md)** - Comprehensive project guide for development
+- **[CLAUDE.md](CLAUDE.md)** - Comprehensive project guide for development
 - **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System architecture overview
 - **[docs/DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md)** - Complete database reference
 - **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** - Deployment procedures
@@ -300,9 +314,19 @@ curl http://localhost:3500/health
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+3. **Write tests** for new code (see [Testing Policy](CLAUDE.md#testing-policy))
+4. Ensure all tests pass (`npm test`)
+5. Ensure code is formatted (`npm run format:check`)
+6. Commit your changes (`git commit -m 'Add amazing feature'`)
+7. Push to the branch (`git push origin feature/amazing-feature`)
+8. Open a Pull Request
+
+**Before submitting a PR:**
+
+- [ ] All tests pass
+- [ ] New code has tests with adequate coverage
+- [ ] Code follows ESLint rules (`npm run lint`)
+- [ ] Code is formatted with Prettier (`npm run format`)
 
 ## License
 
@@ -311,8 +335,9 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Support
 
 For issues and questions:
+
 - GitHub Issues: [Report an issue](https://github.com/yourusername/bluebonnet/issues)
-- Documentation: Start with [xCLAUDE.md](xCLAUDE.md)
+- Documentation: Start with [CLAUDE.md](CLAUDE.md)
 
 ## Roadmap
 
