@@ -1,6 +1,6 @@
 const { Op } = require('sequelize');
 const { validationResult } = require('express-validator');
-const { TravelCompanion, User, TripCompanion, Trip } = require('../models');
+const { TravelCompanion, User } = require('../models');
 const logger = require('../utils/logger');
 
 // Get all companions for current user

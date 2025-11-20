@@ -16,10 +16,8 @@ const { formatDate, formatTime } = require('../utils/dateFormatter');
 exports.createEvent = async (req, res) => {
   try {
     const { tripId } = req.params;
-    let {
+    const {
       name,
-      startDateTime,
-      endDateTime,
       location,
       timezone,
       contactPhone,
@@ -32,6 +30,7 @@ exports.createEvent = async (req, res) => {
       description,
       companions,
     } = req.body;
+    let { startDateTime, endDateTime } = req.body;
 
     // Convert separate date/time fields to datetime strings if provided
     if (startDate && startTime && !startDateTime) {
