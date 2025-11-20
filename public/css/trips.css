@@ -61,7 +61,9 @@
 /* Tertiary Sidebar - consumes remainder of space, hidden by default */
 .tertiary-sidebar {
   left: calc(var(--sidebar-spacing) + (var(--sidebar-width) * 2) + (var(--sidebar-gap) * 2));
-  width: calc(100vw - var(--sidebar-spacing) * 2 - (var(--sidebar-width) * 2) - (var(--sidebar-gap) * 2));
+  width: calc(
+    100vw - var(--sidebar-spacing) * 2 - (var(--sidebar-width) * 2) - (var(--sidebar-gap) * 2)
+  );
   transition: all var(--sidebar-transition-duration) var(--sidebar-transition-timing);
   overflow-y: auto;
   overflow-x: hidden;
@@ -228,11 +230,21 @@
 }
 
 /* Marker type colors */
-.marker-flight { background: #3b82f6; }
-.marker-hotel { background: #10b981; }
-.marker-transport { background: #f59e0b; }
-.marker-car { background: #6b7280; }
-.marker-event { background: #ef4444; }
+.marker-flight {
+  background: #3b82f6;
+}
+.marker-hotel {
+  background: #10b981;
+}
+.marker-transport {
+  background: #f59e0b;
+}
+.marker-car {
+  background: #6b7280;
+}
+.marker-event {
+  background: #ef4444;
+}
 
 /* Material Symbols styling */
 .material-symbols-outlined {

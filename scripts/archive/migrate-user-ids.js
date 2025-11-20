@@ -17,7 +17,7 @@ async function migrateUserIds() {
       const flights = await Flight.findAll({
         where: { userId: null },
         include: [{ model: Trip, as: 'trip', required: true }],
-        transaction
+        transaction,
       });
 
       for (const flight of flights) {
@@ -30,7 +30,7 @@ async function migrateUserIds() {
       const transportation = await Transportation.findAll({
         where: { userId: null },
         include: [{ model: Trip, as: 'trip', required: true }],
-        transaction
+        transaction,
       });
 
       for (const transport of transportation) {
@@ -43,7 +43,7 @@ async function migrateUserIds() {
       const events = await Event.findAll({
         where: { userId: null },
         include: [{ model: Trip, as: 'trip', required: true }],
-        transaction
+        transaction,
       });
 
       for (const event of events) {

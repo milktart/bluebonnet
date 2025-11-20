@@ -112,7 +112,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -123,7 +123,7 @@ services:
       - redis_data:/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 3s
       retries: 5
@@ -139,7 +139,7 @@ services:
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
-      REDIS_ENABLED: "true"
+      REDIS_ENABLED: 'true'
       REDIS_HOST: redis
       REDIS_PORT: 6379
       SESSION_SECRET: ${SESSION_SECRET}
@@ -165,19 +165,19 @@ services:
   postgres:
     container_name: prod_travel_planner_db
     ports:
-      - "127.0.0.1:5432:5432"  # Only expose to localhost
+      - '127.0.0.1:5432:5432' # Only expose to localhost
 
   redis:
     container_name: prod_travel_planner_redis
     ports:
-      - "127.0.0.1:6379:6379"  # Only expose to localhost
+      - '127.0.0.1:6379:6379' # Only expose to localhost
 
   app:
     build:
       dockerfile: Dockerfile.production
     container_name: prod_travel_planner_app
     ports:
-      - "3500:3000"
+      - '3500:3000'
     # No volume mounts in production (use image)
 
 volumes:
@@ -197,17 +197,17 @@ services:
   postgres:
     container_name: dev_travel_planner_db
     ports:
-      - "5433:5432"
+      - '5433:5432'
 
   redis:
     container_name: dev_travel_planner_redis
     ports:
-      - "6380:6379"
+      - '6380:6379'
 
   app:
     container_name: dev_travel_planner_app
     ports:
-      - "3501:3001"
+      - '3501:3001'
     volumes:
       - ./:/app
       - node_modules:/app/node_modules
@@ -224,6 +224,7 @@ volumes:
 ### Environment Files
 
 **Production (.env.production):**
+
 ```bash
 NODE_ENV=production
 PORT=3000
@@ -245,6 +246,7 @@ DOCKERFILE=Dockerfile.production
 ```
 
 **Development (.env.development):**
+
 ```bash
 NODE_ENV=development
 PORT=3001
@@ -365,6 +367,7 @@ curl http://localhost:3501/health
 ### ⚠️ Critical: Remove sync({ alter: true })
 
 **Current Risk**: The codebase uses `sequelize.sync({ alter: true })` which is **DANGEROUS in production** because:
+
 - Can cause data loss
 - No rollback capability
 - No migration history
@@ -392,13 +395,13 @@ module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.addColumn('users', 'avatarUrl', {
       type: Sequelize.STRING,
-      allowNull: true
+      allowNull: true,
     });
   },
 
   down: async (queryInterface, Sequelize) => {
     await queryInterface.removeColumn('users', 'avatarUrl');
-  }
+  },
 };
 ```
 

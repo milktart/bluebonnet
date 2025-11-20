@@ -71,7 +71,7 @@ export {
   highlightMapMarker,
   unhighlightMapMarker,
   calculateDistance,
-  getPointAtDistance
+  getPointAtDistance,
 };
 
 // Also available as window.initializeMap, etc.
@@ -88,7 +88,7 @@ export {
   deleteNotification,
   handleCompanionAction,
   handleTripAction,
-  initializeNotifications
+  initializeNotifications,
 };
 
 // Also available as window.initializeNotifications, etc.
@@ -98,16 +98,12 @@ export {
 
 ```javascript
 // Classes
-export class CompanionSelector { }
-export class CompanionManager { }
-export class ItemCompanionLoader { }
+export class CompanionSelector {}
+export class CompanionManager {}
+export class ItemCompanionLoader {}
 
 // Functions
-export {
-  initCompanionSelector,
-  initCompanionManager,
-  initializeItemCompanions
-};
+export { initCompanionSelector, initCompanionManager, initializeItemCompanions };
 
 // Also available as:
 // window.CompanionSelector, window.CompanionManager, etc.
@@ -145,6 +141,7 @@ export {
 ## Future Improvements
 
 When a bundler (e.g., esbuild) is added:
+
 - Tree-shaking will remove unused exports
 - Code splitting by route will reduce initial load
 - Minification will further reduce file sizes
@@ -153,12 +150,14 @@ When a bundler (e.g., esbuild) is added:
 ## Performance Impact
 
 **Phase 1 Optimizations:**
+
 - Eliminated ~400 lines of duplicate code
 - Reduced from 13 JS files to 10 (-23%)
 - Better browser caching with version control
 - Foundation for future bundling optimizations
 
 **Projected with Phase 2 (Bundler + Minification):**
+
 - Expected 60-70% total JavaScript size reduction
 - Code splitting for faster initial page loads
 - Modern compression (gzip/brotli)

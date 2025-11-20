@@ -7,11 +7,13 @@ This document provides detailed API endpoint documentation for the travel compan
 ## Companion Relationships Endpoints
 
 ### POST /companion-relationships/request
+
 **Purpose**: Create and send a new companion request
 
 **Authentication**: Required (Passport session)
 
 **Request Body**:
+
 ```json
 {
   "companionId": "uuid-of-companion"
@@ -19,6 +21,7 @@ This document provides detailed API endpoint documentation for the travel compan
 ```
 
 **Response - Success (201)**:
+
 ```json
 {
   "success": true,
@@ -35,6 +38,7 @@ This document provides detailed API endpoint documentation for the travel compan
 ```
 
 **Response - Error (400)**:
+
 ```json
 {
   "success": false,
@@ -45,6 +49,7 @@ This document provides detailed API endpoint documentation for the travel compan
 ---
 
 ### GET /companion-relationships/pending
+
 **Purpose**: Get all pending companion requests (incoming and outgoing)
 
 **Authentication**: Required
@@ -52,6 +57,7 @@ This document provides detailed API endpoint documentation for the travel compan
 **Query Parameters**: None
 
 **Response - Success (200)**:
+
 ```json
 {
   "success": true,
@@ -89,14 +95,17 @@ This document provides detailed API endpoint documentation for the travel compan
 ---
 
 ### PUT /companion-relationships/:relationshipId/accept
+
 **Purpose**: Accept a pending companion request
 
 **Authentication**: Required
 
 **URL Parameters**:
+
 - `relationshipId`: UUID of the relationship to accept
 
 **Request Body**:
+
 ```json
 {
   "permissionLevel": "view_travel"
@@ -104,11 +113,13 @@ This document provides detailed API endpoint documentation for the travel compan
 ```
 
 **Valid Permission Levels**:
+
 - `view_travel`: Basic viewing of trips and items
 - `manage_travel`: Full control including trip creation
 - `explicit`: Trip-by-trip permissions (default)
 
 **Response - Success (200)**:
+
 ```json
 {
   "success": true,
@@ -125,16 +136,19 @@ This document provides detailed API endpoint documentation for the travel compan
 ---
 
 ### PUT /companion-relationships/:relationshipId/decline
+
 **Purpose**: Decline a pending companion request
 
 **Authentication**: Required
 
 **URL Parameters**:
+
 - `relationshipId`: UUID of the relationship to decline
 
 **Request Body**: Empty or null
 
 **Response - Success (200)**:
+
 ```json
 {
   "success": true,
@@ -150,14 +164,17 @@ This document provides detailed API endpoint documentation for the travel compan
 ---
 
 ### DELETE /companion-relationships/:relationshipId
+
 **Purpose**: Revoke/delete a companion relationship
 
 **Authentication**: Required
 
 **URL Parameters**:
+
 - `relationshipId`: UUID of the relationship to revoke
 
 **Response - Success (200)**:
+
 ```json
 {
   "success": true,
@@ -166,6 +183,7 @@ This document provides detailed API endpoint documentation for the travel compan
 ```
 
 **Response - Error (403)**:
+
 ```json
 {
   "success": false,
@@ -176,14 +194,17 @@ This document provides detailed API endpoint documentation for the travel compan
 ---
 
 ### PUT /companion-relationships/:relationshipId/permission
+
 **Purpose**: Update permission level for an accepted relationship
 
 **Authentication**: Required
 
 **URL Parameters**:
+
 - `relationshipId`: UUID of the relationship
 
 **Request Body**:
+
 ```json
 {
   "permissionLevel": "manage_travel"
@@ -191,6 +212,7 @@ This document provides detailed API endpoint documentation for the travel compan
 ```
 
 **Response - Success (200)**:
+
 ```json
 {
   "success": true,
@@ -206,11 +228,13 @@ This document provides detailed API endpoint documentation for the travel compan
 ---
 
 ### GET /companion-relationships/mutual
+
 **Purpose**: Get all mutual (accepted) companion relationships
 
 **Authentication**: Required
 
 **Response - Success (200)**:
+
 ```json
 {
   "success": true,
@@ -234,14 +258,17 @@ This document provides detailed API endpoint documentation for the travel compan
 ---
 
 ### POST /companion-relationships/:relationshipId/resend
+
 **Purpose**: Resend a declined companion request
 
 **Authentication**: Required
 
 **URL Parameters**:
+
 - `relationshipId`: UUID of the declined relationship
 
 **Response - Success (200)**:
+
 ```json
 {
   "success": true,
@@ -254,14 +281,17 @@ This document provides detailed API endpoint documentation for the travel compan
 ## Trip Invitations Endpoints
 
 ### POST /trip-invitations/trips/:tripId/invite
+
 **Purpose**: Invite a companion to a trip
 
 **Authentication**: Required
 
 **URL Parameters**:
+
 - `tripId`: UUID of the trip
 
 **Request Body**:
+
 ```json
 {
   "companionId": "companion-uuid",
@@ -270,6 +300,7 @@ This document provides detailed API endpoint documentation for the travel compan
 ```
 
 **Response - Success (201)**:
+
 ```json
 {
   "success": true,
@@ -288,11 +319,13 @@ This document provides detailed API endpoint documentation for the travel compan
 ---
 
 ### GET /trip-invitations/pending
+
 **Purpose**: Get all pending trip invitations for current user
 
 **Authentication**: Required
 
 **Response - Success (200)**:
+
 ```json
 {
   "success": true,
@@ -320,21 +353,25 @@ This document provides detailed API endpoint documentation for the travel compan
 ---
 
 ### PUT /trip-invitations/:invitationId/respond
+
 **Purpose**: Accept or decline a trip invitation
 
 **Authentication**: Required
 
 **URL Parameters**:
+
 - `invitationId`: UUID of the invitation
 
 **Request Body**:
+
 ```json
 {
-  "response": "join"  // or "decline"
+  "response": "join" // or "decline"
 }
 ```
 
 **Response - Success (200)**:
+
 ```json
 {
   "success": true,
@@ -352,15 +389,18 @@ This document provides detailed API endpoint documentation for the travel compan
 ## Notifications Endpoints
 
 ### GET /notifications
+
 **Purpose**: Get notifications for current user
 
 **Authentication**: Required
 
 **Query Parameters**:
+
 - `limit`: Number of notifications to return (default: 10, max: 100)
 - `offset`: Number of notifications to skip (default: 0)
 
 **Response - Success (200)**:
+
 ```json
 {
   "success": true,
@@ -390,11 +430,13 @@ This document provides detailed API endpoint documentation for the travel compan
 ---
 
 ### GET /notifications/count/unread
+
 **Purpose**: Get count of unread notifications
 
 **Authentication**: Required
 
 **Response - Success (200)**:
+
 ```json
 {
   "success": true,
@@ -405,11 +447,13 @@ This document provides detailed API endpoint documentation for the travel compan
 ---
 
 ### GET /notifications/companions
+
 **Purpose**: Get only companion request notifications
 
 **Authentication**: Required
 
 **Response - Success (200)**:
+
 ```json
 {
   "success": true,
@@ -429,11 +473,13 @@ This document provides detailed API endpoint documentation for the travel compan
 ---
 
 ### GET /notifications/trips
+
 **Purpose**: Get only trip invitation notifications
 
 **Authentication**: Required
 
 **Response - Success (200)**:
+
 ```json
 {
   "success": true,
@@ -453,14 +499,17 @@ This document provides detailed API endpoint documentation for the travel compan
 ---
 
 ### PUT /notifications/:notificationId/read
+
 **Purpose**: Mark a single notification as read
 
 **Authentication**: Required
 
 **URL Parameters**:
+
 - `notificationId`: UUID of the notification
 
 **Response - Success (200)**:
+
 ```json
 {
   "success": true,
@@ -471,11 +520,13 @@ This document provides detailed API endpoint documentation for the travel compan
 ---
 
 ### PUT /notifications/read-all
+
 **Purpose**: Mark all notifications as read
 
 **Authentication**: Required
 
 **Response - Success (200)**:
+
 ```json
 {
   "success": true,
@@ -487,14 +538,17 @@ This document provides detailed API endpoint documentation for the travel compan
 ---
 
 ### DELETE /notifications/:notificationId
+
 **Purpose**: Delete a notification
 
 **Authentication**: Required
 
 **URL Parameters**:
+
 - `notificationId`: UUID of the notification
 
 **Response - Success (200)**:
+
 ```json
 {
   "success": true,
@@ -509,15 +563,18 @@ This document provides detailed API endpoint documentation for the travel compan
 These endpoints are used internally but documented for reference.
 
 ### GET /items/:itemType/:itemId/companions
+
 **Purpose**: Get companions for a specific item
 
 **Authentication**: Required
 
 **URL Parameters**:
+
 - `itemType`: Type of item (flight, hotel, transportation, event, car_rental)
 - `itemId`: UUID of the item
 
 **Response - Success (200)**:
+
 ```json
 {
   "success": true,
@@ -539,16 +596,16 @@ These endpoints are used internally but documented for reference.
 
 ### Common HTTP Status Codes
 
-| Code | Meaning | Example |
-|------|---------|---------|
-| 200 | OK | Request successful |
-| 201 | Created | Resource created successfully |
-| 400 | Bad Request | Invalid request body or parameters |
-| 401 | Unauthorized | Not authenticated/session expired |
-| 403 | Forbidden | Authenticated but not authorized |
-| 404 | Not Found | Resource doesn't exist |
-| 409 | Conflict | Resource already exists (duplicate) |
-| 500 | Server Error | Internal server error |
+| Code | Meaning      | Example                             |
+| ---- | ------------ | ----------------------------------- |
+| 200  | OK           | Request successful                  |
+| 201  | Created      | Resource created successfully       |
+| 400  | Bad Request  | Invalid request body or parameters  |
+| 401  | Unauthorized | Not authenticated/session expired   |
+| 403  | Forbidden    | Authenticated but not authorized    |
+| 404  | Not Found    | Resource doesn't exist              |
+| 409  | Conflict     | Resource already exists (duplicate) |
+| 500  | Server Error | Internal server error               |
 
 ---
 
@@ -557,6 +614,7 @@ These endpoints are used internally but documented for reference.
 ### Using cURL
 
 **Send Companion Request**:
+
 ```bash
 curl -X POST http://localhost:3000/companion-relationships/request \
   -H "Content-Type: application/json" \
@@ -565,6 +623,7 @@ curl -X POST http://localhost:3000/companion-relationships/request \
 ```
 
 **Accept Companion Request**:
+
 ```bash
 curl -X PUT http://localhost:3000/companion-relationships/uuid/accept \
   -H "Content-Type: application/json" \
@@ -573,6 +632,7 @@ curl -X PUT http://localhost:3000/companion-relationships/uuid/accept \
 ```
 
 **Get Notifications**:
+
 ```bash
 curl -X GET "http://localhost:3000/notifications?limit=10" \
   --cookie "session=session-cookie"
@@ -597,6 +657,7 @@ curl -X GET "http://localhost:3000/notifications?limit=10" \
 ## Database Queries for Verification
 
 ### Check Companion Relationships
+
 ```sql
 SELECT
   cr.id,
@@ -612,6 +673,7 @@ ORDER BY cr."createdAt" DESC;
 ```
 
 ### Check Trip Invitations
+
 ```sql
 SELECT
   ti.id,
@@ -625,6 +687,7 @@ ORDER BY ti."createdAt" DESC;
 ```
 
 ### Check Item Companions
+
 ```sql
 SELECT
   ic.id,
@@ -639,6 +702,7 @@ ORDER BY ic."createdAt" DESC;
 ```
 
 ### Check Notifications
+
 ```sql
 SELECT
   n.id,
@@ -655,26 +719,29 @@ ORDER BY n."createdAt" DESC;
 ## Troubleshooting
 
 ### Notifications Not Appearing
+
 1. Check that polling is enabled: browser console should show fetch calls to `/notifications`
 2. Verify notification center is open (bell icon clicked)
 3. Check database: `SELECT * FROM "Notification" WHERE "userId" = 'your-user-id';`
 4. Verify relationship/invitation was created with `createdAt` timestamp recent
 
 ### Companions Not Showing on Items
+
 1. Check that companion was added to trip (TripInvitation.status = 'accepted')
 2. Verify ItemCompanion records exist: `SELECT * FROM "ItemCompanion" WHERE "itemId" = 'item-uuid';`
 3. Clear browser cache and refresh page
 4. Check browser console for JavaScript errors
 
 ### Permission Denials
+
 1. Verify relationship status is 'accepted': `SELECT * FROM "CompanionRelationship" WHERE id = 'uuid';`
 2. Check TripCompanion.canEdit flag: `SELECT * FROM "TripCompanion" WHERE "companionId" = 'uuid';`
 3. Verify user is authenticated: check session cookie in Developer Tools
 4. Check server logs for 403 Forbidden error messages
 
 ### Database Constraint Errors
+
 1. Ensure user accounts exist before creating relationships
 2. Verify trip exists before creating invitations
 3. Check that cascade delete isn't removing needed records
 4. Run: `PRAGMA foreign_keys;` (SQLite) or check foreign key constraints (PostgreSQL)
-

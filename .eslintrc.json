@@ -78,7 +78,11 @@
       }
     },
     {
-      "files": ["tests/**/*.test.js", "tests/**/*.spec.js", "**/__tests__/**/*.js"],
+      "files": [
+        "tests/**/*.test.js",
+        "tests/**/*.spec.js",
+        "**/__tests__/**/*.js"
+      ],
       "env": {
         "jest": true,
         "node": true

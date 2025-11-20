@@ -80,6 +80,7 @@ docker compose exec app npm run db:migrate:status
 ### Step 1.4: Full functionality test
 
 Test these critical features:
+
 - [ ] Login/logout works
 - [ ] Create new trip
 - [ ] Airport search (both IATA code and city name)
@@ -294,6 +295,7 @@ docker compose -f docker-compose.yml -f docker-compose.production.yml logs -f
 ```
 
 Watch for these messages:
+
 - ✅ "PostgreSQL Database directory appears to contain a database"
 - ✅ "database system is ready to accept connections"
 - ✅ "Redis version" (new!)
@@ -384,6 +386,7 @@ Test these features in production:
    - Verify it saves and appears in dashboard
 
 5. **Redis Verification**
+
    ```bash
    # Check Redis is caching data
    docker compose -f docker-compose.yml -f docker-compose.production.yml \
@@ -579,6 +582,7 @@ docker compose -f docker-compose.yml -f docker-compose.production.yml \
 **Downtime:** ~20-30 minutes (Phase 5 deployment)
 
 **Key Success Indicators:**
+
 - ✅ /health endpoint shows "ok" status
 - ✅ All three containers running (app, postgres, redis)
 - ✅ Airport search works for both IATA codes and city names
@@ -588,6 +592,7 @@ docker compose -f docker-compose.yml -f docker-compose.production.yml \
 - ✅ Redis shows cached data
 
 **Files Created/Modified:**
+
 - docker-compose.production.yml (new)
 - Dockerfile.production (new)
 - scripts/db-backup.sh (new)
