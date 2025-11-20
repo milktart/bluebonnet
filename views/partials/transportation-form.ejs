@@ -107,10 +107,7 @@
       window.itemType = 'transportation';
       window.itemId = '<%= data?.id || "" %>';
       window.tripId = '<%= tripId %>';
-      // Initialize companions after setting window variables
-      if (typeof initializeItemCompanions === 'function') {
-        initializeItemCompanions();
-      }
+      // Companions are initialized by parent script (trip-view-sidebar.js) via ensureCompanionsInitialized()
     </script>
 
     <!-- Buttons -->
