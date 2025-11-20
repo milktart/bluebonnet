@@ -1003,11 +1003,12 @@ export function initCompanionManager() {
 
 /**
  * Initialize ItemCompanionLoader (for item forms)
+ * @returns {Promise<void>} Promise that resolves when initialization is complete
  */
-export function initializeItemCompanions() {
+export async function initializeItemCompanions() {
   const loader = new ItemCompanionLoader();
   window.itemCompanionLoader = loader; // Make globally accessible
-  loader.initialize();
+  await loader.initialize();
 }
 
 // Auto-initialize on DOMContentLoaded
