@@ -395,6 +395,9 @@ exports.updateFlight = async (req, res) => {
     });
 
     // Update companions for this flight
+    // Note: When editing an existing flight, companions are typically managed via
+    // the real-time API calls in the UI, not via form submission. We only update
+    // companions here if a non-empty array is explicitly provided.
     if (companions) {
       let companionIds = [];
       try {
@@ -403,6 +406,9 @@ exports.updateFlight = async (req, res) => {
         companionIds = Array.isArray(companions) ? companions : [];
       }
 
+      // Only update companions if a non-empty array is provided
+      // An empty array likely means the companion section failed to load,
+      // so we preserve existing companions rather than removing them all
       if (companionIds.length > 0) {
         await itemCompanionHelper.updateItemCompanions(
           'flight',
@@ -411,9 +417,6 @@ exports.updateFlight = async (req, res) => {
           flight.tripId,
           req.user.id
         );
-      } else {
-        // No companions provided, remove all
-        await itemCompanionHelper.removeItemCompanions('flight', flight.id);
       }
     }
 
