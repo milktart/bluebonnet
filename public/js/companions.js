@@ -700,49 +700,31 @@ export class ItemCompanionLoader {
    * Load companions for the current item
    */
   async loadCompanions() {
-    console.log('[COMPANION LOADER] loadCompanions() called');
     const container = document.getElementById('itemCompanions');
-    if (!container) {
-      console.error('[COMPANION LOADER] itemCompanions container not found!');
-      return;
-    }
-    console.log('[COMPANION LOADER] itemCompanions container found');
+    if (!container) return;
 
     try {
       let companions = [];
 
       if (this.itemId) {
         // Existing item - fetch item companions
-        const url = `/api/items/${this.itemType}/${this.itemId}/companions`;
-        console.log('[COMPANION LOADER] Fetching item companions from:', url);
-        const response = await fetch(url);
-        console.log('[COMPANION LOADER] Item companions response status:', response.status);
+        const response = await fetch(`/api/items/${this.itemType}/${this.itemId}/companions`);
         if (response.ok) {
           const data = await response.json();
           companions = data.data || [];
-          console.log('[COMPANION LOADER] Loaded item companions:', companions);
         }
       } else if (this.tripId) {
         // New item - fetch trip-level companions
-        const url = `/api/trips/${this.tripId}/companions`;
-        console.log('[COMPANION LOADER] Fetching trip companions from:', url);
-        const response = await fetch(url);
-        console.log('[COMPANION LOADER] Trip companions response status:', response.status);
+        const response = await fetch(`/api/trips/${this.tripId}/companions`);
         if (response.ok) {
           const data = await response.json();
           companions = data.data || [];
-          console.log('[COMPANION LOADER] Loaded trip companions:', companions);
-        } else {
-          console.error('[COMPANION LOADER] Failed to fetch trip companions, status:', response.status);
         }
-      } else {
-        console.warn('[COMPANION LOADER] No itemId or tripId available');
       }
 
-      console.log('[COMPANION LOADER] Calling displayCompanions with:', companions);
       this.displayCompanions(companions);
     } catch (error) {
-      console.error('[COMPANION LOADER] Error loading companions:', error);
+      console.error('Error loading companions:', error);
       container.innerHTML = '<div class="text-red-500 text-sm">Error loading companions</div>';
     }
   }
@@ -751,32 +733,24 @@ export class ItemCompanionLoader {
    * Display companions as removable badges
    */
   displayCompanions(companions) {
-    console.log('[COMPANION LOADER] displayCompanions() called with:', companions);
     const container = document.getElementById('itemCompanions');
-    if (!container) {
-      console.error('[COMPANION LOADER] itemCompanions container not found in displayCompanions!');
-      return;
-    }
+    if (!container) return;
 
     if (!companions || companions.length === 0) {
-      console.log('[COMPANION LOADER] No companions to display');
       container.innerHTML =
         '<div class="text-center text-gray-500 text-sm py-2">No companions added to this item</div>';
       this.updateHiddenField([]);
       return;
     }
 
-    console.log('[COMPANION LOADER] Displaying', companions.length, 'companions');
     container.innerHTML = '';
     companions.forEach((companion) => {
-      console.log('[COMPANION LOADER] Creating badge for companion:', companion.name);
       const badge = createCompanionBadge(companion, (id) => this.removeCompanion(id));
       badge.classList.add('companion-badge');
       container.appendChild(badge);
     });
 
     this.updateHiddenField(companions.map((c) => c.id));
-    console.log('[COMPANION LOADER] Companions displayed successfully');
   }
 
   /**

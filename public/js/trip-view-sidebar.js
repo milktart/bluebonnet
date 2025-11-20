@@ -11,29 +11,16 @@ import { loadCompanions } from './lazy/companions-loader.js';
  * This is needed because companions are lazy-loaded, but item forms need them immediately
  */
 async function ensureCompanionsInitialized() {
-  console.log('[SIDEBAR] ensureCompanionsInitialized() called');
-  console.log('[SIDEBAR] Current window context:', {
-    itemType: window.itemType,
-    itemId: window.itemId,
-    tripId: window.tripId
-  });
-
   try {
     // Load companions module if not already loaded
-    console.log('[SIDEBAR] Loading companions module...');
     await loadCompanions();
-    console.log('[SIDEBAR] Companions module loaded successfully');
 
     // Now that module is loaded, call the initialization function and wait for it to complete
     if (typeof window.initializeItemCompanions === 'function') {
-      console.log('[SIDEBAR] Calling window.initializeItemCompanions()...');
       await window.initializeItemCompanions();
-      console.log('[SIDEBAR] window.initializeItemCompanions() completed');
-    } else {
-      console.error('[SIDEBAR] window.initializeItemCompanions is not a function!', typeof window.initializeItemCompanions);
     }
   } catch (error) {
-    console.error('[SIDEBAR] Error initializing companions:', error);
+    console.error('Error initializing companions:', error);
   }
 }
 
