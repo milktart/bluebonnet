@@ -265,9 +265,7 @@ describe('Trips API - Integration Tests', () => {
 
       tripService.updateTrip = jest.fn().mockResolvedValue(mockUpdatedTrip);
 
-      const response = await authRequest('put', `/api/v1/trips/${mockTripId}`).send(
-        updatedData
-      );
+      const response = await authRequest('put', `/api/v1/trips/${mockTripId}`).send(updatedData);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);

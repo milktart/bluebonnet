@@ -7,7 +7,7 @@ const {
   redirectAfterSuccess,
   redirectAfterError,
   verifyResourceOwnershipViaTrip,
-  convertToUTC
+  convertToUTC,
 } = require('./helpers/resourceController');
 const { utcToLocal } = require('../utils/timezoneHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
@@ -24,7 +24,7 @@ exports.createCarRental = async (req, res) => {
       pickupDateTime,
       dropoffDateTime,
       confirmationNumber,
-      companions
+      companions,
     } = req.body;
 
     // Verify trip ownership
@@ -38,10 +38,11 @@ exports.createCarRental = async (req, res) => {
     }
 
     // Geocode pickup and dropoff locations
-    const { originCoords: pickupCoords, destCoords: dropoffCoords } = await geocodeOriginDestination({
-      originNew: pickupLocation,
-      destNew: dropoffLocation
-    });
+    const { originCoords: pickupCoords, destCoords: dropoffCoords } =
+      await geocodeOriginDestination({
+        originNew: pickupLocation,
+        destNew: dropoffLocation,
+      });
 
     const carRental = await CarRental.create({
       tripId,
@@ -57,7 +58,7 @@ exports.createCarRental = async (req, res) => {
       pickupDateTime: convertToUTC(pickupDateTime, pickupTimezone),
       dropoffDateTime: convertToUTC(dropoffDateTime, dropoffTimezone),
       confirmationNumber,
-      userId: req.user.id
+      userId: req.user.id,
     });
 
     // Add companions to this car rental
@@ -87,7 +88,12 @@ exports.createCarRental = async (req, res) => {
           );
         } else {
           // Fallback: auto-add trip-level companions
-          await itemCompanionHelper.autoAddTripCompanions('car_rental', carRental.id, tripId, req.user.id);
+          await itemCompanionHelper.autoAddTripCompanions(
+            'car_rental',
+            carRental.id,
+            tripId,
+            req.user.id
+          );
         }
       }
     } catch (e) {
@@ -122,12 +128,12 @@ exports.updateCarRental = async (req, res) => {
       dropoffTimezone,
       pickupDateTime,
       dropoffDateTime,
-      confirmationNumber
+      confirmationNumber,
     } = req.body;
 
     // Find car rental with trip
     const carRental = await CarRental.findByPk(req.params.id, {
-      include: [{ model: Trip, as: 'trip' }]
+      include: [{ model: Trip, as: 'trip' }],
     });
 
     // Verify ownership
@@ -140,14 +146,15 @@ exports.updateCarRental = async (req, res) => {
     }
 
     // Geocode locations if they changed
-    const { originCoords: pickupCoords, destCoords: dropoffCoords } = await geocodeOriginDestination({
-      originNew: pickupLocation,
-      originOld: carRental.pickupLocation,
-      originCoordsOld: { lat: carRental.pickupLat, lng: carRental.pickupLng },
-      destNew: dropoffLocation,
-      destOld: carRental.dropoffLocation,
-      destCoordsOld: { lat: carRental.dropoffLat, lng: carRental.dropoffLng }
-    });
+    const { originCoords: pickupCoords, destCoords: dropoffCoords } =
+      await geocodeOriginDestination({
+        originNew: pickupLocation,
+        originOld: carRental.pickupLocation,
+        originCoordsOld: { lat: carRental.pickupLat, lng: carRental.pickupLng },
+        destNew: dropoffLocation,
+        destOld: carRental.dropoffLocation,
+        destCoordsOld: { lat: carRental.dropoffLat, lng: carRental.dropoffLng },
+      });
 
     await carRental.update({
       company,
@@ -161,7 +168,7 @@ exports.updateCarRental = async (req, res) => {
       dropoffLng: dropoffCoords?.lng,
       pickupDateTime: convertToUTC(pickupDateTime, pickupTimezone),
       dropoffDateTime: convertToUTC(dropoffDateTime, dropoffTimezone),
-      confirmationNumber
+      confirmationNumber,
     });
 
     // Check if this is an async request
@@ -170,7 +177,13 @@ exports.updateCarRental = async (req, res) => {
       return res.json({ success: true, message: 'Car rental updated successfully' });
     }
 
-    redirectAfterSuccess(res, req, carRental.tripId, 'carRentals', 'Car rental updated successfully');
+    redirectAfterSuccess(
+      res,
+      req,
+      carRental.tripId,
+      'carRentals',
+      'Car rental updated successfully'
+    );
   } catch (error) {
     logger.error(error);
     const isAsync = req.headers['x-async-request'] === 'true';
@@ -186,7 +199,7 @@ exports.deleteCarRental = async (req, res) => {
   try {
     // Find car rental with trip
     const carRental = await CarRental.findByPk(req.params.id, {
-      include: [{ model: Trip, as: 'trip' }]
+      include: [{ model: Trip, as: 'trip' }],
     });
 
     // Verify ownership
@@ -198,7 +211,7 @@ exports.deleteCarRental = async (req, res) => {
       return redirectAfterError(res, req, null, 'Car rental not found');
     }
 
-    const tripId = carRental.tripId;
+    const { tripId } = carRental;
     const carRentalData = carRental.get({ plain: true });
 
     // Store the deleted car rental in session for potential restoration
@@ -209,7 +222,11 @@ exports.deleteCarRental = async (req, res) => {
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
-      return res.json({ success: true, message: 'Car rental deleted successfully', itemId: carRental.id });
+      return res.json({
+        success: true,
+        message: 'Car rental deleted successfully',
+        itemId: carRental.id,
+      });
     }
 
     redirectAfterSuccess(res, req, tripId, 'carRentals', 'Car rental deleted successfully');
@@ -232,7 +249,9 @@ exports.restoreCarRental = async (req, res) => {
     const deletedItem = retrieveDeletedItem(req.session, 'carRental', id);
 
     if (!deletedItem) {
-      return res.status(404).json({ success: false, error: 'Car rental not found in undo history' });
+      return res
+        .status(404)
+        .json({ success: false, error: 'Car rental not found in undo history' });
     }
 
     // Verify user owns the trip (car rentals are trip-based)
@@ -264,7 +283,7 @@ exports.getAddForm = async (req, res) => {
     res.render('partials/car-rental-form', {
       tripId,
       isEditing: false,
-      data: null
+      data: null,
     });
   } catch (error) {
     logger.error(error);
@@ -278,7 +297,7 @@ exports.getEditForm = async (req, res) => {
 
     // Find car rental with trip
     const carRental = await CarRental.findByPk(id, {
-      include: [{ model: Trip, as: 'trip' }]
+      include: [{ model: Trip, as: 'trip' }],
     });
 
     // Verify car rental exists
@@ -319,20 +338,20 @@ exports.getEditForm = async (req, res) => {
       id: carRental.id,
       company: carRental.company,
       pickupLocation: carRental.pickupLocation,
-      pickupTimezone: pickupTimezone,
+      pickupTimezone,
       pickupDate,
       pickupTime,
       dropoffLocation: carRental.dropoffLocation,
-      dropoffTimezone: dropoffTimezone,
+      dropoffTimezone,
       dropoffDate,
       dropoffTime,
-      confirmationNumber: carRental.confirmationNumber
+      confirmationNumber: carRental.confirmationNumber,
     };
 
     res.render('partials/car-rental-form', {
       tripId: carRental.tripId,
       isEditing: true,
-      data: formattedData
+      data: formattedData,
     });
   } catch (error) {
     logger.error(error);

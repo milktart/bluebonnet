@@ -7,7 +7,7 @@ const {
   redirectAfterSuccess,
   redirectAfterError,
   verifyResourceOwnership,
-  convertToUTC
+  convertToUTC,
 } = require('./helpers/resourceController');
 const { utcToLocal } = require('../utils/timezoneHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
@@ -30,7 +30,7 @@ exports.createEvent = async (req, res) => {
       endDate,
       endTime,
       description,
-      companions
+      companions,
     } = req.body;
 
     // Convert separate date/time fields to datetime strings if provided
@@ -60,7 +60,10 @@ exports.createEvent = async (req, res) => {
     let finalTimezone = timezone;
     if (!finalTimezone && coords?.lat && coords?.lng) {
       try {
-        finalTimezone = await require('../services/geocodingService').inferTimezone(coords.lat, coords.lng);
+        finalTimezone = await require('../services/geocodingService').inferTimezone(
+          coords.lat,
+          coords.lng
+        );
       } catch (error) {
         logger.error('Error inferring timezone:', error);
         finalTimezone = 'UTC';
@@ -69,7 +72,9 @@ exports.createEvent = async (req, res) => {
     finalTimezone = finalTimezone || 'UTC';
 
     // If no endDateTime provided, default to startDateTime (for instant/point-in-time events)
-    const finalEndDateTime = endDateTime ? convertToUTC(endDateTime, finalTimezone) : convertToUTC(startDateTime, finalTimezone);
+    const finalEndDateTime = endDateTime
+      ? convertToUTC(endDateTime, finalTimezone)
+      : convertToUTC(startDateTime, finalTimezone);
 
     // Sanitize optional fields - convert empty strings to null to avoid validation errors
     const sanitizedContactEmail = contactEmail && contactEmail.trim() !== '' ? contactEmail : null;
@@ -88,7 +93,7 @@ exports.createEvent = async (req, res) => {
       lng: coords?.lng,
       contactPhone: sanitizedContactPhone,
       contactEmail: sanitizedContactEmail,
-      description: sanitizedDescription
+      description: sanitizedDescription,
     });
 
     // Add companions to this event
@@ -160,7 +165,7 @@ exports.updateEvent = async (req, res) => {
       startDate,
       startTime,
       endDate,
-      endTime
+      endTime,
     } = req.body;
 
     // Convert separate date/time fields to datetime strings if provided
@@ -173,12 +178,13 @@ exports.updateEvent = async (req, res) => {
 
     // Find event with trip
     const event = await Event.findByPk(req.params.id, {
-      include: [{ model: Trip, as: 'trip', required: false }]
+      include: [{ model: Trip, as: 'trip', required: false }],
     });
 
     // Verify event exists
     if (!event) {
-      const isAsync = req.headers['x-async-request'] === 'true' || req.get('content-type') === 'application/json';
+      const isAsync =
+        req.headers['x-async-request'] === 'true' || req.get('content-type') === 'application/json';
       if (isAsync) {
         return res.status(404).json({ success: false, error: 'Event not found' });
       }
@@ -187,7 +193,8 @@ exports.updateEvent = async (req, res) => {
 
     // Verify ownership
     if (!verifyResourceOwnership(event, req.user.id)) {
-      const isAsync = req.headers['x-async-request'] === 'true' || req.get('content-type') === 'application/json';
+      const isAsync =
+        req.headers['x-async-request'] === 'true' || req.get('content-type') === 'application/json';
       if (isAsync) {
         return res.status(403).json({ success: false, error: 'Unauthorized' });
       }
@@ -205,7 +212,10 @@ exports.updateEvent = async (req, res) => {
     let finalTimezone = timezone;
     if (!finalTimezone && coords?.lat && coords?.lng) {
       try {
-        finalTimezone = await require('../services/geocodingService').inferTimezone(coords.lat, coords.lng);
+        finalTimezone = await require('../services/geocodingService').inferTimezone(
+          coords.lat,
+          coords.lng
+        );
       } catch (error) {
         logger.error('Error inferring timezone:', error);
         finalTimezone = event.timezone || 'UTC';
@@ -214,7 +224,9 @@ exports.updateEvent = async (req, res) => {
     finalTimezone = finalTimezone || event.timezone || 'UTC';
 
     // If no endDateTime provided, default to startDateTime (for instant/point-in-time events)
-    const finalEndDateTime = endDateTime ? convertToUTC(endDateTime, finalTimezone) : convertToUTC(startDateTime, finalTimezone);
+    const finalEndDateTime = endDateTime
+      ? convertToUTC(endDateTime, finalTimezone)
+      : convertToUTC(startDateTime, finalTimezone);
 
     // Sanitize optional fields - convert empty strings to null to avoid validation errors
     const sanitizedContactEmail = contactEmail && contactEmail.trim() !== '' ? contactEmail : null;
@@ -231,11 +243,12 @@ exports.updateEvent = async (req, res) => {
       lng: coords?.lng,
       contactPhone: sanitizedContactPhone,
       contactEmail: sanitizedContactEmail,
-      description: sanitizedDescription
+      description: sanitizedDescription,
     });
 
     // Check if this is an async request
-    const isAsync = req.headers['x-async-request'] === 'true' || req.get('content-type') === 'application/json';
+    const isAsync =
+      req.headers['x-async-request'] === 'true' || req.get('content-type') === 'application/json';
     if (isAsync) {
       return res.json({ success: true, message: 'Event updated successfully' });
     }
@@ -245,9 +258,12 @@ exports.updateEvent = async (req, res) => {
     logger.error('ERROR in updateEvent:', error);
     logger.error('Request body:', req.body);
     logger.error('Request params:', req.params);
-    const isAsync = req.headers['x-async-request'] === 'true' || req.get('content-type') === 'application/json';
+    const isAsync =
+      req.headers['x-async-request'] === 'true' || req.get('content-type') === 'application/json';
     if (isAsync) {
-      return res.status(500).json({ success: false, error: error.message || 'Error updating event' });
+      return res
+        .status(500)
+        .json({ success: false, error: error.message || 'Error updating event' });
     }
     req.flash('error_msg', 'Error updating event');
     res.redirect('back');
@@ -258,7 +274,7 @@ exports.deleteEvent = async (req, res) => {
   try {
     // Find event with trip
     const event = await Event.findByPk(req.params.id, {
-      include: [{ model: Trip, as: 'trip', required: false }]
+      include: [{ model: Trip, as: 'trip', required: false }],
     });
 
     // Verify ownership
@@ -270,7 +286,7 @@ exports.deleteEvent = async (req, res) => {
       return redirectAfterError(res, req, null, 'Event not found');
     }
 
-    const tripId = event.tripId;
+    const { tripId } = event;
     const eventData = event.get({ plain: true });
 
     // Store the deleted event in session for potential restoration
@@ -299,7 +315,7 @@ exports.deleteEvent = async (req, res) => {
 exports.getEventSidebar = async (req, res) => {
   try {
     const event = await Event.findByPk(req.params.id, {
-      include: [{ model: Trip, as: 'trip', required: false }]
+      include: [{ model: Trip, as: 'trip', required: false }],
     });
 
     if (!event || event.userId !== req.user.id) {
@@ -326,7 +342,7 @@ exports.getEventSidebar = async (req, res) => {
       startDate,
       startTime,
       endDate,
-      endTime
+      endTime,
     });
   } catch (error) {
     logger.error('ERROR fetching event sidebar:', error);
@@ -337,7 +353,7 @@ exports.getEventSidebar = async (req, res) => {
 exports.getEventEditForm = async (req, res) => {
   try {
     const event = await Event.findByPk(req.params.id, {
-      include: [{ model: Trip, as: 'trip', required: false }]
+      include: [{ model: Trip, as: 'trip', required: false }],
     });
 
     if (!event || event.userId !== req.user.id) {
@@ -372,7 +388,7 @@ exports.getEventEditForm = async (req, res) => {
       startDate,
       startTime,
       endDate,
-      endTime
+      endTime,
     });
   } catch (error) {
     logger.error('ERROR fetching event edit form:', error);
@@ -393,7 +409,7 @@ exports.getAddForm = async (req, res) => {
     res.render('partials/event-form', {
       tripId,
       isEditing: false,
-      data: null
+      data: null,
     });
   } catch (error) {
     logger.error(error);
@@ -407,7 +423,7 @@ exports.getEditForm = async (req, res) => {
 
     // Find event with trip
     const event = await Event.findByPk(id, {
-      include: [{ model: Trip, as: 'trip', required: false }]
+      include: [{ model: Trip, as: 'trip', required: false }],
     });
 
     // Verify ownership
@@ -435,13 +451,13 @@ exports.getEditForm = async (req, res) => {
       endDate,
       endTime,
       contactPhone: event.contactPhone,
-      contactEmail: event.contactEmail
+      contactEmail: event.contactEmail,
     };
 
     res.render('partials/event-form', {
       tripId: event.tripId,
       isEditing: true,
-      data: formattedData
+      data: formattedData,
     });
   } catch (error) {
     logger.error(error);
@@ -455,7 +471,7 @@ exports.getStandaloneForm = async (req, res) => {
     res.render('partials/event-form', {
       tripId: null,
       isEditing: false,
-      data: null
+      data: null,
     });
   } catch (error) {
     logger.error(error);

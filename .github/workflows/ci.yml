@@ -10,6 +10,7 @@ jobs:
   lint:
     name: Lint Code
     runs-on: ubuntu-latest
+    timeout-minutes: 10  # Linting should complete in under 10 minutes
 
     steps:
       - name: Checkout code
@@ -33,6 +34,7 @@ jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15  # Tests should complete in under 15 minutes
 
     services:
       postgres:
@@ -117,6 +119,7 @@ jobs:
   build:
     name: Build Application
     runs-on: ubuntu-latest
+    timeout-minutes: 10  # Build should complete in under 10 minutes
 
     steps:
       - name: Checkout code
@@ -146,6 +149,7 @@ jobs:
   security:
     name: Security Scan
     runs-on: ubuntu-latest
+    timeout-minutes: 10  # Security scans should complete in under 10 minutes
 
     steps:
       - name: Checkout code

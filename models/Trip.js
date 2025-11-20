@@ -1,79 +1,83 @@
 module.exports = (sequelize, DataTypes) => {
-  const Trip = sequelize.define('Trip', {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
+  const Trip = sequelize.define(
+    'Trip',
+    {
+      id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+      },
+      userId: {
+        type: DataTypes.UUID,
+        allowNull: false,
+        references: {
+          model: 'users',
+          key: 'id',
+        },
+      },
+      name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      departureDate: {
+        type: DataTypes.DATEONLY,
+        allowNull: false,
+      },
+      returnDate: {
+        type: DataTypes.DATEONLY,
+        allowNull: false,
+      },
+      defaultCompanionEditPermission: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      purpose: {
+        type: DataTypes.ENUM('business', 'pleasure', 'other'),
+        allowNull: false,
+        defaultValue: 'pleasure',
+      },
     },
-    userId: {
-      type: DataTypes.UUID,
-      allowNull: false,
-      references: {
-        model: 'users',
-        key: 'id'
-      }
-    },
-    name: {
-      type: DataTypes.STRING,
-      allowNull: false
-    },
-    departureDate: {
-      type: DataTypes.DATEONLY,
-      allowNull: false
-    },
-    returnDate: {
-      type: DataTypes.DATEONLY,
-      allowNull: false
-    },
-    defaultCompanionEditPermission: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: false
-    },
-    purpose: {
-      type: DataTypes.ENUM('business', 'pleasure', 'other'),
-      allowNull: false,
-      defaultValue: 'pleasure'
+    {
+      tableName: 'trips',
+      timestamps: true,
     }
-  }, {
-    tableName: 'trips',
-    timestamps: true
-  });
+  );
 
   Trip.associate = (models) => {
     Trip.belongsTo(models.User, {
       foreignKey: 'userId',
-      as: 'user'
+      as: 'user',
     });
-    
+
     Trip.hasMany(models.Flight, {
       foreignKey: 'tripId',
       as: 'flights',
-      onDelete: 'CASCADE'
+      onDelete: 'CASCADE',
     });
-    
+
     Trip.hasMany(models.Hotel, {
       foreignKey: 'tripId',
       as: 'hotels',
-      onDelete: 'CASCADE'
+      onDelete: 'CASCADE',
     });
-    
+
     Trip.hasMany(models.Transportation, {
       foreignKey: 'tripId',
       as: 'transportation',
-      onDelete: 'CASCADE'
+      onDelete: 'CASCADE',
     });
-    
+
     Trip.hasMany(models.CarRental, {
       foreignKey: 'tripId',
       as: 'carRentals',
-      onDelete: 'CASCADE'
+      onDelete: 'CASCADE',
     });
-    
+
     Trip.hasMany(models.Event, {
       foreignKey: 'tripId',
       as: 'events',
-      onDelete: 'CASCADE'
+      onDelete: 'CASCADE',
     });
 
     // Many-to-many relationship with companions through junction table
@@ -81,14 +85,14 @@ module.exports = (sequelize, DataTypes) => {
       through: models.TripCompanion,
       foreignKey: 'tripId',
       otherKey: 'companionId',
-      as: 'companions'
+      as: 'companions',
     });
 
     // Direct access to trip companion junction records
     Trip.hasMany(models.TripCompanion, {
       foreignKey: 'tripId',
       as: 'tripCompanions',
-      onDelete: 'CASCADE'
+      onDelete: 'CASCADE',
     });
   };
 

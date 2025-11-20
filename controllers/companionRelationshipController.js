@@ -1,6 +1,6 @@
+const { Op } = require('sequelize');
 const db = require('../models');
 const logger = require('../utils/logger');
-const { Op } = require('sequelize');
 
 exports.sendRequest = async (req, res) => {
   try {
@@ -458,7 +458,7 @@ exports.getMutualCompanions = async (req, res) => {
 
 exports.resendRequest = async (req, res) => {
   try {
-    const relationshipId = req.params.relationshipId;
+    const { relationshipId } = req.params;
     const userId = req.user.id;
 
     // Find the relationship

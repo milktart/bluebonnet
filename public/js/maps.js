@@ -48,21 +48,26 @@ async function initializeMap(tripData, isPast = false) {
       center: [25, 0],
       zoom: 1,
       minZoom: 1,
-      zoomSnap: .5,
+      zoomSnap: 0.5,
       zoomControl: false, // Disable default zoom control
       scrollWheelZoom: true,
-      attributionControl: false
+      attributionControl: false,
     });
 
     // Add zoom control to bottom right
-    L.control.zoom({
-      position: 'bottomright'
-    }).addTo(map);
+    L.control
+      .zoom({
+        position: 'bottomright',
+      })
+      .addTo(map);
 
     // Add ArcGIS tiles
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-      attribution: ''
-    }).addTo(map);
+    L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+      {
+        attribution: '',
+      }
+    ).addTo(map);
 
     const allLocations = [];
     const travelSegments = []; // Store actual travel segments
@@ -86,7 +91,7 @@ async function initializeMap(tripData, isPast = false) {
             details: `${flight.airline} ${flight.flightNumber}`,
             time: new Date(flight.departureDateTime),
             lat: originLat,
-            lng: originLng
+            lng: originLng,
           });
           allCoords.push([originLat, originLng]);
         }
@@ -98,7 +103,7 @@ async function initializeMap(tripData, isPast = false) {
             details: `${flight.airline} ${flight.flightNumber}`,
             time: new Date(flight.arrivalDateTime),
             lat: destLat,
-            lng: destLng
+            lng: destLng,
           });
           allCoords.push([destLat, destLng]);
         }
@@ -110,7 +115,7 @@ async function initializeMap(tripData, isPast = false) {
             from: [originLat, originLng],
             to: [destLat, destLng],
             time: new Date(flight.departureDateTime),
-            color: '#0d6efd'
+            color: '#0d6efd',
           });
         }
       }
@@ -134,8 +139,8 @@ async function initializeMap(tripData, isPast = false) {
             type: 'event',
             details: event.location,
             time: new Date(event.startDateTime),
-            lat: lat,
-            lng: lng
+            lat,
+            lng,
           });
           allCoords.push([lat, lng]);
         }
@@ -147,7 +152,7 @@ async function initializeMap(tripData, isPast = false) {
 
     // Apply darker colors to travel segments if isPast
     if (isPast) {
-      travelSegments.forEach(segment => {
+      travelSegments.forEach((segment) => {
         if (segment.type === 'flight') {
           segment.color = '#084298';
         }
@@ -156,13 +161,15 @@ async function initializeMap(tripData, isPast = false) {
 
     // Define marker colors (darker for past trips)
     // Only flights and events are displayed on the map
-    const colorMap = isPast ? {
-      flight: '#084298',
-      event: '#dc3545'
-    } : {
-      flight: '#0d6efd',
-      event: '#dc3545'
-    };
+    const colorMap = isPast
+      ? {
+          flight: '#084298',
+          event: '#dc3545',
+        }
+      : {
+          flight: '#0d6efd',
+          event: '#dc3545',
+        };
 
     // Store markers to add after polylines for proper z-ordering
 
@@ -179,7 +186,7 @@ async function initializeMap(tripData, isPast = false) {
           weight: 6,
           opacity: 0.2,
           className: `segment-${index + 1}-glow-outer`,
-          smoothFactor: 1
+          smoothFactor: 1,
         }).addTo(map);
         glowLayers.push(glowOuter);
 
@@ -189,7 +196,7 @@ async function initializeMap(tripData, isPast = false) {
           weight: 4,
           opacity: 0.35,
           className: `segment-${index + 1}-glow-middle`,
-          smoothFactor: 1
+          smoothFactor: 1,
         }).addTo(map);
         glowLayers.push(glowMiddle);
 
@@ -199,17 +206,17 @@ async function initializeMap(tripData, isPast = false) {
           weight: 2,
           opacity: 1,
           className: `segment-${index + 1}`,
-          smoothFactor: 1
+          smoothFactor: 1,
         }).addTo(map);
         glowLayers.push(polyline);
 
         segmentLayers.push({
           index: index + 1,
-          polyline: polyline,
-          glowLayers: glowLayers,
+          polyline,
+          glowLayers,
           originalColor: segment.color,
           originalWeight: 2,
-          originalOpacity: 1
+          originalOpacity: 1,
         });
       });
     }
@@ -227,7 +234,7 @@ async function initializeMap(tripData, isPast = false) {
         color: '#fff',
         weight: 1,
         opacity: 1,
-        fillOpacity: 0.8
+        fillOpacity: 0.8,
       }).addTo(map);
 
       const popupContent = `
@@ -279,7 +286,7 @@ async function initializeMap(tripData, isPast = false) {
       map.fitBounds(bounds, {
         paddingTopLeft: [425, 1],
         paddingBottomRight: [0, 80],
-        maxZoom: maxZoom + 0.5
+        maxZoom: maxZoom + 0.5,
       });
     } else {
       // No locations - zoom in slightly more for better initial view
@@ -288,7 +295,6 @@ async function initializeMap(tripData, isPast = false) {
 
     // Return the map instance for external management
     return map;
-
   } catch (error) {
     console.error('Map error:', error);
 
@@ -335,7 +341,8 @@ function initOverviewMap(tripData, mapElementId = 'tripMap', isPast = false) {
 
     if (typeof initializeMap === 'undefined') {
       console.error('initializeMap function not found. maps.js may not be loaded.');
-      mapEl.innerHTML = '<div class="alert alert-danger">Map library not loaded. Please refresh the page.</div>';
+      mapEl.innerHTML =
+        '<div class="alert alert-danger">Map library not loaded. Please refresh the page.</div>';
       reject(new Error('Map library not loaded'));
       return;
     }
@@ -361,7 +368,7 @@ function initOverviewMap(tripData, mapElementId = 'tripMap', isPast = false) {
 
     // Also clear any animation intervals that might be running
     if (window.activeAnimations) {
-      Object.values(window.activeAnimations).forEach(animation => {
+      Object.values(window.activeAnimations).forEach((animation) => {
         if (animation.interval) {
           clearInterval(animation.interval);
         }
@@ -396,7 +403,7 @@ function initOverviewMap(tripData, mapElementId = 'tripMap', isPast = false) {
 
           resolve(map);
         })
-        .catch(error => {
+        .catch((error) => {
           console.error('Map initialization failed:', error);
           mapEl.innerHTML = `<div class="alert alert-danger">Map failed to load: ${error.message}</div>`;
           reject(error);
@@ -429,11 +436,11 @@ function setupTimelineHoverEffects(map) {
   // Setup individual timeline item hover effects
   const timelineItems = document.querySelectorAll('.timeline-item.has-marker');
 
-  timelineItems.forEach(item => {
+  timelineItems.forEach((item) => {
     const marker = item.getAttribute('data-marker');
 
-    item.addEventListener('mouseenter', function() {
-      const segment = map.segmentLayers.find(s => s.index === parseInt(marker, 10));
+    item.addEventListener('mouseenter', function () {
+      const segment = map.segmentLayers.find((s) => s.index === parseInt(marker, 10));
       if (segment && segment.polyline) {
         const coords = segment.polyline.getLatLngs();
 
@@ -443,7 +450,7 @@ function setupTimelineHoverEffects(map) {
             color: '#6ea8fe',
             weight: 8,
             opacity: 0.7,
-            dashArray: ''
+            dashArray: '',
           }).addTo(map);
         }
 
@@ -452,7 +459,7 @@ function setupTimelineHoverEffects(map) {
             color: '#cfe2ff',
             weight: 5,
             opacity: 0.9,
-            dashArray: ''
+            dashArray: '',
           }).addTo(map);
         }
 
@@ -460,7 +467,7 @@ function setupTimelineHoverEffects(map) {
           color: '#ffffff',
           weight: 2,
           opacity: 1,
-          dashArray: ''
+          dashArray: '',
         });
 
         segment.glowLayer1.bringToFront();
@@ -469,8 +476,8 @@ function setupTimelineHoverEffects(map) {
       }
     });
 
-    item.addEventListener('mouseleave', function() {
-      const segment = map.segmentLayers.find(s => s.index === parseInt(marker, 10));
+    item.addEventListener('mouseleave', function () {
+      const segment = map.segmentLayers.find((s) => s.index === parseInt(marker, 10));
       if (segment && segment.polyline) {
         // Remove glow layers
         if (segment.glowLayer1) {
@@ -487,7 +494,7 @@ function setupTimelineHoverEffects(map) {
           color: segment.originalColor,
           weight: segment.originalWeight,
           opacity: segment.originalOpacity,
-          dashArray: segment.originalDashArray
+          dashArray: segment.originalDashArray,
         });
       }
     });
@@ -496,19 +503,21 @@ function setupTimelineHoverEffects(map) {
   // Setup trip header hover effects (for list view)
   const tripHeaders = document.querySelectorAll('.trip-header');
 
-  tripHeaders.forEach(header => {
+  tripHeaders.forEach((header) => {
     const tripId = header.getAttribute('data-trip-id');
 
-    header.addEventListener('mouseenter', function(e) {
+    header.addEventListener('mouseenter', function (e) {
       e.stopPropagation();
 
       // Find all timeline items belonging to this trip
-      const tripItems = document.querySelectorAll(`.timeline-item[data-trip-id="${tripId}"].has-marker`);
+      const tripItems = document.querySelectorAll(
+        `.timeline-item[data-trip-id="${tripId}"].has-marker`
+      );
 
-      tripItems.forEach(item => {
+      tripItems.forEach((item) => {
         const marker = item.getAttribute('data-marker');
         if (marker) {
-          const segment = map.segmentLayers.find(s => s.index === parseInt(marker, 10));
+          const segment = map.segmentLayers.find((s) => s.index === parseInt(marker, 10));
           if (segment && segment.polyline) {
             const coords = segment.polyline.getLatLngs();
 
@@ -517,7 +526,7 @@ function setupTimelineHoverEffects(map) {
                 color: '#6ea8fe',
                 weight: 8,
                 opacity: 0.7,
-                dashArray: ''
+                dashArray: '',
               }).addTo(map);
             }
 
@@ -526,7 +535,7 @@ function setupTimelineHoverEffects(map) {
                 color: '#cfe2ff',
                 weight: 5,
                 opacity: 0.9,
-                dashArray: ''
+                dashArray: '',
               }).addTo(map);
             }
 
@@ -534,7 +543,7 @@ function setupTimelineHoverEffects(map) {
               color: '#ffffff',
               weight: 2,
               opacity: 1,
-              dashArray: ''
+              dashArray: '',
             });
 
             segment.glowLayer1.bringToFront();
@@ -545,16 +554,18 @@ function setupTimelineHoverEffects(map) {
       });
     });
 
-    header.addEventListener('mouseleave', function(e) {
+    header.addEventListener('mouseleave', function (e) {
       e.stopPropagation();
 
       // Find all timeline items belonging to this trip
-      const tripItems = document.querySelectorAll(`.timeline-item[data-trip-id="${tripId}"].has-marker`);
+      const tripItems = document.querySelectorAll(
+        `.timeline-item[data-trip-id="${tripId}"].has-marker`
+      );
 
-      tripItems.forEach(item => {
+      tripItems.forEach((item) => {
         const marker = item.getAttribute('data-marker');
         if (marker) {
-          const segment = map.segmentLayers.find(s => s.index === parseInt(marker, 10));
+          const segment = map.segmentLayers.find((s) => s.index === parseInt(marker, 10));
           if (segment && segment.polyline) {
             if (segment.glowLayer1) {
               map.removeLayer(segment.glowLayer1);
@@ -569,7 +580,7 @@ function setupTimelineHoverEffects(map) {
               color: segment.originalColor,
               weight: segment.originalWeight,
               opacity: segment.originalOpacity,
-              dashArray: segment.originalDashArray
+              dashArray: segment.originalDashArray,
             });
           }
         }
@@ -590,11 +601,14 @@ function setupTimelineHoverEffects(map) {
  */
 function calculateDistance(from, to) {
   const R = 6371;
-  const dLat = (to[0] - from[0]) * Math.PI / 180;
-  const dLng = (to[1] - from[1]) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(from[0] * Math.PI / 180) * Math.cos(to[0] * Math.PI / 180) *
-    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const dLat = ((to[0] - from[0]) * Math.PI) / 180;
+  const dLng = ((to[1] - from[1]) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((from[0] * Math.PI) / 180) *
+      Math.cos((to[0] * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
@@ -632,7 +646,7 @@ function highlightMapMarker(markerId, _type) {
   }
 
   if (markerId && window.currentMap.segmentLayers) {
-    const segment = window.currentMap.segmentLayers.find(s => s.index === parseInt(markerId));
+    const segment = window.currentMap.segmentLayers.find((s) => s.index === parseInt(markerId));
     if (segment) {
       if (window.activeAnimations[markerId]) {
         clearInterval(window.activeAnimations[markerId].interval);
@@ -654,7 +668,7 @@ function highlightMapMarker(markerId, _type) {
       );
 
       const currentZoom = window.currentMap.getZoom();
-      const zoomFactor = Math.max(0.75, Math.pow(2, 4 - currentZoom));
+      const zoomFactor = Math.max(0.75, 2 ** (4 - currentZoom));
       const durationMs = (distance / 6000) * 5000 * zoomFactor;
       const frameTime = 50;
       const animationSpeed = frameTime / durationMs;
@@ -672,8 +686,8 @@ function highlightMapMarker(markerId, _type) {
               border: 2px solid white;
             "></div>`,
             iconSize: [16, 16],
-            iconAnchor: [8, 8]
-          })
+            iconAnchor: [8, 8],
+          }),
         }).addTo(window.currentMap);
 
         let progress = 0;
@@ -696,7 +710,7 @@ function highlightMapMarker(markerId, _type) {
 
         window.activeAnimations[markerId] = {
           marker: movingMarker,
-          interval: animationInterval
+          interval: animationInterval,
         };
       } catch (e) {
         console.warn('Error creating marker animation:', e);
@@ -752,24 +766,24 @@ if (typeof window !== 'undefined') {
 // Export for modules
 /* eslint-disable no-undef */
 if (typeof module !== 'undefined' && module.exports) {
-/* eslint-enable no-undef */
+  /* eslint-enable no-undef */
   module.exports = {
-/* eslint-enable no-undef */
+    /* eslint-enable no-undef */
     initializeMap,
-/* eslint-enable no-undef */
+    /* eslint-enable no-undef */
     initOverviewMap,
-/* eslint-enable no-undef */
+    /* eslint-enable no-undef */
     setupTimelineHoverEffects,
-/* eslint-enable no-undef */
+    /* eslint-enable no-undef */
     highlightMapMarker,
-/* eslint-enable no-undef */
+    /* eslint-enable no-undef */
     unhighlightMapMarker,
-/* eslint-enable no-undef */
+    /* eslint-enable no-undef */
     calculateDistance,
-/* eslint-enable no-undef */
-    getPointAtDistance
-/* eslint-enable no-undef */
+    /* eslint-enable no-undef */
+    getPointAtDistance,
+    /* eslint-enable no-undef */
   };
-/* eslint-enable no-undef */
+  /* eslint-enable no-undef */
 }
 /* eslint-enable no-undef */

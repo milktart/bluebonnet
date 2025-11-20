@@ -7,6 +7,9 @@
 
 const logger = require('../utils/logger');
 
+// Configuration
+const SLOW_REQUEST_THRESHOLD = parseInt(process.env.SLOW_REQUEST_THRESHOLD, 10) || 3000;
+
 /**
  * Request logging middleware
  * Logs all HTTP requests with response time and status code
@@ -68,7 +71,7 @@ const requestLogger = (req, res, next) => {
     }
 
     // Log slow requests as warnings
-    if (duration > 3000) {
+    if (duration > SLOW_REQUEST_THRESHOLD) {
       logger.warn('Slow request detected', logContext);
     } else {
       logger[logLevel]('Request completed', logContext);

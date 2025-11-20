@@ -111,7 +111,9 @@ class AirportAutocomplete {
 
   async search(query) {
     try {
-      const response = await fetch(`${this.apiUrl}?q=${encodeURIComponent(query)}&limit=${this.maxResults}`);
+      const response = await fetch(
+        `${this.apiUrl}?q=${encodeURIComponent(query)}&limit=${this.maxResults}`
+      );
 
       if (!response.ok) {
         console.error('Airport search failed:', response.statusText);
@@ -136,11 +138,14 @@ class AirportAutocomplete {
 
   renderResults() {
     if (this.results.length === 0) {
-      this.dropdown.innerHTML = '<div class="py-2 px-4 text-sm text-gray-500">No airports found</div>';
+      this.dropdown.innerHTML =
+        '<div class="py-2 px-4 text-sm text-gray-500">No airports found</div>';
       return;
     }
 
-    this.dropdown.innerHTML = this.results.map((airport, index) => `
+    this.dropdown.innerHTML = this.results
+      .map(
+        (airport, index) => `
       <div class="airport-result cursor-pointer py-2 px-4 text-sm text-gray-800 hover:bg-gray-100 rounded-lg ${index === this.selectedIndex ? 'bg-gray-100' : ''}"
            data-index="${index}"
            data-iata="${airport.iata}"
@@ -148,10 +153,12 @@ class AirportAutocomplete {
         <div class="font-medium">${airport.iata} - ${airport.city}</div>
         <div class="text-xs text-gray-500">${airport.name}, ${airport.country}</div>
       </div>
-    `).join('');
+    `
+      )
+      .join('');
 
     // Add click handlers to results
-    this.dropdown.querySelectorAll('.airport-result').forEach(item => {
+    this.dropdown.querySelectorAll('.airport-result').forEach((item) => {
       item.addEventListener('mousedown', (e) => {
         e.preventDefault(); // Prevent blur
         const index = parseInt(item.dataset.index, 10);
@@ -211,7 +218,7 @@ function initializeAirportAutocomplete() {
   // Find all airport autocomplete containers
   const containers = document.querySelectorAll('[data-airport-autocomplete]');
 
-  containers.forEach(container => {
+  containers.forEach((container) => {
     const input = container.querySelector('input[data-airport-input]');
     const fieldName = input?.name;
 

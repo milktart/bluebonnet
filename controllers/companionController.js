@@ -1,7 +1,7 @@
-const { TravelCompanion, User, TripCompanion, Trip } = require('../models');
-const logger = require('../utils/logger');
 const { Op } = require('sequelize');
 const { validationResult } = require('express-validator');
+const { TravelCompanion, User, TripCompanion, Trip } = require('../models');
+const logger = require('../utils/logger');
 
 // Get all companions for current user
 exports.listCompanions = async (req, res) => {
@@ -12,15 +12,15 @@ exports.listCompanions = async (req, res) => {
         {
           model: User,
           as: 'linkedAccount',
-          attributes: ['id', 'firstName', 'lastName', 'email']
-        }
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
       ],
-      order: [['name', 'ASC']]
+      order: [['name', 'ASC']],
     });
 
     res.render('companions/list', {
       title: 'Travel Companions',
-      companions
+      companions,
     });
   } catch (error) {
     logger.error(error);
@@ -38,19 +38,23 @@ exports.listCompanionsSidebar = async (req, res) => {
         {
           model: User,
           as: 'linkedAccount',
-          attributes: ['id', 'firstName', 'lastName', 'email']
-        }
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
       ],
-      order: [['name', 'ASC']]
+      order: [['name', 'ASC']],
     });
 
     res.render('partials/companions-list', {
       companions,
-      layout: false  // Don't use main layout, just render the partial
+      layout: false, // Don't use main layout, just render the partial
     });
   } catch (error) {
     logger.error(error);
-    res.status(500).send('<div class="p-4"><p class="text-red-600">Error loading companions. Please try again.</p></div>');
+    res
+      .status(500)
+      .send(
+        '<div class="p-4"><p class="text-red-600">Error loading companions. Please try again.</p></div>'
+      );
   }
 };
 
@@ -63,22 +67,22 @@ exports.getCompanionsJson = async (req, res) => {
         {
           model: User,
           as: 'linkedAccount',
-          attributes: ['id', 'firstName', 'lastName', 'email']
-        }
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
       ],
-      order: [['name', 'ASC']]
+      order: [['name', 'ASC']],
     });
 
     res.json({
       success: true,
-      companions: companions.map(c => ({
+      companions: companions.map((c) => ({
         id: c.id,
         name: c.name,
         email: c.email,
         phone: c.phone,
         linkedAccount: c.linkedAccount,
-        createdAt: c.createdAt
-      }))
+        createdAt: c.createdAt,
+      })),
     });
   } catch (error) {
     logger.error(error);
@@ -95,11 +99,15 @@ exports.getCreateCompanion = (req, res) => {
 exports.getCreateCompanionSidebar = (req, res) => {
   try {
     res.render('partials/companions-create', {
-      layout: false
+      layout: false,
     });
   } catch (error) {
     logger.error(error);
-    res.status(500).send('<div class="p-4"><p class="text-red-600">Error loading form. Please try again.</p></div>');
+    res
+      .status(500)
+      .send(
+        '<div class="p-4"><p class="text-red-600">Error loading form. Please try again.</p></div>'
+      );
   }
 };
 
@@ -109,7 +117,10 @@ exports.createCompanion = async (req, res) => {
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      const errorMsg = errors.array().map(e => e.msg).join(', ');
+      const errorMsg = errors
+        .array()
+        .map((e) => e.msg)
+        .join(', ');
       const isAjax = req.get('X-Sidebar-Request') === 'true' || req.xhr;
 
       if (isAjax) {
@@ -126,8 +137,8 @@ exports.createCompanion = async (req, res) => {
     const existingCompanion = await TravelCompanion.findOne({
       where: {
         email: email.toLowerCase(),
-        createdBy: req.user.id
-      }
+        createdBy: req.user.id,
+      },
     });
 
     if (existingCompanion) {
@@ -141,7 +152,7 @@ exports.createCompanion = async (req, res) => {
 
     // Check if there's already a user account with this email to auto-link
     const existingUser = await User.findOne({
-      where: { email: email.toLowerCase() }
+      where: { email: email.toLowerCase() },
     });
 
     const companion = await TravelCompanion.create({
@@ -150,12 +161,12 @@ exports.createCompanion = async (req, res) => {
       phone,
       canBeAddedByOthers: !!canBeAddedByOthers,
       createdBy: req.user.id,
-      userId: existingUser ? existingUser.id : null
+      userId: existingUser ? existingUser.id : null,
     });
 
-    const successMsg = existingUser ?
-      'Travel companion added and linked to existing account' :
-      'Travel companion added successfully';
+    const successMsg = existingUser
+      ? 'Travel companion added and linked to existing account'
+      : 'Travel companion added successfully';
 
     if (isAjax) {
       return res.json({ success: true, message: successMsg, companion });
@@ -184,8 +195,8 @@ exports.updateCompanionPermissions = async (req, res) => {
     const companion = await TravelCompanion.findOne({
       where: {
         id: companionId,
-        createdBy: req.user.id
-      }
+        createdBy: req.user.id,
+      },
     });
 
     if (!companion) {
@@ -198,7 +209,7 @@ exports.updateCompanionPermissions = async (req, res) => {
     }
 
     await companion.update({
-      canBeAddedByOthers: !!canBeAddedByOthers
+      canBeAddedByOthers: !!canBeAddedByOthers,
     });
 
     const successMsg = 'Companion permissions updated';
@@ -234,36 +245,31 @@ exports.searchCompanions = async (req, res) => {
     // 2. Other users created but marked as canBeAddedByOthers=true
     const companions = await TravelCompanion.findAll({
       where: {
-        [Op.or]: [
-          { createdBy: userId },
-          { canBeAddedByOthers: true }
-        ],
-        [Op.or]: [
-          { name: { [Op.iLike]: `%${q}%` } },
-          { email: { [Op.iLike]: `%${q}%` } }
-        ]
+        [Op.or]: [{ createdBy: userId }, { canBeAddedByOthers: true }],
+        [Op.or]: [{ name: { [Op.iLike]: `%${q}%` } }, { email: { [Op.iLike]: `%${q}%` } }],
       },
       include: [
         {
           model: User,
           as: 'linkedAccount',
           attributes: ['id', 'firstName', 'lastName'],
-          required: false
-        }
+          required: false,
+        },
       ],
       limit: 10,
-      order: [['name', 'ASC']]
+      order: [['name', 'ASC']],
     });
 
-    const results = companions.map(companion => ({
+    const results = companions.map((companion) => ({
       id: companion.id,
       name: companion.name,
       email: companion.email,
       phone: companion.phone,
       isLinked: !!companion.linkedAccount,
       isOwn: companion.createdBy === userId,
-      linkedAccountName: companion.linkedAccount ?
-        `${companion.linkedAccount.firstName} ${companion.linkedAccount.lastName}` : null
+      linkedAccountName: companion.linkedAccount
+        ? `${companion.linkedAccount.firstName} ${companion.linkedAccount.lastName}`
+        : null,
     }));
 
     res.json(results);
@@ -279,15 +285,15 @@ exports.getEditCompanion = async (req, res) => {
     const companion = await TravelCompanion.findOne({
       where: {
         id: req.params.id,
-        createdBy: req.user.id
+        createdBy: req.user.id,
       },
       include: [
         {
           model: User,
           as: 'linkedAccount',
-          attributes: ['id', 'firstName', 'lastName', 'email']
-        }
-      ]
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
+      ],
     });
 
     if (!companion) {
@@ -297,7 +303,7 @@ exports.getEditCompanion = async (req, res) => {
 
     res.render('companions/edit', {
       title: 'Edit Travel Companion',
-      companion
+      companion,
     });
   } catch (error) {
     logger.error(error);
@@ -312,28 +318,34 @@ exports.getEditCompanionSidebar = async (req, res) => {
     const companion = await TravelCompanion.findOne({
       where: {
         id: req.params.id,
-        createdBy: req.user.id
+        createdBy: req.user.id,
       },
       include: [
         {
           model: User,
           as: 'linkedAccount',
-          attributes: ['id', 'firstName', 'lastName', 'email']
-        }
-      ]
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
+      ],
     });
 
     if (!companion) {
-      return res.status(404).send('<div class="p-4"><p class="text-red-600">Companion not found</p></div>');
+      return res
+        .status(404)
+        .send('<div class="p-4"><p class="text-red-600">Companion not found</p></div>');
     }
 
     res.render('partials/companions-edit', {
       companion,
-      layout: false
+      layout: false,
     });
   } catch (error) {
     logger.error(error);
-    res.status(500).send('<div class="p-4"><p class="text-red-600">Error loading companion. Please try again.</p></div>');
+    res
+      .status(500)
+      .send(
+        '<div class="p-4"><p class="text-red-600">Error loading companion. Please try again.</p></div>'
+      );
   }
 };
 
@@ -343,7 +355,10 @@ exports.updateCompanion = async (req, res) => {
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      const errorMsg = errors.array().map(e => e.msg).join(', ');
+      const errorMsg = errors
+        .array()
+        .map((e) => e.msg)
+        .join(', ');
       const isAjax = req.get('X-Sidebar-Request') === 'true' || req.xhr;
 
       if (isAjax) {
@@ -360,8 +375,8 @@ exports.updateCompanion = async (req, res) => {
     const companion = await TravelCompanion.findOne({
       where: {
         id: companionId,
-        createdBy: req.user.id
-      }
+        createdBy: req.user.id,
+      },
     });
 
     if (!companion) {
@@ -379,8 +394,8 @@ exports.updateCompanion = async (req, res) => {
         where: {
           email: email.toLowerCase(),
           createdBy: req.user.id,
-          id: { [Op.ne]: companionId }
-        }
+          id: { [Op.ne]: companionId },
+        },
       });
 
       if (existingCompanion) {
@@ -394,7 +409,7 @@ exports.updateCompanion = async (req, res) => {
 
       // Check if there's a user account to link to
       const existingUser = await User.findOne({
-        where: { email: email.toLowerCase() }
+        where: { email: email.toLowerCase() },
       });
 
       await companion.update({
@@ -402,13 +417,13 @@ exports.updateCompanion = async (req, res) => {
         email: email.toLowerCase(),
         phone,
         canBeAddedByOthers: !!canBeAddedByOthers,
-        userId: existingUser ? existingUser.id : null
+        userId: existingUser ? existingUser.id : null,
       });
     } else {
       await companion.update({
         name,
         phone,
-        canBeAddedByOthers: !!canBeAddedByOthers
+        canBeAddedByOthers: !!canBeAddedByOthers,
       });
     }
 
@@ -438,8 +453,8 @@ exports.deleteCompanion = async (req, res) => {
     const companion = await TravelCompanion.findOne({
       where: {
         id: req.params.id,
-        createdBy: req.user.id
-      }
+        createdBy: req.user.id,
+      },
     });
 
     if (!companion) {
@@ -479,8 +494,8 @@ exports.unlinkCompanion = async (req, res) => {
     const companion = await TravelCompanion.findOne({
       where: {
         id: req.params.id,
-        createdBy: req.user.id
-      }
+        createdBy: req.user.id,
+      },
     });
 
     if (!companion) {

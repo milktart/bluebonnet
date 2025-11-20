@@ -1,8 +1,9 @@
 const express = require('express');
+
 const router = express.Router();
+const { body } = require('express-validator');
 const companionController = require('../controllers/companionController');
 const { ensureAuthenticated } = require('../middleware/auth');
-const { body } = require('express-validator');
 
 // All companion routes require authentication
 router.use(ensureAuthenticated);
@@ -11,7 +12,7 @@ router.use(ensureAuthenticated);
 const validateCompanion = [
   body('name').trim().isLength({ min: 1 }).withMessage('Name is required'),
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
-  body('phone').optional().trim()
+  body('phone').optional().trim(),
 ];
 
 // GET companions list

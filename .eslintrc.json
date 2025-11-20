@@ -11,7 +11,7 @@
   },
   "rules": {
     "no-console": ["warn", { "allow": ["warn", "error"] }],
-    "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
     "consistent-return": "off",
     "no-underscore-dangle": "off",
     "func-names": "off",
@@ -38,7 +38,15 @@
         "exports": "only-multiline",
         "functions": "never"
       }
-    ]
+    ],
+    "prefer-const": "warn",
+    "no-continue": "warn",
+    "no-shadow": "warn",
+    "no-undef": "error",
+    "no-use-before-define": "warn",
+    "class-methods-use-this": "warn",
+    "no-promise-executor-return": "warn",
+    "import/order": "warn"
   },
   "overrides": [
     {
@@ -47,14 +55,57 @@
         "browser": true,
         "node": false
       },
+      "globals": {
+        "L": "writable"
+      },
       "rules": {
         "no-restricted-globals": "off",
-        "import/extensions": "off"
+        "import/extensions": "off",
+        "no-undef": "warn",
+        "no-alert": "warn",
+        "no-console": "warn",
+        "no-use-before-define": "warn",
+        "no-shadow": "warn",
+        "no-unused-vars": "warn",
+        "no-nested-ternary": "warn",
+        "no-redeclare": "off",
+        "radix": "warn",
+        "no-plusplus": "off",
+        "default-case": "warn",
+        "no-new": "warn",
+        "no-promise-executor-return": "warn",
+        "max-classes-per-file": "off"
+      }
+    },
+    {
+      "files": [
+        "tests/**/*.test.js",
+        "tests/**/*.spec.js",
+        "**/__tests__/**/*.js"
+      ],
+      "env": {
+        "jest": true,
+        "node": true
+      },
+      "rules": {
+        "no-undef": "off",
+        "import/no-extraneous-dependencies": "off"
+      }
+    },
+    {
+      "files": ["scripts/**/*.js"],
+      "rules": {
+        "no-console": "off",
+        "no-plusplus": "off",
+        "no-continue": "off",
+        "no-loop-func": "warn",
+        "max-len": "warn"
       }
     },
     {
       "files": ["*.config.js", "migrations/**/*.js"],
       "rules": {
+        "no-console": "off",
         "import/no-extraneous-dependencies": "off"
       }
     }

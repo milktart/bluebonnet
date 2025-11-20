@@ -6,9 +6,9 @@ const path = require('path');
 const config = {
   entryPoints: {
     // Common bundle - shared across all pages
-    'common': './public/js/entries/common.js',
+    common: './public/js/entries/common.js',
     // Page-specific bundles
-    'dashboard': './public/js/entries/dashboard.js',
+    dashboard: './public/js/entries/dashboard.js',
     'trip-view': './public/js/entries/trip-view.js',
     'map-view': './public/js/entries/map-view.js',
   },
@@ -38,14 +38,14 @@ async function build() {
     const manifest = {};
 
     if (result.metafile) {
-      const outputs = result.metafile.outputs;
+      const { outputs } = result.metafile;
 
       for (const [outputPath, info] of Object.entries(outputs)) {
         if (info.entryPoint) {
           // Extract entry name from entry point path
           const entryName = path.basename(info.entryPoint, '.js');
           // Remove 'public/' prefix since Express serves from public folder
-          const publicPath = '/' + outputPath.replace(/^public\//, '');
+          const publicPath = `/${outputPath.replace(/^public\//, '')}`;
 
           manifest[entryName] = publicPath;
         }

@@ -1,5 +1,6 @@
 const db = require('../models');
 const logger = require('../utils/logger');
+
 const { Voucher, VoucherAttachment, Flight, User, TravelCompanion } = db;
 const { Sequelize } = require('sequelize');
 
@@ -16,14 +17,14 @@ exports.createVoucher = async (req, res) => {
       totalValue,
       expirationDate,
       notes,
-      userId
+      userId,
     } = req.body;
 
     // Validate required fields
     if (!type || !issuer || !voucherNumber) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: type, issuer, voucherNumber'
+        message: 'Missing required fields: type, issuer, voucherNumber',
       });
     }
 
@@ -35,7 +36,7 @@ exports.createVoucher = async (req, res) => {
     if (valueRequiredTypes.includes(type) && !totalValue) {
       return res.status(400).json({
         success: false,
-        message: `${type} requires a totalValue`
+        message: `${type} requires a totalValue`,
       });
     }
 
@@ -44,19 +45,19 @@ exports.createVoucher = async (req, res) => {
     if (ownerBoundTypes.includes(type) && !userId) {
       return res.status(400).json({
         success: false,
-        message: `${type} requires a userId (owner)`
+        message: `${type} requires a userId (owner)`,
       });
     }
 
     // Check if voucher number already exists
     const existingVoucher = await Voucher.findOne({
-      where: { voucherNumber }
+      where: { voucherNumber },
     });
 
     if (existingVoucher) {
       return res.status(409).json({
         success: false,
-        message: 'Voucher number already exists'
+        message: 'Voucher number already exists',
       });
     }
 
@@ -72,20 +73,20 @@ exports.createVoucher = async (req, res) => {
       expirationDate,
       notes,
       userId: ownerBoundTypes.includes(type) ? userId : null,
-      status: 'OPEN'
+      status: 'OPEN',
     });
 
     res.status(201).json({
       success: true,
       data: voucher,
-      message: 'Voucher created successfully'
+      message: 'Voucher created successfully',
     });
   } catch (error) {
     logger.error('Error creating voucher:', error);
     res.status(500).json({
       success: false,
       message: 'Error creating voucher',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -98,9 +99,9 @@ exports.getUserVouchers = async (req, res) => {
 
     const where = {
       [Sequelize.Op.or]: [
-        { userId: userId }, // Owner-bound vouchers
-        { userId: null } // Non-owner-bound vouchers accessible to all users
-      ]
+        { userId }, // Owner-bound vouchers
+        { userId: null }, // Non-owner-bound vouchers accessible to all users
+      ],
     };
 
     // Filter by status if provided
@@ -116,10 +117,7 @@ exports.getUserVouchers = async (req, res) => {
     // Filter out expired vouchers unless explicitly included
     if (includeExpired !== 'true') {
       where.expirationDate = {
-        [Sequelize.Op.or]: [
-          { [Sequelize.Op.gte]: new Date() },
-          { [Sequelize.Op.is]: null }
-        ]
+        [Sequelize.Op.or]: [{ [Sequelize.Op.gte]: new Date() }, { [Sequelize.Op.is]: null }],
       };
     }
 
@@ -129,19 +127,19 @@ exports.getUserVouchers = async (req, res) => {
         {
           model: User,
           as: 'owner',
-          attributes: ['id', 'firstName', 'lastName', 'email']
+          attributes: ['id', 'firstName', 'lastName', 'email'],
         },
         {
           model: VoucherAttachment,
           as: 'attachments',
-          attributes: ['id', 'flightId', 'attachmentValue', 'attachmentDate']
-        }
+          attributes: ['id', 'flightId', 'attachmentValue', 'attachmentDate'],
+        },
       ],
-      order: [['createdAt', 'DESC']]
+      order: [['createdAt', 'DESC']],
     });
 
     // Calculate remaining balance for each voucher
-    const vouchersWithBalance = vouchers.map(voucher => {
+    const vouchersWithBalance = vouchers.map((voucher) => {
       const voucherData = voucher.toJSON();
       voucherData.remainingBalance = voucher.getRemainingBalance();
       voucherData.daysUntilExpiration = voucher.getDaysUntilExpiration();
@@ -152,14 +150,14 @@ exports.getUserVouchers = async (req, res) => {
     res.json({
       success: true,
       data: vouchersWithBalance,
-      count: vouchersWithBalance.length
+      count: vouchersWithBalance.length,
     });
   } catch (error) {
     logger.error('Error fetching user vouchers:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching vouchers',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -175,7 +173,7 @@ exports.getVoucherById = async (req, res) => {
         {
           model: User,
           as: 'owner',
-          attributes: ['id', 'firstName', 'lastName', 'email']
+          attributes: ['id', 'firstName', 'lastName', 'email'],
         },
         {
           model: VoucherAttachment,
@@ -184,27 +182,27 @@ exports.getVoucherById = async (req, res) => {
             {
               model: Flight,
               as: 'flight',
-              attributes: ['id', 'flightNumber', 'airline', 'departureDateTime', 'arrivalDateTime']
-            }
-          ]
+              attributes: ['id', 'flightNumber', 'airline', 'departureDateTime', 'arrivalDateTime'],
+            },
+          ],
         },
         {
           model: Voucher,
           as: 'parentVoucher',
-          attributes: ['id', 'voucherNumber', 'totalValue']
+          attributes: ['id', 'voucherNumber', 'totalValue'],
         },
         {
           model: Voucher,
           as: 'replacementVouchers',
-          attributes: ['id', 'voucherNumber', 'totalValue', 'status']
-        }
-      ]
+          attributes: ['id', 'voucherNumber', 'totalValue', 'status'],
+        },
+      ],
     });
 
     if (!voucher) {
       return res.status(404).json({
         success: false,
-        message: 'Voucher not found'
+        message: 'Voucher not found',
       });
     }
 
@@ -212,7 +210,7 @@ exports.getVoucherById = async (req, res) => {
     if (voucher.userId && voucher.userId !== userId) {
       return res.status(403).json({
         success: false,
-        message: 'Unauthorized to access this voucher'
+        message: 'Unauthorized to access this voucher',
       });
     }
 
@@ -223,14 +221,14 @@ exports.getVoucherById = async (req, res) => {
 
     res.json({
       success: true,
-      data: voucherData
+      data: voucherData,
     });
   } catch (error) {
     logger.error('Error fetching voucher:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching voucher',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -240,20 +238,14 @@ exports.updateVoucher = async (req, res) => {
   try {
     const { voucherId } = req.params;
     const userId = req.user.id;
-    const {
-      status,
-      associatedAccount,
-      expirationDate,
-      notes,
-      usedAmount
-    } = req.body;
+    const { status, associatedAccount, expirationDate, notes, usedAmount } = req.body;
 
     const voucher = await Voucher.findByPk(voucherId);
 
     if (!voucher) {
       return res.status(404).json({
         success: false,
-        message: 'Voucher not found'
+        message: 'Voucher not found',
       });
     }
 
@@ -261,7 +253,7 @@ exports.updateVoucher = async (req, res) => {
     if (voucher.userId && voucher.userId !== userId) {
       return res.status(403).json({
         success: false,
-        message: 'Unauthorized to update this voucher'
+        message: 'Unauthorized to update this voucher',
       });
     }
 
@@ -277,14 +269,14 @@ exports.updateVoucher = async (req, res) => {
     res.json({
       success: true,
       data: voucher,
-      message: 'Voucher updated successfully'
+      message: 'Voucher updated successfully',
     });
   } catch (error) {
     logger.error('Error updating voucher:', error);
     res.status(500).json({
       success: false,
       message: 'Error updating voucher',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -300,7 +292,7 @@ exports.deleteVoucher = async (req, res) => {
     if (!voucher) {
       return res.status(404).json({
         success: false,
-        message: 'Voucher not found'
+        message: 'Voucher not found',
       });
     }
 
@@ -308,7 +300,7 @@ exports.deleteVoucher = async (req, res) => {
     if (voucher.userId && voucher.userId !== userId) {
       return res.status(403).json({
         success: false,
-        message: 'Unauthorized to delete this voucher'
+        message: 'Unauthorized to delete this voucher',
       });
     }
 
@@ -316,14 +308,14 @@ exports.deleteVoucher = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Voucher deleted successfully'
+      message: 'Voucher deleted successfully',
     });
   } catch (error) {
     logger.error('Error deleting voucher:', error);
     res.status(500).json({
       success: false,
       message: 'Error deleting voucher',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -339,7 +331,7 @@ exports.reissueRemainder = async (req, res) => {
     if (!voucher) {
       return res.status(404).json({
         success: false,
-        message: 'Voucher not found'
+        message: 'Voucher not found',
       });
     }
 
@@ -347,7 +339,7 @@ exports.reissueRemainder = async (req, res) => {
     if (voucher.userId && voucher.userId !== userId) {
       return res.status(403).json({
         success: false,
-        message: 'Unauthorized to reissue this voucher'
+        message: 'Unauthorized to reissue this voucher',
       });
     }
 
@@ -356,7 +348,7 @@ exports.reissueRemainder = async (req, res) => {
     if (remainingBalance <= 0) {
       return res.status(400).json({
         success: false,
-        message: 'No remaining balance to reissue'
+        message: 'No remaining balance to reissue',
       });
     }
 
@@ -374,7 +366,7 @@ exports.reissueRemainder = async (req, res) => {
       parentVoucherId: voucherId,
       userId: voucher.userId,
       status: 'OPEN',
-      notes: `Reissued from voucher ${voucher.voucherNumber} (Remaining Balance)`
+      notes: `Reissued from voucher ${voucher.voucherNumber} (Remaining Balance)`,
     });
 
     // Mark original as PARTIALLY_USED
@@ -385,16 +377,16 @@ exports.reissueRemainder = async (req, res) => {
       success: true,
       data: {
         originalVoucher: voucher,
-        newVoucher: newVoucher
+        newVoucher,
       },
-      message: 'Voucher reissued successfully'
+      message: 'Voucher reissued successfully',
     });
   } catch (error) {
     logger.error('Error reissuing voucher:', error);
     res.status(500).json({
       success: false,
       message: 'Error reissuing voucher',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -410,7 +402,7 @@ exports.getAvailableVouchersForFlight = async (req, res) => {
     if (!flight) {
       return res.status(404).json({
         success: false,
-        message: 'Flight not found'
+        message: 'Flight not found',
       });
     }
 
@@ -418,24 +410,21 @@ exports.getAvailableVouchersForFlight = async (req, res) => {
     const vouchers = await Voucher.findAll({
       where: {
         status: ['OPEN', 'PARTIALLY_USED'],
-        [Sequelize.Op.or]: [
-          { userId: userId },
-          { userId: null }
-        ]
+        [Sequelize.Op.or]: [{ userId }, { userId: null }],
       },
       include: [
         {
           model: VoucherAttachment,
           as: 'attachments',
-          attributes: ['id', 'attachmentValue']
-        }
-      ]
+          attributes: ['id', 'attachmentValue'],
+        },
+      ],
     });
 
     // Filter and map available vouchers
     const availableVouchers = vouchers
-      .filter(v => !v.getIsExpired()) // Filter out expired vouchers
-      .filter(v => {
+      .filter((v) => !v.getIsExpired()) // Filter out expired vouchers
+      .filter((v) => {
         // Filter based on type:
         // Certificate types (UPGRADE_CERT, COMPANION_CERT) must be OPEN
         // Credit types can be OPEN or PARTIALLY_USED (as long as they have balance)
@@ -447,7 +436,7 @@ exports.getAvailableVouchersForFlight = async (req, res) => {
         // For credit types, they're available if they have remaining balance
         return v.getRemainingBalance() > 0;
       })
-      .map(v => {
+      .map((v) => {
         const voucherData = v.toJSON();
         voucherData.remainingBalance = v.getRemainingBalance();
         voucherData.daysUntilExpiration = v.getDaysUntilExpiration();
@@ -457,14 +446,14 @@ exports.getAvailableVouchersForFlight = async (req, res) => {
     res.json({
       success: true,
       data: availableVouchers,
-      count: availableVouchers.length
+      count: availableVouchers.length,
     });
   } catch (error) {
     logger.error('Error fetching available vouchers:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching available vouchers',
-      error: error.message
+      error: error.message,
     });
   }
 };

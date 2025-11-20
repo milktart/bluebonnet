@@ -1,11 +1,13 @@
 # Travel Companions System - Implementation Guide
 
 ## Overview
+
 This document provides detailed guidance for implementing the remaining frontend views and functionality for the new travel companions system. The backend is fully implemented and tested. This guide covers the views, forms, and UI components that need to be created or updated.
 
 ## Completed Backend Work ✅
 
 ### Models Created
+
 - `CompanionRelationship` - Bidirectional companion relationships with permission levels
 - `TripInvitation` - Trip join requests
 - `ItemCompanion` - Item-level companion tracking
@@ -13,6 +15,7 @@ This document provides detailed guidance for implementing the remaining frontend
 - Updated `TripCompanion` with `canAddItems` and `permissionSource`
 
 ### Controllers Created/Updated
+
 - `companionRelationshipController` - Full relationship lifecycle
 - `notificationController` - Notification management
 - `tripInvitationController` - Trip invitations
@@ -21,11 +24,13 @@ This document provides detailed guidance for implementing the remaining frontend
 - `authController` - Auto-detect account linking
 
 ### Routes Created
+
 - `/companion-relationships` - Relationship CRUD
 - `/trip-invitations` - Trip invitations
 - `/notifications` - Notification management
 
 ### Database
+
 - Auto-synced via `db.sequelize.sync({ alter: true })`
 - Custom indexes created on startup
 - All new tables created automatically
@@ -35,12 +40,14 @@ This document provides detailed guidance for implementing the remaining frontend
 ## Frontend Implementation Checklist
 
 ### 1. Manage Companions Settings View
+
 **File**: `views/partials/companions-manage.ejs` (NEW)
 **Location**: Settings > Manage Companions tab
 
 **Display Three Sections:**
 
 #### Section 1: Mutual Companions
+
 ```
 For each companion where status === 'accepted':
 - Display companion name/email
@@ -51,7 +58,9 @@ For each companion where status === 'accepted':
 ```
 
 #### Section 2: Pending Requests
+
 **Incoming:**
+
 ```
 For each relationship where companionUserId === current user && status === 'pending':
 - Show requester name/email
@@ -64,6 +73,7 @@ For each relationship where companionUserId === current user && status === 'pend
 ```
 
 **Outgoing:**
+
 ```
 For each relationship where userId === current user && status === 'pending':
 - Show recipient name/email
@@ -74,6 +84,7 @@ For each relationship where userId === current user && status === 'pending':
 ```
 
 #### Section 3: Unlinked Companions
+
 ```
 For each TravelCompanion where createdBy === current user && userId === null:
 - Display as they currently appear
@@ -84,15 +95,18 @@ For each TravelCompanion where createdBy === current user && userId === null:
 ---
 
 ### 2. Notification Center
+
 **Location**: Primary sidebar (top)
 
 **Design Pattern:**
+
 - Bell icon with badge showing unread count
 - GET /notifications/count/unread on page load
 - Click expands notification panel below header
 - Poll for new notifications every 30 seconds
 
 **Display:**
+
 ```
 Unread Notifications:
 For each notification where read === false:
@@ -124,6 +138,7 @@ Notification Actions:
 ---
 
 ### 3. Trip Create/Edit Forms
+
 **File**: `views/trips/edit.ejs` (UPDATE)
 
 **Update Companion Selection Section:**
@@ -163,7 +178,7 @@ Notification Actions:
             data-companion-id="{companionId}"
             checked="{canEdit}"
             disabled="permissionSource === 'manage_travel'"
-          >
+          />
           Can add and edit items
         </label>
       </div>
@@ -171,25 +186,26 @@ Notification Actions:
   </div>
 
   <!-- Hidden field for permission updates -->
-  <input type="hidden" name="companionPermissions" id="companionPermissionsJson" value="{}">
+  <input type="hidden" name="companionPermissions" id="companionPermissionsJson" value="{}" />
 </div>
 
 <script>
-// On checkbox change, update hidden JSON field with:
-// { companionId: boolean, companionId: boolean, ... }
-document.querySelectorAll('.companion-can-edit').forEach(checkbox => {
-  checkbox.addEventListener('change', function() {
-    const permissions = {};
-    document.querySelectorAll('.companion-can-edit:not(:disabled)').forEach(cb => {
-      permissions[cb.dataset.companionId] = cb.checked;
+  // On checkbox change, update hidden JSON field with:
+  // { companionId: boolean, companionId: boolean, ... }
+  document.querySelectorAll('.companion-can-edit').forEach((checkbox) => {
+    checkbox.addEventListener('change', function () {
+      const permissions = {};
+      document.querySelectorAll('.companion-can-edit:not(:disabled)').forEach((cb) => {
+        permissions[cb.dataset.companionId] = cb.checked;
+      });
+      document.getElementById('companionPermissionsJson').value = JSON.stringify(permissions);
     });
-    document.getElementById('companionPermissionsJson').value = JSON.stringify(permissions);
   });
-});
 </script>
 ```
 
 **Form Submission:**
+
 - Trip form submits `companions` array (existing)
 - Also submits `companionPermissions` JSON object
 - Server processes both in tripController.updateTrip()
@@ -197,6 +213,7 @@ document.querySelectorAll('.companion-can-edit').forEach(checkbox => {
 ---
 
 ### 4. Trip View Sidebar - Pending Trip Invitations
+
 **File**: `views/partials/trip-sidebar-content.ejs` (UPDATE)
 
 **Add Section for Pending Invitations:**
@@ -209,45 +226,42 @@ document.querySelectorAll('.companion-can-edit').forEach(checkbox => {
   <p class="invitation-from">Invited by {trip.owner.firstName} {trip.owner.lastName}</p>
 
   <div class="trip-actions">
-    <button class="btn btn-primary" onclick="joinTrip('{trip.id}')">
-      Join Trip
-    </button>
-    <button class="btn btn-secondary" onclick="declineTrip('{trip.id}')">
-      Leave
-    </button>
+    <button class="btn btn-primary" onclick="joinTrip('{trip.id}')">Join Trip</button>
+    <button class="btn btn-secondary" onclick="declineTrip('{trip.id}')">Leave</button>
   </div>
 </div>
 
 <script>
-async function joinTrip(tripId) {
-  const invitationId = await getInvitationId(tripId); // GET /trip-invitations/pending
-  const response = await fetch(`/trip-invitations/${invitationId}/respond`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ response: 'join' })
-  });
-  if (response.ok) {
-    location.reload(); // Refresh to show trip as joined
+  async function joinTrip(tripId) {
+    const invitationId = await getInvitationId(tripId); // GET /trip-invitations/pending
+    const response = await fetch(`/trip-invitations/${invitationId}/respond`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ response: 'join' }),
+    });
+    if (response.ok) {
+      location.reload(); // Refresh to show trip as joined
+    }
   }
-}
 
-async function declineTrip(tripId) {
-  const invitationId = await getInvitationId(tripId);
-  const response = await fetch(`/trip-invitations/${invitationId}/respond`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ response: 'decline' })
-  });
-  if (response.ok) {
-    location.reload();
+  async function declineTrip(tripId) {
+    const invitationId = await getInvitationId(tripId);
+    const response = await fetch(`/trip-invitations/${invitationId}/respond`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ response: 'decline' }),
+    });
+    if (response.ok) {
+      location.reload();
+    }
   }
-}
 </script>
 ```
 
 ---
 
 ### 5. Item Form Travel Companions Section
+
 **Files**: All item forms (flight-form.ejs, hotel-form.ejs, etc.) (UPDATE)
 
 **Add New Section in Each Form:**
@@ -257,7 +271,8 @@ async function declineTrip(tripId) {
 <div class="form-section travel-companions-section">
   <h3>Travel Companions</h3>
   <p class="help-text">
-    Trip-level companions are automatically included. You can remove them from this item or add additional companions.
+    Trip-level companions are automatically included. You can remove them from this item or add
+    additional companions.
   </p>
 
   <div id="itemCompanions" class="companions-list">
@@ -265,74 +280,79 @@ async function declineTrip(tripId) {
   </div>
 
   <!-- Hidden field for companion IDs -->
-  <input type="hidden" name="companions" id="itemCompanionsJson" value="[]">
+  <input type="hidden" name="companions" id="itemCompanionsJson" value="[]" />
 </div>
 
 <script>
-// On form load:
-// 1. GET /item-companions/{itemType}/{itemId} if editing
-// 2. Or auto-populate from trip companions if creating
-// 3. Display as removable badges with indicator:
-//    - "(inherited)" for trip-level companions
-//    - "(added)" for explicitly added companions
+  // On form load:
+  // 1. GET /item-companions/{itemType}/{itemId} if editing
+  // 2. Or auto-populate from trip companions if creating
+  // 3. Display as removable badges with indicator:
+  //    - "(inherited)" for trip-level companions
+  //    - "(added)" for explicitly added companions
 
-async function loadCompanions(itemType, itemId, tripId) {
-  if (itemId) {
-    // Editing - fetch existing companions
-    const response = await fetch(`/items/${itemType}/${itemId}/companions`);
-    const data = await response.json();
-    displayCompanions(data.companions);
-  } else if (tripId) {
-    // Creating - get trip-level companions
-    const response = await fetch(`/trips/${tripId}`);
-    const trip = await response.json();
-    // Display trip.tripCompanions as inherited
-    displayCompanions(trip.tripCompanions.map(tc => ({
-      ...tc,
-      inherited: true
-    })));
+  async function loadCompanions(itemType, itemId, tripId) {
+    if (itemId) {
+      // Editing - fetch existing companions
+      const response = await fetch(`/items/${itemType}/${itemId}/companions`);
+      const data = await response.json();
+      displayCompanions(data.companions);
+    } else if (tripId) {
+      // Creating - get trip-level companions
+      const response = await fetch(`/trips/${tripId}`);
+      const trip = await response.json();
+      // Display trip.tripCompanions as inherited
+      displayCompanions(
+        trip.tripCompanions.map((tc) => ({
+          ...tc,
+          inherited: true,
+        }))
+      );
+    }
   }
-}
 
-function displayCompanions(companions) {
-  const container = document.getElementById('itemCompanions');
-  const ids = [];
+  function displayCompanions(companions) {
+    const container = document.getElementById('itemCompanions');
+    const ids = [];
 
-  companions.forEach(c => {
-    const badge = document.createElement('div');
-    badge.className = 'companion-badge';
-    badge.dataset.companionId = c.id;
-    badge.innerHTML = `
+    companions.forEach((c) => {
+      const badge = document.createElement('div');
+      badge.className = 'companion-badge';
+      badge.dataset.companionId = c.id;
+      badge.innerHTML = `
       <span>${c.name || c.email}</span>
       <span class="badge-label">${c.inherited ? '(inherited)' : '(added)'}</span>
       <button type="button" class="remove-btn" onclick="removeCompanion('${c.id}')">×</button>
     `;
-    container.appendChild(badge);
-    ids.push(c.id);
-  });
+      container.appendChild(badge);
+      ids.push(c.id);
+    });
 
-  document.getElementById('itemCompanionsJson').value = JSON.stringify(ids);
-}
+    document.getElementById('itemCompanionsJson').value = JSON.stringify(ids);
+  }
 
-function removeCompanion(companionId) {
-  document.querySelector(`[data-companion-id="${companionId}"]`).remove();
-  updateCompanionIds();
-}
+  function removeCompanion(companionId) {
+    document.querySelector(`[data-companion-id="${companionId}"]`).remove();
+    updateCompanionIds();
+  }
 
-function updateCompanionIds() {
-  const ids = Array.from(document.querySelectorAll('.companion-badge')).map(b => b.dataset.companionId);
-  document.getElementById('itemCompanionsJson').value = JSON.stringify(ids);
-}
+  function updateCompanionIds() {
+    const ids = Array.from(document.querySelectorAll('.companion-badge')).map(
+      (b) => b.dataset.companionId
+    );
+    document.getElementById('itemCompanionsJson').value = JSON.stringify(ids);
+  }
 
-// Option to add more companions:
-// Show autocomplete input to add additional companions not on trip
-// Similar to existing companion selector
+  // Option to add more companions:
+  // Show autocomplete input to add additional companions not on trip
+  // Similar to existing companion selector
 </script>
 ```
 
 ---
 
 ### 6. Item Views - Companion Attendance Display
+
 **Files**: All item detail views (flight details, hotel details, etc.)
 
 **Add Companions Section:**
@@ -359,6 +379,7 @@ function updateCompanionIds() {
 ---
 
 ### 7. Dashboard Sidebar - Individual Items
+
 **File**: `views/trips/dashboard.ejs` (UPDATE)
 
 **Show Individual Items Not in Trips:**
@@ -394,6 +415,7 @@ function updateCompanionIds() {
 ```
 
 **JavaScript to Load:**
+
 ```javascript
 // Load pending invitations
 async function loadPendingInvitations() {
@@ -421,6 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
 ## API Endpoints Reference
 
 ### Companion Relationships
+
 ```
 POST   /companion-relationships/request          - Send request
 GET    /companion-relationships/pending          - Get pending requests
@@ -432,6 +455,7 @@ DELETE /companion-relationships/:id              - Revoke relationship
 ```
 
 ### Trip Invitations
+
 ```
 POST   /trip-invitations/trips/:tripId/invite    - Invite companion to trip
 GET    /trip-invitations/pending                 - Get pending invitations
@@ -440,6 +464,7 @@ POST   /trip-invitations/trips/:tripId/leave     - Leave a trip
 ```
 
 ### Notifications
+
 ```
 GET    /notifications                             - Get all notifications
 GET    /notifications/count/unread               - Get unread count
@@ -455,17 +480,20 @@ DELETE /notifications/:id                        - Delete notification
 ## Permission System Overview
 
 ### Permission Hierarchy
+
 1. **Trip Owner** - Full control (implicit)
 2. **Manage Travel (from relationship)** - Auto-edit rights on trips/items
 3. **Explicit Permission** - Custom permission set at trip level
 4. **Default Permission** - Fallback if no explicit permission
 
 ### Permission Levels
+
 - **manage_travel**: Can create, edit, delete items; full control
 - **view_travel**: Can view trips/items; cannot edit without explicit acceptance
 - **trip-specific**: Can edit items only within specific trip (after accepting invitation)
 
 ### Item-Level Permissions
+
 - Inherited from trip (marked with "inherited" badge)
 - Can be explicitly removed (changes to "not_attending")
 - Can be explicitly added (even if not on trip)
@@ -492,6 +520,7 @@ DELETE /notifications/:id                        - Delete notification
 ## Database Verification
 
 After starting the server, verify these tables exist:
+
 ```sql
 SELECT * FROM companion_relationships;
 SELECT * FROM trip_invitations;

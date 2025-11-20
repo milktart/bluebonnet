@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
+const { Sequelize } = require('sequelize');
 const logger = require('../utils/logger');
 const { User, TravelCompanion, Voucher } = require('../models');
-const { Sequelize } = require('sequelize');
 
 exports.getAccountSettings = async (req, res) => {
   try {
@@ -12,16 +12,16 @@ exports.getAccountSettings = async (req, res) => {
         {
           model: User,
           as: 'creator',
-          attributes: ['id', 'firstName', 'lastName', 'email']
-        }
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
       ],
-      order: [['createdAt', 'DESC']]
+      order: [['createdAt', 'DESC']],
     });
 
     res.render('account/settings', {
       title: 'Account Settings',
       user: req.user,
-      linkedCompanions
+      linkedCompanions,
     });
   } catch (error) {
     logger.error('Error loading account settings:', error);
@@ -40,8 +40,8 @@ exports.updateProfile = async (req, res) => {
       const existingUser = await User.findOne({
         where: {
           email: email.toLowerCase(),
-          id: { [require('sequelize').Op.ne]: userId }
-        }
+          id: { [require('sequelize').Op.ne]: userId },
+        },
       });
 
       if (existingUser) {
@@ -51,13 +51,16 @@ exports.updateProfile = async (req, res) => {
     }
 
     // Update user profile
-    await User.update({
-      firstName,
-      lastName,
-      email: email.toLowerCase()
-    }, {
-      where: { id: userId }
-    });
+    await User.update(
+      {
+        firstName,
+        lastName,
+        email: email.toLowerCase(),
+      },
+      {
+        where: { id: userId },
+      }
+    );
 
     // Update the user object in session
     req.user.firstName = firstName;
@@ -95,11 +98,14 @@ exports.changePassword = async (req, res) => {
 
     // Hash new password and update
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-    await User.update({
-      password: hashedNewPassword
-    }, {
-      where: { id: userId }
-    });
+    await User.update(
+      {
+        password: hashedNewPassword,
+      },
+      {
+        where: { id: userId },
+      }
+    );
 
     req.flash('success_msg', 'Password changed successfully');
     res.redirect('/account');
@@ -119,21 +125,25 @@ exports.getAccountSettingsSidebar = async (req, res) => {
         {
           model: User,
           as: 'creator',
-          attributes: ['id', 'firstName', 'lastName', 'email']
-        }
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
       ],
-      order: [['createdAt', 'DESC']]
+      order: [['createdAt', 'DESC']],
     });
 
     res.render('partials/account-forms', {
       user: req.user,
       companionProfiles,
       isSidebarRequest: true,
-      layout: false  // Don't use main layout, just render the partial
+      layout: false, // Don't use main layout, just render the partial
     });
   } catch (error) {
     logger.error('Error loading account settings sidebar:', error);
-    res.status(500).send('<div class="p-4"><p class="text-red-600">Error loading account settings. Please try again.</p></div>');
+    res
+      .status(500)
+      .send(
+        '<div class="p-4"><p class="text-red-600">Error loading account settings. Please try again.</p></div>'
+      );
   }
 };
 
@@ -143,25 +153,29 @@ exports.getCompanionsSidebar = async (req, res) => {
     // The partial will load companion data via JavaScript API calls
     res.render('partials/account-companions-sidebar', {
       user: req.user,
-      layout: false  // Don't use main layout, just render the partial
+      layout: false, // Don't use main layout, just render the partial
     });
   } catch (error) {
     logger.error('Error loading companions sidebar:', error);
-    res.status(500).send('<div class="p-4"><p class="text-red-600">Error loading companions. Please try again.</p></div>');
+    res
+      .status(500)
+      .send(
+        '<div class="p-4"><p class="text-red-600">Error loading companions. Please try again.</p></div>'
+      );
   }
 };
 
 exports.revokeCompanionAccess = async (req, res) => {
   try {
-    const companionId = req.params.companionId;
+    const { companionId } = req.params;
     const isAjax = req.get('X-Sidebar-Request') === 'true' || req.xhr;
 
     // Find and update the companion to unlink this user
     const companion = await TravelCompanion.findOne({
       where: {
         id: companionId,
-        userId: req.user.id
-      }
+        userId: req.user.id,
+      },
     });
 
     if (!companion) {
@@ -199,10 +213,7 @@ exports.getVouchers = async (req, res) => {
     const { status, type } = req.query;
 
     const where = {
-      [Sequelize.Op.or]: [
-        { userId: userId },
-        { userId: null }
-      ]
+      [Sequelize.Op.or]: [{ userId }, { userId: null }],
     };
 
     if (status) {
@@ -219,14 +230,14 @@ exports.getVouchers = async (req, res) => {
         {
           model: User,
           as: 'owner',
-          attributes: ['id', 'firstName', 'lastName', 'email']
-        }
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
       ],
-      order: [['createdAt', 'DESC']]
+      order: [['createdAt', 'DESC']],
     });
 
     // Calculate remaining balance and expiration info for each voucher
-    const vouchersWithInfo = vouchers.map(v => {
+    const vouchersWithInfo = vouchers.map((v) => {
       const vData = v.toJSON();
       vData.remainingBalance = v.getRemainingBalance();
       vData.daysUntilExpiration = v.getDaysUntilExpiration();
@@ -238,7 +249,7 @@ exports.getVouchers = async (req, res) => {
     res.render('account/vouchers', {
       title: 'Travel Vouchers & Credits',
       user: req.user,
-      vouchers: vouchersWithInfo
+      vouchers: vouchersWithInfo,
     });
   } catch (error) {
     logger.error('Error loading vouchers:', error);
@@ -253,51 +264,62 @@ exports.getVouchersSidebar = async (req, res) => {
 
     const vouchers = await Voucher.findAll({
       where: {
-        [Sequelize.Op.or]: [
-          { userId: userId },
-          { userId: null }
-        ]
+        [Sequelize.Op.or]: [{ userId }, { userId: null }],
       },
       include: [
         {
           model: User,
           as: 'owner',
-          attributes: ['id', 'firstName', 'lastName', 'email']
-        }
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
       ],
-      order: [['createdAt', 'DESC']]
+      order: [['createdAt', 'DESC']],
     });
 
     // Calculate remaining balance and expiration info for each voucher
-    const vouchersWithInfo = vouchers.map(v => {
+    const vouchersWithInfo = vouchers.map((v) => {
       const vData = v.toJSON();
       vData.remainingBalance = v.getRemainingBalance();
       vData.daysUntilExpiration = v.getDaysUntilExpiration();
       vData.isExpired = v.getIsExpired();
-      vData.usagePercent = v.totalValue ? Math.round(((v.usedAmount || 0) / v.totalValue) * 100) : 0;
+      vData.usagePercent = v.totalValue
+        ? Math.round(((v.usedAmount || 0) / v.totalValue) * 100)
+        : 0;
       return vData;
     });
 
     // Separate open and closed vouchers
-    const openVouchers = vouchersWithInfo.filter(v => v.status === 'OPEN' || v.status === 'PARTIALLY_USED');
-    const closedVouchers = vouchersWithInfo.filter(v => v.status === 'USED' || v.status === 'EXPIRED' || v.status === 'TRANSFERRED' || v.status === 'CANCELLED');
+    const openVouchers = vouchersWithInfo.filter(
+      (v) => v.status === 'OPEN' || v.status === 'PARTIALLY_USED'
+    );
+    const closedVouchers = vouchersWithInfo.filter(
+      (v) =>
+        v.status === 'USED' ||
+        v.status === 'EXPIRED' ||
+        v.status === 'TRANSFERRED' ||
+        v.status === 'CANCELLED'
+    );
 
     res.render('partials/vouchers-sidebar', {
       openVouchers,
       closedVouchers,
       user: req.user,
       isSidebarRequest: true,
-      layout: false
+      layout: false,
     });
   } catch (error) {
     logger.error('Error loading vouchers sidebar:', error);
-    res.status(500).send('<div class="p-4"><p class="text-red-600">Error loading vouchers. Please try again.</p></div>');
+    res
+      .status(500)
+      .send(
+        '<div class="p-4"><p class="text-red-600">Error loading vouchers. Please try again.</p></div>'
+      );
   }
 };
 
 exports.getVoucherDetails = async (req, res) => {
   try {
-    const voucherId = req.params.voucherId;
+    const { voucherId } = req.params;
     const userId = req.user.id;
 
     const voucher = await Voucher.findByPk(voucherId, {
@@ -305,18 +327,24 @@ exports.getVoucherDetails = async (req, res) => {
         {
           model: User,
           as: 'owner',
-          attributes: ['id', 'firstName', 'lastName', 'email']
-        }
-      ]
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
+      ],
     });
 
     if (!voucher) {
-      return res.status(404).send('<div class="p-4"><p class="text-red-600">Voucher not found</p></div>');
+      return res
+        .status(404)
+        .send('<div class="p-4"><p class="text-red-600">Voucher not found</p></div>');
     }
 
     // Check authorization: user must be owner or voucher must be non-owner-bound
     if (voucher.userId && voucher.userId !== userId) {
-      return res.status(403).send('<div class="p-4"><p class="text-red-600">Unauthorized to access this voucher</p></div>');
+      return res
+        .status(403)
+        .send(
+          '<div class="p-4"><p class="text-red-600">Unauthorized to access this voucher</p></div>'
+        );
     }
 
     // Calculate values
@@ -324,14 +352,20 @@ exports.getVoucherDetails = async (req, res) => {
     voucherData.remainingBalance = voucher.getRemainingBalance();
     voucherData.daysUntilExpiration = voucher.getDaysUntilExpiration();
     voucherData.isExpired = voucher.getIsExpired();
-    voucherData.usagePercent = voucher.totalValue ? Math.round(((voucher.usedAmount || 0) / voucher.totalValue) * 100) : 0;
+    voucherData.usagePercent = voucher.totalValue
+      ? Math.round(((voucher.usedAmount || 0) / voucher.totalValue) * 100)
+      : 0;
 
     res.render('partials/voucher-details-tertiary', {
       voucher: voucherData,
-      layout: false
+      layout: false,
     });
   } catch (error) {
     logger.error('Error loading voucher details:', error);
-    res.status(500).send('<div class="p-4"><p class="text-red-600">Error loading voucher details. Please try again.</p></div>');
+    res
+      .status(500)
+      .send(
+        '<div class="p-4"><p class="text-red-600">Error loading voucher details. Please try again.</p></div>'
+      );
   }
 };

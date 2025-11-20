@@ -198,11 +198,7 @@ describe('VoucherService', () => {
         totalValue: 100,
       };
 
-      const result = await voucherService.updateVoucher(
-        mockVoucherId,
-        updatedData,
-        mockUserId
-      );
+      const result = await voucherService.updateVoucher(mockVoucherId, updatedData, mockUserId);
 
       expect(mockVoucher.update).toHaveBeenCalledWith({
         usedAmount: 50,

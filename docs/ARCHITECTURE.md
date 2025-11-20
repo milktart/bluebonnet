@@ -390,15 +390,15 @@ graph TB
 
 ### Cache Keys & TTLs
 
-| Data Type | Cache Key Pattern | TTL | Invalidation |
-|-----------|------------------|-----|--------------|
-| Airports | `airport:code:{IATA}` | 24 hours | Never (static data) |
-| Airport Search | `airport:search:{query}:{limit}` | 24 hours | Never |
-| User Trips | `trips:user:{userId}:{filter}:{page}` | 5 minutes | On create/update/delete |
-| Trip Statistics | `trips:stats:{userId}` | 10 minutes | On trip changes |
-| User Companions | `companions:user:{userId}` | 5 minutes | On create/update/delete |
-| User Vouchers | `vouchers:user:{userId}` | 5 minutes | On create/update/delete |
-| Sessions | `sess:{sessionId}` | 24 hours | On logout |
+| Data Type       | Cache Key Pattern                     | TTL        | Invalidation            |
+| --------------- | ------------------------------------- | ---------- | ----------------------- |
+| Airports        | `airport:code:{IATA}`                 | 24 hours   | Never (static data)     |
+| Airport Search  | `airport:search:{query}:{limit}`      | 24 hours   | Never                   |
+| User Trips      | `trips:user:{userId}:{filter}:{page}` | 5 minutes  | On create/update/delete |
+| Trip Statistics | `trips:stats:{userId}`                | 10 minutes | On trip changes         |
+| User Companions | `companions:user:{userId}`            | 5 minutes  | On create/update/delete |
+| User Vouchers   | `vouchers:user:{userId}`              | 5 minutes  | On create/update/delete |
+| Sessions        | `sess:{sessionId}`                    | 24 hours   | On logout               |
 
 ---
 
@@ -591,16 +591,16 @@ graph LR
 
 ### Why These Technologies?
 
-| Technology | Reason |
-|------------|--------|
-| **Node.js** | Non-blocking I/O, excellent for I/O-heavy operations, large ecosystem |
-| **Express** | Minimal, flexible, industry standard, excellent middleware ecosystem |
-| **PostgreSQL** | ACID compliance, complex queries, JSON support, strong consistency |
-| **Redis** | In-memory speed, persistence, pub/sub, session storage |
-| **EJS** | Server-side rendering for SEO, simple syntax, works well with Express |
-| **esbuild** | 100x faster than webpack, simple configuration, native ESM support |
-| **Jest** | All-in-one testing solution, excellent mocking, great developer experience |
-| **Sequelize** | Mature ORM, good PostgreSQL support, migration system |
+| Technology     | Reason                                                                     |
+| -------------- | -------------------------------------------------------------------------- |
+| **Node.js**    | Non-blocking I/O, excellent for I/O-heavy operations, large ecosystem      |
+| **Express**    | Minimal, flexible, industry standard, excellent middleware ecosystem       |
+| **PostgreSQL** | ACID compliance, complex queries, JSON support, strong consistency         |
+| **Redis**      | In-memory speed, persistence, pub/sub, session storage                     |
+| **EJS**        | Server-side rendering for SEO, simple syntax, works well with Express      |
+| **esbuild**    | 100x faster than webpack, simple configuration, native ESM support         |
+| **Jest**       | All-in-one testing solution, excellent mocking, great developer experience |
+| **Sequelize**  | Mature ORM, good PostgreSQL support, migration system                      |
 
 ---
 

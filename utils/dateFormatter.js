@@ -4,6 +4,8 @@
  * Format: DD MMM YYYY for dates, HH:MM for times (24-hour)
  */
 
+const { MS_PER_HOUR } = require('./constants');
+
 // Constants
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -15,7 +17,7 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 function formatDate(date) {
   if (!date) return '';
   const d = new Date(date);
-  if (isNaN(d.getTime())) return '';
+  if (Number.isNaN(d.getTime())) return '';
 
   const day = String(d.getDate()).padStart(2, '0');
   const month = MONTHS[d.getMonth()];
@@ -32,7 +34,7 @@ function formatDate(date) {
 function formatTime(dateString) {
   if (!dateString) return '';
   const date = new Date(dateString);
-  if (isNaN(date.getTime())) return '';
+  if (Number.isNaN(date.getTime())) return '';
 
   const hours = String(date.getHours()).padStart(2, '0');
   const minutes = String(date.getMinutes()).padStart(2, '0');
@@ -98,7 +100,7 @@ function calculateLayoverDuration(flight1ArrivalTime, flight2DepartureTime) {
   const arrival = new Date(flight1ArrivalTime);
   const departure = new Date(flight2DepartureTime);
   const diffMs = departure - arrival;
-  const diffHours = diffMs / (1000 * 60 * 60);
+  const diffHours = diffMs / MS_PER_HOUR;
 
   // Only show layover if less than 24 hours between flights
   if (diffMs <= 0 || diffHours >= 24) return null;
@@ -126,7 +128,12 @@ function formatLayoverDisplay(duration, airportCode) {
  * Legacy function for backward compatibility
  * Calculate layover and return with airport code
  */
-function calculateLayover(flight1ArrivalTime, flight1Destination, flight2DepartureTime, flight2Origin) {
+function calculateLayover(
+  flight1ArrivalTime,
+  flight1Destination,
+  flight2DepartureTime,
+  flight2Origin
+) {
   if (!flight1ArrivalTime || !flight2DepartureTime) return null;
 
   const duration = calculateLayoverDuration(flight1ArrivalTime, flight2DepartureTime);
@@ -161,5 +168,5 @@ module.exports = {
   calculateLayoverDuration,
   formatLayoverDisplay,
   calculateLayover,
-  getLayoverText
+  getLayoverText,
 };

@@ -1,4 +1,5 @@
 const express = require('express');
+
 const router = express.Router();
 const companionRelationshipController = require('../controllers/companionRelationshipController');
 const { ensureAuthenticated } = require('../middleware/auth');

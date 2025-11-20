@@ -1,5 +1,6 @@
 const express = require('express');
 const logger = require('../utils/logger');
+const { sortCompanions } = require('../utils/itemCompanionHelper');
 
 const router = express.Router();
 const { ensureAuthenticated } = require('../middleware/auth');
@@ -9,8 +10,7 @@ const v1Routes = require('./api/v1');
 
 router.use('/v1', v1Routes);
 
-// Legacy API endpoints (kept for backward compatibility)
-// TODO: Migrate these to v1 endpoints and deprecate
+// Companion and item-specific API endpoints
 router.use(ensureAuthenticated);
 
 // API endpoint to fetch trip data (for async form refresh)
@@ -115,20 +115,8 @@ router.get('/trips/:id/companions', async (req, res) => {
       email: req.user.email,
     });
 
-    // Separate self and others, sort others by first name
-    const selfCompanion = companionList.find((c) => c.email === req.user.email);
-    logger.debug('API /trips/:id/companions - Found self:', { selfCompanion });
-
-    const others = companionList
-      .filter((c) => c.email !== req.user.email)
-      .sort((a, b) => {
-        const firstNameA = a.name.split(' ')[0];
-        const firstNameB = b.name.split(' ')[0];
-        return firstNameA.localeCompare(firstNameB);
-      });
-
-    // Combine: self first, then others
-    const sortedCompanionList = selfCompanion ? [selfCompanion, ...others] : others;
+    // Sort companions: self first, then alphabetically by first name
+    const sortedCompanionList = sortCompanions(companionList, req.user.email);
 
     logger.debug('API /trips/:id/companions - Final sorted list:', { sortedCompanionList });
 
@@ -172,18 +160,8 @@ router.get('/items/:itemType/:itemId/companions', async (req, res) => {
       email: ic.companion.email,
     }));
 
-    // Sort: self (current user) first, then alphabetically by first name
-    const selfCompanion = companionList.find((c) => c.email === req.user.email);
-    const others = companionList
-      .filter((c) => c.email !== req.user.email)
-      .sort((a, b) => {
-        const firstNameA = a.name.split(' ')[0];
-        const firstNameB = b.name.split(' ')[0];
-        return firstNameA.localeCompare(firstNameB);
-      });
-
-    // Combine: self first, then others
-    const sortedCompanionList = selfCompanion ? [selfCompanion, ...others] : others;
+    // Sort companions: self first, then alphabetically by first name
+    const sortedCompanionList = sortCompanions(companionList, req.user.email);
 
     res.json({
       success: true,

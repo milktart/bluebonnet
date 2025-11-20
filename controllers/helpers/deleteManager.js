@@ -1,4 +1,4 @@
-const logger = require("../../utils/logger");
+const logger = require('../../utils/logger');
 // Delete manager - handles soft delete and restore functionality
 // Uses session to store deleted items for undo capability
 // Timeouts stored separately to avoid JSON serialization issues
@@ -31,7 +31,7 @@ function storeDeletedItem(session, itemType, itemId, itemData, itemName) {
     itemId,
     itemData,
     itemName,
-    deletedAt: new Date().toISOString()
+    deletedAt: new Date().toISOString(),
   };
 
   // Store timeout separately in memory map
@@ -112,5 +112,5 @@ function hasDeletedItem(session, itemType, itemId) {
 module.exports = {
   storeDeletedItem,
   retrieveDeletedItem,
-  hasDeletedItem
+  hasDeletedItem,
 };

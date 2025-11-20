@@ -10,13 +10,7 @@ module.exports = (sequelize) => {
         primaryKey: true,
       },
       itemType: {
-        type: DataTypes.ENUM(
-          'flight',
-          'hotel',
-          'transportation',
-          'car_rental',
-          'event'
-        ),
+        type: DataTypes.ENUM('flight', 'hotel', 'transportation', 'car_rental', 'event'),
         allowNull: false,
       },
       itemId: {

@@ -7,11 +7,14 @@
 
 function calculateDistance(from, to) {
   const R = 6371;
-  const dLat = (to[0] - from[0]) * Math.PI / 180;
-  const dLng = (to[1] - from[1]) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(from[0] * Math.PI / 180) * Math.cos(to[0] * Math.PI / 180) *
-    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const dLat = ((to[0] - from[0]) * Math.PI) / 180;
+  const dLng = ((to[1] - from[1]) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((from[0] * Math.PI) / 180) *
+      Math.cos((to[0] * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
@@ -32,7 +35,7 @@ function highlightMapMarker(markerId, type) {
   }
 
   if (markerId && currentMap.segmentLayers) {
-    const segment = currentMap.segmentLayers.find(s => s.index === parseInt(markerId));
+    const segment = currentMap.segmentLayers.find((s) => s.index === parseInt(markerId));
     if (segment) {
       if (activeAnimations[markerId]) {
         clearInterval(activeAnimations[markerId].interval);
@@ -54,7 +57,7 @@ function highlightMapMarker(markerId, type) {
       );
 
       const currentZoom = currentMap.getZoom();
-      const zoomFactor = Math.max(0.75, Math.pow(2, 4 - currentZoom));
+      const zoomFactor = Math.max(0.75, 2 ** (4 - currentZoom));
       const durationMs = (distance / 6000) * 5000 * zoomFactor;
       const frameTime = 50;
       const animationSpeed = frameTime / durationMs;
@@ -72,8 +75,8 @@ function highlightMapMarker(markerId, type) {
               border: 2px solid white;
             "></div>`,
             iconSize: [16, 16],
-            iconAnchor: [8, 8]
-          })
+            iconAnchor: [8, 8],
+          }),
         }).addTo(currentMap);
 
         let progress = 0;
@@ -96,7 +99,7 @@ function highlightMapMarker(markerId, type) {
 
         activeAnimations[markerId] = {
           marker: movingMarker,
-          interval: animationInterval
+          interval: animationInterval,
         };
       } catch (e) {
         console.warn('Error creating marker animation:', e);

@@ -18,7 +18,7 @@ const {
   verifyResourceOwnership,
   verifyResourceOwnershipViaTrip,
   convertToUTC,
-  geocodeWithAirportFallback
+  geocodeWithAirportFallback,
 } = require('./helpers/resourceController');
 ```
 
@@ -33,6 +33,7 @@ const {
 Verify that a trip exists and belongs to the current user.
 
 **Parameters:**
+
 - `tripId` (string) - Trip ID to verify
 - `userId` (string) - Current user's ID
 - `Trip` (Model) - Trip Sequelize model
@@ -40,6 +41,7 @@ Verify that a trip exists and belongs to the current user.
 **Returns:** `Promise<Object|null>` - Trip object if valid, null otherwise
 
 **Example:**
+
 ```javascript
 const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
 if (!trip) {
@@ -52,12 +54,14 @@ if (!trip) {
 Verify that a resource belongs directly to a user (for resources with `userId` field).
 
 **Parameters:**
+
 - `resource` (Object) - Resource object with userId property
 - `currentUserId` (string) - Current user's ID
 
 **Returns:** `boolean` - True if user owns the resource
 
 **Example:**
+
 ```javascript
 const event = await Event.findByPk(req.params.id);
 if (!verifyResourceOwnership(event, req.user.id)) {
@@ -70,15 +74,17 @@ if (!verifyResourceOwnership(event, req.user.id)) {
 Verify that a resource belongs to a trip owned by the user (for resources accessed via trip).
 
 **Parameters:**
+
 - `resource` (Object) - Resource object with `trip` association
 - `currentUserId` (string) - Current user's ID
 
 **Returns:** `boolean` - True if user owns the trip that owns the resource
 
 **Example:**
+
 ```javascript
 const hotel = await Hotel.findByPk(req.params.id, {
-  include: [{ model: Trip, as: 'trip' }]
+  include: [{ model: Trip, as: 'trip' }],
 });
 if (!verifyResourceOwnershipViaTrip(hotel, req.user.id)) {
   return redirectAfterError(res, req, null, 'Hotel not found');
@@ -94,6 +100,7 @@ if (!verifyResourceOwnershipViaTrip(hotel, req.user.id)) {
 Geocode a location only if it has changed (or for new records).
 
 **Parameters:**
+
 - `newLocation` (string) - New location string
 - `oldLocation` (string) - Previous location string (optional, for updates)
 - `oldCoords` (Object) - Previous coordinates {lat, lng} (optional, for updates)
@@ -101,16 +108,16 @@ Geocode a location only if it has changed (or for new records).
 **Returns:** `Promise<Object|null>` - Coordinates {lat, lng} or null
 
 **Examples:**
+
 ```javascript
 // For new records
 const coords = await geocodeIfChanged(address);
 
 // For updates
-const coords = await geocodeIfChanged(
-  newAddress,
-  hotel.address,
-  { lat: hotel.lat, lng: hotel.lng }
-);
+const coords = await geocodeIfChanged(newAddress, hotel.address, {
+  lat: hotel.lat,
+  lng: hotel.lng,
+});
 ```
 
 #### `geocodeOriginDestination(params)`
@@ -118,6 +125,7 @@ const coords = await geocodeIfChanged(
 Geocode both origin and destination, with smart caching for updates.
 
 **Parameters:**
+
 - `params.originNew` (string) - New origin location
 - `params.originOld` (string) - Previous origin (optional, for updates)
 - `params.originCoordsOld` (Object) - Previous origin coords (optional)
@@ -128,11 +136,12 @@ Geocode both origin and destination, with smart caching for updates.
 **Returns:** `Promise<Object>` - {originCoords, destCoords}
 
 **Examples:**
+
 ```javascript
 // For new records
 const { originCoords, destCoords } = await geocodeOriginDestination({
   originNew: origin,
-  destNew: destination
+  destNew: destination,
 });
 
 // For updates
@@ -142,7 +151,7 @@ const { originCoords, destCoords } = await geocodeOriginDestination({
   originCoordsOld: { lat: transportation.originLat, lng: transportation.originLng },
   destNew: destination,
   destOld: transportation.destination,
-  destCoordsOld: { lat: transportation.destinationLat, lng: transportation.destinationLng }
+  destCoordsOld: { lat: transportation.destinationLat, lng: transportation.destinationLng },
 });
 ```
 
@@ -151,6 +160,7 @@ const { originCoords, destCoords } = await geocodeOriginDestination({
 Specialized geocoding for flight origins/destinations that handles airport codes.
 
 **Parameters:**
+
 - `location` (string) - Location string (could be airport code or address)
 - `airportService` (Object) - Airport service for IATA code lookup
 - `currentTimezone` (string) - Current timezone (optional, will be updated if airport found)
@@ -158,15 +168,21 @@ Specialized geocoding for flight origins/destinations that handles airport codes
 **Returns:** `Promise<Object>` - {coords: {lat, lng}, timezone: string, formattedLocation: string}
 
 **How it works:**
+
 1. Checks if location is a 3-letter airport code (e.g., "JFK")
 2. If airport code found, returns airport coordinates, timezone, and formatted name
 3. Otherwise falls back to regular geocoding
 
 **Example:**
+
 ```javascript
 // Flight controller usage
 const originResult = await geocodeWithAirportFallback(origin, airportService, originTimezone);
-const destResult = await geocodeWithAirportFallback(destination, airportService, destinationTimezone);
+const destResult = await geocodeWithAirportFallback(
+  destination,
+  airportService,
+  destinationTimezone
+);
 
 // Update locations and timezones with airport data
 origin = originResult.formattedLocation; // "JFK - New York, USA"
@@ -184,6 +200,7 @@ if (!destinationTimezone) destinationTimezone = destResult.timezone;
 Standard redirect after successful CRUD operation.
 
 **Parameters:**
+
 - `res` (Object) - Express response object
 - `req` (Object) - Express request object
 - `tripId` (string|null) - Trip ID to redirect to (or null for /trips)
@@ -191,6 +208,7 @@ Standard redirect after successful CRUD operation.
 - `successMessage` (string) - Flash message to display
 
 **Example:**
+
 ```javascript
 redirectAfterSuccess(res, req, tripId, 'hotels', 'Hotel added successfully');
 // Redirects to: /trips/:tripId?tab=hotels with success flash message
@@ -201,12 +219,14 @@ redirectAfterSuccess(res, req, tripId, 'hotels', 'Hotel added successfully');
 Standard redirect after error.
 
 **Parameters:**
+
 - `res` (Object) - Express response object
 - `req` (Object) - Express request object
 - `tripId` (string|null) - Trip ID to redirect to (or null for /trips)
 - `errorMessage` (string) - Flash message to display
 
 **Example:**
+
 ```javascript
 redirectAfterError(res, req, req.params.tripId, 'Error adding hotel');
 // Redirects to: /trips/:tripId with error flash message
@@ -221,14 +241,16 @@ redirectAfterError(res, req, req.params.tripId, 'Error adding hotel');
 Convert local datetime to UTC using timezone.
 
 **Parameters:**
+
 - `datetime` (string) - Datetime string from datetime-local input
 - `timezone` (string) - Timezone string (e.g., 'America/New_York')
 
 **Returns:** `Date` - UTC date object
 
 **Example:**
+
 ```javascript
-checkInDateTime: convertToUTC(checkInDateTime, timezone)
+checkInDateTime: convertToUTC(checkInDateTime, timezone);
 ```
 
 ---
@@ -241,7 +263,9 @@ checkInDateTime: convertToUTC(checkInDateTime, timezone)
 exports.createResource = async (req, res) => {
   try {
     const { tripId } = req.params;
-    const { /* ... fields ... */ } = req.body;
+    const {
+      /* ... fields ... */
+    } = req.body;
 
     // 1. Verify trip ownership
     const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
@@ -276,11 +300,13 @@ exports.createResource = async (req, res) => {
 ```javascript
 exports.updateResource = async (req, res) => {
   try {
-    const { /* ... fields ... */ } = req.body;
+    const {
+      /* ... fields ... */
+    } = req.body;
 
     // 1. Find resource with trip
     const resource = await Resource.findByPk(req.params.id, {
-      include: [{ model: Trip, as: 'trip' }]
+      include: [{ model: Trip, as: 'trip' }],
     });
 
     // 2. Verify ownership
@@ -289,11 +315,10 @@ exports.updateResource = async (req, res) => {
     }
 
     // 3. Geocode if changed
-    const coords = await geocodeIfChanged(
-      location,
-      resource.location,
-      { lat: resource.lat, lng: resource.lng }
-    );
+    const coords = await geocodeIfChanged(location, resource.location, {
+      lat: resource.lat,
+      lng: resource.lng,
+    });
 
     // 4. Update resource
     await resource.update({
@@ -321,7 +346,7 @@ exports.deleteResource = async (req, res) => {
   try {
     // 1. Find resource with trip
     const resource = await Resource.findByPk(req.params.id, {
-      include: [{ model: Trip, as: 'trip' }]
+      include: [{ model: Trip, as: 'trip' }],
     });
 
     // 2. Verify ownership
@@ -361,7 +386,7 @@ exports.createFlight = async (req, res) => {
       destination,
       destinationTimezone,
       pnr,
-      seat
+      seat,
     } = req.body;
 
     // 1. Verify trip ownership
@@ -382,7 +407,11 @@ exports.createFlight = async (req, res) => {
 
     // 3. Geocode with airport fallback (handles IATA codes like "JFK")
     const originResult = await geocodeWithAirportFallback(origin, airportService, originTimezone);
-    const destResult = await geocodeWithAirportFallback(destination, airportService, destinationTimezone);
+    const destResult = await geocodeWithAirportFallback(
+      destination,
+      airportService,
+      destinationTimezone
+    );
 
     // Update locations and timezones if airport data was found
     origin = originResult.formattedLocation;
@@ -407,7 +436,7 @@ exports.createFlight = async (req, res) => {
       destinationLat: destResult.coords?.lat,
       destinationLng: destResult.coords?.lng,
       pnr,
-      seat
+      seat,
     });
 
     // 5. Redirect with success
@@ -420,6 +449,7 @@ exports.createFlight = async (req, res) => {
 ```
 
 **Key differences for flights:**
+
 - Uses `geocodeWithAirportFallback` which automatically detects 3-letter airport codes
 - Handles timezone extraction from airport data
 - Updates location strings with formatted airport info (e.g., "JFK" → "JFK - New York, USA")
@@ -452,21 +482,23 @@ exports.createFlight = async (req, res) => {
 Potential additions to this helper module:
 
 1. **Validation Helpers**
+
    ```javascript
-   validateRequiredFields(fields)
-   validateDateRange(startDate, endDate)
+   validateRequiredFields(fields);
+   validateDateRange(startDate, endDate);
    ```
 
 2. **Query Helpers**
+
    ```javascript
-   findResourceWithAuth(Model, id, userId)
-   findAllUserResources(Model, userId, filters)
+   findResourceWithAuth(Model, id, userId);
+   findAllUserResources(Model, userId, filters);
    ```
 
 3. **Logging Helpers**
    ```javascript
-   logControllerAction(action, resource, userId)
-   logControllerError(error, context)
+   logControllerAction(action, resource, userId);
+   logControllerError(error, context);
    ```
 
 ---

@@ -26,7 +26,9 @@
   background-color: rgba(255, 255, 255, 0.7) !important;
 }
 
-.sidebar input, .sidebar select, .sidebar textarea {
+.sidebar input,
+.sidebar select,
+.sidebar textarea {
   background-color: rgba(255, 255, 255, 0.4) !important;
-  backdrop-filter: blur(.5px) !important;
+  backdrop-filter: blur(0.5px) !important;
 }

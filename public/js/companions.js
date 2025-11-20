@@ -37,7 +37,8 @@ function isValidEmail(email) {
  */
 function createCompanionBadge(companion, onRemove) {
   const badge = document.createElement('div');
-  badge.className = 'inline-flex items-center gap-2 bg-blue-100 text-blue-900 px-3 py-2 rounded-lg text-sm mr-2 mb-2';
+  badge.className =
+    'inline-flex items-center gap-2 bg-blue-100 text-blue-900 px-3 py-2 rounded-lg text-sm mr-2 mb-2';
   badge.dataset.companionId = companion.id;
 
   const nameSpan = document.createElement('span');
@@ -58,7 +59,8 @@ function createCompanionBadge(companion, onRemove) {
 
   const removeBtn = document.createElement('button');
   removeBtn.type = 'button';
-  removeBtn.className = 'text-blue-900 hover:text-blue-700 font-bold ml-1 focus:outline-none flex-shrink-0';
+  removeBtn.className =
+    'text-blue-900 hover:text-blue-700 font-bold ml-1 focus:outline-none flex-shrink-0';
   removeBtn.textContent = '×';
   removeBtn.style.fontSize = '1.2em';
   removeBtn.style.lineHeight = '1';
@@ -161,8 +163,8 @@ export class CompanionSelector {
         const companions = await response.json();
 
         // Filter out already selected companions
-        this.currentResults = companions.filter(c =>
-          !this.selectedCompanions.some(sc => sc.id === c.id)
+        this.currentResults = companions.filter(
+          (c) => !this.selectedCompanions.some((sc) => sc.id === c.id)
         );
 
         this.displayResults(this.currentResults, query);
@@ -181,7 +183,7 @@ export class CompanionSelector {
       noResults.textContent = 'No companions found';
       this.dropdown.appendChild(noResults);
     } else {
-      companions.forEach(companion => {
+      companions.forEach((companion) => {
         const item = this.createDropdownItem(companion);
         this.dropdown.appendChild(item);
       });
@@ -193,7 +195,8 @@ export class CompanionSelector {
   createDropdownItem(companion) {
     const item = document.createElement('button');
     item.type = 'button';
-    item.className = 'w-full text-left cursor-pointer py-2 px-4 hover:bg-gray-100 rounded-lg focus:outline-none focus:bg-gray-100 transition-colors';
+    item.className =
+      'w-full text-left cursor-pointer py-2 px-4 hover:bg-gray-100 rounded-lg focus:outline-none focus:bg-gray-100 transition-colors';
 
     const mainInfo = document.createElement('div');
     mainInfo.innerHTML = `
@@ -243,7 +246,7 @@ export class CompanionSelector {
   }
 
   removeCompanion(companionId) {
-    this.selectedCompanions = this.selectedCompanions.filter(c => c.id !== companionId);
+    this.selectedCompanions = this.selectedCompanions.filter((c) => c.id !== companionId);
     this.updateSelectedDisplay();
     this.updateHiddenInput();
   }
@@ -251,14 +254,14 @@ export class CompanionSelector {
   updateSelectedDisplay() {
     this.selectedContainer.innerHTML = '';
 
-    this.selectedCompanions.forEach(companion => {
+    this.selectedCompanions.forEach((companion) => {
       const badge = createCompanionBadge(companion, (id) => this.removeCompanion(id));
       this.selectedContainer.appendChild(badge);
     });
   }
 
   updateHiddenInput() {
-    const companionIds = this.selectedCompanions.map(c => c.id);
+    const companionIds = this.selectedCompanions.map((c) => c.id);
     this.hiddenInput.value = JSON.stringify(companionIds);
   }
 
@@ -341,7 +344,7 @@ export class CompanionSelector {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name, email, phone })
+        body: JSON.stringify({ name, email, phone }),
       });
 
       if (response.ok) {
@@ -353,7 +356,7 @@ export class CompanionSelector {
         this.hideDropdown();
       } else {
         const errorData = await response.text();
-        alert('Failed to add companion: ' + errorData);
+        alert(`Failed to add companion: ${errorData}`);
       }
     } catch (error) {
       console.error('Error adding companion:', error);
@@ -401,69 +404,73 @@ export class CompanionManager {
 
   attachGlobalListeners() {
     // Global click handler for all companion actions
-    document.addEventListener('click', (event) => {
-      const sidebarContent = document.getElementById('secondary-sidebar-content');
-      if (!sidebarContent) return;
+    document.addEventListener(
+      'click',
+      (event) => {
+        const sidebarContent = document.getElementById('secondary-sidebar-content');
+        if (!sidebarContent) return;
 
-      // Menu toggle buttons
-      const menuBtn = event.target.closest('[data-companion-menu-btn]');
-      if (menuBtn) {
-        event.stopPropagation();
-        const companionId = menuBtn.dataset.companionMenuBtn;
-        const menu = sidebarContent.querySelector(`[data-companion-menu="${companionId}"]`);
-        if (menu) {
-          // Close other menus
-          sidebarContent.querySelectorAll('[data-companion-menu]').forEach(m => {
-            if (m !== menu) m.classList.add('hidden');
-          });
-          menu.classList.toggle('hidden');
+        // Menu toggle buttons
+        const menuBtn = event.target.closest('[data-companion-menu-btn]');
+        if (menuBtn) {
+          event.stopPropagation();
+          const companionId = menuBtn.dataset.companionMenuBtn;
+          const menu = sidebarContent.querySelector(`[data-companion-menu="${companionId}"]`);
+          if (menu) {
+            // Close other menus
+            sidebarContent.querySelectorAll('[data-companion-menu]').forEach((m) => {
+              if (m !== menu) m.classList.add('hidden');
+            });
+            menu.classList.toggle('hidden');
+          }
+          return;
         }
-        return;
-      }
 
-      // Edit button
-      const editBtn = event.target.closest('[data-companion-edit]');
-      if (editBtn) {
-        event.stopPropagation();
-        const companionId = editBtn.dataset.companionEdit;
-        this.loadEditForm(companionId);
-        return;
-      }
+        // Edit button
+        const editBtn = event.target.closest('[data-companion-edit]');
+        if (editBtn) {
+          event.stopPropagation();
+          const companionId = editBtn.dataset.companionEdit;
+          this.loadEditForm(companionId);
+          return;
+        }
 
-      // Delete button
-      const deleteBtn = event.target.closest('[data-companion-delete]');
-      if (deleteBtn) {
-        event.stopPropagation();
-        const companionId = deleteBtn.dataset.companionDelete;
-        this.deleteCompanion(companionId);
-        return;
-      }
+        // Delete button
+        const deleteBtn = event.target.closest('[data-companion-delete]');
+        if (deleteBtn) {
+          event.stopPropagation();
+          const companionId = deleteBtn.dataset.companionDelete;
+          this.deleteCompanion(companionId);
+          return;
+        }
 
-      // Unlink button
-      const unlinkBtn = event.target.closest('[data-companion-unlink]');
-      if (unlinkBtn) {
-        event.stopPropagation();
-        const companionId = unlinkBtn.dataset.companionUnlink;
-        this.unlinkCompanion(companionId);
-        return;
-      }
+        // Unlink button
+        const unlinkBtn = event.target.closest('[data-companion-unlink]');
+        if (unlinkBtn) {
+          event.stopPropagation();
+          const companionId = unlinkBtn.dataset.companionUnlink;
+          this.unlinkCompanion(companionId);
+          return;
+        }
 
-      // Permission toggle
-      const permissionCheckbox = event.target.closest('[data-companion-permission]');
-      if (permissionCheckbox) {
-        const companionId = permissionCheckbox.dataset.companionPermission;
-        this.togglePermission(companionId, permissionCheckbox.checked);
-        return;
-      }
+        // Permission toggle
+        const permissionCheckbox = event.target.closest('[data-companion-permission]');
+        if (permissionCheckbox) {
+          const companionId = permissionCheckbox.dataset.companionPermission;
+          this.togglePermission(companionId, permissionCheckbox.checked);
+          return;
+        }
 
-      // Close menus when clicking outside
-      const isMenuBtn = event.target.closest('[data-companion-menu-btn]');
-      if (!isMenuBtn && sidebarContent) {
-        sidebarContent.querySelectorAll('[data-companion-menu]').forEach(menu => {
-          menu.classList.add('hidden');
-        });
-      }
-    }, true); // Use capture phase
+        // Close menus when clicking outside
+        const isMenuBtn = event.target.closest('[data-companion-menu-btn]');
+        if (!isMenuBtn && sidebarContent) {
+          sidebarContent.querySelectorAll('[data-companion-menu]').forEach((menu) => {
+            menu.classList.add('hidden');
+          });
+        }
+      },
+      true
+    ); // Use capture phase
 
     // Form submission handler
     document.addEventListener('submit', (event) => {
@@ -498,9 +505,9 @@ export class CompanionManager {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Sidebar-Request': 'true'
+          'X-Sidebar-Request': 'true',
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       });
 
       if (!response.ok && response.status !== 400) {
@@ -530,9 +537,9 @@ export class CompanionManager {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Sidebar-Request': 'true'
+          'X-Sidebar-Request': 'true',
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       });
 
       if (!response.ok && response.status !== 400) {
@@ -549,12 +556,16 @@ export class CompanionManager {
         alert(result.error || 'Failed to add companion');
       }
     } catch (error) {
-      alert('Error adding companion: ' + error.message);
+      alert(`Error adding companion: ${error.message}`);
     }
   }
 
   async deleteCompanion(companionId) {
-    if (!confirm('Are you sure you want to delete this travel companion? This will remove them from all trips they are currently part of.')) {
+    if (
+      !confirm(
+        'Are you sure you want to delete this travel companion? This will remove them from all trips they are currently part of.'
+      )
+    ) {
       return;
     }
 
@@ -562,8 +573,8 @@ export class CompanionManager {
       const response = await fetch(`/companions/${companionId}`, {
         method: 'DELETE',
         headers: {
-          'X-Sidebar-Request': 'true'
-        }
+          'X-Sidebar-Request': 'true',
+        },
       });
 
       if (!response.ok && response.status !== 404 && response.status !== 500) {
@@ -580,12 +591,16 @@ export class CompanionManager {
         alert(data.error || 'Failed to delete companion');
       }
     } catch (error) {
-      alert('Error deleting companion: ' + error.message);
+      alert(`Error deleting companion: ${error.message}`);
     }
   }
 
   async unlinkCompanion(companionId) {
-    if (!confirm('Are you sure you want to unlink this companion\'s account? They will no longer be able to see trips you\'ve added them to until they are linked again.')) {
+    if (
+      !confirm(
+        "Are you sure you want to unlink this companion's account? They will no longer be able to see trips you've added them to until they are linked again."
+      )
+    ) {
       return;
     }
 
@@ -594,8 +609,8 @@ export class CompanionManager {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'X-Sidebar-Request': 'true'
-        }
+          'X-Sidebar-Request': 'true',
+        },
       });
 
       if (!response.ok && response.status !== 404 && response.status !== 500) {
@@ -612,7 +627,7 @@ export class CompanionManager {
         alert(data.error || 'Failed to unlink companion');
       }
     } catch (error) {
-      alert('Error unlinking companion: ' + error.message);
+      alert(`Error unlinking companion: ${error.message}`);
     }
   }
 
@@ -622,9 +637,9 @@ export class CompanionManager {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'X-Sidebar-Request': 'true'
+          'X-Sidebar-Request': 'true',
         },
-        body: JSON.stringify({ canBeAddedByOthers })
+        body: JSON.stringify({ canBeAddedByOthers }),
       });
 
       if (!response.ok && response.status !== 404 && response.status !== 500) {
@@ -640,7 +655,7 @@ export class CompanionManager {
         }
       }
     } catch (error) {
-      alert('Error updating companion permissions: ' + error.message);
+      alert(`Error updating companion permissions: ${error.message}`);
       if (typeof loadSidebarContent === 'function') {
         loadSidebarContent('/companions/sidebar');
       }
@@ -670,7 +685,7 @@ export class ItemCompanionLoader {
     console.log('ItemCompanionLoader initialized with:', {
       itemType: this.itemType,
       itemId: this.itemId,
-      tripId: this.tripId
+      tripId: this.tripId,
     });
 
     if (this.tripId) {
@@ -722,19 +737,20 @@ export class ItemCompanionLoader {
     if (!container) return;
 
     if (!companions || companions.length === 0) {
-      container.innerHTML = '<div class="text-center text-gray-500 text-sm py-2">No companions added to this item</div>';
+      container.innerHTML =
+        '<div class="text-center text-gray-500 text-sm py-2">No companions added to this item</div>';
       this.updateHiddenField([]);
       return;
     }
 
     container.innerHTML = '';
-    companions.forEach(companion => {
+    companions.forEach((companion) => {
       const badge = createCompanionBadge(companion, (id) => this.removeCompanion(id));
       badge.classList.add('companion-badge');
       container.appendChild(badge);
     });
 
-    this.updateHiddenField(companions.map(c => c.id));
+    this.updateHiddenField(companions.map((c) => c.id));
   }
 
   /**
@@ -750,17 +766,17 @@ export class ItemCompanionLoader {
       // Get current companion IDs (excluding the one being removed)
       const currentBadges = document.querySelectorAll('.companion-badge');
       const companionIds = Array.from(currentBadges)
-        .filter(b => b.dataset.companionId !== companionId)
-        .map(b => b.dataset.companionId);
+        .filter((b) => b.dataset.companionId !== companionId)
+        .map((b) => b.dataset.companionId);
 
       // For existing items, send update to server
       if (!isNewItem) {
         const response = await fetch(`/api/items/${this.itemType}/${this.itemId}/companions`, {
           method: 'PUT',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ companionIds })
+          body: JSON.stringify({ companionIds }),
         });
 
         if (!response.ok) {
@@ -777,7 +793,8 @@ export class ItemCompanionLoader {
       // Check if no companions left
       const container = document.getElementById('itemCompanions');
       if (container.children.length === 0) {
-        container.innerHTML = '<div class="text-center text-gray-500 text-sm py-2">No companions added to this item</div>';
+        container.innerHTML =
+          '<div class="text-center text-gray-500 text-sm py-2">No companions added to this item</div>';
       }
 
       this.updateHiddenField(companionIds);
@@ -796,7 +813,7 @@ export class ItemCompanionLoader {
     try {
       // Get current companion IDs
       const currentBadges = document.querySelectorAll('.companion-badge');
-      const companionIds = Array.from(currentBadges).map(b => b.dataset.companionId);
+      const companionIds = Array.from(currentBadges).map((b) => b.dataset.companionId);
       companionIds.push(companionId);
 
       // Only send to server for existing items
@@ -804,9 +821,9 @@ export class ItemCompanionLoader {
         const response = await fetch(`/api/items/${this.itemType}/${this.itemId}/companions`, {
           method: 'PUT',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ companionIds })
+          body: JSON.stringify({ companionIds }),
         });
 
         if (!response.ok) {
@@ -859,7 +876,9 @@ export class ItemCompanionLoader {
     let ids = companionIds;
 
     if (!companionIds) {
-      ids = Array.from(document.querySelectorAll('.companion-badge')).map(b => b.dataset.companionId);
+      ids = Array.from(document.querySelectorAll('.companion-badge')).map(
+        (b) => b.dataset.companionId
+      );
     }
 
     const input = document.getElementById('itemCompanionsJson');
@@ -897,33 +916,40 @@ export class ItemCompanionLoader {
           const companions = await response.json();
 
           if (!Array.isArray(companions) || companions.length === 0) {
-            searchResults.innerHTML = '<div class="px-3 py-2 text-gray-500 text-sm">No companions found</div>';
+            searchResults.innerHTML =
+              '<div class="px-3 py-2 text-gray-500 text-sm">No companions found</div>';
             searchResults.classList.remove('hidden');
             return;
           }
 
           // Filter out companions already added
           const currentBadges = document.querySelectorAll('.companion-badge');
-          const addedIds = new Set(Array.from(currentBadges).map(b => b.dataset.companionId));
-          const availableCompanions = companions.filter(c => !addedIds.has(c.id));
+          const addedIds = new Set(Array.from(currentBadges).map((b) => b.dataset.companionId));
+          const availableCompanions = companions.filter((c) => !addedIds.has(c.id));
 
           if (availableCompanions.length === 0) {
-            searchResults.innerHTML = '<div class="px-3 py-2 text-gray-500 text-sm">All matching companions are already added</div>';
+            searchResults.innerHTML =
+              '<div class="px-3 py-2 text-gray-500 text-sm">All matching companions are already added</div>';
             searchResults.classList.remove('hidden');
             return;
           }
 
-          searchResults.innerHTML = availableCompanions.map(c => `
+          searchResults.innerHTML = availableCompanions
+            .map(
+              (c) => `
             <div class="px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0" onclick="window.itemCompanionLoader.addCompanion('${c.id}', '${escapeHtml(c.name)}', '${escapeHtml(c.email)}'); return false;">
               <div class="font-medium text-gray-900 text-sm">${escapeHtml(c.name)}</div>
               <div class="text-xs text-gray-500">${escapeHtml(c.email)}</div>
             </div>
-          `).join('');
+          `
+            )
+            .join('');
 
           searchResults.classList.remove('hidden');
         } catch (error) {
           console.error('Error searching companions:', error);
-          searchResults.innerHTML = '<div class="px-3 py-2 text-red-500 text-sm">Error searching companions</div>';
+          searchResults.innerHTML =
+            '<div class="px-3 py-2 text-red-500 text-sm">Error searching companions</div>';
           searchResults.classList.remove('hidden');
         }
       }, 300);
@@ -1000,31 +1026,31 @@ if (typeof window !== 'undefined') {
   window.initializeItemCompanions = initializeItemCompanions;
 
   // Legacy function names for backward compatibility
-  window.unlinkCompanionAccount = function(companionId) {
+  window.unlinkCompanionAccount = function (companionId) {
     if (window.companionManagerInstance) {
       window.companionManagerInstance.unlinkCompanion(companionId);
     }
   };
 
-  window.deleteCompanionSidebar = function(companionId) {
+  window.deleteCompanionSidebar = function (companionId) {
     if (window.companionManagerInstance) {
       window.companionManagerInstance.deleteCompanion(companionId);
     }
   };
 
-  window.toggleCompanionPermission = function(companionId, canBeAddedByOthers) {
+  window.toggleCompanionPermission = function (companionId, canBeAddedByOthers) {
     if (window.companionManagerInstance) {
       window.companionManagerInstance.togglePermission(companionId, canBeAddedByOthers);
     }
   };
 
-  window.removeCompanionFromItem = function(companionId) {
+  window.removeCompanionFromItem = function (companionId) {
     if (window.itemCompanionLoader) {
       window.itemCompanionLoader.removeCompanion(companionId);
     }
   };
 
-  window.addCompanionToItem = function(companionId, companionName, companionEmail) {
+  window.addCompanionToItem = function (companionId, companionName, companionEmail) {
     if (window.itemCompanionLoader) {
       window.itemCompanionLoader.addCompanion(companionId, companionName, companionEmail);
     }

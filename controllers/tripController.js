@@ -1,9 +1,23 @@
-const { Trip, Flight, Hotel, Transportation, CarRental, Event, TravelCompanion, TripCompanion, User, CompanionRelationship, TripInvitation, Notification, ItemCompanion } = require('../models');
+const { Op } = require('sequelize');
+const {
+  Trip,
+  Flight,
+  Hotel,
+  Transportation,
+  CarRental,
+  Event,
+  TravelCompanion,
+  TripCompanion,
+  User,
+  CompanionRelationship,
+  TripInvitation,
+  Notification,
+  ItemCompanion,
+} = require('../models');
 const logger = require('../utils/logger');
 const airportService = require('../services/airportService');
 const { formatInTimezone } = require('../utils/timezoneHelper');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
-const { Op } = require('sequelize');
 
 exports.listTrips = async (req, res, options = {}) => {
   try {
@@ -50,19 +64,19 @@ exports.listTrips = async (req, res, options = {}) => {
               {
                 model: User,
                 as: 'linkedAccount',
-                attributes: ['id', 'firstName', 'lastName']
-              }
-            ]
-          }
-        ]
-      }
+                attributes: ['id', 'firstName', 'lastName'],
+              },
+            ],
+          },
+        ],
+      },
     ];
 
     // Get trips the user owns (with pagination for past trips)
     const ownedTripsQuery = {
       where: { userId: req.user.id, ...dateFilter },
       order: [['departureDate', orderDirection]],
-      include: tripIncludes
+      include: tripIncludes,
     };
 
     // Add pagination only for past trips tab
@@ -77,7 +91,7 @@ exports.listTrips = async (req, res, options = {}) => {
     let totalPastTrips = 0;
     if (activeTab === 'past') {
       totalPastTrips = await Trip.count({
-        where: { userId: req.user.id, ...dateFilter }
+        where: { userId: req.user.id, ...dateFilter },
       });
     }
 
@@ -99,14 +113,14 @@ exports.listTrips = async (req, res, options = {}) => {
                 {
                   model: User,
                   as: 'linkedAccount',
-                  attributes: ['id', 'firstName', 'lastName']
-                }
-              ]
-            }
-          ]
-        }
+                  attributes: ['id', 'firstName', 'lastName'],
+                },
+              ],
+            },
+          ],
+        },
       ],
-      order: [['departureDate', orderDirection]]
+      order: [['departureDate', orderDirection]],
     };
 
     // Add pagination for past companion trips
@@ -119,8 +133,8 @@ exports.listTrips = async (req, res, options = {}) => {
 
     // Combine and deduplicate trips
     const allTrips = [...ownedTrips, ...companionTrips];
-    const uniqueTrips = allTrips.filter((trip, index, self) =>
-      index === self.findIndex(t => t.id === trip.id)
+    const uniqueTrips = allTrips.filter(
+      (trip, index, self) => index === self.findIndex((t) => t.id === trip.id)
     );
 
     // Get standalone items (not attached to any trip) - only for upcoming tab
@@ -131,17 +145,17 @@ exports.listTrips = async (req, res, options = {}) => {
     if (activeTab === 'upcoming' || activeTab === 'all') {
       standaloneFlights = await Flight.findAll({
         where: { userId: req.user.id, tripId: null },
-        order: [['departureDateTime', 'ASC']]
+        order: [['departureDateTime', 'ASC']],
       });
 
       standaloneTransportation = await Transportation.findAll({
         where: { userId: req.user.id, tripId: null },
-        order: [['departureDateTime', 'ASC']]
+        order: [['departureDateTime', 'ASC']],
       });
 
       standaloneEvents = await Event.findAll({
         where: { userId: req.user.id, tripId: null },
-        order: [['startDateTime', 'ASC']]
+        order: [['startDateTime', 'ASC']],
       });
     }
 
@@ -151,16 +165,16 @@ exports.listTrips = async (req, res, options = {}) => {
       pendingInvitations = await TripInvitation.findAll({
         where: {
           invitedUserId: req.user.id,
-          status: 'pending'
+          status: 'pending',
         },
         include: [
           {
             model: Trip,
             as: 'trip',
-            include: tripIncludes
-          }
+            include: tripIncludes,
+          },
         ],
-        order: [['createdAt', 'DESC']]
+        order: [['createdAt', 'DESC']],
       });
     }
 
@@ -172,7 +186,7 @@ exports.listTrips = async (req, res, options = {}) => {
       totalTrips: totalPastTrips,
       hasNextPage: page < totalPages,
       hasPrevPage: page > 1,
-      limit
+      limit,
     };
 
     const renderData = {
@@ -189,7 +203,7 @@ exports.listTrips = async (req, res, options = {}) => {
       openCompanionsSidebar: options.openCompanionsSidebar || false,
       showSettingsTab: options.showSettingsTab || false,
       activeTab,
-      pagination
+      pagination,
     };
 
     res.render('trips/dashboard', renderData);
@@ -200,10 +214,10 @@ exports.listTrips = async (req, res, options = {}) => {
   }
 };
 
-
 exports.createTrip = async (req, res) => {
   try {
-    const { name, departureDate, returnDate, companions, purpose, defaultCompanionEditPermission } = req.body;
+    const { name, departureDate, returnDate, companions, purpose, defaultCompanionEditPermission } =
+      req.body;
 
     // Create the trip
     const trip = await Trip.create({
@@ -212,13 +226,13 @@ exports.createTrip = async (req, res) => {
       departureDate,
       returnDate,
       purpose,
-      defaultCompanionEditPermission: !!defaultCompanionEditPermission
+      defaultCompanionEditPermission: !!defaultCompanionEditPermission,
     });
 
     // Ensure trip owner is added as a trip companion
     // Get or create a TravelCompanion record for the trip owner
     let ownerCompanion = await TravelCompanion.findOne({
-      where: { userId: req.user.id }
+      where: { userId: req.user.id },
     });
 
     if (!ownerCompanion) {
@@ -228,7 +242,7 @@ exports.createTrip = async (req, res) => {
         email: req.user.email,
         userId: req.user.id,
         createdBy: req.user.id,
-        canBeAddedByOthers: true
+        canBeAddedByOthers: true,
       });
     }
 
@@ -280,7 +294,7 @@ exports.createTrip = async (req, res) => {
 
           await TripCompanion.create({
             tripId: trip.id,
-            companionId: companionId,
+            companionId,
             canEdit,
             canAddItems,
             permissionSource,
@@ -348,36 +362,36 @@ exports.viewTrip = async (req, res) => {
                 {
                   model: User,
                   as: 'linkedAccount',
-                  attributes: ['id', 'firstName', 'lastName', 'email']
-                }
-              ]
-            }
-          ]
-        }
-      ]
+                  attributes: ['id', 'firstName', 'lastName', 'email'],
+                },
+              ],
+            },
+          ],
+        },
+      ],
     });
 
     // Fetch all item companions for this trip's items
     if (trip) {
       const allItemIds = [
-        ...trip.flights.map(f => f.id),
-        ...trip.hotels.map(h => h.id),
-        ...trip.transportation.map(t => t.id),
-        ...trip.carRentals.map(c => c.id),
-        ...trip.events.map(e => e.id)
+        ...trip.flights.map((f) => f.id),
+        ...trip.hotels.map((h) => h.id),
+        ...trip.transportation.map((t) => t.id),
+        ...trip.carRentals.map((c) => c.id),
+        ...trip.events.map((e) => e.id),
       ];
 
       const itemCompanions = await ItemCompanion.findAll({
         where: {
-          itemId: allItemIds
+          itemId: allItemIds,
         },
         include: [
           {
             model: TravelCompanion,
             as: 'companion',
-            attributes: ['id', 'name', 'email']
-          }
-        ]
+            attributes: ['id', 'name', 'email'],
+          },
+        ],
       });
 
       trip.itemCompanions = itemCompanions;
@@ -390,9 +404,7 @@ exports.viewTrip = async (req, res) => {
 
     // Check if user has permission to view this trip
     const isOwner = trip.userId === req.user.id;
-    const companionRecord = trip.tripCompanions?.find(tc =>
-      tc.companion.userId === req.user.id
-    );
+    const companionRecord = trip.tripCompanions?.find((tc) => tc.companion.userId === req.user.id);
 
     if (!isOwner && !companionRecord) {
       req.flash('error_msg', 'You do not have permission to view this trip');
@@ -404,12 +416,12 @@ exports.viewTrip = async (req, res) => {
 
     // Get current user's travel companion profile (if they're a companion)
     let userCompanionId = null;
-    let userItemCompanions = {};
+    const userItemCompanions = {};
 
     if (!isOwner && companionRecord) {
       // User is a companion on this trip - use their companion profile
       const userCompanionProfile = await TravelCompanion.findOne({
-        where: { userId: req.user.id }
+        where: { userId: req.user.id },
       });
       if (userCompanionProfile) {
         userCompanionId = userCompanionProfile.id;
@@ -417,7 +429,7 @@ exports.viewTrip = async (req, res) => {
     } else if (isOwner) {
       // Trip owner should also check if they have a companion profile
       const ownerCompanionProfile = await TravelCompanion.findOne({
-        where: { userId: req.user.id }
+        where: { userId: req.user.id },
       });
       if (ownerCompanionProfile) {
         userCompanionId = ownerCompanionProfile.id;
@@ -427,11 +439,11 @@ exports.viewTrip = async (req, res) => {
     // Get item companions data for the current user
     if (userCompanionId) {
       const itemCompanions = await ItemCompanion.findAll({
-        where: { companionId: userCompanionId }
+        where: { companionId: userCompanionId },
       });
 
       // Create a map of itemId -> itemType for quick lookup
-      itemCompanions.forEach(ic => {
+      itemCompanions.forEach((ic) => {
         const key = `${ic.itemType}_${ic.itemId}`;
         userItemCompanions[key] = true;
       });
@@ -465,7 +477,7 @@ exports.viewTrip = async (req, res) => {
       formatInTimezone,
       userItemCompanions, // Pass item companions data to view
       userCompanionId, // Pass user's companion ID for reference
-      tripStatus
+      tripStatus,
     });
   } catch (error) {
     logger.error(error);
@@ -490,13 +502,13 @@ exports.getEditTrip = async (req, res) => {
                 {
                   model: User,
                   as: 'linkedAccount',
-                  attributes: ['id', 'firstName', 'lastName', 'email']
-                }
-              ]
-            }
-          ]
-        }
-      ]
+                  attributes: ['id', 'firstName', 'lastName', 'email'],
+                },
+              ],
+            },
+          ],
+        },
+      ],
     });
 
     if (!trip) {
@@ -528,13 +540,13 @@ exports.getEditTripSidebar = async (req, res) => {
                 {
                   model: User,
                   as: 'linkedAccount',
-                  attributes: ['id', 'firstName', 'lastName', 'email']
-                }
-              ]
-            }
-          ]
-        }
-      ]
+                  attributes: ['id', 'firstName', 'lastName', 'email'],
+                },
+              ],
+            },
+          ],
+        },
+      ],
     });
 
     if (!trip) {
@@ -544,7 +556,7 @@ exports.getEditTripSidebar = async (req, res) => {
     res.render('trips/edit', {
       title: 'Edit Trip',
       trip,
-      layout: false  // Don't use main layout, just render the content
+      layout: false, // Don't use main layout, just render the content
     });
   } catch (error) {
     logger.error(error);
@@ -554,10 +566,18 @@ exports.getEditTripSidebar = async (req, res) => {
 
 exports.updateTrip = async (req, res) => {
   try {
-    const { name, departureDate, returnDate, companions, companionPermissions, purpose, defaultCompanionEditPermission } = req.body;
+    const {
+      name,
+      departureDate,
+      returnDate,
+      companions,
+      companionPermissions,
+      purpose,
+      defaultCompanionEditPermission,
+    } = req.body;
 
     const trip = await Trip.findOne({
-      where: { id: req.params.id, userId: req.user.id }
+      where: { id: req.params.id, userId: req.user.id },
     });
 
     if (!trip) {
@@ -571,12 +591,12 @@ exports.updateTrip = async (req, res) => {
       departureDate,
       returnDate,
       purpose,
-      defaultCompanionEditPermission: !!defaultCompanionEditPermission
+      defaultCompanionEditPermission: !!defaultCompanionEditPermission,
     });
 
     // Get existing companions
     const existingCompanions = await TripCompanion.findAll({
-      where: { tripId: trip.id }
+      where: { tripId: trip.id },
     });
 
     // Parse companions and permissions
@@ -585,22 +605,25 @@ exports.updateTrip = async (req, res) => {
     try {
       companionIds = typeof companions === 'string' ? JSON.parse(companions) : companions;
       if (companionPermissions) {
-        permissionsMap = typeof companionPermissions === 'string' ? JSON.parse(companionPermissions) : companionPermissions;
+        permissionsMap =
+          typeof companionPermissions === 'string'
+            ? JSON.parse(companionPermissions)
+            : companionPermissions;
       }
     } catch (e) {
       companionIds = Array.isArray(companions) ? companions : [];
     }
 
     // Identify companions to remove
-    const existingIds = existingCompanions.map(c => c.companionId);
-    const toRemove = existingIds.filter(id => !companionIds.includes(id));
-    const toAdd = companionIds.filter(id => !existingIds.includes(id));
+    const existingIds = existingCompanions.map((c) => c.companionId);
+    const toRemove = existingIds.filter((id) => !companionIds.includes(id));
+    const toAdd = companionIds.filter((id) => !existingIds.includes(id));
 
     // Remove companions that were deleted
     if (toRemove.length > 0) {
       for (const companionId of toRemove) {
         await TripCompanion.destroy({
-          where: { tripId: trip.id, companionId }
+          where: { tripId: trip.id, companionId },
         });
       }
     }
@@ -613,7 +636,7 @@ exports.updateTrip = async (req, res) => {
 
         let canEdit = !!defaultCompanionEditPermission;
         let canAddItems = false;
-        let permissionSource = existingTripCompanion.permissionSource;
+        let { permissionSource } = existingTripCompanion;
 
         // Check if explicit permission override exists
         if (permissionsMap[existingTripCompanion.companionId] !== undefined) {
@@ -677,7 +700,7 @@ exports.updateTrip = async (req, res) => {
 
         await TripCompanion.create({
           tripId: trip.id,
-          companionId: companionId,
+          companionId,
           canEdit,
           canAddItems,
           permissionSource,
@@ -733,7 +756,7 @@ exports.updateTrip = async (req, res) => {
 exports.deleteTrip = async (req, res) => {
   try {
     const trip = await Trip.findOne({
-      where: { id: req.params.id, userId: req.user.id }
+      where: { id: req.params.id, userId: req.user.id },
     });
 
     if (!trip) {
@@ -760,8 +783,8 @@ exports.getMapView = async (req, res) => {
         { model: Hotel, as: 'hotels' },
         { model: Transportation, as: 'transportation' },
         { model: CarRental, as: 'carRentals' },
-        { model: Event, as: 'events' }
-      ]
+        { model: Event, as: 'events' },
+      ],
     });
 
     if (!trip) {
@@ -788,10 +811,10 @@ exports.removeSelfFromTrip = async (req, res) => {
         {
           model: TravelCompanion,
           as: 'companion',
-          where: { userId: userId }
-        }
+          where: { userId },
+        },
       ],
-      where: { tripId: tripId }
+      where: { tripId },
     });
 
     if (!companionRecord) {
@@ -817,8 +840,8 @@ exports.getTripDataJson = async (req, res) => {
         { model: Hotel, as: 'hotels', order: [['checkInDateTime', 'ASC']] },
         { model: Transportation, as: 'transportation', order: [['departureDateTime', 'ASC']] },
         { model: CarRental, as: 'carRentals', order: [['pickupDateTime', 'ASC']] },
-        { model: Event, as: 'events', order: [['startDateTime', 'ASC']] }
-      ]
+        { model: Event, as: 'events', order: [['startDateTime', 'ASC']] },
+      ],
     });
 
     if (!trip) {
@@ -832,15 +855,19 @@ exports.getTripDataJson = async (req, res) => {
       // Check if user is a companion
       const tripWithCompanions = await Trip.findOne({
         where: { id: req.params.id },
-        include: [{
-          model: TripCompanion,
-          as: 'tripCompanions',
-          include: [{
-            model: TravelCompanion,
-            as: 'companion',
-            where: { userId: req.user.id }
-          }]
-        }]
+        include: [
+          {
+            model: TripCompanion,
+            as: 'tripCompanions',
+            include: [
+              {
+                model: TravelCompanion,
+                as: 'companion',
+                where: { userId: req.user.id },
+              },
+            ],
+          },
+        ],
       });
 
       if (!tripWithCompanions?.tripCompanions?.length) {
@@ -857,7 +884,7 @@ exports.getTripDataJson = async (req, res) => {
       hotels: trip.hotels,
       transportation: trip.transportation,
       carRentals: trip.carRentals,
-      events: trip.events
+      events: trip.events,
     });
   } catch (error) {
     logger.error('Error fetching trip data:', error);
@@ -874,8 +901,8 @@ exports.getTripSidebarHtml = async (req, res) => {
         { model: Hotel, as: 'hotels', order: [['checkInDateTime', 'ASC']] },
         { model: Transportation, as: 'transportation', order: [['departureDateTime', 'ASC']] },
         { model: CarRental, as: 'carRentals', order: [['pickupDateTime', 'ASC']] },
-        { model: Event, as: 'events', order: [['startDateTime', 'ASC']] }
-      ]
+        { model: Event, as: 'events', order: [['startDateTime', 'ASC']] },
+      ],
     });
 
     if (!trip) {
@@ -884,24 +911,24 @@ exports.getTripSidebarHtml = async (req, res) => {
 
     // Fetch all item companions for this trip's items
     const allItemIds = [
-      ...trip.flights.map(f => f.id),
-      ...trip.hotels.map(h => h.id),
-      ...trip.transportation.map(t => t.id),
-      ...trip.carRentals.map(c => c.id),
-      ...trip.events.map(e => e.id)
+      ...trip.flights.map((f) => f.id),
+      ...trip.hotels.map((h) => h.id),
+      ...trip.transportation.map((t) => t.id),
+      ...trip.carRentals.map((c) => c.id),
+      ...trip.events.map((e) => e.id),
     ];
 
     const allItemCompanions = await ItemCompanion.findAll({
       where: {
-        itemId: allItemIds
+        itemId: allItemIds,
       },
       include: [
         {
           model: TravelCompanion,
           as: 'companion',
-          attributes: ['id', 'name', 'email']
-        }
-      ]
+          attributes: ['id', 'name', 'email'],
+        },
+      ],
     });
 
     trip.itemCompanions = allItemCompanions;
@@ -913,15 +940,19 @@ exports.getTripSidebarHtml = async (req, res) => {
       // Check if user is a companion
       const tripWithCompanions = await Trip.findOne({
         where: { id: req.params.id },
-        include: [{
-          model: TripCompanion,
-          as: 'tripCompanions',
-          include: [{
-            model: TravelCompanion,
-            as: 'companion',
-            where: { userId: req.user.id }
-          }]
-        }]
+        include: [
+          {
+            model: TripCompanion,
+            as: 'tripCompanions',
+            include: [
+              {
+                model: TravelCompanion,
+                as: 'companion',
+                where: { userId: req.user.id },
+              },
+            ],
+          },
+        ],
       });
 
       if (!tripWithCompanions?.tripCompanions?.length) {
@@ -931,12 +962,12 @@ exports.getTripSidebarHtml = async (req, res) => {
 
     // Get current user's travel companion profile and item companions
     let userCompanionId = null;
-    let userItemCompanions = {};
+    const userItemCompanions = {};
 
     if (!isOwner) {
       // User is a companion on this trip - use their companion profile
       const userCompanionProfile = await TravelCompanion.findOne({
-        where: { userId: req.user.id }
+        where: { userId: req.user.id },
       });
       if (userCompanionProfile) {
         userCompanionId = userCompanionProfile.id;
@@ -944,7 +975,7 @@ exports.getTripSidebarHtml = async (req, res) => {
     } else {
       // Trip owner should also check if they have a companion profile
       const ownerCompanionProfile = await TravelCompanion.findOne({
-        where: { userId: req.user.id }
+        where: { userId: req.user.id },
       });
       if (ownerCompanionProfile) {
         userCompanionId = ownerCompanionProfile.id;
@@ -954,11 +985,11 @@ exports.getTripSidebarHtml = async (req, res) => {
     // Get item companions data for the current user
     if (userCompanionId) {
       const itemCompanions = await ItemCompanion.findAll({
-        where: { companionId: userCompanionId }
+        where: { companionId: userCompanionId },
       });
 
       // Create a map of itemId -> itemType for quick lookup
-      itemCompanions.forEach(ic => {
+      itemCompanions.forEach((ic) => {
         const key = `${ic.itemType}_${ic.itemId}`;
         userItemCompanions[key] = true;
       });
@@ -981,14 +1012,17 @@ exports.getTripSidebarHtml = async (req, res) => {
     }
 
     // Extract global marker assignments from query params
-    let globalMarkerAssignments = {};
+    const globalMarkerAssignments = {};
     if (req.query.marker) {
       // marker can be a single value or an array of values
       const markerParams = Array.isArray(req.query.marker) ? req.query.marker : [req.query.marker];
-      markerParams.forEach(markerStr => {
+      markerParams.forEach((markerStr) => {
         const [key, value] = markerStr.split('=');
         if (key && value) {
-          globalMarkerAssignments[decodeURIComponent(key)] = parseInt(decodeURIComponent(value), 10);
+          globalMarkerAssignments[decodeURIComponent(key)] = parseInt(
+            decodeURIComponent(value),
+            10
+          );
         }
       });
     }
@@ -1001,7 +1035,7 @@ exports.getTripSidebarHtml = async (req, res) => {
       userItemCompanions,
       userCompanionId,
       tripStatus,
-      globalMarkerAssignments
+      globalMarkerAssignments,
     });
   } catch (error) {
     logger.error('Error fetching sidebar HTML:', error);

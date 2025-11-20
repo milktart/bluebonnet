@@ -315,9 +315,7 @@ describe('TripService', () => {
 
   describe('getStandaloneItems', () => {
     it('should get standalone flights and events', async () => {
-      const mockFlights = [
-        testHelpers.createTestFlight(null, { id: 'flight-1' }),
-      ];
+      const mockFlights = [testHelpers.createTestFlight(null, { id: 'flight-1' })];
       const mockEvents = [{ id: 'event-1', name: 'Concert' }];
 
       Flight.findAll = jest.fn().mockResolvedValue(mockFlights);

@@ -8,7 +8,7 @@ const {
   redirectAfterSuccess,
   redirectAfterError,
   verifyResourceOwnershipViaTrip,
-  convertToUTC
+  convertToUTC,
 } = require('./helpers/resourceController');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 
@@ -26,7 +26,7 @@ exports.createHotel = async (req, res) => {
       timezone,
       confirmationNumber,
       roomNumber,
-      companions
+      companions,
     } = req.body;
 
     // Verify trip ownership
@@ -51,7 +51,10 @@ exports.createHotel = async (req, res) => {
     if (!finalTimezone && coords?.lat && coords?.lng) {
       const { geocodingService } = require('../services/geocodingService');
       try {
-        finalTimezone = await require('../services/geocodingService').inferTimezone(coords.lat, coords.lng);
+        finalTimezone = await require('../services/geocodingService').inferTimezone(
+          coords.lat,
+          coords.lng
+        );
       } catch (error) {
         logger.error('Error inferring timezone:', error);
         finalTimezone = 'UTC';
@@ -71,7 +74,7 @@ exports.createHotel = async (req, res) => {
       lng: coords?.lng,
       confirmationNumber,
       roomNumber,
-      userId: req.user.id
+      userId: req.user.id,
     });
 
     // Add companions to this hotel
@@ -138,12 +141,12 @@ exports.updateHotel = async (req, res) => {
       checkOutTime,
       timezone,
       confirmationNumber,
-      roomNumber
+      roomNumber,
     } = req.body;
 
     // Find hotel with trip
     const hotel = await Hotel.findByPk(req.params.id, {
-      include: [{ model: Trip, as: 'trip' }]
+      include: [{ model: Trip, as: 'trip' }],
     });
 
     // Verify ownership
@@ -160,17 +163,19 @@ exports.updateHotel = async (req, res) => {
     const checkOutDateTime = `${checkOutDate}T${checkOutTime}`;
 
     // Geocode address if changed
-    const coords = await geocodeIfChanged(
-      address,
-      hotel.address,
-      { lat: hotel.lat, lng: hotel.lng }
-    );
+    const coords = await geocodeIfChanged(address, hotel.address, {
+      lat: hotel.lat,
+      lng: hotel.lng,
+    });
 
     // Infer timezone from location if not provided
     let finalTimezone = timezone;
     if (!finalTimezone && coords?.lat && coords?.lng) {
       try {
-        finalTimezone = await require('../services/geocodingService').inferTimezone(coords.lat, coords.lng);
+        finalTimezone = await require('../services/geocodingService').inferTimezone(
+          coords.lat,
+          coords.lng
+        );
       } catch (error) {
         logger.error('Error inferring timezone:', error);
         finalTimezone = hotel.timezone || 'UTC';
@@ -188,7 +193,7 @@ exports.updateHotel = async (req, res) => {
       lat: coords?.lat,
       lng: coords?.lng,
       confirmationNumber,
-      roomNumber
+      roomNumber,
     });
 
     // Check if this is an async request
@@ -213,7 +218,7 @@ exports.deleteHotel = async (req, res) => {
   try {
     // Find hotel with trip
     const hotel = await Hotel.findByPk(req.params.id, {
-      include: [{ model: Trip, as: 'trip' }]
+      include: [{ model: Trip, as: 'trip' }],
     });
 
     // Verify ownership
@@ -225,7 +230,7 @@ exports.deleteHotel = async (req, res) => {
       return redirectAfterError(res, req, null, 'Hotel not found');
     }
 
-    const tripId = hotel.tripId;
+    const { tripId } = hotel;
     const hotelData = hotel.get({ plain: true });
 
     // Store the deleted hotel in session for potential restoration
@@ -307,18 +312,18 @@ exports.getAddForm = async (req, res) => {
 
       formData = {
         checkInDate,
-        checkInTime: '14:00',  // Default check-in time at 2 PM
+        checkInTime: '14:00', // Default check-in time at 2 PM
         checkOutDate,
-        checkOutTime: '11:00'  // Default check-out time at 11 AM
+        checkOutTime: '11:00', // Default check-out time at 11 AM
       };
     }
 
     // Render form partial for sidebar (not modal)
     res.render('partials/hotel-form', {
-      tripId: tripId,
+      tripId,
       isEditing: false,
       data: formData,
-      isModal: false  // This tells the partial to render for sidebar
+      isModal: false, // This tells the partial to render for sidebar
     });
   } catch (error) {
     logger.error('Error fetching add form:', error);
@@ -333,7 +338,7 @@ exports.getEditForm = async (req, res) => {
 
     // Fetch the hotel
     const hotel = await Hotel.findByPk(id, {
-      include: [{ model: Trip, as: 'trip', required: false }]
+      include: [{ model: Trip, as: 'trip', required: false }],
     });
 
     // Verify ownership
@@ -360,9 +365,9 @@ exports.getEditForm = async (req, res) => {
         checkInDate,
         checkInTime,
         checkOutDate,
-        checkOutTime
+        checkOutTime,
       },
-      isModal: false  // This tells the partial to render for sidebar
+      isModal: false, // This tells the partial to render for sidebar
     });
   } catch (error) {
     logger.error('Error fetching edit form:', error);

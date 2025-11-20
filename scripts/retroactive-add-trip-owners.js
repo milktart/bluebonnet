@@ -25,9 +25,9 @@ async function runMigration() {
         {
           model: db.User,
           as: 'user',
-          attributes: ['id', 'firstName', 'lastName', 'email']
-        }
-      ]
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
+      ],
     });
 
     console.log(`Found ${trips.length} trips to process\n`);
@@ -40,17 +40,19 @@ async function runMigration() {
 
       // Check if trip owner already has a TravelCompanion record
       let ownerCompanion = await db.TravelCompanion.findOne({
-        where: { userId: trip.user.id }
+        where: { userId: trip.user.id },
       });
 
       if (!ownerCompanion) {
-        console.log(`  - Creating TravelCompanion for trip owner ${trip.user.firstName} ${trip.user.lastName}`);
+        console.log(
+          `  - Creating TravelCompanion for trip owner ${trip.user.firstName} ${trip.user.lastName}`
+        );
         ownerCompanion = await db.TravelCompanion.create({
           name: `${trip.user.firstName} ${trip.user.lastName}`,
           email: trip.user.email,
           userId: trip.user.id,
           createdBy: trip.user.id,
-          canBeAddedByOthers: true
+          canBeAddedByOthers: true,
         });
       } else {
         console.log(`  - TravelCompanion already exists for trip owner`);
@@ -60,8 +62,8 @@ async function runMigration() {
       const tripCompanionLink = await db.TripCompanion.findOne({
         where: {
           tripId: trip.id,
-          companionId: ownerCompanion.id
-        }
+          companionId: ownerCompanion.id,
+        },
       });
 
       if (!tripCompanionLink) {
@@ -72,7 +74,7 @@ async function runMigration() {
           canEdit: true,
           canAddItems: true,
           permissionSource: 'owner',
-          addedBy: trip.user.id
+          addedBy: trip.user.id,
         });
       } else {
         console.log(`  - TripCompanion link already exists`);
@@ -86,11 +88,11 @@ async function runMigration() {
       const events = await db.Event.findAll({ where: { tripId: trip.id } });
 
       const items = [
-        ...flights.map(f => ({ type: 'flight', id: f.id })),
-        ...hotels.map(h => ({ type: 'hotel', id: h.id })),
-        ...transportation.map(t => ({ type: 'transportation', id: t.id })),
-        ...carRentals.map(cr => ({ type: 'car_rental', id: cr.id })),
-        ...events.map(e => ({ type: 'event', id: e.id }))
+        ...flights.map((f) => ({ type: 'flight', id: f.id })),
+        ...hotels.map((h) => ({ type: 'hotel', id: h.id })),
+        ...transportation.map((t) => ({ type: 'transportation', id: t.id })),
+        ...carRentals.map((cr) => ({ type: 'car_rental', id: cr.id })),
+        ...events.map((e) => ({ type: 'event', id: e.id })),
       ];
 
       console.log(`  - Found ${items.length} items in this trip`);
@@ -101,8 +103,8 @@ async function runMigration() {
           where: {
             itemType: item.type,
             itemId: item.id,
-            companionId: ownerCompanion.id
-          }
+            companionId: ownerCompanion.id,
+          },
         });
 
         if (!existingCompanion) {
@@ -112,7 +114,7 @@ async function runMigration() {
             companionId: ownerCompanion.id,
             status: 'attending',
             addedBy: trip.user.id,
-            inheritedFromTrip: true
+            inheritedFromTrip: true,
           });
           totalCompanionsAdded++;
         }
@@ -120,7 +122,9 @@ async function runMigration() {
         totalItemsProcessed++;
       }
 
-      console.log(`  ✓ Processed ${items.length} items, added ${items.length > 0 ? items.filter(() => totalCompanionsAdded > 0).length : 0} new companion links\n`);
+      console.log(
+        `  ✓ Processed ${items.length} items, added ${items.length > 0 ? items.filter(() => totalCompanionsAdded > 0).length : 0} new companion links\n`
+      );
     }
 
     console.log('\n=== Migration Summary ===');

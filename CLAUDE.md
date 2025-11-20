@@ -23,22 +23,32 @@ npm start
 
 **Docker Compose (recommended for fresh setups):**
 ```bash
-docker-compose up
+docker-compose up --build
 ```
 - App accessible at http://localhost:3500
 - PostgreSQL at localhost:5432
-- Database automatically syncs on startup
+- Redis at localhost:6379
+- **Database automatically initializes on first run** (creates tables and seeds airports)
 - Volume mounts allow hot-reload during development
+- No manual setup required - everything is automated via `docker-entrypoint.sh`
 
 ### Database Operations
 
-**Run database migrations (sync schema):**
-```bash
-npm run migrate
-```
-Uses Sequelize's `sync({alter: true})` to update schema without data loss.
+**Docker (automatic):**
+When using Docker Compose, the `docker-entrypoint.sh` script automatically:
+1. Waits for PostgreSQL to be ready
+2. Checks if database needs initialization
+3. Creates all tables via `db:sync` if needed
+4. Seeds airport data if the airports table is empty
+5. Starts the application
 
-**Note:** The application automatically runs `db.sequelize.sync({ alter: true })` on startup (see server.js:84), so manual migration is rarely needed. However, some custom constraints are applied post-sync (e.g., making `events.tripId` nullable - see server.js:87-95).
+**Local development (manual):**
+```bash
+npm run db:sync          # Create/update database tables
+npm run db:seed-airports # Seed airport data from data/airports.json
+```
+
+Uses Sequelize's `sync({alter: true})` to update schema without data loss.
 
 ### Styling
 
@@ -113,16 +123,22 @@ Database connection configured in `config/database.js`:
 **Geocoding Service** (`services/geocodingService.js`):
 - Uses OpenStreetMap's Nominatim API for location-to-coordinates conversion
 - In-memory cache to reduce API calls and improve performance
-- Rate limiting: 1 second between requests to respect API usage policies
+- Rate limiting: 1 second between requests (configurable via `GEOCODING_RATE_LIMIT`)
 - No API key required (free service)
 - Used for map features to display locations
+- Configuration via environment variables:
+  - `NOMINATIM_BASE_URL` - API base URL (default: https://nominatim.openstreetmap.org)
+  - `GEOCODING_TIMEOUT` - Request timeout in ms (default: 10000)
+  - `GEOCODING_RATE_LIMIT` - Minimum ms between requests (default: 1000)
 
 **Airport/Airline Service** (`services/airportService.js`):
-- Local data service using JSON files (`data/airports.json`, `data/airlines.json`)
-- Provides airport lookup by IATA code
-- Airline lookup and flight number parsing
-- Search functionality for airports by name/city
+- Local data service using PostgreSQL database and JSON files
+- Airports automatically seeded from `data/airports.json` on first container startup
+- Airlines loaded from `data/airlines.json` (static data)
+- Provides airport lookup by IATA code with Redis caching
+- Search functionality for airports by name/city/code
 - No external API required - all data is local
+- Cache automatically cleared when airports are seeded
 
 ### Key Data Flow
 
@@ -169,14 +185,16 @@ The application includes a travel companions feature that allows users to:
 
 ## Important Notes
 
-- **Database sync on startup**: Server automatically runs `alter: true` sync, which modifies tables to match models without dropping data
+- **Database initialization**: Docker containers automatically initialize database on first run via `docker-entrypoint.sh`
 - **Port configuration**: Default 3000 (local) or 3500 (Docker), configurable via PORT env var
 - **Timezone handling**: All dates stored in GMT-0 to ensure consistent time handling across timezones
 - **Flash messages**: Available in all views via `res.locals` (success_msg, error_msg, error)
 - **Static files**: Served from `public/` directory
 - **Method override**: Supports `_method` query parameter for PUT/DELETE in forms
+- **Logging**: All server-side code uses Winston logger (no console.log statements)
+- **Constants**: Time calculations use centralized constants from `utils/constants.js`
 - **Client-side features** (`public/js/`):
-  - `map.js`: Interactive maps using geocoding service to display locations
+  - `maps.js`: Consolidated map implementation (replaces old map.js, trip-map.js files)
   - `calendar.js`: Date picker and calendar functionality for trip planning
   - `datetime-formatter.js`: Timezone-aware date/time formatting
   - `main.js`: General UI interactions and form handling
@@ -185,12 +203,17 @@ The application includes a travel companions feature that allows users to:
 
 Required variables in `.env`:
 - `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` - PostgreSQL connection
-- `SESSION_SECRET` - Express session secret
+- `SESSION_SECRET` - Express session secret (strong random value in production)
 - `NODE_ENV` - Environment mode (development/production)
 
 Optional variables:
 - `PORT` - Server port (defaults to 3000)
-- `AVIATIONSTACK_API_KEY` - Flight lookup API key (app works without it, uses local data)
+- `NOMINATIM_BASE_URL` - Geocoding API URL (defaults to OpenStreetMap Nominatim)
+- `GEOCODING_TIMEOUT` - Geocoding request timeout in ms (default: 10000)
+- `GEOCODING_RATE_LIMIT` - Min ms between geocoding requests (default: 1000)
+- `SLOW_REQUEST_THRESHOLD` - Log requests slower than X ms (default: 3000)
+- `REDIS_ENABLED` - Enable Redis caching (default: false in dev, true in production)
+- `SESSION_MAX_AGE` - Session cookie max age in ms (default: 24 hours)
 
 ## UI/Formatting Standards
 
@@ -244,3 +267,193 @@ Vouchers relate to flights and companions through association attributes, allowi
 - Multiple vouchers per flight segment
 - Single voucher across multiple segments
 - Passenger-specific redemption tracking
+
+## Testing Policy
+
+### When to Write Tests
+
+**ALWAYS write tests when:**
+- Creating new services, controllers, or utilities
+- Adding new API endpoints
+- Implementing business logic or data transformations
+- Fixing bugs (write test that reproduces bug first, then fix)
+- Modifying existing functionality
+
+**Tests are REQUIRED for:**
+- All service layer code (`services/**/*.js`)
+- All utility functions (`utils/**/*.js`)
+- All API endpoints (`routes/api/**/*.js`)
+- Complex controller logic
+
+**Tests are OPTIONAL but encouraged for:**
+- Simple CRUD controllers (if covered by integration tests)
+- View rendering logic
+- Static content
+
+### Test Structure
+
+**Unit Tests** (`tests/unit/`):
+- Test individual functions/methods in isolation
+- Mock external dependencies (database, APIs, etc.)
+- Fast execution (< 100ms per test)
+- File naming: `{moduleName}.test.js`
+
+**Integration Tests** (`tests/integration/`):
+- Test complete request/response cycles
+- Use real database (test environment)
+- Test API endpoints end-to-end
+- File naming: `{feature}.test.js`
+
+### Coverage Requirements
+
+Current thresholds (as of latest update):
+```javascript
+{
+  branches: 9%,
+  functions: 25%,
+  lines: 14%,
+  statements: 14%
+}
+```
+
+**Target thresholds** (gradually increase as tests are added):
+```javascript
+{
+  branches: 60%,
+  functions: 60%,
+  lines: 60%,
+  statements: 60%
+}
+```
+
+**When adding new code:**
+1. New service files should have ≥80% coverage
+2. New utility files should have ≥90% coverage
+3. New API endpoints should have ≥70% coverage
+
+### Writing Tests - Examples
+
+**Unit Test Example** (`tests/unit/utils/constants.test.js`):
+```javascript
+const { MS_PER_HOUR, MS_PER_DAY } = require('../../../utils/constants');
+
+describe('Time Constants', () => {
+  it('should have correct MS_PER_HOUR value', () => {
+    expect(MS_PER_HOUR).toBe(3600000);
+  });
+
+  it('should have correct MS_PER_DAY value', () => {
+    expect(MS_PER_DAY).toBe(86400000);
+  });
+});
+```
+
+**Service Test Example** (`tests/unit/services/myService.test.js`):
+```javascript
+const myService = require('../../../services/myService');
+const db = require('../../../models');
+
+// Mock database
+jest.mock('../../../models', () => ({
+  MyModel: {
+    findAll: jest.fn(),
+    create: jest.fn(),
+  },
+}));
+
+describe('MyService', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('getItems', () => {
+    it('should return all items', async () => {
+      const mockItems = [{ id: 1, name: 'Test' }];
+      db.MyModel.findAll.mockResolvedValue(mockItems);
+
+      const result = await myService.getItems();
+
+      expect(result).toEqual(mockItems);
+      expect(db.MyModel.findAll).toHaveBeenCalledTimes(1);
+    });
+  });
+});
+```
+
+**Integration Test Example** (`tests/integration/myEndpoint.test.js`):
+```javascript
+const request = require('supertest');
+const app = require('../../server');
+const { sequelize } = require('../../models');
+
+describe('My Endpoint - Integration', () => {
+  beforeAll(async () => {
+    await sequelize.sync({ force: true });
+  });
+
+  afterAll(async () => {
+    await sequelize.close();
+  });
+
+  describe('GET /api/v1/items', () => {
+    it('should return items list', async () => {
+      const response = await request(app)
+        .get('/api/v1/items')
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(Array.isArray(response.body.data)).toBe(true);
+    });
+  });
+});
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run specific test file
+npm test -- tests/unit/utils/constants.test.js
+
+# Run with coverage
+npm run test:coverage
+
+# Run in watch mode (for TDD)
+npm run test:watch
+
+# Run only unit tests
+npm run test:unit
+
+# Run only integration tests
+npm run test:integration
+```
+
+### Test-Driven Development (TDD)
+
+For complex features, follow TDD:
+1. Write failing test first
+2. Write minimum code to pass test
+3. Refactor while keeping tests green
+4. Repeat
+
+### Pre-Commit Requirements
+
+Before committing code:
+- [ ] All tests pass (`npm test`)
+- [ ] No decrease in coverage percentages
+- [ ] New code has corresponding tests
+- [ ] Tests are readable and maintainable
+
+### CI/CD Integration
+
+All pull requests must:
+- Pass lint checks (`npm run lint`)
+- Pass all tests (`npm test`)
+- Meet minimum coverage thresholds
+- Pass format checks (`npm run format:check`)
+
+Tests run automatically in GitHub Actions on:
+- Every push to main/develop
+- Every pull request

@@ -5,6 +5,7 @@ This document explains the JavaScript build process using esbuild for code bundl
 ## Overview
 
 The application uses **esbuild** to bundle, minify, and optimize JavaScript files. This provides:
+
 - **40-60% smaller bundle sizes** through minification
 - **Code splitting** for faster initial page loads
 - **Content-based hashing** for optimal caching
@@ -14,6 +15,7 @@ The application uses **esbuild** to bundle, minify, and optimize JavaScript file
 ## Build System
 
 ### Technologies
+
 - **esbuild** - Ultra-fast JavaScript bundler
 - **ES6 modules** - Modern import/export syntax
 - **Code splitting** - Separate bundles for different pages
@@ -33,33 +35,41 @@ public/dist/
 ## Build Commands
 
 ### Development Build (Fast, unminified)
+
 ```bash
 npm run build-js
 ```
+
 - Bundles code without minification
 - Includes source maps for debugging
 - Fast iteration during development
 
 ### Production Build (Optimized, minified)
+
 ```bash
 npm run build:prod
 ```
+
 - Minifies JavaScript (~40-60% size reduction)
 - Optimizes for production deployment
 - Includes source maps
 
 ### Watch Mode (Auto-rebuild on changes)
+
 ```bash
 npm run build-js:watch
 ```
+
 - Watches for file changes
 - Automatically rebuilds on save
 - Great for development workflow
 
 ### Full Build (CSS + JS)
+
 ```bash
 npm run build
 ```
+
 - Builds both CSS (Tailwind) and JavaScript
 - Production-ready output
 
@@ -68,7 +78,9 @@ npm run build
 Entry points define which code gets bundled for each page:
 
 ### `public/js/entries/common.js`
+
 Shared across all pages:
+
 - datetime-formatter.js
 - time-input-formatter.js
 - main.js
@@ -77,7 +89,9 @@ Shared across all pages:
 **Pages using this:** All pages
 
 ### `public/js/entries/dashboard.js`
+
 Dashboard-specific:
+
 - maps.js
 - trip-view-utils.js
 - sidebar-loader.js
@@ -88,7 +102,9 @@ Dashboard-specific:
 **Pages using this:** Dashboard (`/`)
 
 ### `public/js/entries/trip-view.js`
+
 Individual trip view:
+
 - maps.js
 - trip-view-utils.js
 - preline.js (380KB - UI framework)
@@ -101,7 +117,9 @@ Individual trip view:
 **Pages using this:** Trip detail (`/trips/:id`)
 
 ### `public/js/entries/map-view.js`
+
 Standalone map view:
+
 - maps.js
 
 **Pages using this:** Map page (`/trips/:id/map`)
@@ -197,21 +215,25 @@ Savings: ~60-70% reduction
 ### Pre-deployment Checklist
 
 1. Run production build:
+
    ```bash
    npm run build:prod
    ```
 
 2. Verify bundles exist:
+
    ```bash
    ls -lh public/dist/*.js
    ```
 
 3. Check manifest.json:
+
    ```bash
    cat public/dist/manifest.json
    ```
 
 4. Commit manifest and configuration (not bundles):
+
    ```bash
    git add public/dist/manifest.json
    git add esbuild.config.js
@@ -256,11 +278,13 @@ node esbuild.config.js
 ### Bundles Not Loading
 
 1. Check server console for manifest loading:
+
    ```
    ✅ Loaded bundle manifest: common, dashboard, trip-view, map-view
    ```
 
 2. Verify manifest.json exists:
+
    ```bash
    cat public/dist/manifest.json
    ```

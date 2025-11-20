@@ -11,6 +11,7 @@ This document provides comprehensive manual testing procedures for the travel co
 ### Test User Setup
 
 Create two test accounts:
+
 1. **User A** (Trip Owner/Creator)
    - Email: `testuser1@example.com`
    - Password: `TestPass123`
@@ -32,6 +33,7 @@ Create two test accounts:
 **Objective**: Verify users can create companion profiles and send requests
 
 **Steps**:
+
 1. Login as User A
 2. Navigate to Dashboard
 3. Click "Settings" tab → "Travel Companions" button
@@ -44,6 +46,7 @@ Create two test accounts:
 7. Verify companion appears in companion selection UI
 
 **Expected Results**:
+
 - ✓ Companion profile created successfully
 - ✓ Companion appears in "Mutual Companions" section (if User B has reciprocal request)
 - ✓ Status shows as "Pending" for unaccepted requests
@@ -60,6 +63,7 @@ Create two test accounts:
 **Prerequisites**: Test 1.1 completed, User B account exists
 
 **Steps**:
+
 1. **Check Notifications (User A)**:
    - Verify notification center shows pending request (optional - if system sends notifications)
 
@@ -82,6 +86,7 @@ Create two test accounts:
    - User B should appear in "Mutual Companions" section
 
 **Expected Results**:
+
 - ✓ Request moved from "Pending" to "Accepted" status
 - ✓ Both users see each other as mutual companions
 - ✓ Permission level correctly recorded
@@ -96,6 +101,7 @@ Create two test accounts:
 **Prerequisites**: Create a new pending request (similar to Test 1.1)
 
 **Steps**:
+
 1. Create companion profile from User A to test user (different email)
 2. Login as recipient user
 3. Navigate to Travel Companions section
@@ -104,6 +110,7 @@ Create two test accounts:
 6. Confirm in modal
 
 **Expected Results**:
+
 - ✓ Request status changes to "Declined"
 - ✓ Companion removed from mutual list
 - ✓ Can re-send request later if desired
@@ -118,6 +125,7 @@ Create two test accounts:
 **Prerequisites**: Test 1.3 completed (declined request exists)
 
 **Steps**:
+
 1. As original requestor (User A)
 2. Navigate to Travel Companions
 3. Look for "Pending Requests" (outgoing)
@@ -126,6 +134,7 @@ Create two test accounts:
 6. Verify status returns to "Pending"
 
 **Expected Results**:
+
 - ✓ Request status changes back to "Pending"
 - ✓ Recipient receives notification of resent request
 - ✓ Previous decline is overridden
@@ -139,6 +148,7 @@ Create two test accounts:
 **Prerequisites**: Test 1.2 completed (mutual companion exists)
 
 **Steps**:
+
 1. As User A (companion creator)
 2. Navigate to Travel Companions
 3. Find User B in "Mutual Companions"
@@ -146,6 +156,7 @@ Create two test accounts:
 5. Confirm in modal
 
 **Expected Results**:
+
 - ✓ Companion relationship deleted
 - ✓ User B removed from mutual companions list
 - ✓ User B receives notification of revocation
@@ -162,6 +173,7 @@ Create two test accounts:
 **Prerequisites**: Test 1.2 completed (mutual companions exist)
 
 **Steps**:
+
 1. Login as User A
 2. Click "Create Trip" button
 3. Fill in trip details:
@@ -175,6 +187,7 @@ Create two test accounts:
 7. Click "Create Trip" button
 
 **Expected Results**:
+
 - ✓ Trip created successfully
 - ✓ Companion added to trip with correct permissions
 - ✓ TripInvitation record created in database
@@ -190,6 +203,7 @@ Create two test accounts:
 **Prerequisites**: Test 2.1 completed (User B has pending invitation)
 
 **Steps**:
+
 1. Login as User B
 2. Navigate to Dashboard → Upcoming trips
 3. Look for "Pending Trip Invitations" section at top
@@ -199,6 +213,7 @@ Create two test accounts:
 7. Refresh page
 
 **Expected Results**:
+
 - ✓ Invitation status changes to "accepted"
 - ✓ Trip moves to User B's "Upcoming Trips" list
 - ✓ Pending invitation card disappears
@@ -214,6 +229,7 @@ Create two test accounts:
 **Prerequisites**: Create a new trip invitation (similar to Test 2.1)
 
 **Steps**:
+
 1. Login as recipient user
 2. Navigate to Dashboard → Upcoming trips
 3. Find pending invitation in "Pending Trip Invitations" section
@@ -221,6 +237,7 @@ Create two test accounts:
 5. Verify success message
 
 **Expected Results**:
+
 - ✓ Invitation status changes to "declined"
 - ✓ Trip does NOT appear in recipient's trip list
 - ✓ Pending invitation card disappears
@@ -237,6 +254,7 @@ Create two test accounts:
 **Prerequisites**: Test 2.2 completed (User B accepted trip invitation)
 
 **Steps**:
+
 1. Login as User A (trip owner)
 2. Navigate to the trip
 3. Add a flight to the trip:
@@ -251,6 +269,7 @@ Create two test accounts:
    - Badge should indicate "1 companion"
 
 **Expected Results**:
+
 - ✓ Flight created successfully
 - ✓ User B automatically added as companion
 - ✓ Badge shows correct count
@@ -265,6 +284,7 @@ Create two test accounts:
 **Prerequisites**: Trip exists with at least one companion added
 
 **Steps**:
+
 1. Create second companion profile for same trip
 2. Add a hotel to the trip:
    - Click "Add Hotel"
@@ -278,6 +298,7 @@ Create two test accounts:
    - Second companion shows as "Added"
 
 **Expected Results**:
+
 - ✓ Hotel created with mixed companions (inherited + manually added)
 - ✓ Companion status labels show correctly
 - ✓ Companion count badge reflects actual count
@@ -291,6 +312,7 @@ Create two test accounts:
 **Prerequisites**: Test 3.2 completed (item with manually added companion exists)
 
 **Steps**:
+
 1. Click on the hotel created in Test 3.2
 2. In "Travel Companions" section, find the manually added companion
 3. Click the "Remove" button next to their name
@@ -298,6 +320,7 @@ Create two test accounts:
 5. Verify in timeline that companion count decreased
 
 **Expected Results**:
+
 - ✓ Companion removed from item only
 - ✓ Companion still appears on other trip items (inherited)
 - ✓ Companion count badge updates correctly
@@ -314,12 +337,14 @@ Create two test accounts:
 **Prerequisites**: Test 2.2 completed (User B accepted with default permissions)
 
 **Steps**:
+
 1. Login as User B (accepted companion)
 2. Navigate to Dashboard
 3. Find the trip User A invited them to
 4. Click on trip to open it
 
 **Expected Results**:
+
 - ✓ User B can view trip details
 - ✓ User B can see all items (flights, hotels, etc.)
 - ✓ User B can see other companions on the trip
@@ -333,10 +358,12 @@ Create two test accounts:
 **Objective**: Verify companions with canEdit can add items to trip
 
 **Prerequisites**:
+
 - Test 2.1 completed with "Can add items" checkbox CHECKED for companion
 - User B accepted trip invitation
 
 **Steps**:
+
 1. Login as User B
 2. Navigate to the trip
 3. Look for "Add Flight" or "Add Hotel" buttons
@@ -344,6 +371,7 @@ Create two test accounts:
 5. Fill in details and save
 
 **Expected Results**:
+
 - ✓ Add item buttons are visible
 - ✓ Item can be created successfully
 - ✓ Item appears in trip timeline
@@ -356,16 +384,19 @@ Create two test accounts:
 **Objective**: Verify companions without canEdit cannot add items
 
 **Prerequisites**:
+
 - Create trip with companion
 - In trip edit form, do NOT check "Can add items" for companion
 - Companion accepts invitation
 
 **Steps**:
+
 1. Login as companion user
 2. Navigate to the trip
 3. Look for "Add Flight" or "Add Hotel" buttons
 
 **Expected Results**:
+
 - ✓ Add item buttons are **not visible**
 - ✓ No error messages on page
 - ✓ Companion can still view all trip items
@@ -378,16 +409,19 @@ Create two test accounts:
 **Objective**: Verify users with manage_travel permission can create trips for companions
 
 **Prerequisites**:
+
 - Two users with established companion relationship
 - Verify relationship has `permissionLevel: 'manage_travel'`
 
 **Steps**:
+
 1. Login as User A (has manage_travel permission from User B)
 2. Click "Create Trip" button
 3. In trip creation form, notice that User B might be auto-selected or have special indication
 4. Create trip and verify User B is added as owner-level companion
 
 **Expected Results**:
+
 - ✓ Trip created successfully
 - ✓ User B appears with "manage_travel" permission badge
 - ✓ User B can edit the trip (not just view)
@@ -404,6 +438,7 @@ Create two test accounts:
 **Prerequisites**: Create new companion request (Test 1.1)
 
 **Steps**:
+
 1. Login as recipient user
 2. Look at navigation bar for notification bell icon
 3. Click bell icon to open notification panel
@@ -413,6 +448,7 @@ Create two test accounts:
    - Relative time ("just now", "5m ago", etc.)
 
 **Expected Results**:
+
 - ✓ Notification appears in panel
 - ✓ Badge count increases
 - ✓ Inline action buttons work (accept/decline)
@@ -427,6 +463,7 @@ Create two test accounts:
 **Prerequisites**: Create new trip with companion invite (Test 2.1)
 
 **Steps**:
+
 1. Login as invited companion
 2. Click notification bell
 3. Look for trip invitation notification
@@ -436,6 +473,7 @@ Create two test accounts:
    - "Join" and "Decline" buttons
 
 **Expected Results**:
+
 - ✓ Notification appears immediately
 - ✓ Action buttons work correctly
 - ✓ Notification updates after action
@@ -450,6 +488,7 @@ Create two test accounts:
 **Prerequisites**: Two browser windows/tabs with different users logged in
 
 **Steps**:
+
 1. Open User B's account in one window, dashboard in view
 2. Open User A's account in another window
 3. As User A, create a companion request to User B
@@ -457,6 +496,7 @@ Create two test accounts:
 5. Wait up to 30 seconds or manually refresh
 
 **Expected Results**:
+
 - ✓ Notification appears within 30 seconds without manual refresh
 - ✓ Badge count updates automatically
 - ✓ No console errors related to polling
@@ -470,12 +510,14 @@ Create two test accounts:
 **Prerequisites**: Unread notification exists
 
 **Steps**:
+
 1. Open notification panel
 2. Click on a notification to mark it as read
 3. Verify notification background changes (no longer highlighted)
 4. Check unread count decreases
 
 **Expected Results**:
+
 - ✓ Notification marked as read
 - ✓ Background styling updates
 - ✓ Badge count decreases
@@ -490,12 +532,14 @@ Create two test accounts:
 **Objective**: Verify companions can be created with email only (unlinked)
 
 **Steps**:
+
 1. Login as User A
 2. Create companion with email of non-existent user: `newuser@example.com`
 3. Send request to that email
 4. Verify companion appears in "Unlinked Companions" section
 
 **Expected Results**:
+
 - ✓ Companion created successfully
 - ✓ Status shows as "Unlinked" or "Awaiting Account"
 - ✓ Request can be sent (email may be queued)
@@ -510,6 +554,7 @@ Create two test accounts:
 **Prerequisites**: Test 6.1 completed (unlinked companion with `newuser@example.com`)
 
 **Steps**:
+
 1. Register new account with email `newuser@example.com`
 2. Complete registration
 3. Check notifications on first login
@@ -517,6 +562,7 @@ Create two test accounts:
 5. Accept the request
 
 **Expected Results**:
+
 - ✓ Account created successfully
 - ✓ Companion profile auto-linked to user account
 - ✓ Notification for companion request appears
@@ -532,10 +578,12 @@ Create two test accounts:
 **Prerequisites**: Test 6.2 partially complete (unlinked companion account being created)
 
 **Steps**:
+
 1. As User A, watch for notification when User C creates account
 2. Notification should indicate account was linked to existing companion profile
 
 **Expected Results**:
+
 - ✓ Notification appears for account linking
 - ✓ Unlinked companion status updates
 - ✓ Can now interact with newly-linked user
@@ -549,11 +597,13 @@ Create two test accounts:
 **Objective**: Verify system prevents duplicate companion requests
 
 **Steps**:
+
 1. Create companion profile and send request
 2. Try to send another request to same user/email
 3. Observe error handling
 
 **Expected Results**:
+
 - ✓ Error message appears: "Companion request already exists"
 - ✓ No duplicate record created
 - ✓ User guided to existing request status
@@ -565,10 +615,12 @@ Create two test accounts:
 **Objective**: Verify users cannot send companion requests to themselves
 
 **Steps**:
+
 1. Try to create companion with own email
 2. Attempt to send request
 
 **Expected Results**:
+
 - ✓ Validation error appears
 - ✓ Message: "Cannot add yourself as companion"
 - ✓ No record created
@@ -580,10 +632,12 @@ Create two test accounts:
 **Objective**: Verify invalid permission levels are rejected
 
 **Steps**:
+
 1. Manually craft API request with invalid permission level
 2. Send POST/PUT request with invalid permission enum
 
 **Expected Results**:
+
 - ✓ Request rejected with 400 Bad Request
 - ✓ Error message describes valid options
 - ✓ No database state corrupted
@@ -597,10 +651,12 @@ Create two test accounts:
 **Prerequisites**: Trip with pending companion invitation
 
 **Steps**:
+
 1. As trip owner, delete the trip
 2. As invited companion, check for invitation
 
 **Expected Results**:
+
 - ✓ Invitation marked as cancelled/invalid
 - ✓ Invitation removed from pending list
 - ✓ No database foreign key errors
@@ -616,6 +672,7 @@ Create two test accounts:
 **Prerequisites**: Accepted companion relationship exists
 
 **Steps**:
+
 1. Login as User A (relationship creator)
 2. Navigate to Travel Companions → Manage Companions
 3. Find User B in mutual companions
@@ -625,6 +682,7 @@ Create two test accounts:
 7. Confirm change
 
 **Expected Results**:
+
 - ✓ Permission updated in database
 - ✓ Modal closes
 - ✓ UI reflects new permission level
@@ -639,12 +697,14 @@ Create two test accounts:
 **Prerequisites**: Test 8.1 completed (permission changed)
 
 **Steps**:
+
 1. Logout as User A
 2. Login again as User A
 3. Navigate to Travel Companions
 4. Find User B
 
 **Expected Results**:
+
 - ✓ Permission level still shows as updated value
 - ✓ No reversion to default
 
@@ -659,11 +719,13 @@ Create two test accounts:
 **Prerequisites**: Trip with companions and items exists
 
 **Steps**:
+
 1. Navigate to trip
 2. Open item details (flight, hotel, etc.)
 3. Look for "Travel Companions" section in item detail view
 
 **Expected Results**:
+
 - ✓ Companion names displayed
 - ✓ Attendance status shown (if implemented)
 - ✓ Email addresses visible for reference
@@ -676,10 +738,12 @@ Create two test accounts:
 **Objective**: Verify companions can mark attendance status
 
 **Prerequisites**:
+
 - Companion added to trip item
 - Item details page loads
 
 **Steps**:
+
 1. Login as companion user
 2. Open trip
 3. Open item details
@@ -687,6 +751,7 @@ Create two test accounts:
 5. Toggle attendance status
 
 **Expected Results**:
+
 - ✓ UI shows current attendance status
 - ✓ Status can be changed
 - ✓ Change persists on page refresh
@@ -703,12 +768,14 @@ Create two test accounts:
 **Prerequisites**: Create 20+ companion relationships
 
 **Steps**:
+
 1. Open Travel Companions page
 2. Scroll through mutual companions list
 3. Open trip with 10+ companions
 4. Check notification panel with 20+ notifications
 
 **Expected Results**:
+
 - ✓ Pages load within 2 seconds
 - ✓ No UI freezing or lag
 - ✓ Scrolling is smooth
@@ -731,10 +798,10 @@ After completing all test suites, document results:
 - [ ] All Test Suite 9 tests passed (Trip Item Interaction)
 - [ ] Performance testing completed
 
-**Date**: ___________
-**Tester**: ___________
-**Build Version**: ___________
-**Issues Found**: ___________
+**Date**: \***\*\_\_\_\*\***
+**Tester**: \***\*\_\_\_\*\***
+**Build Version**: \***\*\_\_\_\*\***
+**Issues Found**: \***\*\_\_\_\*\***
 
 ---
 
@@ -749,4 +816,3 @@ After completing all test suites, document results:
 4. **Audit Trail**: Track who made permission changes and when for security auditing.
 
 5. **Invitation Expiry**: Implement time-limited invitations that expire after N days.
-

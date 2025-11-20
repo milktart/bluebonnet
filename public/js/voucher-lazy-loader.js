@@ -27,7 +27,7 @@ async function loadVoucherModule() {
       voucherModuleLoaded = true;
       console.log('✅ Voucher module loaded');
     })
-    .catch(error => {
+    .catch((error) => {
       console.error('Failed to load voucher module:', error);
       voucherLoadingPromise = null; // Reset so it can be retried
       throw error;
@@ -47,9 +47,8 @@ async function openVoucherAttachmentPanel(flightId, tripId, flightDetails) {
     // Call the actual function (now available globally)
     if (typeof window.openVoucherAttachmentPanelImpl === 'function') {
       return window.openVoucherAttachmentPanelImpl(flightId, tripId, flightDetails);
-    } else {
-      console.error('openVoucherAttachmentPanelImpl not found after loading module');
     }
+    console.error('openVoucherAttachmentPanelImpl not found after loading module');
   } catch (error) {
     console.error('Error opening voucher panel:', error);
   }

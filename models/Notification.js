@@ -34,10 +34,7 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
       relatedType: {
-        type: DataTypes.ENUM(
-          'companion_relationship',
-          'trip_invitation'
-        ),
+        type: DataTypes.ENUM('companion_relationship', 'trip_invitation'),
         allowNull: true,
       },
       message: {

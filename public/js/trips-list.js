@@ -6,7 +6,7 @@
 // Map state
 let mapInitialized = false;
 let currentMap = null;
-let markers = {};
+const markers = {};
 const activeAnimations = {};
 let activeTripAnimation = null;
 let originalMapBounds = null;
@@ -17,7 +17,7 @@ let currentTripMarker = null;
 const TAB_CONFIG = {
   upcoming: { tab: 'upcoming-tab', content: 'upcoming-content' },
   past: { tab: 'past-tab', content: 'past-content' },
-  settings: { tab: 'settings-tab', content: 'settings-content' }
+  settings: { tab: 'settings-tab', content: 'settings-content' },
 };
 
 // Update map with new trip data
@@ -35,7 +35,7 @@ function updateMapData(newData, isPast = false) {
       .then((map) => {
         currentMap = map;
       })
-      .catch(error => {
+      .catch((error) => {
         // Map update failed silently
       });
   }
@@ -43,12 +43,14 @@ function updateMapData(newData, isPast = false) {
 
 function switchTab(activeTab) {
   console.log('[switchTab] Switching to tab:', activeTab);
-  Object.keys(TAB_CONFIG).forEach(tab => {
+  Object.keys(TAB_CONFIG).forEach((tab) => {
     const { tab: tabId, content: contentId } = TAB_CONFIG[tab];
     const tabElement = document.getElementById(tabId);
     const contentElement = document.getElementById(contentId);
 
-    console.log(`[switchTab] Processing ${tab}: tabElement=${!!tabElement}, contentElement=${!!contentElement}`);
+    console.log(
+      `[switchTab] Processing ${tab}: tabElement=${!!tabElement}, contentElement=${!!contentElement}`
+    );
 
     // Skip if elements don't exist (e.g., when there are no trips)
     if (!tabElement || !contentElement) {
@@ -58,11 +60,13 @@ function switchTab(activeTab) {
 
     if (tab === activeTab) {
       console.log(`[switchTab] Showing ${tab}`);
-      tabElement.className = 'py-3 px-4 border-b-2 border-blue-500 font-medium text-sm text-blue-600 bg-blue-50 rounded-t-lg transition-all duration-200';
+      tabElement.className =
+        'py-3 px-4 border-b-2 border-blue-500 font-medium text-sm text-blue-600 bg-blue-50 rounded-t-lg transition-all duration-200';
       contentElement.classList.remove('hidden');
     } else {
       console.log(`[switchTab] Hiding ${tab}`);
-      tabElement.className = 'py-3 px-4 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-t-lg transition-all duration-200';
+      tabElement.className =
+        'py-3 px-4 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-t-lg transition-all duration-200';
       contentElement.classList.add('hidden');
     }
   });
@@ -130,11 +134,14 @@ function confirmLogout() {
 // Map distance calculation
 function calculateDistance(from, to) {
   const R = 6371;
-  const dLat = (to[0] - from[0]) * Math.PI / 180;
-  const dLng = (to[1] - from[1]) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(from[0] * Math.PI / 180) * Math.cos(to[0] * Math.PI / 180) *
-    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const dLat = ((to[0] - from[0]) * Math.PI) / 180;
+  const dLng = ((to[1] - from[1]) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((from[0] * Math.PI) / 180) *
+      Math.cos((to[0] * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
@@ -148,10 +155,16 @@ function getPointAtDistance(from, to, percent) {
 
 // Highlight map marker with animation
 function highlightMapMarker(markerId, type) {
-  if (!currentMap || !currentMap._loaded || !currentMap._container || !currentMap._container.parentNode) return;
+  if (
+    !currentMap ||
+    !currentMap._loaded ||
+    !currentMap._container ||
+    !currentMap._container.parentNode
+  )
+    return;
 
   if (markerId && currentMap.segmentLayers) {
-    const segment = currentMap.segmentLayers.find(s => s.index === parseInt(markerId));
+    const segment = currentMap.segmentLayers.find((s) => s.index === parseInt(markerId));
     if (segment) {
       if (activeAnimations[markerId]) {
         clearInterval(activeAnimations[markerId].interval);
@@ -174,7 +187,7 @@ function highlightMapMarker(markerId, type) {
       } catch (e) {
         console.warn('Failed to get zoom level:', e);
       }
-      const zoomFactor = Math.max(0.75, Math.pow(2, 4 - currentZoom));
+      const zoomFactor = Math.max(0.75, 2 ** (4 - currentZoom));
       const durationMs = (distance / 6000) * 5000 * zoomFactor;
       const frameTime = 50;
       const animationSpeed = frameTime / durationMs;
@@ -191,8 +204,8 @@ function highlightMapMarker(markerId, type) {
             border: 2px solid white;
           "></div>`,
           iconSize: [16, 16],
-          iconAnchor: [8, 8]
-        })
+          iconAnchor: [8, 8],
+        }),
       });
 
       // Add marker with error handling
@@ -222,7 +235,7 @@ function highlightMapMarker(markerId, type) {
 
       activeAnimations[markerId] = {
         marker: movingMarker,
-        interval: animationInterval
+        interval: animationInterval,
       };
     }
   }
@@ -255,7 +268,7 @@ function getTripBounds(tripIndex, prefix = 'upcoming') {
 
   // Get all markers that belong to this trip (have data-marker attribute)
   const tripMarkers = [];
-  tripItems.forEach(item => {
+  tripItems.forEach((item) => {
     const marker = item.getAttribute('data-marker');
     if (marker) {
       tripMarkers.push(parseInt(marker));
@@ -266,13 +279,13 @@ function getTripBounds(tripIndex, prefix = 'upcoming') {
 
   // Find segments by their index matching the markers
   // But account for potential reindexing by checking segment count
-  tripMarkers.forEach(markerNum => {
+  tripMarkers.forEach((markerNum) => {
     // Segments are indexed starting from 1, find segment with matching index
-    const segment = currentMap.segmentLayers.find(s => s.index === markerNum);
+    const segment = currentMap.segmentLayers.find((s) => s.index === markerNum);
 
     if (segment && segment.polyline) {
       const coords = segment.polyline.getLatLngs();
-      coords.forEach(coord => {
+      coords.forEach((coord) => {
         allCoords.push([coord.lat, coord.lng]);
       });
     }
@@ -283,10 +296,10 @@ function getTripBounds(tripIndex, prefix = 'upcoming') {
     const minMarker = Math.min(...tripMarkers);
     const maxMarker = Math.max(...tripMarkers);
 
-    currentMap.segmentLayers.forEach(segment => {
+    currentMap.segmentLayers.forEach((segment) => {
       if (segment.index >= minMarker && segment.index <= maxMarker && segment.polyline) {
         const coords = segment.polyline.getLatLngs();
-        coords.forEach(coord => {
+        coords.forEach((coord) => {
           allCoords.push([coord.lat, coord.lng]);
         });
       }
@@ -299,7 +312,13 @@ function getTripBounds(tripIndex, prefix = 'upcoming') {
 
 // Zoom to trip bounds
 function zoomToTripBounds(tripIndex, prefix = 'upcoming') {
-  if (!currentMap || !currentMap._loaded || !currentMap._container || !currentMap._container.parentNode) return;
+  if (
+    !currentMap ||
+    !currentMap._loaded ||
+    !currentMap._container ||
+    !currentMap._container.parentNode
+  )
+    return;
 
   if (!originalMapBounds && !originalMapZoom) {
     try {
@@ -341,8 +360,8 @@ function zoomToTripBounds(tripIndex, prefix = 'upcoming') {
   const paddingOptions = {
     paddingTopLeft: [425, 50],
     paddingBottomRight: [0, 0],
-    maxZoom: maxZoom,
-    duration: 0.5
+    maxZoom,
+    duration: 0.5,
   };
 
   try {
@@ -354,12 +373,20 @@ function zoomToTripBounds(tripIndex, prefix = 'upcoming') {
 
 // Restore original map view
 function restoreOriginalZoom() {
-  if (!currentMap || !currentMap._loaded || !currentMap._container || !currentMap._container.parentNode || !originalMapBounds || originalMapZoom === null) return;
+  if (
+    !currentMap ||
+    !currentMap._loaded ||
+    !currentMap._container ||
+    !currentMap._container.parentNode ||
+    !originalMapBounds ||
+    originalMapZoom === null
+  )
+    return;
 
   try {
     currentMap.fitBounds(originalMapBounds, {
       maxZoom: originalMapZoom,
-      duration: 0.5
+      duration: 0.5,
     });
   } catch (e) {
     console.warn('Failed to restore original zoom:', e);
@@ -371,7 +398,13 @@ function restoreOriginalZoom() {
 
 // Animate trip segments sequentially
 function animateTripSegments(tripIndex, prefix = 'upcoming') {
-  if (!currentMap || !currentMap._loaded || !currentMap._container || !currentMap._container.parentNode) return;
+  if (
+    !currentMap ||
+    !currentMap._loaded ||
+    !currentMap._container ||
+    !currentMap._container.parentNode
+  )
+    return;
 
   if (activeTripAnimation) {
     clearInterval(activeTripAnimation);
@@ -384,10 +417,10 @@ function animateTripSegments(tripIndex, prefix = 'upcoming') {
   const tripItems = accordionContent.querySelectorAll('.trip-item');
   const segments = [];
 
-  tripItems.forEach(item => {
+  tripItems.forEach((item) => {
     const markerId = item.getAttribute('data-marker');
     if (markerId) {
-      const segment = currentMap.segmentLayers.find(s => s.index === parseInt(markerId));
+      const segment = currentMap.segmentLayers.find((s) => s.index === parseInt(markerId));
       if (segment) {
         segments.push({ markerId, segment });
       }
@@ -397,9 +430,10 @@ function animateTripSegments(tripIndex, prefix = 'upcoming') {
   if (segments.length === 0) return;
 
   let totalDistance = 0;
-  segments.forEach(item => {
+  segments.forEach((item) => {
     const startPoint = item.segment.polyline.getLatLngs()[0];
-    const endPoint = item.segment.polyline.getLatLngs()[item.segment.polyline.getLatLngs().length - 1];
+    const endPoint =
+      item.segment.polyline.getLatLngs()[item.segment.polyline.getLatLngs().length - 1];
     const distance = calculateDistance(
       [startPoint.lat, startPoint.lng],
       [endPoint.lat, endPoint.lng]
@@ -413,7 +447,7 @@ function animateTripSegments(tripIndex, prefix = 'upcoming') {
   } catch (e) {
     console.warn('Failed to get zoom level:', e);
   }
-  const zoomFactor = Math.max(0.75, Math.pow(2, 4 - currentZoom));
+  const zoomFactor = Math.max(0.75, 2 ** (4 - currentZoom));
   const totalDurationMs = (totalDistance / 6000) * 5000 * zoomFactor;
   const frameTime = 50;
   const globalSpeed = 1 / (totalDurationMs / frameTime);
@@ -430,7 +464,8 @@ function animateTripSegments(tripIndex, prefix = 'upcoming') {
     for (let i = 0; i < segments.length; i++) {
       const item = segments[i];
       const startPoint = item.segment.polyline.getLatLngs()[0];
-      const endPoint = item.segment.polyline.getLatLngs()[item.segment.polyline.getLatLngs().length - 1];
+      const endPoint =
+        item.segment.polyline.getLatLngs()[item.segment.polyline.getLatLngs().length - 1];
       const distance = calculateDistance(
         [startPoint.lat, startPoint.lng],
         [endPoint.lat, endPoint.lng]
@@ -457,8 +492,8 @@ function animateTripSegments(tripIndex, prefix = 'upcoming') {
                 border: 2px solid white;
               "></div>`,
               iconSize: [16, 16],
-              iconAnchor: [8, 8]
-            })
+              iconAnchor: [8, 8],
+            }),
           });
 
           // Add marker with error handling
@@ -510,7 +545,7 @@ function stopTripAnimation() {
     currentTripMarker = null;
   }
 
-  Object.keys(activeAnimations).forEach(markerId => {
+  Object.keys(activeAnimations).forEach((markerId) => {
     if (activeAnimations[markerId]) {
       clearInterval(activeAnimations[markerId].interval);
       if (activeAnimations[markerId].marker) {
@@ -528,7 +563,8 @@ document.addEventListener('DOMContentLoaded', function () {
   if (typeof L === 'undefined') {
     const mapEl = document.getElementById('tripMap');
     if (mapEl) {
-      mapEl.innerHTML = '<div class="bg-red-50 border border-red-200 rounded-md p-4 text-red-700">Map library not loaded.</div>';
+      mapEl.innerHTML =
+        '<div class="bg-red-50 border border-red-200 rounded-md p-4 text-red-700">Map library not loaded.</div>';
     }
     return;
   }
@@ -582,10 +618,12 @@ document.addEventListener('DOMContentLoaded', function () {
             }
           });
         })
-        .catch(error => {
+        .catch((error) => {
           const mapEl = document.getElementById('tripMap');
           if (mapEl) {
-            mapEl.innerHTML = '<div class="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-yellow-700">Map failed to load: ' + error.message + '</div>';
+            mapEl.innerHTML = `<div class="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-yellow-700">Map failed to load: ${
+              error.message
+            }</div>`;
           }
         });
     }

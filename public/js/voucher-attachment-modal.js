@@ -70,10 +70,14 @@ function populateVoucherSelect() {
   const select = document.getElementById('voucherSelect');
   select.innerHTML = '<option value="">Select a voucher...</option>';
 
-  availableVouchers.forEach(voucher => {
+  availableVouchers.forEach((voucher) => {
     const remaining = parseFloat(voucher.totalValue) - parseFloat(voucher.usedAmount);
     const expirationText = voucher.expirationDate
-      ? new Date(voucher.expirationDate).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})
+      ? new Date(voucher.expirationDate).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        })
       : 'No expiration';
 
     const option = document.createElement('option');
@@ -101,10 +105,11 @@ function onVoucherSelected(event) {
   }
 
   const selectedOption = event.target.options[event.target.selectedIndex];
-  const balance = selectedOption.dataset.balance;
-  const currency = selectedOption.dataset.currency;
+  const { balance } = selectedOption.dataset;
+  const { currency } = selectedOption.dataset;
 
-  document.getElementById('maxAttachmentValue').textContent = `${currency} ${parseFloat(balance).toFixed(2)}`;
+  document.getElementById('maxAttachmentValue').textContent =
+    `${currency} ${parseFloat(balance).toFixed(2)}`;
   document.getElementById('attachmentValue').max = balance;
   document.getElementById('attachmentValue').value = '';
 }
@@ -128,7 +133,7 @@ function populateTravelerSelect(companions) {
     const optgroup = document.createElement('optgroup');
     optgroup.label = 'Travel Companions';
 
-    companions.forEach(companion => {
+    companions.forEach((companion) => {
       const option = document.createElement('option');
       option.value = `${companion.id}:COMPANION`;
       option.textContent = companion.name;
@@ -162,16 +167,16 @@ async function submitVoucherAttachment(event) {
     travelerId,
     travelerType,
     attachmentValue: parseFloat(attachmentValue),
-    notes
+    notes,
   };
 
   try {
     const response = await fetch(`/vouchers/flights/${currentFlightId}/attach`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
 
     const result = await response.json();
@@ -187,7 +192,7 @@ async function submitVoucherAttachment(event) {
         location.reload();
       }
     } else {
-      alert('Error: ' + result.message);
+      alert(`Error: ${result.message}`);
     }
   } catch (error) {
     console.error('Error attaching voucher:', error);

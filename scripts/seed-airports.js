@@ -10,6 +10,8 @@ const fs = require('fs');
 const path = require('path');
 const { Airport, sequelize } = require('../models');
 const logger = require('../utils/logger');
+const redis = require('../utils/redis');
+const cacheService = require('../services/cacheService');
 
 async function seedAirports() {
   try {
@@ -79,6 +81,19 @@ async function seedAirports() {
     // Verify final count
     const finalCount = await Airport.count();
     logger.info(`Database now contains ${finalCount} airports`);
+
+    // Clear airport cache if Redis is available
+    try {
+      await redis.initRedis();
+      if (redis.isAvailable()) {
+        const cacheCleared = await cacheService.invalidateAirportCaches();
+        logger.info(`Cleared ${cacheCleared} cached airport entries`);
+      } else {
+        logger.info('Redis not available, skipping cache invalidation');
+      }
+    } catch (cacheError) {
+      logger.warn('Failed to clear airport cache (non-critical):', cacheError.message);
+    }
 
     logger.info('✓ Airport data migration completed successfully!');
     process.exit(0);
