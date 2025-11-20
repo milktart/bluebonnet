@@ -7,6 +7,7 @@ This file tracks features, improvements, and known issues for the Bluebonnet tra
 ### Features to Implement
 
 #### Voucher Edit Functionality
+
 **Status:** Not Implemented
 **Priority:** Medium
 **Location:** `views/account/vouchers.ejs:380`
@@ -28,11 +29,13 @@ The voucher management page has an "Edit" button for each voucher, but the funct
 6. Updates the voucher list without page reload
 
 **Technical Notes:**
+
 - Backend endpoint already exists: `PUT /vouchers/:id`
 - Can reuse the existing voucher creation modal as a template
 - Should follow the same pattern as other edit modals in the application
 
 **Files to Update:**
+
 - `views/account/vouchers.ejs` - Add edit modal HTML
 - `public/js/voucher-sidebar-manager.js` or create new handler - Add edit functionality
 
@@ -41,6 +44,7 @@ The voucher management page has an "Edit" button for each voucher, but the funct
 ## Completed Items
 
 ### Code Quality Improvements
+
 - ✅ Removed unused/duplicate JavaScript files (trip-view-map.js, item-companions-loader.js, companion-selector.js, companions-manager.js)
 - ✅ Removed backup files (.backup files)
 - ✅ Externalized database pool timeouts as environment variables
@@ -53,11 +57,13 @@ The voucher management page has an "Edit" button for each voucher, but the funct
 ## Future Considerations
 
 ### Performance
+
 - Consider implementing service worker for offline support
 - Evaluate need for GraphQL API as alternative to REST
 - Consider implementing Redis pub/sub for real-time notifications
 
 ### Features
+
 - Email notifications for trip reminders
 - Calendar integration (iCal/Google Calendar export)
 - PDF export for trip itineraries
