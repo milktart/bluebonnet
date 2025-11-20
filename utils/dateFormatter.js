@@ -4,6 +4,8 @@
  * Format: DD MMM YYYY for dates, HH:MM for times (24-hour)
  */
 
+const { MS_PER_HOUR } = require('./constants');
+
 // Constants
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -98,7 +100,7 @@ function calculateLayoverDuration(flight1ArrivalTime, flight2DepartureTime) {
   const arrival = new Date(flight1ArrivalTime);
   const departure = new Date(flight2DepartureTime);
   const diffMs = departure - arrival;
-  const diffHours = diffMs / (1000 * 60 * 60);
+  const diffHours = diffMs / MS_PER_HOUR;
 
   // Only show layover if less than 24 hours between flights
   if (diffMs <= 0 || diffHours >= 24) return null;

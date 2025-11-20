@@ -79,9 +79,6 @@ DB_PASSWORD=your_password
 
 # Session Secret
 SESSION_SECRET=your-secret-key-change-in-production
-
-# Optional API Keys
-AVIATIONSTACK_API_KEY=your_api_key_here
 ```
 
 ## Project Structure

@@ -13,6 +13,7 @@ const db = require('./models');
 const dateFormatter = require('./utils/dateFormatter');
 const logger = require('./utils/logger');
 const redis = require('./utils/redis');
+const { MS_PER_DAY } = require('./utils/constants');
 
 // Validate required environment variables
 const requiredEnvVars = ['SESSION_SECRET'];
@@ -93,7 +94,7 @@ const sessionConfig = {
   resave: false,
   saveUninitialized: false,
   cookie: {
-    maxAge: parseInt(process.env.SESSION_MAX_AGE, 10) || 1000 * 60 * 60 * 24, // 24 hours default
+    maxAge: parseInt(process.env.SESSION_MAX_AGE, 10) || MS_PER_DAY, // 24 hours default
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production', // Use secure cookies in production (HTTPS)
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Allow cross-site in production

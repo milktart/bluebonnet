@@ -1,11 +1,18 @@
 const axios = require('axios');
+const { version } = require('../package.json');
+const logger = require('../utils/logger');
+
+// Configuration
+const NOMINATIM_BASE_URL = process.env.NOMINATIM_BASE_URL || 'https://nominatim.openstreetmap.org';
+const GEOCODING_TIMEOUT = parseInt(process.env.GEOCODING_TIMEOUT, 10) || 10000;
+const MIN_REQUEST_INTERVAL = parseInt(process.env.GEOCODING_RATE_LIMIT, 10) || 1000;
+const USER_AGENT = `TravelPlannerApp/${version}`;
 
 // Simple in-memory cache for geocoding results
 const geocodeCache = new Map();
 
 // Rate limiting: track last request time
 let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 1000; // 1 second between requests
 
 /**
  * Geocode a location name to coordinates using Nominatim (OpenStreetMap)
@@ -24,7 +31,7 @@ async function geocodeLocation(locationName) {
 
   // Check cache first
   if (geocodeCache.has(trimmedLocation)) {
-    console.log(`Geocoding cache hit for: ${trimmedLocation}`);
+    logger.info(`Geocoding cache hit for: ${trimmedLocation}`);
     return geocodeCache.get(trimmedLocation);
   }
 
@@ -39,19 +46,19 @@ async function geocodeLocation(locationName) {
     }
     lastRequestTime = Date.now();
 
-    console.log(`Geocoding: ${trimmedLocation}`);
+    logger.info(`Geocoding: ${trimmedLocation}`);
 
     // Use Nominatim API for geocoding
-    const response = await axios.get('https://nominatim.openstreetmap.org/search', {
+    const response = await axios.get(`${NOMINATIM_BASE_URL}/search`, {
       params: {
         format: 'json',
         q: trimmedLocation,
         limit: 1
       },
       headers: {
-        'User-Agent': 'TravelPlannerApp/1.0'
+        'User-Agent': USER_AGENT
       },
-      timeout: 10000 // 10 second timeout
+      timeout: GEOCODING_TIMEOUT
     });
 
     if (response.data && response.data.length > 0) {
@@ -64,16 +71,16 @@ async function geocodeLocation(locationName) {
       // Cache the result
       geocodeCache.set(trimmedLocation, coords);
 
-      console.log(`Geocoded ${trimmedLocation} to:`, coords);
+      logger.info(`Geocoded ${trimmedLocation} to:`, coords);
       return coords;
     } else {
-      console.log(`No geocoding results for: ${trimmedLocation}`);
+      logger.info(`No geocoding results for: ${trimmedLocation}`);
       // Cache null result to avoid repeated failed lookups
       geocodeCache.set(trimmedLocation, null);
       return null;
     }
   } catch (error) {
-    console.error(`Geocoding error for "${trimmedLocation}":`, error.message);
+    logger.error(`Geocoding error for "${trimmedLocation}":`, error.message);
     // Don't cache errors, as they might be temporary
     return null;
   }
@@ -84,7 +91,7 @@ async function geocodeLocation(locationName) {
  */
 function clearCache() {
   geocodeCache.clear();
-  console.log('Geocoding cache cleared');
+  logger.info('Geocoding cache cleared');
 }
 
 /**
@@ -121,19 +128,19 @@ async function reverseGeocode(lat, lng) {
     }
     lastRequestTime = Date.now();
 
-    console.log(`Reverse geocoding: ${lat}, ${lng}`);
+    logger.info(`Reverse geocoding: ${lat}, ${lng}`);
 
     // Use Nominatim reverse geocoding
-    const response = await axios.get('https://nominatim.openstreetmap.org/reverse', {
+    const response = await axios.get(`${NOMINATIM_BASE_URL}/reverse`, {
       params: {
         format: 'json',
         lat: lat,
         lon: lng
       },
       headers: {
-        'User-Agent': 'TravelPlannerApp/1.0'
+        'User-Agent': USER_AGENT
       },
-      timeout: 10000
+      timeout: GEOCODING_TIMEOUT
     });
 
     if (response.data && response.data.address) {
@@ -149,7 +156,7 @@ async function reverseGeocode(lat, lng) {
 
     return null;
   } catch (error) {
-    console.error(`Reverse geocoding error for (${lat}, ${lng}):`, error.message);
+    logger.error(`Reverse geocoding error for (${lat}, ${lng}):`, error.message);
     return null;
   }
 }
@@ -170,7 +177,7 @@ async function inferTimezone(lat, lng) {
     const geoData = await reverseGeocode(lat, lng);
     return geoData?.timezone || null;
   } catch (error) {
-    console.error('Error inferring timezone:', error);
+    logger.error('Error inferring timezone:', error);
     return null;
   }
 }

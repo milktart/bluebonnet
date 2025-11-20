@@ -1,4 +1,24 @@
 const db = require('../models');
+const logger = require('./logger');
+
+/**
+ * Sort companions: self (current user) first, then alphabetically by first name
+ * @param {Array} companions - Array of companion objects with name and email
+ * @param {string} currentUserEmail - Email of the current user
+ * @returns {Array} Sorted array of companions
+ */
+exports.sortCompanions = (companions, currentUserEmail) => {
+  const selfCompanion = companions.find((c) => c.email === currentUserEmail);
+  const others = companions
+    .filter((c) => c.email !== currentUserEmail)
+    .sort((a, b) => {
+      const firstNameA = a.name.split(' ')[0];
+      const firstNameB = b.name.split(' ')[0];
+      return firstNameA.localeCompare(firstNameB);
+    });
+
+  return selfCompanion ? [selfCompanion, ...others] : others;
+};
 
 /**
  * Gets trip-level companions for an item's trip
@@ -84,13 +104,13 @@ exports.getAllCompanionsForItem = async (itemType, itemId, tripId) => {
  * Auto-add trip-level companions to an item
  */
 exports.autoAddTripCompanions = async (itemType, itemId, tripId, addedBy) => {
-  console.log('autoAddTripCompanions called:', { itemType, itemId, tripId, addedBy });
+  logger.info('autoAddTripCompanions called:', { itemType, itemId, tripId, addedBy });
 
   const tripCompanions = await db.TripCompanion.findAll({
     where: { tripId },
   });
 
-  console.log('Found trip companions:', tripCompanions.map(tc => ({ id: tc.id, companionId: tc.companionId })));
+  logger.info('Found trip companions:', tripCompanions.map(tc => ({ id: tc.id, companionId: tc.companionId })));
 
   const itemCompanionRecords = tripCompanions.map(tc => ({
     itemType,
@@ -101,15 +121,15 @@ exports.autoAddTripCompanions = async (itemType, itemId, tripId, addedBy) => {
     inheritedFromTrip: true,
   }));
 
-  console.log('Creating item companions:', itemCompanionRecords);
+  logger.info('Creating item companions:', itemCompanionRecords);
 
   if (itemCompanionRecords.length > 0) {
     const result = await db.ItemCompanion.bulkCreate(itemCompanionRecords, {
       ignoreDuplicates: true,
     });
-    console.log('Created item companions:', result);
+    logger.info('Created item companions:', result);
   } else {
-    console.log('No item companions to create');
+    logger.info('No item companions to create');
   }
 };
 

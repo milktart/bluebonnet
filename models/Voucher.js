@@ -1,4 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
+  const { MS_PER_DAY } = require('../utils/constants');
+
   const Voucher = sequelize.define('Voucher', {
     id: {
       type: DataTypes.UUID,
@@ -150,7 +152,7 @@ module.exports = (sequelize, DataTypes) => {
     const today = new Date();
     const expDate = new Date(this.expirationDate);
     const diffTime = expDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.ceil(diffTime / MS_PER_DAY);
     return diffDays;
   };
 

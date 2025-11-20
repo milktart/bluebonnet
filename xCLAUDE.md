@@ -190,7 +190,6 @@ Required variables in `.env`:
 
 Optional variables:
 - `PORT` - Server port (defaults to 3000)
-- `AVIATIONSTACK_API_KEY` - Flight lookup API key (app works without it, uses local data)
 
 ## UI/Formatting Standards
 

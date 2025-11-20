@@ -5,6 +5,7 @@
  */
 
 const moment = require('moment-timezone');
+const logger = require('./logger');
 
 /**
  * Convert a datetime-local string (without timezone) to UTC Date object
@@ -33,14 +34,14 @@ function localToUTC(datetimeLocal, timezone) {
     const localMoment = moment.tz(datetimeLocal, timezone);
 
     if (!localMoment.isValid()) {
-      console.error('Invalid datetime:', datetimeLocal);
+      logger.error('Invalid datetime:', datetimeLocal);
       return null;
     }
 
     return localMoment.utc().toDate();
 
   } catch (error) {
-    console.error('Error converting local to UTC:', error, { datetimeLocal, timezone });
+    logger.error('Error converting local to UTC:', error, { datetimeLocal, timezone });
     // Fallback: treat as UTC
     return moment.utc(datetimeLocal).toDate();
   }
@@ -64,7 +65,7 @@ function utcToLocal(utcDate, timezone) {
     const m = moment.utc(utcDate);
 
     if (!m.isValid()) {
-      console.error('Invalid UTC date:', utcDate);
+      logger.error('Invalid UTC date:', utcDate);
       return '';
     }
 
@@ -77,7 +78,7 @@ function utcToLocal(utcDate, timezone) {
     return m.format('YYYY-MM-DDTHH:mm');
 
   } catch (error) {
-    console.error('Error converting UTC to local:', error, { utcDate, timezone });
+    logger.error('Error converting UTC to local:', error, { utcDate, timezone });
     return moment.utc(utcDate).format('YYYY-MM-DDTHH:mm');
   }
 }
@@ -107,7 +108,7 @@ function formatInTimezone(utcDate, timezone, format = 'DD MMM YYYY HH:mm') {
     return m.format(format);
 
   } catch (error) {
-    console.error('Error formatting in timezone:', error);
+    logger.error('Error formatting in timezone:', error);
     return '';
   }
 }
