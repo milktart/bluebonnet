@@ -60,6 +60,9 @@
   <script type="module" src="<%= getBundle('common') %>"></script>
   <script type="module" src="<%= getBundle('map-view') %>"></script>
   <script>
+    // Map configuration
+    window.MAP_TILE_URL = '<%- mapTileUrl %>';
+
     // Prepare trip data for the map
     const tripData = {
       flights: <%- JSON.stringify(trip.flights) %>,
@@ -68,7 +71,7 @@
       carRentals: <%- JSON.stringify(trip.carRentals) %>,
       events: <%- JSON.stringify(trip.events) %>
     };
-    
+
     // Initialize map when page loads
     document.addEventListener('DOMContentLoaded', function() {
       initializeMap(tripData);
