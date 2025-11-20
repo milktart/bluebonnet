@@ -178,6 +178,9 @@
   <script type="module" src="<%= getBundle('trip-view') %>"></script>
 
   <script>
+    // Map configuration
+    window.MAP_TILE_URL = '<%- mapTileUrl %>';
+
     // Trip data for map
     // Make trip ID available globally for sidebar form loading
     window.tripId = '<%- trip.id %>';

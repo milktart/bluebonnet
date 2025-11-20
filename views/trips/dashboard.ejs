@@ -1545,6 +1545,12 @@
   <!-- External dependencies (CDN) -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+  <!-- Configuration -->
+  <script>
+    // Map configuration
+    window.MAP_TILE_URL = '<%- mapTileUrl %>';
+  </script>
+
   <!-- Bundled JavaScript (with code splitting and minification) -->
   <script type="module" src="<%= getBundle('common') %>"></script>
   <script type="module" src="<%= getBundle('dashboard') %>"></script>

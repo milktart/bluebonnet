@@ -8,6 +8,10 @@
  * Provides map initialization, overview maps, and interactive animations
  */
 
+// Default map tile URL (can be overridden by setting window.MAP_TILE_URL)
+const DEFAULT_MAP_TILE_URL =
+  'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}';
+
 // ============================================================================
 // CORE MAP INITIALIZATION (from map.js)
 // ============================================================================
@@ -61,13 +65,14 @@ async function initializeMap(tripData, isPast = false) {
       })
       .addTo(map);
 
-    // Add ArcGIS tiles
-    L.tileLayer(
-      'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-      {
-        attribution: '',
-      }
-    ).addTo(map);
+    // Add map tiles (configurable via MAP_TILE_URL global variable)
+    const tileUrl =
+      typeof window !== 'undefined' && window.MAP_TILE_URL
+        ? window.MAP_TILE_URL
+        : DEFAULT_MAP_TILE_URL;
+    L.tileLayer(tileUrl, {
+      attribution: '',
+    }).addTo(map);
 
     const allLocations = [];
     const travelSegments = []; // Store actual travel segments

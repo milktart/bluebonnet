@@ -213,11 +213,18 @@ Optional variables:
 - `GEOCODING_RATE_LIMIT` - Min ms between geocoding requests (default: 1000)
 - `SLOW_REQUEST_THRESHOLD` - Log requests slower than X ms (default: 3000)
 - `REDIS_ENABLED` - Enable Redis caching (default: false in dev, true in production)
+- `REDIS_HOST` - Redis server hostname (default: localhost)
+- `REDIS_PORT` - Redis server port (default: 6379)
+- `REDIS_PASSWORD` - Redis authentication password (default: none)
+- `REDIS_DB` - Redis database number (default: 0)
 - `SESSION_MAX_AGE` - Session cookie max age in ms (default: 24 hours)
 - `POOL_ACQUIRE_TIMEOUT` - Database pool connection acquire timeout in ms (default: 30000)
 - `POOL_IDLE_TIMEOUT` - Database pool connection idle timeout in ms (default: 10000)
 - `SOCKET_PING_TIMEOUT` - WebSocket ping timeout in ms (default: 60000)
 - `SOCKET_PING_INTERVAL` - WebSocket ping interval in ms (default: 25000)
+- `CORS_ORIGIN` - CORS origin for WebSocket connections (default: request origin)
+- `MAP_TILE_URL` - Map tile provider URL (default: ArcGIS World Light Gray Base)
+- `LOG_LEVEL` - Winston logger verbosity level (default: info, options: error, warn, info, debug)
 
 ## UI/Formatting Standards
 
