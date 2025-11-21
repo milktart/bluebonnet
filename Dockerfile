@@ -8,7 +8,7 @@
 # AVAILABLE STAGES:
 #   - development: Full dev environment with hot-reload, all dependencies
 #   - production:  Optimized build, pruned dependencies, non-root user, health checks
-#   - test:        Testing environment with all dependencies, runs tests
+#   - test:        Testing environment with all dependencies (run tests: docker-compose run app npm test)
 #
 # ADDING CUSTOM STAGES:
 #   To add a new stage (e.g., "staging"), copy an existing stage and modify:
@@ -120,9 +120,9 @@ EXPOSE 3000
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Run tests by default (can be overridden in docker-compose.yml)
+# Run dev server by default (run tests with: docker-compose run app npm test)
 ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["npm", "test"]
+CMD ["npm", "run", "dev"]
 
 # ============================================================================
 # Stage 7: Production - Optimized production image
