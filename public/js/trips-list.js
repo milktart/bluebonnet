@@ -1,6 +1,7 @@
 /**
  * Trips List Page - UI and Interactions
  * Handles tabs, accordions, map animations, and sidebar controls
+ * Phase 4 - Frontend Modernization: ES6 Module Pattern
  */
 
 // Map state
@@ -73,7 +74,7 @@ function switchTab(activeTab) {
   console.log('[switchTab] Tab switch complete');
 }
 
-function showUpcomingTrips() {
+export function showUpcomingTrips() {
   switchTab('upcoming');
   // Update map to show upcoming trips data (flights and events)
   if (typeof upcomingTripsData !== 'undefined') {
@@ -81,7 +82,7 @@ function showUpcomingTrips() {
   }
 }
 
-function showPastTrips() {
+export function showPastTrips() {
   switchTab('past');
   // Update map to show past trips data (flights only) with darker colors
   if (typeof pastTripsData !== 'undefined') {
@@ -89,17 +90,12 @@ function showPastTrips() {
   }
 }
 
-function showSettings() {
+export function showSettings() {
   switchTab('settings');
 }
 
-// Expose tab switching functions globally for event handlers
-window.showUpcomingTrips = showUpcomingTrips;
-window.showPastTrips = showPastTrips;
-window.showSettings = showSettings;
-
 // Accordion functionality
-function toggleAccordion(contentId) {
+export function toggleAccordion(contentId) {
   const content = document.getElementById(contentId);
   const arrow = content.previousElementSibling.querySelector('.accordion-arrow');
 
@@ -116,9 +112,6 @@ function toggleAccordion(contentId) {
     arrow.style.transform = 'rotate(0deg)';
   }
 }
-
-// Expose toggleAccordion globally for event handlers
-window.toggleAccordion = toggleAccordion;
 
 // Note: openSecondarySidebar(), closeSecondarySidebar(), showCreateTripForm(),
 // and showCreateEventForm() are now defined in dashboard.ejs before the onclick
