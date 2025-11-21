@@ -36,6 +36,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: ${NODE_ENV:-development}
       args:
         NODE_ENV: ${NODE_ENV:-development}
     container_name: ${NODE_ENV}_travel_planner_app
