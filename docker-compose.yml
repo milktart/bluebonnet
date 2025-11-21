@@ -35,13 +35,15 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile.${NODE_ENV}
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: ${NODE_ENV:-development}
     container_name: ${NODE_ENV}_travel_planner_app
     ports:
       - "${APP_PORT}:3000"
     environment:
       NODE_ENV: ${NODE_ENV}
-      DB_HOST: ${NODE_ENV}_${DB_HOST}
+      DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: ${NODE_ENV}_${DB_NAME}
       DB_USER: ${DB_USER:-postgres}

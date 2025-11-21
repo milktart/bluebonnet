@@ -36,8 +36,9 @@ npm install
 # Create .env file (see Environment Variables below)
 cp .env.example .env
 
-# Run database migrations
-npm run migrate
+# Initialize database (creates tables and seeds airports)
+npm run db:sync
+npm run db:seed-airports
 
 # Start development server
 npm run dev
@@ -138,8 +139,10 @@ npm run build          # Build all assets for production
 npm run build:prod     # Build optimized bundles
 
 # Database
-npm run migrate        # Run database migrations
-npm run migrate:undo   # Rollback last migration
+npm run db:sync            # Sync database schema (development)
+npm run db:migrate         # Run database migrations
+npm run db:migrate:undo    # Rollback last migration
+npm run db:seed-airports   # Seed airport data
 
 # Testing
 npm test              # Run all tests
@@ -194,19 +197,25 @@ The database uses UUID primary keys throughout. Key tables:
 
 See [docs/DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md) for complete schema documentation.
 
-### Migrations
+### Database Management
 
-The application uses Sequelize migrations for version-controlled schema changes:
+The application supports both Sequelize sync and migrations:
 
 ```bash
-# Run migrations
-npm run migrate
+# Sync database schema (development - recommended)
+npm run db:sync
+
+# Run Sequelize migrations (production - if migrations exist)
+npm run db:migrate
+
+# Seed airport data
+npm run db:seed-airports
 
 # Create new migration
 npx sequelize-cli migration:generate --name description
 
-# Rollback
-npm run migrate:undo
+# Rollback last migration
+npm run db:migrate:undo
 ```
 
 ## Authentication
