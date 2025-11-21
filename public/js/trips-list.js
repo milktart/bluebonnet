@@ -93,6 +93,11 @@ function showSettings() {
   switchTab('settings');
 }
 
+// Expose tab switching functions globally for event handlers
+window.showUpcomingTrips = showUpcomingTrips;
+window.showPastTrips = showPastTrips;
+window.showSettings = showSettings;
+
 // Accordion functionality
 function toggleAccordion(contentId) {
   const content = document.getElementById(contentId);
@@ -111,6 +116,9 @@ function toggleAccordion(contentId) {
     arrow.style.transform = 'rotate(0deg)';
   }
 }
+
+// Expose toggleAccordion globally for event handlers
+window.toggleAccordion = toggleAccordion;
 
 // Note: openSecondarySidebar(), closeSecondarySidebar(), showCreateTripForm(),
 // and showCreateEventForm() are now defined in dashboard.ejs before the onclick
@@ -557,6 +565,19 @@ function stopTripAnimation() {
 
   restoreOriginalZoom();
 }
+
+// Handle browser back/forward navigation
+window.addEventListener('popstate', function () {
+  const path = window.location.pathname;
+
+  if (path === '/') {
+    showUpcomingTrips();
+  } else if (path === '/trips/past') {
+    showPastTrips();
+  } else if (path === '/manage') {
+    showSettings();
+  }
+});
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function () {
