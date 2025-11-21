@@ -1,13 +1,13 @@
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: ${NODE_ENV}_travel_planner_db
-    ports:
-      - "${DB_PORT}:5432"
+    container_name: prod_travel_planner_db
     environment:
-      POSTGRES_DB: ${NODE_ENV}_${DB_NAME}
+      POSTGRES_DB: ${DB_NAME:-prod_travel_planner}
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -19,9 +19,9 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: ${NODE_ENV}_travel_planner_redis
+    container_name: prod_travel_planner_redis
     ports:
-      - "${REDIS_PORT}:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
@@ -35,15 +35,16 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile.${NODE_ENV}
-    container_name: ${NODE_ENV}_travel_planner_app
+      dockerfile: Dockerfile.production
+    image: bluebonnet-app-prod
+    container_name: prod_travel_planner_app
     ports:
-      - "${APP_PORT}:3000"
+      - "3500:3000"
     environment:
       NODE_ENV: production
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: ${NODE_ENV}_${DB_NAME}
+      DB_NAME: ${DB_NAME:-prod_travel_planner}
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       REDIS_ENABLED: "true"
@@ -61,6 +62,6 @@ services:
 
 volumes:
   postgres_data:
-    name: ${NODE_ENV}_postgres_data
+    name: prod_postgres_data
   redis_data:
-    name: ${NODE_ENV}_redis_data
+    name: prod_redis_data

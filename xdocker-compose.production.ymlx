@@ -1,0 +1,31 @@
+# Production overrides
+# Usage: docker compose -f docker-compose.yml -f docker-compose.production.yml up
+services:
+  postgres:
+    container_name: prod_travel_planner_db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: prod_travel_planner
+
+  redis:
+    container_name: prod_travel_planner_redis
+    ports:
+      - "6379:6379"
+
+  app:
+    container_name: prod_travel_planner_app
+    ports:
+      - "3500:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_NAME: prod_travel_planner
+      REDIS_ENABLED: "true"
+      LOG_LEVEL: ${LOG_LEVEL:-warn}
+
+volumes:
+  postgres_data:
+    name: prod_postgres_data
+  redis_data:
+    name: prod_redis_data
