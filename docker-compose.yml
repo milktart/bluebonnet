@@ -40,13 +40,13 @@ services:
     ports:
       - "${APP_PORT}:3000"
     environment:
-      NODE_ENV: production
-      DB_HOST: postgres
+      NODE_ENV: ${NODE_ENV}
+      DB_HOST: ${NODE_ENV}_${DB_HOST}
       DB_PORT: 5432
       DB_NAME: ${NODE_ENV}_${DB_NAME}
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      REDIS_ENABLED: "true"
+      REDIS_ENABLED: ${REDIS_ENABLED:-true}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       LOG_LEVEL: ${LOG_LEVEL:-warn}
