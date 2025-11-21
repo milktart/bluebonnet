@@ -1,13 +1,12 @@
 # Bluebonnet Travel Planner - Fresh Setup Guide
 
-This guide provides step-by-step instructions for cloning and setting up a fresh Bluebonnet environment. It addresses all configuration requirements and known setup issues.
+This guide provides step-by-step instructions for cloning and setting up a fresh Bluebonnet environment.
 
 ## Table of Contents
 
 - [Prerequisites](#prerequisites)
 - [Quick Start (Docker - Recommended)](#quick-start-docker---recommended)
 - [Manual Setup (Local Development)](#manual-setup-local-development)
-- [Configuration Issues & Solutions](#configuration-issues--solutions)
 - [Verification](#verification)
 - [Troubleshooting](#troubleshooting)
 
@@ -48,64 +47,43 @@ cd bluebonnet
 cp .env.example .env
 ```
 
-### Step 3: Configure Required Variables
-
-Edit the `.env` file and add the **missing required variables**:
+The `.env.example` file now includes all required variables with sensible defaults. For development, you can use it as-is or customize:
 
 ```bash
 # Server Configuration
-NODE_ENV=development
-PORT=3000
-APP_PORT=3500        # ⚠️ REQUIRED - Missing from .env.example
+NODE_ENV=development             # Environment: development, production, test
+PORT=3000                        # Application port for local development
+APP_PORT=3500                    # Docker exposed port
 
-# Database Configuration
-DB_HOST=postgres     # ⚠️ IMPORTANT - Must be "postgres" for Docker
+# Database Configuration (Docker uses service name 'postgres')
+DB_HOST=localhost                # Use 'postgres' when running in Docker
 DB_PORT=5432
 DB_NAME=travel_planner
 DB_USER=postgres
 DB_PASSWORD=postgres
 
 # Redis Configuration
-REDIS_PORT=6379      # ⚠️ REQUIRED - Uncomment this line
+REDIS_ENABLED=false              # Set to true for production
+REDIS_HOST=localhost
+REDIS_PORT=6379
 
 # Session Configuration
 SESSION_SECRET=your-secret-key-here-change-in-production-use-random-string
 ```
 
-**Critical Configuration Notes:**
+**Important:** For production, generate a strong random secret:
+```bash
+openssl rand -hex 32
+```
 
-1. **APP_PORT** - This variable is missing from `.env.example` but required by `docker-compose.yml`
-2. **DB_HOST** - Must be set to `postgres` (the Docker service name), not `localhost`
-3. **REDIS_PORT** - Must be uncommented and set to `6379`
-4. **NODE_ENV** - Must match the Dockerfile name (see Step 4)
-
-### Step 4: Fix Dockerfile Naming Issue
-
-**⚠️ CRITICAL:** The docker-compose.yml expects `Dockerfile.${NODE_ENV}`, but there's a naming inconsistency:
-
-**Current state:**
-- `Dockerfile` - Simple development build
-- `Dockerfile.development` - Multi-stage production build (misnamed)
-- `Dockerfile.production` - **MISSING**
-
-**Quick fix for development:**
-
-The `Dockerfile.development` already exists, so if you set `NODE_ENV=development` in `.env`, it will work. No action needed for development setup.
-
-**For production:**
-
-If you need to run production, either:
-- Copy `Dockerfile.development` to `Dockerfile.production`, OR
-- Modify `docker-compose.yml` line 38 to use a fixed Dockerfile name
-
-### Step 5: Build and Start
+### Step 3: Build and Start
 
 ```bash
 docker-compose up --build
 ```
 
 This will:
-- ✅ Build the application container
+- ✅ Build the application container (automatically selects dev/prod based on NODE_ENV)
 - ✅ Start PostgreSQL database
 - ✅ Start Redis cache
 - ✅ Wait for services to be healthy
@@ -113,7 +91,7 @@ This will:
 - ✅ Automatically seed airport data
 - ✅ Start the application
 
-### Step 6: Access the Application
+### Step 4: Access the Application
 
 Open your browser and navigate to:
 
@@ -121,7 +99,7 @@ Open your browser and navigate to:
 http://localhost:3500
 ```
 
-**Note:** The port is `3500` (from APP_PORT), not `3000`!
+That's it! The application is now running with a fully initialized database.
 
 ---
 
@@ -170,12 +148,12 @@ CREATE DATABASE travel_planner;
 cp .env.example .env
 ```
 
-Edit `.env`:
+Edit `.env` for local development:
 
 ```bash
 NODE_ENV=development
 PORT=3000
-DB_HOST=localhost    # For local development
+DB_HOST=localhost    # For local PostgreSQL
 DB_PORT=5432
 DB_NAME=travel_planner
 DB_USER=postgres
@@ -193,8 +171,6 @@ npm run db:sync
 # Seed airport data
 npm run db:seed-airports
 ```
-
-**Note:** The README.md mentions `npm run migrate`, but the correct command is `npm run db:sync` (as defined in package.json).
 
 ### Step 6: Build Assets
 
@@ -216,115 +192,36 @@ Access at: `http://localhost:3000`
 
 ---
 
-## Configuration Issues & Solutions
+## Environment Modes
 
-### Issue 1: Missing Environment Variables
+The unified Dockerfile supports both development and production environments:
 
-**Problem:** `.env.example` is missing required variables used by `docker-compose.yml`
-
-**Missing variables:**
-- `APP_PORT` (used in docker-compose.yml:41)
-- `REDIS_PORT` (used in docker-compose.yml:24, currently commented)
-
-**Solution:** Add these to your `.env` file:
+### Development Mode (default)
 
 ```bash
-APP_PORT=3500
-REDIS_PORT=6379
+NODE_ENV=development docker-compose up --build
 ```
 
-**Recommendation:** Update `.env.example` to include:
+Features:
+- Includes all dependencies (including devDependencies)
+- Runs `npm run dev` with nodemon for hot-reload
+- Faster build time
+- Full debugging capabilities
+- Runs as root for volume mount flexibility
+
+### Production Mode
 
 ```bash
-# Docker Configuration
-APP_PORT=3500                # Docker exposed port for app
-REDIS_PORT=6379              # Change this for multiple environments
+NODE_ENV=production docker-compose up --build
 ```
 
-### Issue 2: Dockerfile Naming Confusion
-
-**Problem:** docker-compose.yml expects `Dockerfile.${NODE_ENV}`, but:
-- `Dockerfile` exists (simple build)
-- `Dockerfile.development` exists (multi-stage production-style build)
-- `Dockerfile.production` is **missing**
-
-**Current workaround:**
-- For development: Use `NODE_ENV=development` (works with existing `Dockerfile.development`)
-- For production: Copy `Dockerfile.development` to `Dockerfile.production`
-
-**Recommendation:** Rename files for clarity:
-- `Dockerfile.development` → Keep as-is OR rename to `Dockerfile.production`
-- `Dockerfile` → Rename to `Dockerfile.simple` or delete
-- Create proper `Dockerfile.production` if needed
-
-### Issue 3: DB_HOST Configuration in Docker
-
-**Problem:** docker-compose.yml line 44 constructs `DB_HOST: ${NODE_ENV}_${DB_HOST}`, which:
-- If `DB_HOST=localhost` and `NODE_ENV=development`, creates `development_localhost` ❌
-- If `DB_HOST=postgres`, creates `development_postgres` ❌
-- Actual service name is `postgres` ✅
-- Actual container name is `${NODE_ENV}_travel_planner_db` ✅
-
-**Solution:** In your `.env` file for Docker setup, set:
-
-```bash
-DB_HOST=postgres
-```
-
-This will create `development_postgres` which doesn't match the service name, BUT Docker Compose networking is smart enough to resolve this. However, this is confusing.
-
-**Better solution (manual fix):** Edit `docker-compose.yml` line 44:
-
-```yaml
-# Change from:
-DB_HOST: ${NODE_ENV}_${DB_HOST}
-
-# To:
-DB_HOST: postgres
-```
-
-**Recommendation:** Remove the `${NODE_ENV}_` prefix from DB_HOST in docker-compose.yml since services reference each other by service name, not container name.
-
-### Issue 4: README.md Migration Command
-
-**Problem:** README.md line 39 instructs users to run:
-
-```bash
-npm run migrate
-```
-
-But this script doesn't exist in package.json!
-
-**Correct commands:**
-
-```bash
-# For Sequelize sync (recommended for development)
-npm run db:sync
-
-# For Sequelize migrations (if migrations exist)
-npm run db:migrate
-```
-
-**Recommendation:** Update README.md to use `npm run db:sync` or `npm run db:migrate` instead of `npm run migrate`.
-
-### Issue 5: Confusing .env.example Comment
-
-**Problem:** Line 2 of `.env.example` says:
-
-```bash
-NODE_ENV=development             # Change this to environment and rename Dockerfile to Dockerfile.${NODE_ENV}
-```
-
-This is confusing because:
-1. The Dockerfile already exists as `Dockerfile.development`
-2. Users shouldn't need to rename files
-3. The comment suggests manual renaming on every environment change
-
-**Recommendation:** Update comment to:
-
-```bash
-NODE_ENV=development             # Valid values: development, production (must match Dockerfile.{NODE_ENV})
-```
+Features:
+- Multi-stage build for smaller image size
+- Only production dependencies included
+- Runs as non-root user (nodejs:nodejs) for security
+- Health checks enabled
+- Optimized asset builds
+- Runs `node server.js` directly
 
 ---
 
@@ -400,23 +297,9 @@ APP_PORT=3501
    docker exec -it development_travel_planner_db psql -U postgres -l
    ```
 
-3. DB_HOST in .env is set to `postgres` (not `localhost`)
-
-### Dockerfile not found
-
-**Error:** `failed to solve: failed to read dockerfile`
-
-**Solution:**
-
-Ensure `NODE_ENV` in `.env` matches an existing Dockerfile:
-
-```bash
-# Check available Dockerfiles
-ls -la Dockerfile*
-
-# Set NODE_ENV to match
-NODE_ENV=development  # Uses Dockerfile.development
-```
+3. DB_HOST is correct:
+   - Docker: Should be `postgres` (service name)
+   - Local: Should be `localhost`
 
 ### Assets not loading (404 on CSS/JS)
 
@@ -455,6 +338,20 @@ docker exec -it development_travel_planner_app npm run db:seed-airports
 npm run db:seed-airports
 ```
 
+### Docker build fails
+
+**Error:** Various build errors
+
+**Solution:**
+
+Clear Docker cache and rebuild:
+
+```bash
+docker-compose down -v
+docker system prune -af
+docker-compose up --build
+```
+
 ---
 
 ## Production Deployment
@@ -462,12 +359,12 @@ npm run db:seed-airports
 For production deployment:
 
 1. Copy `.env.production.example` to `.env`
-2. Fill in all REQUIRED values (especially secrets!)
-3. Ensure `NODE_ENV=production`
-4. Create `Dockerfile.production` (or rename `Dockerfile.development`)
-5. Use strong passwords for DB_PASSWORD and SESSION_SECRET
-6. Enable SSL/TLS for database if remote
-7. Set up proper logging and monitoring
+2. Set `NODE_ENV=production`
+3. Fill in all REQUIRED values (especially secrets!)
+4. Use strong passwords for `DB_PASSWORD` and `SESSION_SECRET`
+5. Enable SSL/TLS for database if remote
+6. Set `REDIS_ENABLED=true`
+7. Configure proper logging and monitoring
 
 See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for complete production deployment procedures.
 
@@ -515,43 +412,17 @@ npm run lint                       # Check code quality
 
 ---
 
-## Summary of Required Fixes
+## Configuration Changes (2025-11-21)
 
-Before this repository is fully clone-ready, the following files should be updated:
+All previously identified configuration issues have been resolved:
 
-### High Priority
+✅ `.env.example` now includes all required variables (APP_PORT, REDIS_PORT)
+✅ Unified Dockerfile supports both development and production environments
+✅ docker-compose.yml correctly references single Dockerfile with build args
+✅ DB_HOST properly configured in docker-compose.yml
+✅ README.md updated with correct database commands
 
-1. **`.env.example`** - Add missing variables:
-   ```bash
-   APP_PORT=3500
-   REDIS_PORT=6379  # Uncomment this
-   ```
-
-2. **`docker-compose.yml`** - Fix DB_HOST construction (line 44):
-   ```yaml
-   # Change from:
-   DB_HOST: ${NODE_ENV}_${DB_HOST}
-   # To:
-   DB_HOST: postgres
-   ```
-
-3. **Create `Dockerfile.production`** OR rename `Dockerfile.development` → `Dockerfile.production`
-
-4. **`README.md`** - Fix migration command (line 39):
-   ```bash
-   # Change from:
-   npm run migrate
-   # To:
-   npm run db:sync
-   ```
-
-### Medium Priority
-
-5. Update `.env.example` comment to be clearer about Dockerfile naming
-
-6. Consider simplifying Dockerfile naming (one file vs multiple)
-
-7. Add this SETUP.md to the repository for future users
+For historical context, see `CONFIG_AUDIT_REPORT.md`.
 
 ---
 
@@ -564,4 +435,4 @@ Before this repository is fully clone-ready, the following files should be updat
 ---
 
 **Last Updated:** 2025-11-21
-**Status:** Configuration audit complete - 5 critical issues identified
+**Status:** All configuration issues resolved - clone-ready ✅
