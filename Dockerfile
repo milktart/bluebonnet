@@ -123,8 +123,3 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Start application
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "server.js"]
-
-# ============================================================================
-# Default target based on NODE_ENV build arg
-# ============================================================================
-FROM ${NODE_ENV} AS final
