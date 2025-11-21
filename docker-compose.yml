@@ -61,6 +61,10 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+    # Uncomment volumes for development hot-reload (bundles rebuild automatically on container start)
+    # volumes:
+    #   - .:/app
+    #   - /app/node_modules
 
 volumes:
   postgres_data:

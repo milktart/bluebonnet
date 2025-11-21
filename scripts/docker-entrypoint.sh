@@ -47,6 +47,14 @@ else
   echo "✅ Database already initialized, skipping setup"
 fi
 
+# Build JavaScript bundles
+echo "📦 Building JavaScript bundles..."
+if npm run build-js 2>&1 | grep -q "Build complete\|Build failed"; then
+  echo "✅ JavaScript bundles built successfully!"
+else
+  echo "⚠️  Bundle build had warnings, but continuing..."
+fi
+
 # Start the application
 echo "🎉 Starting application server..."
 exec "$@"
