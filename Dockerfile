@@ -1,5 +1,22 @@
-# Multi-stage Dockerfile supporting both development and production environments
-# Build argument determines the target stage and optimizations
+# Multi-stage Dockerfile supporting multiple environments
+#
+# USAGE:
+#   docker-compose up --build                    # Uses NODE_ENV from .env (default: development)
+#   NODE_ENV=production docker-compose up --build # Explicitly set environment
+#   NODE_ENV=test docker-compose up --build       # Use test environment
+#
+# AVAILABLE STAGES:
+#   - development: Full dev environment with hot-reload, all dependencies
+#   - production:  Optimized build, pruned dependencies, non-root user, health checks
+#   - test:        Testing environment with all dependencies, runs tests
+#
+# ADDING CUSTOM STAGES:
+#   To add a new stage (e.g., "staging"), copy an existing stage and modify:
+#   1. Change: FROM node:20-alpine AS your-stage-name
+#   2. Customize: ENV NODE_ENV, CMD, dependencies, etc.
+#   3. Set NODE_ENV=your-stage-name in .env
+#   4. Run: docker-compose up --build
+#
 ARG NODE_ENV=development
 
 # ============================================================================
@@ -77,7 +94,38 @@ ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["npm", "run", "dev"]
 
 # ============================================================================
-# Stage 6: Production - Optimized production image
+# Stage 6: Test - Testing environment
+# ============================================================================
+FROM node:20-alpine AS test
+
+WORKDIR /app
+
+# Copy all dependencies (including dev for testing tools)
+COPY --from=development-deps /app/node_modules ./node_modules
+
+# Copy source code
+COPY . .
+
+# Build JavaScript bundles
+RUN npm run build-js
+
+# Set environment
+ENV NODE_ENV=test
+ENV PORT=3000
+
+# Expose port
+EXPOSE 3000
+
+# Copy and set entrypoint script
+COPY scripts/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Run tests by default (can be overridden in docker-compose.yml)
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["npm", "test"]
+
+# ============================================================================
+# Stage 7: Production - Optimized production image
 # ============================================================================
 FROM node:20-alpine AS production
 
