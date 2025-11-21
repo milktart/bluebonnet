@@ -41,7 +41,7 @@ services:
         NODE_ENV: ${NODE_ENV:-development}
     container_name: ${NODE_ENV}_travel_planner_app
     ports:
-      - "${APP_PORT}:3000"
+      - "${APP_PORT}:${PORT}"
     environment:
       NODE_ENV: ${NODE_ENV}
       DB_HOST: postgres
