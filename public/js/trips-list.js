@@ -1,6 +1,7 @@
 /**
  * Trips List Page - UI and Interactions
  * Handles tabs, accordions, map animations, and sidebar controls
+ * Phase 4 - Frontend Modernization: ES6 Module Pattern
  */
 
 // Map state
@@ -73,7 +74,7 @@ function switchTab(activeTab) {
   console.log('[switchTab] Tab switch complete');
 }
 
-function showUpcomingTrips() {
+export function showUpcomingTrips() {
   switchTab('upcoming');
   // Update map to show upcoming trips data (flights and events)
   if (typeof upcomingTripsData !== 'undefined') {
@@ -81,7 +82,7 @@ function showUpcomingTrips() {
   }
 }
 
-function showPastTrips() {
+export function showPastTrips() {
   switchTab('past');
   // Update map to show past trips data (flights only) with darker colors
   if (typeof pastTripsData !== 'undefined') {
@@ -89,12 +90,12 @@ function showPastTrips() {
   }
 }
 
-function showSettings() {
+export function showSettings() {
   switchTab('settings');
 }
 
 // Accordion functionality
-function toggleAccordion(contentId) {
+export function toggleAccordion(contentId) {
   const content = document.getElementById(contentId);
   const arrow = content.previousElementSibling.querySelector('.accordion-arrow');
 
@@ -557,6 +558,19 @@ function stopTripAnimation() {
 
   restoreOriginalZoom();
 }
+
+// Handle browser back/forward navigation
+window.addEventListener('popstate', function () {
+  const path = window.location.pathname;
+
+  if (path === '/') {
+    showUpcomingTrips();
+  } else if (path === '/trips/past') {
+    showPastTrips();
+  } else if (path === '/manage') {
+    showSettings();
+  }
+});
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function () {

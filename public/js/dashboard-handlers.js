@@ -8,6 +8,12 @@
 /* eslint-disable no-alert, no-console */
 
 import { registerHandlers, getElementData } from './event-delegation.js';
+import {
+  showUpcomingTrips,
+  showPastTrips,
+  showSettings,
+  toggleAccordion,
+} from './trips-list.js';
 
 /**
  * Close secondary sidebar
@@ -108,9 +114,7 @@ function handleShowUpcomingTrips(element, _event) {
     window.history.pushState({}, '', '/');
   }
 
-  if (typeof window.showUpcomingTrips === 'function') {
-    window.showUpcomingTrips();
-  }
+  showUpcomingTrips();
 }
 
 /**
@@ -123,9 +127,7 @@ function handleShowPastTrips(element, _event) {
     window.history.pushState({}, '', '/trips/past');
   }
 
-  if (typeof window.showPastTrips === 'function') {
-    window.showPastTrips();
-  }
+  showPastTrips();
 }
 
 /**
@@ -138,9 +140,7 @@ function handleShowSettings(element, _event) {
     window.history.pushState({}, '', '/manage');
   }
 
-  if (typeof window.showSettings === 'function') {
-    window.showSettings();
-  }
+  showSettings();
 }
 
 /**
@@ -150,9 +150,7 @@ function handleShowSettings(element, _event) {
 function handleToggleAccordion(element, _event) {
   const { accordionId } = getElementData(element);
 
-  if (typeof window.toggleAccordion === 'function') {
-    window.toggleAccordion(accordionId);
-  }
+  toggleAccordion(accordionId);
 }
 
 /**
