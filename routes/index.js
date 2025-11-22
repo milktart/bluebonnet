@@ -4,10 +4,16 @@ const router = express.Router();
 const { ensureAuthenticated } = require('../middleware/auth');
 const tripController = require('../controllers/tripController');
 
-router.get('/', (req, res) => {
+// Home page - redirects to trips if authenticated, otherwise shows landing page
+router.get('/', (req, res, next) => {
   if (req.isAuthenticated()) {
     return tripController.listTrips(req, res);
   }
+  next();
+});
+
+// Landing page for non-authenticated users
+router.get('/', (req, res) => {
   res.render('index', { title: 'Welcome to Travel Planner' });
 });
 

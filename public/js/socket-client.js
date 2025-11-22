@@ -9,6 +9,13 @@
 
 import { eventBus, EventTypes } from './eventBus.js';
 
+// Import constants
+const {
+  SOCKET_POLL_INTERVAL,
+  SOCKET_RECONNECT_DELAY,
+  SOCKET_RECONNECT_DELAY_MAX,
+} = window.CONSTANTS || {};
+
 // Import Socket.IO client library (loaded via CDN in base template)
 let socket = null;
 let reconnectAttempts = 0;
@@ -36,7 +43,7 @@ function waitForSocketIO() {
         clearInterval(checkInterval);
         reject(new Error('Socket.IO library failed to load'));
       }
-    }, 100);
+    }, SOCKET_POLL_INTERVAL || 100);
   });
 }
 
@@ -62,8 +69,8 @@ export async function initializeSocket() {
   socket = io({
     transports: ['polling'], // Use polling-only until nginx/proxy supports WebSocket
     reconnection: true,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 5000,
+    reconnectionDelay: SOCKET_RECONNECT_DELAY || 1000,
+    reconnectionDelayMax: SOCKET_RECONNECT_DELAY_MAX || 5000,
     reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
   });
 

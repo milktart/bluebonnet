@@ -9,6 +9,9 @@
 import { initializeSocket, onEvent } from './socket-client.js';
 import { eventBus, EventTypes } from './eventBus.js';
 
+// Import constants
+const { UI_RELOAD_DELAY } = window.CONSTANTS || {};
+
 let notificationPanelOpen = false;
 let socketInitialized = false;
 
@@ -311,7 +314,7 @@ async function handleTripAction(notificationId, invitationId, action) {
     if (response.ok) {
       await markNotificationAsRead(notificationId);
       // Refresh page after joining/declining a trip
-      setTimeout(() => location.reload(), 500);
+      setTimeout(() => location.reload(), UI_RELOAD_DELAY || 500);
     }
   } catch (error) {
     console.error('Error handling trip action:', error);
