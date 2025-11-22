@@ -86,7 +86,6 @@ module.exports = (sequelize, DataTypes) => {
     Event.belongsTo(models.Trip, {
       foreignKey: 'tripId',
       as: 'trip',
-      constraints: false,
     });
   };
 

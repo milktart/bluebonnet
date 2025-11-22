@@ -21,6 +21,7 @@ const {
 } = require('../models');
 const logger = require('../utils/logger');
 const cacheService = require('./cacheService');
+const { sortCompanions } = require('../utils/itemCompanionHelper');
 
 class TripService extends BaseService {
   constructor() {
@@ -383,6 +384,120 @@ class TripService extends BaseService {
     });
 
     return trips;
+  }
+
+  /**
+   * Get trip data for API (for async form refresh)
+   * @param {string} tripId - Trip ID
+   * @param {string} userId - User ID (for ownership verification)
+   * @returns {Promise<Object|null>} Trip data with all related items
+   * @throws {Error} If trip not found
+   */
+  async getTripData(tripId, userId) {
+    logger.debug(`${this.modelName}: Getting trip data for API`, { tripId, userId });
+
+    const trip = await Trip.findOne({
+      where: { id: tripId, userId },
+      include: [
+        { model: Flight, as: 'flights', order: [['departureDateTime', 'ASC']] },
+        { model: Hotel, as: 'hotels', order: [['checkInDateTime', 'ASC']] },
+        { model: Transportation, as: 'transportation', order: [['departureDateTime', 'ASC']] },
+        { model: CarRental, as: 'carRentals', order: [['pickupDateTime', 'ASC']] },
+        { model: Event, as: 'events', order: [['startDateTime', 'ASC']] },
+        {
+          model: TripCompanion,
+          as: 'tripCompanions',
+          include: [
+            {
+              model: TravelCompanion,
+              as: 'companion',
+              attributes: ['id', 'name', 'email'],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!trip) {
+      const error = new Error('Trip not found');
+      error.status = 404;
+      throw error;
+    }
+
+    return trip;
+  }
+
+  /**
+   * Get trip companions for API
+   * @param {string} tripId - Trip ID
+   * @param {string} userId - User ID (for ownership verification)
+   * @param {string} userEmail - User email (for sorting self first)
+   * @returns {Promise<Array>} Sorted list of companions
+   * @throws {Error} If trip not found or unauthorized
+   */
+  async getTripCompanions(tripId, userId, userEmail) {
+    logger.debug(`${this.modelName}: Getting trip companions for API`, {
+      tripId,
+      userId,
+      userEmail,
+    });
+
+    // Verify user owns the trip
+    const trip = await Trip.findOne({
+      where: { id: tripId, userId },
+    });
+
+    if (!trip) {
+      const error = new Error('Trip not found');
+      error.status = 404;
+      throw error;
+    }
+
+    // Fetch companions for this trip
+    const companions = await TripCompanion.findAll({
+      where: { tripId },
+      include: [
+        {
+          model: TravelCompanion,
+          as: 'companion',
+          attributes: ['id', 'name', 'email'],
+        },
+      ],
+    });
+
+    logger.debug(`${this.modelName}: Raw TripCompanion records`, {
+      count: companions.length,
+      companions: companions.map((tc) => ({
+        id: tc.id,
+        companionId: tc.companionId,
+        companion: tc.companion
+          ? { id: tc.companion.id, name: tc.companion.name, email: tc.companion.email }
+          : 'NULL',
+      })),
+    });
+
+    // Transform to simpler format and filter null companions
+    const companionList = companions
+      .filter((tc) => tc.companion !== null)
+      .map((tc) => ({
+        id: tc.companion.id,
+        name: tc.companion.name,
+        email: tc.companion.email,
+      }));
+
+    logger.debug(`${this.modelName}: Mapped companion list`, {
+      count: companionList.length,
+      selfEmail: userEmail,
+    });
+
+    // Sort companions: self first, then alphabetically by first name
+    const sortedCompanionList = sortCompanions(companionList, userEmail);
+
+    logger.debug(`${this.modelName}: Final sorted list`, {
+      count: sortedCompanionList.length,
+    });
+
+    return sortedCompanionList;
   }
 }
 

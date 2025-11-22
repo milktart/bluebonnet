@@ -95,7 +95,6 @@ module.exports = (sequelize, DataTypes) => {
     Flight.belongsTo(models.Trip, {
       foreignKey: 'tripId',
       as: 'trip',
-      constraints: false,
     });
 
     Flight.hasMany(models.VoucherAttachment, {

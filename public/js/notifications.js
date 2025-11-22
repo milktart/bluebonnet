@@ -9,6 +9,9 @@
 import { initializeSocket, onEvent } from './socket-client.js';
 import { eventBus, EventTypes } from './eventBus.js';
 
+// Import constants
+const { UI_RELOAD_DELAY } = window.CONSTANTS || {};
+
 let notificationPanelOpen = false;
 let socketInitialized = false;
 
@@ -196,7 +199,13 @@ function getRelativeTime(dateString) {
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
   if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
-  return date.toLocaleDateString();
+
+  // Format as DD MMM YYYY
+  const day = String(date.getDate()).padStart(2, '0');
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = months[date.getMonth()];
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
 }
 
 /**
@@ -305,7 +314,7 @@ async function handleTripAction(notificationId, invitationId, action) {
     if (response.ok) {
       await markNotificationAsRead(notificationId);
       // Refresh page after joining/declining a trip
-      setTimeout(() => location.reload(), 500);
+      setTimeout(() => location.reload(), UI_RELOAD_DELAY || 500);
     }
   } catch (error) {
     console.error('Error handling trip action:', error);

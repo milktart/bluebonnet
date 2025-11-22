@@ -45,6 +45,11 @@ module.exports = (sequelize, DataTypes) => {
       timestamps: false,
       indexes: [
         {
+          name: 'idx_airports_iata',
+          fields: ['iata'],
+          unique: true,
+        },
+        {
           name: 'idx_airports_city',
           fields: ['city'],
         },

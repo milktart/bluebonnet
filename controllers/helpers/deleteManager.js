@@ -1,10 +1,11 @@
 const logger = require('../../utils/logger');
+const { MS_PER_SECOND } = require('../../utils/constants');
 // Delete manager - handles soft delete and restore functionality
 // Uses session to store deleted items for undo capability
 // Timeouts stored separately to avoid JSON serialization issues
 
 const DELETED_ITEMS_KEY = 'deletedItems';
-const DELETE_TIMEOUT = 30 * 1000; // 30 seconds before permanent deletion
+const DELETE_TIMEOUT = 30 * MS_PER_SECOND; // 30 seconds before permanent deletion
 
 // Track timeouts in memory (separate from session)
 const timeoutMap = new Map();

@@ -1,5 +1,12 @@
 // Main JavaScript for Travel Planner
 
+// Import constants
+const {
+  UI_DEBOUNCE_DELAY,
+  UI_NOTIFICATION_DISMISS,
+  UI_ALERT_AUTO_DISMISS,
+} = window.CONSTANTS || {};
+
 // Handle browser back/forward button navigation
 window.addEventListener('popstate', function (e) {
   const path = window.location.pathname;
@@ -53,7 +60,7 @@ window.addEventListener('popstate', function (e) {
     if (typeof loadCertificateDetails === 'function') {
       setTimeout(function () {
         loadCertificateDetails(voucherId);
-      }, 100);
+      }, UI_DEBOUNCE_DELAY || 100);
     }
   } else if (path === '/manage/companions') {
     if (typeof showSettings === 'function') {
@@ -72,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setTimeout(() => {
       const bsAlert = new bootstrap.Alert(alert);
       bsAlert.close();
-    }, 5000);
+    }, UI_ALERT_AUTO_DISMISS || 5000);
   });
 });
 
@@ -250,7 +257,7 @@ function showAlert(message, type = 'info') {
     setTimeout(() => {
       const bsAlert = new bootstrap.Alert(alertDiv);
       bsAlert.close();
-    }, 5000);
+    }, UI_ALERT_AUTO_DISMISS || 5000);
   }
 }
 
@@ -350,7 +357,7 @@ function showDeleteNotification(itemName, itemType, itemId, restoreUrl, onUndoCa
         container.appendChild(successMsg);
         setTimeout(() => {
           successMsg.remove();
-        }, 3000);
+        }, UI_NOTIFICATION_DISMISS || 3000);
       } else {
         alert(`Failed to restore ${itemName}`);
       }
@@ -366,6 +373,6 @@ function showDeleteNotification(itemName, itemType, itemId, restoreUrl, onUndoCa
     notification.style.transition = 'opacity 0.3s ease-out';
     setTimeout(() => {
       notification.remove();
-    }, 300);
-  }, 5000);
+    }, 300); // Fade-out animation delay (keep hardcoded)
+  }, UI_ALERT_AUTO_DISMISS || 5000);
 }

@@ -23,7 +23,7 @@ class AirportService {
       }
 
       // Cache miss - fetch from database
-      const airport = await Airport.findByPk(code);
+      const airport = await Airport.findOne({ where: { iata: code } });
 
       if (!airport) return null;
 

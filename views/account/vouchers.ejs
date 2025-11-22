@@ -155,7 +155,7 @@
                   <% } else { %>text-gray-600<% } %>
                 ">
                   <% if (voucher.expirationDate) { %>
-                    <% const date = new Date(voucher.expirationDate); const formatted = date.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'}); %>
+                    <% const date = new Date(voucher.expirationDate); const day = String(date.getDate()).padStart(2, '0'); const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']; const month = months[date.getMonth()]; const year = date.getFullYear(); const formatted = `${day} ${month} ${year}`; %>
                     <%= formatted %>
                   <% } else { %>
                     No expiration

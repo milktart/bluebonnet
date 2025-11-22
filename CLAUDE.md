@@ -110,6 +110,20 @@ Authentication uses **Passport.js** with local strategy:
   - `ensureAuthenticated`: Protects routes requiring login
   - `forwardAuthenticated`: Redirects logged-in users away from auth pages
 
+### Public API Endpoints
+
+The following API endpoints are intentionally **public** (no authentication required):
+
+- **`/api/v1/airports/search`** - Airport autocomplete search
+- **`/api/v1/airports/:iata`** - Airport details by IATA code
+
+**Rationale**: These endpoints are required for flight form autocomplete functionality before users create trips. They provide read-only access to airport reference data.
+
+**Security**:
+- Rate limited to prevent abuse (searchLimiter middleware)
+- No sensitive data exposed (public airport information only)
+- No write operations permitted
+
 ### Database Configuration
 
 Database connection configured in `config/database.js`:
