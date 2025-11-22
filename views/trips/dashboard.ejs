@@ -545,6 +545,16 @@
 
       <!-- No trips state -->
       <% if (trips.length === 0) { %>
+      <script>
+        // Initialize empty data structures for no-trips state
+        window.allTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
+        window.upcomingTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
+        window.pastTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
+        window.globalMarkerAssignments = {};
+      </script>
+
+      <!-- Upcoming Trips Content (empty for no-trips state) -->
+      <div id="upcoming-content" class="space-y-4 p-6">
         <div class="text-center py-12 px-6">
           <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -559,20 +569,6 @@
             </svg>
             Create first trip
           </button>
-        </div>
-
-      <script>
-        // Initialize empty data structures for no-trips state
-        window.allTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
-        window.upcomingTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
-        window.pastTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
-        window.globalMarkerAssignments = {};
-      </script>
-
-      <!-- Upcoming Trips Content (empty for no-trips state) -->
-      <div id="upcoming-content" class="space-y-4 p-6">
-        <div class="text-center py-8">
-          <p class="text-gray-500">No upcoming trips to display.</p>
         </div>
       </div>
 
