@@ -2,14 +2,9 @@ module.exports = (sequelize, DataTypes) => {
   const Airport = sequelize.define(
     'Airport',
     {
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true,
-      },
       iata: {
         type: DataTypes.STRING(3),
-        unique: true,
+        primaryKey: true,
         allowNull: false,
         comment: 'IATA 3-letter airport code',
       },
