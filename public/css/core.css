@@ -32,3 +32,29 @@
   background-color: rgba(255, 255, 255, 0.4) !important;
   backdrop-filter: blur(0.5px) !important;
 }
+
+/* ===== Date Input Fixes ===== */
+/* Ensure date inputs fit within their containers and follow app styling */
+input[type="date"] {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  position: relative;
+}
+
+/* Style the calendar picker icon */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  padding: 0;
+  margin-left: 4px;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Firefox date input styling */
+input[type="date"]::-moz-calendar-picker-indicator {
+  cursor: pointer;
+}
