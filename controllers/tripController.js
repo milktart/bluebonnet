@@ -36,8 +36,8 @@ exports.listTrips = async (req, res, options = {}) => {
     let orderDirection = 'ASC';
 
     if (activeTab === 'upcoming') {
-      // Upcoming: departureDate >= today
-      dateFilter = { departureDate: { [Op.gte]: today } };
+      // Upcoming: returnDate >= today (includes in-progress trips)
+      dateFilter = { returnDate: { [Op.gte]: today } };
       orderDirection = 'ASC'; // Soonest first
     } else if (activeTab === 'past') {
       // Past: returnDate < today

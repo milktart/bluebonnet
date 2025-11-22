@@ -32,3 +32,35 @@
   background-color: rgba(255, 255, 255, 0.4) !important;
   backdrop-filter: blur(0.5px) !important;
 }
+
+/* ===== Date Input Styling ===== */
+/* Reset browser default styling that causes date inputs to overflow */
+input[type="date"] {
+  /* Ensure the input respects container width */
+  width: 100%;
+  box-sizing: border-box;
+
+  /* Remove browser-specific styling that can cause sizing issues */
+  -webkit-appearance: textfield;
+  -moz-appearance: textfield;
+  appearance: textfield;
+
+  /* Ensure proper sizing in flex/grid layouts */
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Style the calendar picker icon */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Firefox date input styling */
+input[type="date"]::-moz-calendar-picker-indicator {
+  cursor: pointer;
+}
