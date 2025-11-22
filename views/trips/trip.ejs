@@ -213,7 +213,7 @@
 
 
     // Initialize when DOM is ready
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
       console.log('Trip data:', tripData);
 
       if (typeof L === 'undefined') {
@@ -225,27 +225,43 @@
         return;
       }
 
-      // Initialize map immediately
-      setTimeout(() => {
-        if (!mapInitialized) {
-          initOverviewMap(tripData, 'tripMap')
-            .then((map) => {
-              mapInitialized = true;
-              currentMap = map;
-              setupTimelineHoverEffects(map);
-              console.log('Map initialized successfully');
+      // Wait for maps module to load (loaded lazily by trip-view bundle)
+      let attempts = 0;
+      const maxAttempts = 20; // 2 seconds max wait
 
-              // Map sizing is now handled by maps.js
-            })
-            .catch(error => {
-              console.error('Map initialization error:', error);
-              const mapEl = document.getElementById('tripMap');
-              if (mapEl) {
-                mapEl.innerHTML = '<div class="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-yellow-700">Map failed to load: ' + error.message + '</div>';
-              }
-            });
+      while (typeof initOverviewMap === 'undefined' && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+
+      if (typeof initOverviewMap === 'undefined') {
+        console.error('Maps module not loaded');
+        const mapEl = document.getElementById('tripMap');
+        if (mapEl) {
+          mapEl.innerHTML = '<div class="bg-red-50 border border-red-200 rounded-md p-4 text-red-700">Maps module not loaded. Please refresh the page.</div>';
         }
-      }, 500);
+        return;
+      }
+
+      // Initialize map
+      if (!mapInitialized) {
+        initOverviewMap(tripData, 'tripMap')
+          .then((map) => {
+            mapInitialized = true;
+            currentMap = map;
+            setupTimelineHoverEffects(map);
+            console.log('Map initialized successfully');
+
+            // Map sizing is now handled by maps.js
+          })
+          .catch(error => {
+            console.error('Map initialization error:', error);
+            const mapEl = document.getElementById('tripMap');
+            if (mapEl) {
+              mapEl.innerHTML = '<div class="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-yellow-700">Map failed to load: ' + error.message + '</div>';
+            }
+          });
+      }
     });
 
     // Show add item menu
