@@ -21,8 +21,8 @@ const missingVars = requiredEnvVars.filter((varName) => !process.env[varName]);
 
 if (missingVars.length > 0) {
   logger.error('Missing required environment variables', { missingVars });
-  console.error(`ERROR: Missing required environment variables: ${missingVars.join(', ')}`);
-  console.error('Please create a .env file based on .env.example');
+  logger.error(`ERROR: Missing required environment variables: ${missingVars.join(', ')}`);
+  logger.error('Please create a .env file based on .env.example');
   process.exit(1);
 }
 

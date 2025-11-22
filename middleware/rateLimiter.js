@@ -7,13 +7,14 @@
 
 const rateLimit = require('express-rate-limit');
 const logger = require('../utils/logger');
+const { MS_PER_MINUTE } = require('../utils/constants');
 
 /**
  * General API rate limiter
  * Applied to all API endpoints
  */
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * MS_PER_MINUTE, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
   message: {
     success: false,
@@ -40,7 +41,7 @@ const apiLimiter = rateLimit({
  * Protects against brute force login attempts
  */
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * MS_PER_MINUTE, // 15 minutes
   max: 5, // Limit each IP to 5 login attempts per windowMs
   skipSuccessfulRequests: true, // Don't count successful logins
   message: {
@@ -67,7 +68,7 @@ const authLimiter = rateLimit({
  * Prevents spam and abuse
  */
 const formLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes
+  windowMs: 5 * MS_PER_MINUTE, // 5 minutes
   max: 20, // 20 form submissions per 5 minutes
   message: {
     success: false,
@@ -102,7 +103,7 @@ const formLimiter = rateLimit({
  * Allows more frequent requests for search functionality
  */
 const searchLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
+  windowMs: MS_PER_MINUTE, // 1 minute
   max: 30, // 30 searches per minute
   message: {
     success: false,
@@ -120,7 +121,7 @@ const searchLimiter = rateLimit({
  */
 function createCustomLimiter(options = {}) {
   const defaults = {
-    windowMs: 15 * 60 * 1000,
+    windowMs: 15 * MS_PER_MINUTE,
     max: 100,
     standardHeaders: true,
     legacyHeaders: false,

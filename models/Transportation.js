@@ -95,7 +95,6 @@ module.exports = (sequelize, DataTypes) => {
     Transportation.belongsTo(models.Trip, {
       foreignKey: 'tripId',
       as: 'trip',
-      constraints: false,
     });
   };
 

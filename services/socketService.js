@@ -6,9 +6,10 @@
 
 const { Server } = require('socket.io');
 const logger = require('../utils/logger');
+const { MS_PER_MINUTE } = require('../utils/constants');
 
 // WebSocket configuration
-const SOCKET_PING_TIMEOUT = parseInt(process.env.SOCKET_PING_TIMEOUT, 10) || 60000;
+const SOCKET_PING_TIMEOUT = parseInt(process.env.SOCKET_PING_TIMEOUT, 10) || MS_PER_MINUTE;
 const SOCKET_PING_INTERVAL = parseInt(process.env.SOCKET_PING_INTERVAL, 10) || 25000;
 
 let io = null;
