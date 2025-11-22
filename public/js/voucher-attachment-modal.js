@@ -72,13 +72,15 @@ function populateVoucherSelect() {
 
   availableVouchers.forEach((voucher) => {
     const remaining = parseFloat(voucher.totalValue) - parseFloat(voucher.usedAmount);
-    const expirationText = voucher.expirationDate
-      ? new Date(voucher.expirationDate).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        })
-      : 'No expiration';
+    let expirationText = 'No expiration';
+    if (voucher.expirationDate) {
+      const date = new Date(voucher.expirationDate);
+      const day = String(date.getDate()).padStart(2, '0');
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = months[date.getMonth()];
+      const year = date.getFullYear();
+      expirationText = `${day} ${month} ${year}`;
+    }
 
     const option = document.createElement('option');
     option.value = voucher.id;

@@ -76,7 +76,7 @@ module.exports = (sequelize, DataTypes) => {
 
     // Many-to-many relationship with trips through junction table
     TravelCompanion.belongsToMany(models.Trip, {
-      through: 'TripCompanions',
+      through: models.TripCompanion,
       foreignKey: 'companionId',
       otherKey: 'tripId',
       as: 'trips',
