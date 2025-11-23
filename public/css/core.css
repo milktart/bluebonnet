@@ -11,7 +11,8 @@
 .sidebar {
   position: fixed;
   top: var(--sidebar-spacing);
-  height: calc(100vh - (var(--sidebar-spacing) * 2));
+  bottom: var(--sidebar-spacing);
+  height: auto;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 1000;
   overflow: hidden;

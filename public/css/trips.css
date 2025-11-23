@@ -115,24 +115,13 @@
     --sidebar-gap: 2.5vh;
   }
 
-  /* Ensure sidebars have consistent margins on all sides */
-  .primary-sidebar,
-  .secondary-sidebar,
-  .tertiary-sidebar {
-    top: var(--sidebar-spacing);
-    bottom: var(--sidebar-spacing);
-    height: calc(100vh - (var(--sidebar-spacing) * 2));
-    max-height: calc(100vh - (var(--sidebar-spacing) * 2));
-  }
-
+  /* Sidebar positioning is handled by base .sidebar class with top/bottom */
   .primary-sidebar {
     left: var(--sidebar-spacing);
-    right: auto;
   }
 
   .secondary-sidebar {
     left: calc(var(--sidebar-spacing) + var(--sidebar-width) + var(--sidebar-gap));
-    right: auto;
   }
 
   .tertiary-sidebar {
@@ -153,24 +142,22 @@
   }
 
   .primary-sidebar {
-    top: auto;
+    top: 50vh;
     bottom: var(--sidebar-spacing);
     left: var(--sidebar-spacing);
     right: var(--sidebar-spacing);
     width: calc(100% - (var(--sidebar-spacing) * 2));
-    height: 50vh;
-    max-height: 50vh;
+    height: auto;
     border-radius: 16px;
   }
 
   .secondary-sidebar {
-    top: auto;
-    bottom: calc(var(--sidebar-spacing) + 50vh + var(--sidebar-gap));
+    top: 5vh;
+    bottom: calc(50vh + var(--sidebar-gap) + var(--sidebar-spacing));
     left: var(--sidebar-spacing);
     right: var(--sidebar-spacing);
     width: calc(100% - (var(--sidebar-spacing) * 2));
-    height: 45vh;
-    max-height: 45vh;
+    height: auto;
     opacity: 0;
     visibility: hidden;
     transform: translateY(100%);
@@ -184,13 +171,12 @@
   }
 
   .tertiary-sidebar {
-    top: auto;
-    bottom: calc(var(--sidebar-spacing) + 50vh + var(--sidebar-gap) + 45vh + var(--sidebar-gap));
+    top: 5vh;
+    bottom: calc(45vh + (var(--sidebar-gap) * 2) + var(--sidebar-spacing));
     left: var(--sidebar-spacing);
     right: var(--sidebar-spacing);
     width: calc(100% - (var(--sidebar-spacing) * 2));
-    height: 40vh;
-    max-height: 40vh;
+    height: auto;
     opacity: 0;
     visibility: hidden;
     transform: translateY(100%);
