@@ -8,6 +8,7 @@
 # AVAILABLE STAGES:
 #   - development: Full dev environment with hot-reload, all dependencies
 #   - production:  Optimized build, pruned dependencies, non-root user, health checks
+#   - prod:        Alias for production (uses NODE_ENV=prod for database naming)
 #   - test:        Testing environment with all dependencies (run tests: docker-compose run app npm test)
 #
 # ADDING CUSTOM STAGES:
@@ -46,7 +47,8 @@ RUN npm install
 FROM base AS production-deps
 
 # Install only production dependencies
-RUN npm ci --only=production
+# Skip prepare script (husky) since git is not available in Docker
+RUN npm ci --omit=dev --ignore-scripts && npm rebuild bcrypt 2>/dev/null || true
 
 # ============================================================================
 # Stage 4: Builder - Build assets
@@ -146,11 +148,15 @@ COPY --from=builder --chown=nodejs:nodejs /app/public/css/style.css ./public/css
 COPY --chown=nodejs:nodejs . .
 
 # Create logs directory with proper permissions
-RUN mkdir -p /app/logs && chown -R nodejs:nodejs /app/logs
+RUN mkdir -p /app/logs && chown -R nodejs:nodejs /app/logs && chmod -R 777 /app/logs
 
 # Set production environment
 ENV NODE_ENV=production
 ENV PORT=3000
+
+# Copy and set entrypoint script with proper permissions (before switching user)
+COPY --chown=nodejs:nodejs scripts/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Use non-root user
 USER nodejs
@@ -158,11 +164,51 @@ USER nodejs
 # Expose port
 EXPOSE 3000
 
-# Copy and set entrypoint script with proper permissions
-USER root
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
+# Start application
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["node", "server.js"]
+
+# ============================================================================
+# Stage 8: Prod - Alias for production (uses NODE_ENV=prod for database naming)
+# ============================================================================
+FROM node:20-alpine AS prod
+
+# Add non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+WORKDIR /app
+
+# Copy only production dependencies
+COPY --from=production-deps --chown=nodejs:nodejs /app/node_modules ./node_modules
+
+# Copy built assets from builder
+COPY --from=builder --chown=nodejs:nodejs /app/public/dist ./public/dist
+COPY --from=builder --chown=nodejs:nodejs /app/public/css/style.css ./public/css/style.css
+
+# Copy application code (exclude dev files via .dockerignore)
+COPY --chown=nodejs:nodejs . .
+
+# Create logs directory with proper permissions
+RUN mkdir -p /app/logs && chown -R nodejs:nodejs /app/logs && chmod -R 777 /app/logs
+
+# Set prod environment (will be overridden by NODE_ENV env var at runtime)
+ENV NODE_ENV=prod
+ENV PORT=3000
+
+# Copy and set entrypoint script with proper permissions (before switching user)
 COPY --chown=nodejs:nodejs scripts/docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Use non-root user
 USER nodejs
+
+# Expose port
+EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \

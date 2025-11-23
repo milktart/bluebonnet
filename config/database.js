@@ -75,4 +75,34 @@ module.exports = {
       idle: POOL_IDLE_TIMEOUT,
     },
   },
+  prod: {
+    username: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT || DB_PORT_DEFAULT,
+    dialect: 'postgres',
+    logging: false,
+    timezone: '+00:00',
+    dialectOptions: {
+      timezone: 'Etc/GMT-0',
+      // Only require SSL if host is not localhost (for Docker deployments)
+      ...(process.env.DB_HOST &&
+      process.env.DB_HOST !== 'postgres' &&
+      process.env.DB_HOST !== 'localhost'
+        ? {
+            ssl: {
+              require: true,
+              rejectUnauthorized: false,
+            },
+          }
+        : {}),
+    },
+    pool: {
+      max: 10,
+      min: 2,
+      acquire: POOL_ACQUIRE_TIMEOUT,
+      idle: POOL_IDLE_TIMEOUT,
+    },
+  },
 };

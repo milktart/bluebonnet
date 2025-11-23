@@ -5,8 +5,14 @@ const fs = require('fs');
 
 // Ensure logs directory exists
 const logsDir = path.join(__dirname, '../logs');
-if (!fs.existsSync(logsDir)) {
-  fs.mkdirSync(logsDir, { recursive: true });
+try {
+  if (!fs.existsSync(logsDir)) {
+    fs.mkdirSync(logsDir, { recursive: true });
+  }
+} catch (err) {
+  // If we can't create the logs directory (e.g., in Docker with permission issues),
+  // continue without file logging - console logging will still work
+  console.warn('Warning: Could not create logs directory:', err.message);
 }
 
 // Define log format
@@ -30,32 +36,48 @@ const consoleFormat = winston.format.combine(
   })
 );
 
-// Create the logger
+// Create the logger with only console transport by default
+// File transports will be added if the logs directory is writable
+const transports = [];
+
+// Try to add file transports if logs directory is writable
+try {
+  if (fs.existsSync(logsDir)) {
+    transports.push(
+      // Error log - only errors
+      new DailyRotateFile({
+        filename: path.join(logsDir, 'error-%DATE%.log'),
+        datePattern: 'YYYY-MM-DD',
+        level: 'error',
+        maxFiles: '30d',
+        maxSize: '20m',
+      }),
+      // Combined log - all levels
+      new DailyRotateFile({
+        filename: path.join(logsDir, 'combined-%DATE%.log'),
+        datePattern: 'YYYY-MM-DD',
+        maxFiles: '14d',
+        maxSize: '20m',
+      })
+    );
+  }
+} catch (err) {
+  console.warn('Warning: Could not add file transports:', err.message);
+}
+
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
   format: logFormat,
   defaultMeta: { service: 'travel-planner' },
-  transports: [
-    // Error log - only errors
-    new DailyRotateFile({
-      filename: path.join(logsDir, 'error-%DATE%.log'),
-      datePattern: 'YYYY-MM-DD',
-      level: 'error',
-      maxFiles: '30d',
-      maxSize: '20m',
-    }),
-    // Combined log - all levels
-    new DailyRotateFile({
-      filename: path.join(logsDir, 'combined-%DATE%.log'),
-      datePattern: 'YYYY-MM-DD',
-      maxFiles: '14d',
-      maxSize: '20m',
+  transports: transports.length > 0 ? transports : [
+    new winston.transports.Console({
+      format: winston.format.simple(),
     }),
   ],
 });
 
-// Add console transport in development
-if (process.env.NODE_ENV !== 'production') {
+// Add console transport in development and test environments
+if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'prod') {
   logger.add(
     new winston.transports.Console({
       format: consoleFormat,
