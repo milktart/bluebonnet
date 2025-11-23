@@ -17,6 +17,9 @@
   top: 0;
   left: 0;
   z-index: 0;
+  /* Prevent map container from scrolling on touch devices */
+  overflow: hidden;
+  touch-action: manipulation;
 }
 
 /* Primary Sidebar - always visible, fixed width on the left */
@@ -104,31 +107,57 @@
   scrollbar-gutter: stable;
 }
 
+/* iPad and tablet layout (portrait and landscape) */
+@media (min-width: 769px) and (max-width: 1366px) {
+  :root {
+    --sidebar-spacing: 2.5vh;
+    --sidebar-width: 380px;
+    --sidebar-gap: 2.5vh;
+  }
+
+  /* Sidebar positioning is handled by base .sidebar class with top/bottom */
+  .primary-sidebar {
+    left: var(--sidebar-spacing);
+  }
+
+  .secondary-sidebar {
+    left: calc(var(--sidebar-spacing) + var(--sidebar-width) + var(--sidebar-gap));
+  }
+
+  .tertiary-sidebar {
+    left: calc(var(--sidebar-spacing) + (var(--sidebar-width) * 2) + (var(--sidebar-gap) * 2));
+    right: var(--sidebar-spacing);
+    width: calc(
+      100vw - var(--sidebar-spacing) * 2 - (var(--sidebar-width) * 2) - (var(--sidebar-gap) * 2)
+    );
+  }
+}
+
 /* Mobile bottom sheet layout */
 @media (max-width: 768px) {
   :root {
-    --sidebar-spacing: 3vh;
+    --sidebar-spacing: 2vh;
     --sidebar-width: 100%;
-    --sidebar-gap: 3vh;
+    --sidebar-gap: 2vh;
   }
 
   .primary-sidebar {
-    top: auto;
+    top: 50vh;
     bottom: var(--sidebar-spacing);
     left: var(--sidebar-spacing);
     right: var(--sidebar-spacing);
     width: calc(100% - (var(--sidebar-spacing) * 2));
-    height: 50vh;
+    height: auto;
     border-radius: 16px;
   }
 
   .secondary-sidebar {
-    top: auto;
-    bottom: calc(var(--sidebar-spacing) + 50vh + var(--sidebar-gap));
+    top: 5vh;
+    bottom: calc(50vh + var(--sidebar-gap) + var(--sidebar-spacing));
     left: var(--sidebar-spacing);
     right: var(--sidebar-spacing);
     width: calc(100% - (var(--sidebar-spacing) * 2));
-    height: 45vh;
+    height: auto;
     opacity: 0;
     visibility: hidden;
     transform: translateY(100%);
@@ -142,12 +171,12 @@
   }
 
   .tertiary-sidebar {
-    top: auto;
-    bottom: calc(var(--sidebar-spacing) + 50vh + var(--sidebar-gap) + 45vh + var(--sidebar-gap));
+    top: 5vh;
+    bottom: calc(45vh + (var(--sidebar-gap) * 2) + var(--sidebar-spacing));
     left: var(--sidebar-spacing);
     right: var(--sidebar-spacing);
     width: calc(100% - (var(--sidebar-spacing) * 2));
-    height: 40vh;
+    height: auto;
     opacity: 0;
     visibility: hidden;
     transform: translateY(100%);
@@ -196,7 +225,20 @@
   display: none;
 }
 
+/* Prevent body scroll on map pages */
+body.overflow-hidden {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
 /* Leaflet fixes */
+.leaflet-container {
+  /* Allow only map pan and zoom gestures on touch devices */
+  touch-action: pan-x pan-y pinch-zoom;
+}
+
 .leaflet-container img.leaflet-tile {
   mix-blend-mode: unset !important;
 }
