@@ -17,6 +17,9 @@
   top: 0;
   left: 0;
   z-index: 0;
+  /* Prevent map container from scrolling on touch devices */
+  overflow: hidden;
+  touch-action: manipulation;
 }
 
 /* Primary Sidebar - always visible, fixed width on the left */
@@ -104,12 +107,49 @@
   scrollbar-gutter: stable;
 }
 
+/* iPad and tablet layout (portrait and landscape) */
+@media (min-width: 769px) and (max-width: 1366px) {
+  :root {
+    --sidebar-spacing: 2.5vh;
+    --sidebar-width: 380px;
+    --sidebar-gap: 2.5vh;
+  }
+
+  /* Ensure sidebars have consistent margins on all sides */
+  .primary-sidebar,
+  .secondary-sidebar,
+  .tertiary-sidebar {
+    top: var(--sidebar-spacing);
+    bottom: var(--sidebar-spacing);
+    height: calc(100vh - (var(--sidebar-spacing) * 2));
+    max-height: calc(100vh - (var(--sidebar-spacing) * 2));
+  }
+
+  .primary-sidebar {
+    left: var(--sidebar-spacing);
+    right: auto;
+  }
+
+  .secondary-sidebar {
+    left: calc(var(--sidebar-spacing) + var(--sidebar-width) + var(--sidebar-gap));
+    right: auto;
+  }
+
+  .tertiary-sidebar {
+    left: calc(var(--sidebar-spacing) + (var(--sidebar-width) * 2) + (var(--sidebar-gap) * 2));
+    right: var(--sidebar-spacing);
+    width: calc(
+      100vw - var(--sidebar-spacing) * 2 - (var(--sidebar-width) * 2) - (var(--sidebar-gap) * 2)
+    );
+  }
+}
+
 /* Mobile bottom sheet layout */
 @media (max-width: 768px) {
   :root {
-    --sidebar-spacing: 3vh;
+    --sidebar-spacing: 2vh;
     --sidebar-width: 100%;
-    --sidebar-gap: 3vh;
+    --sidebar-gap: 2vh;
   }
 
   .primary-sidebar {
@@ -119,6 +159,7 @@
     right: var(--sidebar-spacing);
     width: calc(100% - (var(--sidebar-spacing) * 2));
     height: 50vh;
+    max-height: 50vh;
     border-radius: 16px;
   }
 
@@ -129,6 +170,7 @@
     right: var(--sidebar-spacing);
     width: calc(100% - (var(--sidebar-spacing) * 2));
     height: 45vh;
+    max-height: 45vh;
     opacity: 0;
     visibility: hidden;
     transform: translateY(100%);
@@ -148,6 +190,7 @@
     right: var(--sidebar-spacing);
     width: calc(100% - (var(--sidebar-spacing) * 2));
     height: 40vh;
+    max-height: 40vh;
     opacity: 0;
     visibility: hidden;
     transform: translateY(100%);
@@ -196,7 +239,20 @@
   display: none;
 }
 
+/* Prevent body scroll on map pages */
+body.overflow-hidden {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
 /* Leaflet fixes */
+.leaflet-container {
+  /* Allow only map pan and zoom gestures on touch devices */
+  touch-action: pan-x pan-y pinch-zoom;
+}
+
 .leaflet-container img.leaflet-tile {
   mix-blend-mode: unset !important;
 }
