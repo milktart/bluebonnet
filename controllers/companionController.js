@@ -7,7 +7,10 @@ const logger = require('../utils/logger');
 exports.listCompanions = async (req, res) => {
   try {
     const companions = await TravelCompanion.findAll({
-      where: { createdBy: req.user.id },
+      where: {
+        createdBy: req.user.id,
+        userId: { [Op.ne]: req.user.id } // Exclude account owner's companion profile
+      },
       include: [
         {
           model: User,
@@ -33,7 +36,10 @@ exports.listCompanions = async (req, res) => {
 exports.listCompanionsSidebar = async (req, res) => {
   try {
     const companions = await TravelCompanion.findAll({
-      where: { createdBy: req.user.id },
+      where: {
+        createdBy: req.user.id,
+        userId: { [Op.ne]: req.user.id } // Exclude account owner's companion profile
+      },
       include: [
         {
           model: User,
@@ -62,7 +68,10 @@ exports.listCompanionsSidebar = async (req, res) => {
 exports.getCompanionsJson = async (req, res) => {
   try {
     const companions = await TravelCompanion.findAll({
-      where: { createdBy: req.user.id },
+      where: {
+        createdBy: req.user.id,
+        userId: { [Op.ne]: req.user.id } // Exclude account owner's companion profile
+      },
       include: [
         {
           model: User,
@@ -243,10 +252,12 @@ exports.searchCompanions = async (req, res) => {
     // Search companions that:
     // 1. User created themselves, OR
     // 2. Other users created but marked as canBeAddedByOthers=true
+    // 3. But exclude the account owner's companion profile
     const companions = await TravelCompanion.findAll({
       where: {
         [Op.or]: [{ createdBy: userId }, { canBeAddedByOthers: true }],
         [Op.or]: [{ name: { [Op.iLike]: `%${q}%` } }, { email: { [Op.iLike]: `%${q}%` } }],
+        userId: { [Op.ne]: userId }, // Exclude account owner's companion profile
       },
       include: [
         {
@@ -286,6 +297,7 @@ exports.getEditCompanion = async (req, res) => {
       where: {
         id: req.params.id,
         createdBy: req.user.id,
+        userId: { [Op.ne]: req.user.id }, // Prevent editing own companion profile
       },
       include: [
         {
@@ -319,6 +331,7 @@ exports.getEditCompanionSidebar = async (req, res) => {
       where: {
         id: req.params.id,
         createdBy: req.user.id,
+        userId: { [Op.ne]: req.user.id }, // Prevent editing own companion profile
       },
       include: [
         {
@@ -376,6 +389,7 @@ exports.updateCompanion = async (req, res) => {
       where: {
         id: companionId,
         createdBy: req.user.id,
+        userId: { [Op.ne]: req.user.id }, // Prevent editing own companion profile
       },
     });
 
@@ -454,6 +468,7 @@ exports.deleteCompanion = async (req, res) => {
       where: {
         id: req.params.id,
         createdBy: req.user.id,
+        userId: { [Op.ne]: req.user.id }, // Prevent deleting own companion profile
       },
     });
 

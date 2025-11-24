@@ -517,6 +517,13 @@ exports.getEditTrip = async (req, res) => {
       return res.redirect('/');
     }
 
+    // Filter out the trip owner from the companions list shown in edit form
+    if (trip.tripCompanions) {
+      trip.tripCompanions = trip.tripCompanions.filter(
+        tc => tc.companion.userId !== req.user.id
+      );
+    }
+
     res.render('trips/edit', { title: 'Edit Trip', trip });
   } catch (error) {
     logger.error(error);
@@ -552,6 +559,13 @@ exports.getEditTripSidebar = async (req, res) => {
 
     if (!trip) {
       return res.status(404).json({ error: 'Trip not found' });
+    }
+
+    // Filter out the trip owner from the companions list shown in edit form
+    if (trip.tripCompanions) {
+      trip.tripCompanions = trip.tripCompanions.filter(
+        tc => tc.companion.userId !== req.user.id
+      );
     }
 
     res.render('trips/edit', {
@@ -615,14 +629,23 @@ exports.updateTrip = async (req, res) => {
       companionIds = Array.isArray(companions) ? companions : [];
     }
 
+    // Get the owner's companion profile ID to prevent removal
+    const ownerCompanion = await TravelCompanion.findOne({
+      where: { userId: req.user.id },
+    });
+
     // Identify companions to remove
     const existingIds = existingCompanions.map((c) => c.companionId);
     const toRemove = existingIds.filter((id) => !companionIds.includes(id));
     const toAdd = companionIds.filter((id) => !existingIds.includes(id));
 
-    // Remove companions that were deleted
+    // Remove companions that were deleted (but never remove the trip owner)
     if (toRemove.length > 0) {
       for (const companionId of toRemove) {
+        // Skip removing the owner's companion profile
+        if (ownerCompanion && companionId === ownerCompanion.id) {
+          continue;
+        }
         await TripCompanion.destroy({
           where: { tripId: trip.id, companionId },
         });
