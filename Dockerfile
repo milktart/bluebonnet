@@ -61,6 +61,11 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Capture build information (git commit, timestamp) and save to .build-info file
+# This allows production builds to know the exact commit they were built from
+RUN node scripts/capture-build-info.js > /tmp/build-info.txt && cat /tmp/build-info.txt && \
+    cp /tmp/build-info.txt .build-info
+
 # Build all assets (CSS and JavaScript)
 RUN npm run build
 
@@ -150,6 +155,9 @@ COPY --from=production-deps --chown=nodejs:nodejs /app/node_modules ./node_modul
 COPY --from=builder --chown=nodejs:nodejs /app/public/dist ./public/dist
 COPY --from=builder --chown=nodejs:nodejs /app/public/css/style.css ./public/css/style.css
 
+# Copy build info file for version tracking
+COPY --from=builder --chown=nodejs:nodejs /app/.build-info ./.build-info
+
 # Copy application code (exclude dev files via .dockerignore)
 COPY --chown=nodejs:nodejs . .
 
@@ -195,6 +203,9 @@ COPY --from=production-deps --chown=nodejs:nodejs /app/node_modules ./node_modul
 # Copy built assets from builder
 COPY --from=builder --chown=nodejs:nodejs /app/public/dist ./public/dist
 COPY --from=builder --chown=nodejs:nodejs /app/public/css/style.css ./public/css/style.css
+
+# Copy build info file for version tracking
+COPY --from=builder --chown=nodejs:nodejs /app/.build-info ./.build-info
 
 # Copy application code (exclude dev files via .dockerignore)
 COPY --chown=nodejs:nodejs . .
