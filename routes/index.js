@@ -69,7 +69,7 @@ router.get('/manage/certificates', ensureAuthenticated, (req, res) => {
 
 // GET companions within manage
 router.get('/manage/companions', ensureAuthenticated, (req, res) => {
-  tripController.listTrips(req, res, { openSettingsSidebar: true, openCompanionsSidebar: true });
+  tripController.listTrips(req, res, { openCompanionsSidebar: true });
 });
 
 // GET certificate details within manage

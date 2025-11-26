@@ -76,6 +76,16 @@ function switchTab(activeTab) {
 
 export function showUpcomingTrips() {
   switchTab('upcoming');
+  // Close secondary sidebar if open
+  const secondarySidebar = document.getElementById('secondary-sidebar');
+  if (secondarySidebar && secondarySidebar.classList.contains('open')) {
+    console.log('[showUpcomingTrips] Closing secondary sidebar');
+    if (typeof window.closeSecondarySidebar === 'function') {
+      window.closeSecondarySidebar();
+    } else {
+      console.warn('[showUpcomingTrips] closeSecondarySidebar function not found');
+    }
+  }
   // Update map to show upcoming trips data (flights and events)
   if (typeof upcomingTripsData !== 'undefined') {
     updateMapData(upcomingTripsData);
@@ -84,6 +94,16 @@ export function showUpcomingTrips() {
 
 export function showPastTrips() {
   switchTab('past');
+  // Close secondary sidebar if open
+  const secondarySidebar = document.getElementById('secondary-sidebar');
+  if (secondarySidebar && secondarySidebar.classList.contains('open')) {
+    console.log('[showPastTrips] Closing secondary sidebar');
+    if (typeof window.closeSecondarySidebar === 'function') {
+      window.closeSecondarySidebar();
+    } else {
+      console.warn('[showPastTrips] closeSecondarySidebar function not found');
+    }
+  }
   // Update map to show past trips data (flights only) with darker colors
   if (typeof pastTripsData !== 'undefined') {
     updateMapData(pastTripsData, true);
@@ -643,3 +663,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }, 500);
 });
+
+// Expose functions globally for inline scripts and initialization
+window.showUpcomingTrips = showUpcomingTrips;
+window.showPastTrips = showPastTrips;
+window.showSettings = showSettings;
+window.toggleAccordion = toggleAccordion;

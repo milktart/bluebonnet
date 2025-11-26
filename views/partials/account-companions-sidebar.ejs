@@ -91,7 +91,12 @@ function renderMutualCompanions(companions) {
 async function editCompanion(companionId) {
   try {
     // Load the edit form in the secondary sidebar
-    await loadSidebarContent(`/companions/${companionId}/sidebar/edit`);
+    if (typeof window.loadSidebarContent === 'function') {
+      await window.loadSidebarContent(`/companions/${companionId}/sidebar/edit`);
+    } else {
+      console.error('loadSidebarContent function not found');
+      alert('Error loading edit form');
+    }
   } catch (error) {
     console.error('Error loading edit form:', error);
     alert('Error loading edit form');
@@ -102,13 +107,20 @@ async function deleteCompanionClick(companionId) {
   if (!confirm('Are you sure you want to delete this companion?')) return;
 
   try {
-    const response = await fetch(`/companions/${companionId}`, { method: 'DELETE' });
+    const response = await fetch(`/companions/${companionId}`, {
+      method: 'DELETE',
+      headers: {
+        'X-Sidebar-Request': 'true'
+      }
+    });
+
     if (response.ok) {
       // Reload companion data to reflect the deletion
       loadCompanionData();
       alert('Companion deleted successfully');
     } else {
-      alert('Error deleting companion');
+      const data = await response.json();
+      alert(data.error || 'Error deleting companion');
     }
   } catch (error) {
     console.error('Error:', error);

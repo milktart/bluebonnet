@@ -61,9 +61,9 @@ async function loadSidebarContent(url, options = {}) {
       document.head.appendChild(newScript);
     });
 
-    // Save to history (remove any forward history if we're going back then forward)
+    // Save to history (store URL instead of HTML for more reliable back navigation)
     sidebarHistory = sidebarHistory.slice(0, sidebarHistoryIndex + 1);
-    sidebarHistory.push(html);
+    sidebarHistory.push({ url, options });
     sidebarHistoryIndex += 1;
 
     // Close tertiary sidebar if open
@@ -181,13 +181,69 @@ function initializeSidebarContent() {
 /**
  * Navigate back in sidebar history
  */
-function goBackInSidebar() {
+async function goBackInSidebar() {
+  console.log('[goBackInSidebar] Current index:', sidebarHistoryIndex, 'History length:', sidebarHistory.length);
+
+  // Temporary debug alert for iPad testing
+  alert(`Back clicked! Index: ${sidebarHistoryIndex}, History: ${sidebarHistory.length}`);
+
   if (sidebarHistoryIndex > 0) {
     sidebarHistoryIndex -= 1;
+    const historyEntry = sidebarHistory[sidebarHistoryIndex];
+
+    console.log('[goBackInSidebar] Going back to:', historyEntry);
+
+    // Reload the content from the URL to ensure scripts execute properly
     const container = document.getElementById('secondary-sidebar-content');
+    const sidebar = document.getElementById('secondary-sidebar');
+
     if (container) {
-      container.innerHTML = sidebarHistory[sidebarHistoryIndex];
-      initializeSidebarContent();
+      container.innerHTML = '<div class="text-center py-8"><p class="text-gray-500">Loading...</p></div>';
+
+      try {
+        console.log('[goBackInSidebar] Fetching:', historyEntry.url);
+        const response = await fetch(historyEntry.url, {
+          method: 'GET',
+          headers: {
+            'X-Sidebar-Request': 'true',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const html = await response.text();
+        console.log('[goBackInSidebar] Received HTML, length:', html.length);
+        container.innerHTML = html;
+
+        // Execute any scripts in the loaded content
+        const scripts = container.querySelectorAll('script');
+        console.log('[goBackInSidebar] Found', scripts.length, 'scripts to execute');
+        scripts.forEach((script, index) => {
+          console.log('[goBackInSidebar] Executing script', index);
+          const newScript = document.createElement('script');
+          if (script.src) {
+            newScript.src = script.src;
+          } else {
+            newScript.textContent = script.textContent;
+          }
+          document.head.appendChild(newScript);
+        });
+
+        // Apply full-width styling if needed
+        if (historyEntry.options && historyEntry.options.fullWidth) {
+          if (sidebar) {
+            sidebar.classList.add('full-width');
+          }
+        }
+
+        initializeSidebarContent();
+        console.log('[goBackInSidebar] Content loaded successfully');
+      } catch (error) {
+        console.error('[goBackInSidebar] Error loading previous content:', error);
+        container.innerHTML = '<div class="p-4"><p class="text-red-600">Error loading content. Please try again.</p></div>';
+      }
     }
 
     // Emit history changed event
@@ -196,6 +252,7 @@ function goBackInSidebar() {
       total: sidebarHistory.length,
     });
   } else {
+    console.log('[goBackInSidebar] No history, closing sidebar');
     // No history, close the sidebar
     if (typeof closeSecondarySidebar === 'function') {
       closeSecondarySidebar();

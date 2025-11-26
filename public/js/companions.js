@@ -517,8 +517,10 @@ export class CompanionManager {
       const result = await response.json();
 
       if (result.success) {
+        // Reload the companions sidebar to show the updated companion
+        // This ensures fresh data is loaded via the sidebar's loadCompanionData() function
         if (typeof loadSidebarContent === 'function') {
-          loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
+          await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
         }
       } else {
         alert(result.error || 'Failed to update companion');
@@ -549,8 +551,10 @@ export class CompanionManager {
       const result = await response.json();
 
       if (result.success) {
+        // Reload the companions sidebar to show the newly created companion
+        // This ensures fresh data is loaded via the sidebar's loadCompanionData() function
         if (typeof loadSidebarContent === 'function') {
-          loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
+          await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
         }
       } else {
         alert(result.error || 'Failed to add companion');
@@ -584,8 +588,9 @@ export class CompanionManager {
       const data = await response.json();
 
       if (data.success) {
+        // Reload the companions sidebar to reflect the deletion
         if (typeof loadSidebarContent === 'function') {
-          loadSidebarContent('/companions/sidebar');
+          await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
         }
       } else {
         alert(data.error || 'Failed to delete companion');
@@ -620,8 +625,9 @@ export class CompanionManager {
       const data = await response.json();
 
       if (data.success) {
+        // Reload the companions sidebar to reflect the unlinking
         if (typeof loadSidebarContent === 'function') {
-          loadSidebarContent('/companions/sidebar');
+          await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
         }
       } else {
         alert(data.error || 'Failed to unlink companion');
@@ -650,14 +656,16 @@ export class CompanionManager {
 
       if (!data.success) {
         alert(data.error || 'Failed to update companion permissions');
+        // Reload the companions sidebar on error to ensure consistent state
         if (typeof loadSidebarContent === 'function') {
-          loadSidebarContent('/companions/sidebar');
+          await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
         }
       }
     } catch (error) {
       alert(`Error updating companion permissions: ${error.message}`);
+      // Reload the companions sidebar on error to ensure consistent state
       if (typeof loadSidebarContent === 'function') {
-        loadSidebarContent('/companions/sidebar');
+        await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
       }
     }
   }

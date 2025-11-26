@@ -9,7 +9,12 @@ exports.listCompanions = async (req, res) => {
     const companions = await TravelCompanion.findAll({
       where: {
         createdBy: req.user.id,
-        userId: { [Op.ne]: req.user.id } // Exclude account owner's companion profile
+        // Exclude account owner's companion profile (where userId equals current user)
+        // Must explicitly handle NULL since SQL NULL != value evaluates to NULL (not true)
+        [Op.or]: [
+          { userId: { [Op.is]: null } },
+          { userId: { [Op.ne]: req.user.id } }
+        ]
       },
       include: [
         {
@@ -38,7 +43,12 @@ exports.listCompanionsSidebar = async (req, res) => {
     const companions = await TravelCompanion.findAll({
       where: {
         createdBy: req.user.id,
-        userId: { [Op.ne]: req.user.id } // Exclude account owner's companion profile
+        // Exclude account owner's companion profile (where userId equals current user)
+        // Must explicitly handle NULL since SQL NULL != value evaluates to NULL (not true)
+        [Op.or]: [
+          { userId: { [Op.is]: null } },
+          { userId: { [Op.ne]: req.user.id } }
+        ]
       },
       include: [
         {
@@ -70,7 +80,12 @@ exports.getCompanionsJson = async (req, res) => {
     const companions = await TravelCompanion.findAll({
       where: {
         createdBy: req.user.id,
-        userId: { [Op.ne]: req.user.id } // Exclude account owner's companion profile
+        // Exclude account owner's companion profile (where userId equals current user)
+        // Must explicitly handle NULL since SQL NULL != value evaluates to NULL (not true)
+        [Op.or]: [
+          { userId: { [Op.is]: null } },
+          { userId: { [Op.ne]: req.user.id } }
+        ]
       },
       include: [
         {
@@ -257,7 +272,12 @@ exports.searchCompanions = async (req, res) => {
       where: {
         [Op.or]: [{ createdBy: userId }, { canBeAddedByOthers: true }],
         [Op.or]: [{ name: { [Op.iLike]: `%${q}%` } }, { email: { [Op.iLike]: `%${q}%` } }],
-        userId: { [Op.ne]: userId }, // Exclude account owner's companion profile
+        // Exclude account owner's companion profile (where userId equals current user)
+        // Must explicitly handle NULL since SQL NULL != value evaluates to NULL (not true)
+        [Op.or]: [
+          { userId: { [Op.is]: null } },
+          { userId: { [Op.ne]: userId } }
+        ]
       },
       include: [
         {
@@ -297,7 +317,12 @@ exports.getEditCompanion = async (req, res) => {
       where: {
         id: req.params.id,
         createdBy: req.user.id,
-        userId: { [Op.ne]: req.user.id }, // Prevent editing own companion profile
+        // Prevent editing own companion profile (where userId equals current user)
+        // Must explicitly handle NULL since SQL NULL != value evaluates to NULL (not true)
+        [Op.or]: [
+          { userId: { [Op.is]: null } },
+          { userId: { [Op.ne]: req.user.id } }
+        ]
       },
       include: [
         {
@@ -331,7 +356,12 @@ exports.getEditCompanionSidebar = async (req, res) => {
       where: {
         id: req.params.id,
         createdBy: req.user.id,
-        userId: { [Op.ne]: req.user.id }, // Prevent editing own companion profile
+        // Prevent editing own companion profile (where userId equals current user)
+        // Must explicitly handle NULL since SQL NULL != value evaluates to NULL (not true)
+        [Op.or]: [
+          { userId: { [Op.is]: null } },
+          { userId: { [Op.ne]: req.user.id } }
+        ]
       },
       include: [
         {
@@ -389,7 +419,12 @@ exports.updateCompanion = async (req, res) => {
       where: {
         id: companionId,
         createdBy: req.user.id,
-        userId: { [Op.ne]: req.user.id }, // Prevent editing own companion profile
+        // Prevent editing own companion profile (where userId equals current user)
+        // Must explicitly handle NULL since SQL NULL != value evaluates to NULL (not true)
+        [Op.or]: [
+          { userId: { [Op.is]: null } },
+          { userId: { [Op.ne]: req.user.id } }
+        ]
       },
     });
 
@@ -468,7 +503,12 @@ exports.deleteCompanion = async (req, res) => {
       where: {
         id: req.params.id,
         createdBy: req.user.id,
-        userId: { [Op.ne]: req.user.id }, // Prevent deleting own companion profile
+        // Prevent deleting own companion profile (where userId equals current user)
+        // Must explicitly handle NULL since SQL NULL != value evaluates to NULL (not true)
+        [Op.or]: [
+          { userId: { [Op.is]: null } },
+          { userId: { [Op.ne]: req.user.id } }
+        ]
       },
     });
 
