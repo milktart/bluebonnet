@@ -27,8 +27,8 @@ FROM node:20-alpine AS base
 
 WORKDIR /app
 
-# Install build dependencies (needed for some npm packages)
-RUN apk add --no-cache python3 make g++
+# Install build dependencies (needed for some npm packages) and git for version info
+RUN apk add --no-cache python3 make g++ git
 
 # Copy package files
 COPY package*.json ./
@@ -70,6 +70,12 @@ RUN npm run build
 FROM node:20-alpine AS development
 
 WORKDIR /app
+
+# Install git for version info
+RUN apk add --no-cache git
+
+# Configure git to trust the /app directory (for volume mounts)
+RUN git config --global --add safe.directory /app
 
 # Copy all dependencies (including dev)
 COPY --from=development-deps /app/node_modules ./node_modules

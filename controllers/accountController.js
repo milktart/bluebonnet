@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const { Sequelize } = require('sequelize');
 const logger = require('../utils/logger');
 const { User, TravelCompanion, Voucher } = require('../models');
+const versionInfo = require('../utils/version');
 
 exports.getAccountSettings = async (req, res) => {
   try {
@@ -22,6 +23,7 @@ exports.getAccountSettings = async (req, res) => {
       title: 'Account Settings',
       user: req.user,
       linkedCompanions,
+      versionInfo,
     });
   } catch (error) {
     logger.error('Error loading account settings:', error);

@@ -18,6 +18,7 @@ const logger = require('../utils/logger');
 const airportService = require('../services/airportService');
 const { formatInTimezone } = require('../utils/timezoneHelper');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
+const versionInfo = require('../utils/version');
 
 exports.listTrips = async (req, res, options = {}) => {
   try {
@@ -205,6 +206,7 @@ exports.listTrips = async (req, res, options = {}) => {
       showSettingsTab: options.showSettingsTab || false,
       activeTab,
       pagination,
+      versionInfo,
     };
 
     res.render('trips/dashboard', renderData);

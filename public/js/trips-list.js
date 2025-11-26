@@ -383,6 +383,7 @@ function zoomToTripBounds(tripIndex, prefix = 'upcoming') {
     paddingBottomRight: [0, 0],
     maxZoom,
     duration: 0.5,
+    easeLinearity: 0.1,
   };
 
   try {
@@ -408,6 +409,7 @@ function restoreOriginalZoom() {
     currentMap.fitBounds(originalMapBounds, {
       maxZoom: originalMapZoom,
       duration: 0.5,
+      easeLinearity: 0.1,
     });
   } catch (e) {
     console.warn('Failed to restore original zoom:', e);
@@ -612,9 +614,9 @@ document.addEventListener('DOMContentLoaded', function () {
           currentMap = map;
 
           // Setup accordion hover handlers
-          const accordionButtons = document.querySelectorAll('.w-full.py-4.px-5');
-          accordionButtons.forEach((button, index) => {
-            const accordionContent = button.nextElementSibling;
+          const accordionContainers = document.querySelectorAll('.accordion-button-container');
+          accordionContainers.forEach((container, index) => {
+            const accordionContent = container.querySelector('[class*="accordion-content"]');
             if (accordionContent && accordionContent.id) {
               // Extract prefix (upcoming or past) and trip index
               let tripIndex = '';
@@ -629,7 +631,7 @@ document.addEventListener('DOMContentLoaded', function () {
               }
 
               if (tripIndex) {
-                button.addEventListener('mouseenter', async () => {
+                container.addEventListener('mouseenter', async () => {
                   const accordionId = `${prefix}-${tripIndex}`;
                   const accordionContent = document.getElementById(accordionId);
 
@@ -645,7 +647,7 @@ document.addEventListener('DOMContentLoaded', function () {
                   animateTripSegments(tripIndex, prefix);
                 });
 
-                button.addEventListener('mouseleave', () => {
+                container.addEventListener('mouseleave', () => {
                   stopTripAnimation();
                 });
               }
