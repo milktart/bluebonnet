@@ -1,5 +1,5 @@
 const bcrypt = require('bcrypt');
-const { Sequelize } = require('sequelize');
+const { Sequelize, Op } = require('sequelize');
 const logger = require('../utils/logger');
 const { User, TravelCompanion, Voucher } = require('../models');
 const versionInfo = require('../utils/version');
@@ -7,8 +7,12 @@ const versionInfo = require('../utils/version');
 exports.getAccountSettings = async (req, res) => {
   try {
     // Get companion profiles where this user is linked
+    // Exclude profiles created by the user themselves (prevent self-removal)
     const linkedCompanions = await TravelCompanion.findAll({
-      where: { userId: req.user.id },
+      where: {
+        userId: req.user.id,
+        createdBy: { [Op.ne]: req.user.id }, // Exclude self-created profiles
+      },
       include: [
         {
           model: User,
@@ -121,8 +125,12 @@ exports.changePassword = async (req, res) => {
 exports.getAccountSettingsSidebar = async (req, res) => {
   try {
     // Get all companion profiles where this user is linked
+    // Exclude profiles created by the user themselves (prevent self-removal)
     const companionProfiles = await TravelCompanion.findAll({
-      where: { userId: req.user.id },
+      where: {
+        userId: req.user.id,
+        createdBy: { [Op.ne]: req.user.id }, // Exclude self-created profiles
+      },
       include: [
         {
           model: User,
