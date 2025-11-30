@@ -33,55 +33,6 @@
             <span class="material-symbols-outlined text-lg">group</span>
           </button>
 
-          <!-- Notification Center -->
-          <div class="relative">
-            <button
-              type="button"
-              class="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors duration-200 relative"
-              id="notification-bell"
-              onclick="toggleNotificationCenter()"
-            >
-              <i class="bi bi-bell text-lg"></i>
-              <span
-                id="notification-badge"
-                class="absolute top-1 right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
-                style="display: none;"
-              >
-                <span id="unread-count">0</span>
-              </span>
-            </button>
-
-            <!-- Notification Panel -->
-            <div
-              id="notification-panel"
-              class="absolute right-0 top-12 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
-              style="display: none; max-height: 500px; overflow-y: auto;"
-            >
-              <div class="p-4 border-b border-gray-200">
-                <div class="flex justify-between items-center">
-                  <h6 class="font-semibold text-gray-900">Notifications</h6>
-                  <button
-                    type="button"
-                    class="text-gray-400 hover:text-gray-600"
-                    onclick="toggleNotificationCenter()"
-                  >
-                    <i class="bi bi-x-lg"></i>
-                  </button>
-                </div>
-              </div>
-
-              <div id="notification-list" class="divide-y divide-gray-200">
-                <div class="p-4 text-center text-gray-500 text-sm">Loading notifications...</div>
-              </div>
-
-              <div class="p-3 border-t border-gray-200 bg-gray-50 text-center">
-                <a href="/account" class="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                  View all notifications
-                </a>
-              </div>
-            </div>
-          </div>
-
           <!-- User Dropdown -->
           <div class="relative" data-hs-dropdown>
             <button
@@ -176,10 +127,3 @@
   </nav>
 </header>
 
-<script src="/js/notifications.js?v=<%= assetVersion %>"></script>
-<script>
-// Initialize notification system for nav
-document.addEventListener('DOMContentLoaded', () => {
-  initializeNotifications('notification-panel', 'notification-bell');
-});
-</script>

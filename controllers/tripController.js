@@ -97,9 +97,27 @@ exports.listTrips = async (req, res, options = {}) => {
       });
     }
 
-    // Get trips where the user is a companion
+    // Get trips where the user is a companion (but exclude trips with pending invitations)
+    // First, get trip IDs with pending invitations for this user
+    const pendingTripIds = await TripInvitation.findAll({
+      where: {
+        invitedUserId: req.user.id,
+        status: 'pending',
+      },
+      attributes: ['tripId'],
+      raw: true,
+    }).then(invitations => invitations.map(inv => inv.tripId));
+
     const companionTripsQuery = {
-      where: dateFilter,
+      where: {
+        ...dateFilter,
+        // Exclude trips with pending invitations
+        ...(pendingTripIds.length > 0 && {
+          id: {
+            [Op.notIn]: pendingTripIds
+          }
+        })
+      },
       include: [
         ...tripIncludes,
         {
@@ -174,6 +192,11 @@ exports.listTrips = async (req, res, options = {}) => {
             model: Trip,
             as: 'trip',
             include: tripIncludes,
+          },
+          {
+            model: User,
+            as: 'invitedByUser',
+            attributes: ['id', 'firstName', 'lastName'],
           },
         ],
         order: [['createdAt', 'DESC']],
@@ -310,7 +333,7 @@ exports.createTrip = async (req, res) => {
             // Auto-add to all trip items (will be created later)
           } else if (companion.userId) {
             // Send trip invitation for view_travel
-            await TripInvitation.create({
+            const invitation = await TripInvitation.create({
               tripId: trip.id,
               invitedUserId: companion.userId,
               invitedByUserId: req.user.id,
@@ -323,7 +346,7 @@ exports.createTrip = async (req, res) => {
               await Notification.create({
                 userId: companion.userId,
                 type: 'trip_invitation_received',
-                relatedId: trip.id,
+                relatedId: invitation.id,
                 relatedType: 'trip_invitation',
                 message: `${req.user.firstName} ${req.user.lastName} invited you to join the trip "${trip.name}"`,
                 read: false,
@@ -746,7 +769,7 @@ exports.updateTrip = async (req, res) => {
           });
 
           if (!existingInvitation) {
-            await TripInvitation.create({
+            const invitation = await TripInvitation.create({
               tripId: trip.id,
               invitedUserId: companion.userId,
               invitedByUserId: req.user.id,
@@ -758,7 +781,7 @@ exports.updateTrip = async (req, res) => {
               await Notification.create({
                 userId: companion.userId,
                 type: 'trip_invitation_received',
-                relatedId: trip.id,
+                relatedId: invitation.id,
                 relatedType: 'trip_invitation',
                 message: `${req.user.firstName} ${req.user.lastName} invited you to join the trip "${trip.name}"`,
                 read: false,

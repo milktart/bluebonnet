@@ -89,8 +89,10 @@ exports.inviteCompanion = async (req, res) => {
       status: 'pending',
     });
 
+    logger.info('TRIP_INVITE_CREATE SUCCESS', { invitationId: invitation.id, tripId, invitedUserId });
+
     // Create notification
-    await db.Notification.create({
+    const notification = await db.Notification.create({
       userId: invitedUserId,
       type: 'trip_invitation_received',
       relatedId: invitation.id,
@@ -99,6 +101,8 @@ exports.inviteCompanion = async (req, res) => {
       read: false,
       actionRequired: true,
     });
+
+    logger.info('NOTIF_CREATE SUCCESS', { notificationId: notification.id, relatedId: notification.relatedId });
 
     return res.status(201).json({
       success: true,
@@ -163,6 +167,8 @@ exports.respondToInvitation = async (req, res) => {
     const { response } = req.body; // 'join' or 'decline'
     const userId = req.user.id;
 
+    logger.info('respondToInvitation called:', { invitationId, response, userId });
+
     // Validate response
     if (!['join', 'decline'].includes(response)) {
       return res.status(400).json({
@@ -180,6 +186,8 @@ exports.respondToInvitation = async (req, res) => {
         },
       ],
     });
+
+    logger.info('TRIP_INVITE_LOOKUP', { invitationId, found: !!invitation, status: invitation?.status || 'NOT_FOUND' });
 
     if (!invitation) {
       return res.status(404).json({
@@ -245,16 +253,7 @@ exports.respondToInvitation = async (req, res) => {
       invitation.respondedAt = new Date();
       await invitation.save();
 
-      // Create notification for trip owner
-      await db.Notification.create({
-        userId: trip.userId,
-        type: 'trip_invitation_accepted',
-        relatedId: invitation.id,
-        relatedType: 'trip_invitation',
-        message: `${req.user.firstName} ${req.user.lastName} joined your trip to ${trip.destination}`,
-        read: false,
-        actionRequired: false,
-      });
+      // Note: Removed notification to trip owner - per requirements, trip owner doesn't need confirmation
 
       return res.json({
         success: true,
@@ -267,16 +266,7 @@ exports.respondToInvitation = async (req, res) => {
     invitation.respondedAt = new Date();
     await invitation.save();
 
-    // Create notification for trip owner
-    await db.Notification.create({
-      userId: invitation.trip.userId,
-      type: 'trip_invitation_declined',
-      relatedId: invitation.id,
-      relatedType: 'trip_invitation',
-      message: `${req.user.firstName} ${req.user.lastName} declined your trip invitation to ${invitation.trip.destination}`,
-      read: false,
-      actionRequired: false,
-    });
+    // Note: Removed notification to trip owner - per requirements, trip owner doesn't need confirmation
 
     return res.json({
       success: true,

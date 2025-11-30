@@ -157,16 +157,15 @@ exports.createCompanion = async (req, res) => {
     const { name, email, phone, canBeAddedByOthers } = req.body;
     const isAjax = req.get('X-Sidebar-Request') === 'true' || req.xhr;
 
-    // Check if companion with this email already exists for this user
+    // Check if companion with this email already exists (globally unique)
     const existingCompanion = await TravelCompanion.findOne({
       where: {
         email: email.toLowerCase(),
-        createdBy: req.user.id,
       },
     });
 
     if (existingCompanion) {
-      const errorMsg = 'You already have a companion with this email address';
+      const errorMsg = 'A companion with this email address already exists';
       if (isAjax) {
         return res.status(400).json({ success: false, error: errorMsg });
       }
@@ -256,28 +255,45 @@ exports.updateCompanionPermissions = async (req, res) => {
 
 // API endpoint for autocomplete search
 exports.searchCompanions = async (req, res) => {
+  logger.info('COMPANION_SEARCH_ENDPOINT_HIT', { path: req.path, url: req.originalUrl, method: req.method });
   try {
     const { q } = req.query;
     const userId = req.user.id;
 
+    logger.info('COMPANION_SEARCH_START', { query: q, userId, queryLength: q ? q.length : 0 });
+
     if (!q || q.length < 2) {
+      logger.info('COMPANION_SEARCH_SHORT_QUERY', { query: q });
       return res.json([]);
     }
 
     // Search companions that:
     // 1. User created themselves, OR
     // 2. Other users created but marked as canBeAddedByOthers=true
-    // 3. But exclude the account owner's companion profile
+    // 3. Match the search query (name or email)
+    // 4. Exclude the account owner's companion profile
     const companions = await TravelCompanion.findAll({
       where: {
-        [Op.or]: [{ createdBy: userId }, { canBeAddedByOthers: true }],
-        [Op.or]: [{ name: { [Op.iLike]: `%${q}%` } }, { email: { [Op.iLike]: `%${q}%` } }],
-        // Exclude account owner's companion profile (where userId equals current user)
-        // Must explicitly handle NULL since SQL NULL != value evaluates to NULL (not true)
-        [Op.or]: [
-          { userId: { [Op.is]: null } },
-          { userId: { [Op.ne]: userId } }
-        ]
+        [Op.and]: [
+          // Creator filter: user created this OR it's marked as addable by others
+          {
+            [Op.or]: [{ createdBy: userId }, { canBeAddedByOthers: true }],
+          },
+          // Search filter: name or email matches
+          {
+            [Op.or]: [
+              { name: { [Op.iLike]: `%${q}%` } },
+              { email: { [Op.iLike]: `%${q}%` } },
+            ],
+          },
+          // Exclude account owner's companion profile
+          {
+            [Op.or]: [
+              { userId: { [Op.is]: null } },
+              { userId: { [Op.ne]: userId } },
+            ],
+          },
+        ],
       },
       include: [
         {
@@ -291,7 +307,22 @@ exports.searchCompanions = async (req, res) => {
       order: [['name', 'ASC']],
     });
 
-    const results = companions.map((companion) => ({
+    logger.info('COMPANION_SEARCH_QUERY_EXECUTED', { query: q, userId, companionsFound: companions.length });
+
+    // Deduplicate by email - since email is now globally unique, we should only return one entry per email
+    // Prioritize: user-created companions first, then others marked as addable
+    const deduplicatedByEmail = new Map();
+
+    companions.forEach((companion) => {
+      const email = companion.email.toLowerCase();
+
+      // Only add if not already in map, OR if this is the user's own creation (prioritize)
+      if (!deduplicatedByEmail.has(email) || companion.createdBy === userId) {
+        deduplicatedByEmail.set(email, companion);
+      }
+    });
+
+    const results = Array.from(deduplicatedByEmail.values()).map((companion) => ({
       id: companion.id,
       name: companion.name,
       email: companion.email,
@@ -303,9 +334,10 @@ exports.searchCompanions = async (req, res) => {
         : null,
     }));
 
+    logger.info('COMPANION_SEARCH_RESPONSE', { query: q, resultsCount: results.length, deduplicatedCount: companions.length });
     res.json(results);
   } catch (error) {
-    logger.error(error);
+    logger.error('COMPANION_SEARCH_ERROR', { query: q, error: error.message, stack: error.stack });
     res.status(500).json({ error: 'Search failed' });
   }
 };
@@ -437,18 +469,17 @@ exports.updateCompanion = async (req, res) => {
       return res.redirect('/companions');
     }
 
-    // Check if email is being changed and if it conflicts
+    // Check if email is being changed and if it conflicts (globally unique)
     if (email.toLowerCase() !== companion.email) {
       const existingCompanion = await TravelCompanion.findOne({
         where: {
           email: email.toLowerCase(),
-          createdBy: req.user.id,
           id: { [Op.ne]: companionId },
         },
       });
 
       if (existingCompanion) {
-        const errorMsg = 'You already have a companion with this email address';
+        const errorMsg = 'A companion with this email address already exists';
         if (isAjax) {
           return res.status(400).json({ success: false, error: errorMsg });
         }

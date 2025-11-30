@@ -168,14 +168,13 @@ async function handleRespondToTripInvitation(element, _event) {
     });
 
     if (respondRes.ok) {
-      alert(response === 'join' ? 'You have joined the trip!' : 'You have declined the invitation');
-      location.reload();
+      // Silently reload after responding to invitation
+      setTimeout(() => location.reload(), 300);
     } else {
-      alert('Error responding to invitation');
+      console.error('Error responding to invitation');
     }
   } catch (error) {
-    console.error('Error:', error);
-    alert('Error responding to invitation');
+    console.error('Error responding to invitation:', error);
   }
 }
 

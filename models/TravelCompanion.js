@@ -50,6 +50,7 @@ module.exports = (sequelize, DataTypes) => {
       indexes: [
         {
           fields: ['email'],
+          unique: true, // Email must be globally unique
         },
         {
           fields: ['createdBy'],

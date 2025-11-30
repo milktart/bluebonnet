@@ -268,7 +268,7 @@ export class CompanionSelector {
   async handleAddNew() {
     const query = this.searchInput.value.trim();
     if (!query) {
-      alert('Please enter a name for the new companion');
+      // Silently return if no name provided
       return;
     }
 
@@ -329,12 +329,12 @@ export class CompanionSelector {
     const phone = document.getElementById('newCompanionPhone').value.trim();
 
     if (!name || !email) {
-      alert('Name and email are required');
+      // Silently return if required fields are missing
       return;
     }
 
     if (!isValidEmail(email)) {
-      alert('Please enter a valid email address');
+      // Silently return if email format is invalid
       return;
     }
 
@@ -356,11 +356,10 @@ export class CompanionSelector {
         this.hideDropdown();
       } else {
         const errorData = await response.text();
-        alert(`Failed to add companion: ${errorData}`);
+        console.error('Failed to add companion:', errorData);
       }
     } catch (error) {
       console.error('Error adding companion:', error);
-      alert('Failed to add companion');
     }
   }
 
@@ -523,10 +522,18 @@ export class CompanionManager {
           await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
         }
       } else {
-        alert(result.error || 'Failed to update companion');
+        console.error('Failed to update companion:', result.error);
+        // Reload the companions sidebar on error to ensure consistent state
+        if (typeof loadSidebarContent === 'function') {
+          await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
+        }
       }
     } catch (error) {
-      alert('Error updating companion. Please try again.');
+      console.error('Error updating companion:', error);
+      // Reload the companions sidebar on error to ensure consistent state
+      if (typeof loadSidebarContent === 'function') {
+        await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
+      }
     }
   }
 
@@ -557,10 +564,18 @@ export class CompanionManager {
           await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
         }
       } else {
-        alert(result.error || 'Failed to add companion');
+        console.error('Failed to add companion:', result.error);
+        // Reload the companions sidebar on error to ensure consistent state
+        if (typeof loadSidebarContent === 'function') {
+          await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
+        }
       }
     } catch (error) {
-      alert(`Error adding companion: ${error.message}`);
+      console.error('Error adding companion:', error);
+      // Reload the companions sidebar on error to ensure consistent state
+      if (typeof loadSidebarContent === 'function') {
+        await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
+      }
     }
   }
 
@@ -593,10 +608,18 @@ export class CompanionManager {
           await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
         }
       } else {
-        alert(data.error || 'Failed to delete companion');
+        console.error('Failed to delete companion:', data.error);
+        // Reload the companions sidebar on error to ensure consistent state
+        if (typeof loadSidebarContent === 'function') {
+          await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
+        }
       }
     } catch (error) {
-      alert(`Error deleting companion: ${error.message}`);
+      console.error('Error deleting companion:', error);
+      // Reload the companions sidebar on error to ensure consistent state
+      if (typeof loadSidebarContent === 'function') {
+        await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
+      }
     }
   }
 
@@ -630,10 +653,18 @@ export class CompanionManager {
           await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
         }
       } else {
-        alert(data.error || 'Failed to unlink companion');
+        console.error('Failed to unlink companion:', data.error);
+        // Reload the companions sidebar on error to ensure consistent state
+        if (typeof loadSidebarContent === 'function') {
+          await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
+        }
       }
     } catch (error) {
-      alert(`Error unlinking companion: ${error.message}`);
+      console.error('Error unlinking companion:', error);
+      // Reload the companions sidebar on error to ensure consistent state
+      if (typeof loadSidebarContent === 'function') {
+        await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
+      }
     }
   }
 
@@ -655,14 +686,14 @@ export class CompanionManager {
       const data = await response.json();
 
       if (!data.success) {
-        alert(data.error || 'Failed to update companion permissions');
+        console.error('Failed to update companion permissions:', data.error);
         // Reload the companions sidebar on error to ensure consistent state
         if (typeof loadSidebarContent === 'function') {
           await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
         }
       }
     } catch (error) {
-      alert(`Error updating companion permissions: ${error.message}`);
+      console.error('Error updating companion permissions:', error);
       // Reload the companions sidebar on error to ensure consistent state
       if (typeof loadSidebarContent === 'function') {
         await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
@@ -790,7 +821,6 @@ export class ItemCompanionLoader {
         if (!response.ok) {
           const error = await response.json();
           console.error('Error removing companion:', error);
-          alert('Failed to remove companion. Please try again.');
           return;
         }
       }
@@ -808,7 +838,6 @@ export class ItemCompanionLoader {
       this.updateHiddenField(companionIds);
     } catch (error) {
       console.error('Error removing companion:', error);
-      alert('Failed to remove companion. Please try again.');
     }
   }
 
@@ -837,7 +866,6 @@ export class ItemCompanionLoader {
         if (!response.ok) {
           const error = await response.json();
           console.error('Error adding companion:', error);
-          alert('Failed to add companion. Please try again.');
           return;
         }
       }
@@ -873,7 +901,6 @@ export class ItemCompanionLoader {
       }
     } catch (error) {
       console.error('Error adding companion:', error);
-      alert('Failed to add companion. Please try again.');
     }
   }
 

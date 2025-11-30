@@ -57,4 +57,5 @@ fi
 
 # Start the application
 echo "🎉 Starting application server..."
-exec "$@"
+# Run with unbuffered output so logs appear in docker compose logs
+exec node --unhandled-rejections=strict server.js

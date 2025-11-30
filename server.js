@@ -258,7 +258,6 @@ app.use('/companion-relationships', require('./routes/companionRelationships'));
 app.use('/api', apiLimiter, require('./routes/api')); // Rate limit API routes
 app.use('/trips', require('./routes/trips'));
 app.use('/trip-invitations', require('./routes/tripInvitations'));
-app.use('/notifications', require('./routes/notifications'));
 app.use('/flights', formLimiter, require('./routes/flights')); // Rate limit form submissions
 app.use('/hotels', formLimiter, require('./routes/hotels'));
 app.use('/transportation', formLimiter, require('./routes/transportation'));

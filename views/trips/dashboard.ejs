@@ -101,19 +101,28 @@
 
     let selectedCompanions = [];
 
-    if (!searchInput) return;
+    console.log('initializeTripCompanionSearch called', { searchInput, searchResults, companionsContainer, companionsJson });
+
+    if (!searchInput) {
+      console.log('searchInput not found - companion search will not be initialized');
+      return;
+    }
 
     // Handle search input
     searchInput.addEventListener('input', async function(e) {
       const query = this.value.trim().toLowerCase();
+      console.log('Trip companion search input event', { query, queryLength: query.length });
 
       if (query.length < 2) {
+        console.log('Query too short, hiding results');
         searchResults.classList.add('hidden');
         return;
       }
 
+      console.log('Fetching companions for query:', query);
       try {
         const response = await fetch(`/companions/api/search?q=${encodeURIComponent(query)}`);
+        console.log('Fetch response status:', response.status);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -424,52 +433,6 @@
           <h1 class="text-xl font-bold text-gray-900">My Trips</h1>
         </div>
         <div class="flex items-center space-x-2">
-          <!-- Notifications -->
-          <div class="relative">
-            <button
-              type="button"
-              class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              id="dashboard-notification-bell"
-              data-action="toggleNotificationCenter"
-              title="Notifications"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-              </svg>
-              <span
-                id="dashboard-notification-badge"
-                class="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
-                style="display: none; font-size: 10px;"
-              >
-                <span id="dashboard-unread-count">0</span>
-              </span>
-            </button>
-
-            <!-- Notification Panel -->
-            <div
-              id="dashboard-notification-panel"
-              class="fixed bg-white rounded-lg shadow-xl border border-gray-200 z-50"
-              style="display: none; max-height: 400px; overflow-y: auto; width: 380px; right: 30px; top: 80px;"
-            >
-              <div class="p-4 border-b border-gray-200">
-                <div class="flex justify-between items-center">
-                  <h6 class="font-semibold text-gray-900 text-sm">Notifications</h6>
-                  <button
-                    type="button"
-                    class="text-gray-400 hover:text-gray-600 text-lg"
-                    data-action="toggleNotificationCenter"
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
-
-              <div id="dashboard-notification-list" class="divide-y divide-gray-200">
-                <div class="p-4 text-center text-gray-500 text-sm">Loading notifications...</div>
-              </div>
-            </div>
-          </div>
-
           <button
             data-action="showCreateEventForm"
             class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -929,28 +892,34 @@
                         <div class="flex-1 min-w-0">
                           <p class="text-sm font-medium text-gray-900"><%= trip.name %></p>
                           <p class="text-xs text-gray-600"><%= formatDate(trip.departureDate) %> - <%= formatDate(trip.returnDate) %></p>
-                          <p class="text-xs text-gray-500 mt-1">Invited by <%= invitation.invitedBy || 'a companion' %></p>
+                          <p class="text-xs text-gray-500 mt-1">Invited by <%= invitation.invitedByUser ? (invitation.invitedByUser.firstName + ' ' + invitation.invitedByUser.lastName) : 'a companion' %></p>
                         </div>
                         <div class="flex gap-2 ml-2 flex-shrink-0">
                           <button
                             type="button"
-                            class="px-2 py-1 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                            class="p-1 text-green-600 hover:bg-green-100 rounded transition-colors"
+                            title="Accept invitation"
                             data-action="respondToTripInvitation"
                             data-trip-id="<%= trip.id %>"
                             data-response="join"
                             data-invitation-id="<%= invitation.id %>"
                           >
-                            Join
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
                           </button>
                           <button
                             type="button"
-                            class="px-2 py-1 text-xs font-medium bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                            class="p-1 text-red-600 hover:bg-red-100 rounded transition-colors"
+                            title="Decline invitation"
                             data-action="respondToTripInvitation"
                             data-trip-id="<%= trip.id %>"
                             data-response="decline"
                             data-invitation-id="<%= invitation.id %>"
                           >
-                            Decline
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
                           </button>
                         </div>
                       </div>
@@ -1388,14 +1357,15 @@
         });
 
         if (respondRes.ok) {
-          alert(response === 'join' ? 'You have joined the trip!' : 'You have declined the invitation');
-          location.reload();
+          // Show success message without alert - just reload the page
+          setTimeout(() => location.reload(), 300);
         } else {
-          alert('Error responding to invitation');
+          console.error('Error responding to invitation');
+          // Silently handle error - could add a toast notification here
         }
       } catch (error) {
         console.error('Error:', error);
-        alert('Error responding to invitation');
+        // Silently handle error - could add a toast notification here
       }
     }
 
@@ -1625,17 +1595,6 @@
         console.error('Error in loadCertificateDetails:', error);
       }
     }
-
-    // Initialize notification system for dashboard
-    document.addEventListener('DOMContentLoaded', () => {
-      // Make toggleNotificationCenter available globally for onclick handlers
-      window.toggleNotificationCenter = () => {
-        window.toggleNotificationCenter('dashboard-notification-panel', 'dashboard-notification-bell');
-      };
-
-      // Initialize notification system
-      initializeNotifications('dashboard-notification-panel', 'dashboard-notification-bell');
-    });
 
   </script>
   <% } %>

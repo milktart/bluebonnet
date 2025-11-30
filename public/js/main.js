@@ -146,7 +146,7 @@ if (departureDateInput && returnDateInput) {
 
   returnDateInput.addEventListener('change', function () {
     if (this.value < departureDateInput.value) {
-      alert('Return date must be after departure date');
+      // Silently correct the return date if it's before departure date
       this.value = departureDateInput.value;
     }
   });
@@ -359,11 +359,10 @@ function showDeleteNotification(itemName, itemType, itemId, restoreUrl, onUndoCa
           successMsg.remove();
         }, UI_NOTIFICATION_DISMISS || 3000);
       } else {
-        alert(`Failed to restore ${itemName}`);
+        console.error(`Failed to restore ${itemName}`);
       }
     } catch (error) {
       console.error('Error restoring:', error);
-      alert(`Error restoring ${itemName}`);
     }
   });
 
@@ -376,3 +375,4 @@ function showDeleteNotification(itemName, itemType, itemId, restoreUrl, onUndoCa
     }, 300); // Fade-out animation delay (keep hardcoded)
   }, UI_ALERT_AUTO_DISMISS || 5000);
 }
+

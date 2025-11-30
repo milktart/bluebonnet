@@ -13,6 +13,64 @@ let sidebarHistory = [];
 let sidebarHistoryIndex = -1;
 
 /**
+ * Handle notifications in the primary sidebar content area
+ * Instead of using secondary sidebar
+ */
+async function loadNotificationsSidebar() {
+  try {
+    const container = document.getElementById('notifications-content');
+    if (!container) {
+      console.error('Notifications content container not found');
+      return;
+    }
+
+    // Show loading state
+    container.innerHTML = '<div class="text-center py-8"><p class="text-gray-500">Loading notifications...</p></div>';
+
+    // Fetch sidebar content
+    const response = await fetch('/notifications/sidebar', {
+      method: 'GET',
+      headers: {
+        'X-Sidebar-Request': 'true',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const html = await response.text();
+    container.innerHTML = html;
+
+    // Execute any scripts in the loaded content
+    const scripts = container.querySelectorAll('script');
+    scripts.forEach((script, index) => {
+      const newScript = document.createElement('script');
+      if (script.src) {
+        newScript.src = script.src;
+      } else {
+        newScript.textContent = script.textContent;
+      }
+      document.head.appendChild(newScript);
+    });
+
+    // Update notification badge
+    if (typeof updateNotificationBadge === 'function') {
+      await updateNotificationBadge();
+    }
+  } catch (error) {
+    console.error('Error loading notifications sidebar:', error);
+    const container = document.getElementById('notifications-content');
+    if (container) {
+      container.innerHTML = '<div class="p-4"><p class="text-red-600">Error loading notifications. Please try again.</p></div>';
+    }
+  }
+}
+
+// Make loadNotificationsSidebar globally available
+window.loadNotificationsSidebar = loadNotificationsSidebar;
+
+/**
  * Load content into the secondary sidebar
  * @param {string} url - The URL to fetch content from
  * @param {object} options - Optional configuration { fullWidth: boolean }
@@ -170,12 +228,6 @@ function initializeSidebarContent() {
     });
   }
 
-  // Initialize companion selector if the form has one
-  if (document.getElementById('companionSearch')) {
-    if (typeof initCompanionSelector === 'function') {
-      initCompanionSelector();
-    }
-  }
 }
 
 /**
@@ -183,9 +235,6 @@ function initializeSidebarContent() {
  */
 async function goBackInSidebar() {
   console.log('[goBackInSidebar] Current index:', sidebarHistoryIndex, 'History length:', sidebarHistory.length);
-
-  // Temporary debug alert for iPad testing
-  alert(`Back clicked! Index: ${sidebarHistoryIndex}, History: ${sidebarHistory.length}`);
 
   if (sidebarHistoryIndex > 0) {
     sidebarHistoryIndex -= 1;
@@ -321,7 +370,7 @@ async function handleEventEditFormSubmit(e) {
     };
 
     if (!eventId) {
-      alert('Error: Could not determine event ID');
+      console.error('Error: Could not determine event ID');
       return;
     }
 
@@ -339,10 +388,10 @@ async function handleEventEditFormSubmit(e) {
       // Reload the page to refresh the primary sidebar with updated event
       window.location.reload();
     } else {
-      alert(`Error updating event: ${result.error || 'Unknown error'}`);
+      console.error(`Error updating event: ${result.error || 'Unknown error'}`);
     }
   } catch (error) {
-    alert(`Error updating event: ${error.message}`);
+    console.error(`Error updating event: ${error.message}`);
   }
 }
 

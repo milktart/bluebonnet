@@ -1,0 +1,399 @@
+<!-- Notifications Sidebar -->
+<!-- Displays actionable notification cards that users can confirm/deny/acknowledge -->
+
+<!-- Notifications List -->
+<div id="notifications-list" class="space-y-3">
+    <% if (!notifications || notifications.length === 0) { %>
+      <div class="py-8 px-4 text-center">
+        <div class="text-gray-400 mb-2">
+          <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+          </svg>
+        </div>
+        <p class="text-sm text-gray-500">No notifications at this time</p>
+      </div>
+    <% } else { %>
+      <%
+        // Filter notifications to only show those with actionRequired
+        const activeNotifications = notifications.filter(n => n.actionRequired);
+      %>
+      <% if (activeNotifications.length === 0) { %>
+        <div class="py-8 px-4 text-center">
+          <div class="text-gray-400 mb-2">
+            <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
+          </div>
+          <p class="text-sm text-gray-500">No notifications at this time</p>
+        </div>
+      <% } else { %>
+        <% activeNotifications.forEach((notif) => { %>
+          <% if (typeof console !== 'undefined') { console.log('Rendering notification:', { id: notif.id, type: notif.type, relatedId: notif.relatedId }); } %>
+          <div class="notification-card border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md hover:border-gray-300 transition-all cursor-pointer" data-notification-id="<%= notif.id %>">
+            <!-- Notification Content -->
+            <div class="py-4 px-5">
+              <!-- Header: Timestamp (top right) -->
+              <p class="text-xs text-gray-500 text-right mb-2 whitespace-nowrap" data-timestamp="<%= notif.createdAt %>">
+                <span class="relative-time"></span>
+              </p>
+
+              <!-- Message -->
+              <p class="text-sm font-medium text-gray-900 mb-3"><%= notif.message %></p>
+
+
+              <!-- Action Buttons -->
+              <div class="mt-3 flex gap-2">
+                <% if (notif.type === 'companion_request_received') { %>
+                  <button
+                    type="button"
+                    class="flex-1 px-3 py-2 bg-green-100 hover:bg-green-200 text-green-700 text-xs font-medium rounded transition-colors flex items-center justify-center gap-1"
+                    data-notification-id="<%= notif.id %>"
+                    data-related-id="<%= notif.relatedId %>"
+                    onclick="acceptCompanion(this.getAttribute('data-notification-id'), this.getAttribute('data-related-id'), event)"
+                    title="Accept"
+                  >
+                    <span class="material-symbols-outlined" style="font-size: 16px;">check</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="flex-1 px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-medium rounded transition-colors flex items-center justify-center gap-1"
+                    data-notification-id="<%= notif.id %>"
+                    data-related-id="<%= notif.relatedId %>"
+                    onclick="declineCompanion(this.getAttribute('data-notification-id'), this.getAttribute('data-related-id'), event)"
+                    title="Decline"
+                  >
+                    <span class="material-symbols-outlined" style="font-size: 16px;">close</span>
+                  </button>
+                <% } else if (notif.type === 'trip_invitation_received') { %>
+                  <button
+                    type="button"
+                    class="flex-1 px-3 py-2 bg-green-100 hover:bg-green-200 text-green-700 text-xs font-medium rounded transition-colors flex items-center justify-center gap-1"
+                    data-notification-id="<%= notif.id %>"
+                    data-related-id="<%= notif.relatedId %>"
+                    onclick="joinTrip(this.getAttribute('data-notification-id'), this.getAttribute('data-related-id'), event)"
+                    title="Join"
+                  >
+                    <span class="material-symbols-outlined" style="font-size: 16px;">check</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="flex-1 px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-medium rounded transition-colors flex items-center justify-center gap-1"
+                    data-notification-id="<%= notif.id %>"
+                    data-related-id="<%= notif.relatedId %>"
+                    onclick="declineTrip(this.getAttribute('data-notification-id'), this.getAttribute('data-related-id'), event)"
+                    title="Decline"
+                  >
+                    <span class="material-symbols-outlined" style="font-size: 16px;">close</span>
+                  </button>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        <% }); %>
+      <% } %>
+    <% } %>
+</div>
+
+<script>
+/**
+ * Format timestamp for notifications
+ * Returns HH:MM if < 24 hours ago, ddd dd MMM HH:MM if >= 24 hours ago
+ * All times in 24-hour UTC format
+ */
+function formatNotificationTimestamp(dateString) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const secondsAgo = Math.floor((now - date) / 1000);
+
+  const hours = String(date.getUTCHours()).padStart(2, '0');
+  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+  const timeStr = `${hours}:${minutes}`;
+
+  // If less than 24 hours ago, show just time
+  if (secondsAgo < 86400) {
+    return timeStr;
+  }
+
+  // For 24+ hours ago, show ddd dd MMM HH:MM
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  const dayOfWeek = dayNames[date.getUTCDay()];
+  const dayOfMonth = String(date.getUTCDate()); // No padding, just the day number
+  const month = monthNames[date.getUTCMonth()];
+
+  return `${dayOfWeek} ${dayOfMonth} ${month} ${timeStr}`;
+}
+
+/**
+ * Initialize timestamp display
+ */
+function initializeRelativeTime() {
+  document.querySelectorAll('[data-timestamp]').forEach((el) => {
+    const formattedTime = formatNotificationTimestamp(el.getAttribute('data-timestamp'));
+    const timeSpan = el.querySelector('.relative-time');
+    if (timeSpan) {
+      timeSpan.textContent = formattedTime;
+    } else {
+      el.textContent = formattedTime;
+    }
+  });
+
+  // Update every minute
+  setInterval(() => {
+    document.querySelectorAll('[data-timestamp]').forEach((el) => {
+      const formattedTime = formatNotificationTimestamp(el.getAttribute('data-timestamp'));
+      const timeSpan = el.querySelector('.relative-time');
+      if (timeSpan) {
+        timeSpan.textContent = formattedTime;
+      } else {
+        el.textContent = formattedTime;
+      }
+    });
+  }, 60000);
+}
+
+/**
+ * Dismiss notification
+ */
+async function dismissNotification(notificationId, event) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  try {
+    const response = await fetch(`/notifications/${notificationId}`, { method: 'DELETE' });
+    if (response.ok) {
+      // Animate removal
+      const card = document.querySelector(`[data-notification-id="${notificationId}"]`);
+      if (card) {
+        card.style.opacity = '0';
+        card.style.transition = 'opacity 0.3s ease-out';
+        setTimeout(() => {
+          card.remove();
+          // Check if list is now empty
+          const listContainer = document.getElementById('notifications-list');
+          if (listContainer.children.length === 0) {
+            location.reload(); // Refresh to show empty state
+          }
+        }, 300);
+      }
+    }
+  } catch (error) {
+    console.error('Error dismissing notification:', error);
+    alert('Failed to dismiss notification');
+  }
+}
+
+/**
+ * Accept companion request
+ */
+async function acceptCompanion(notificationId, relationshipId, event) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  try {
+    const response = await fetch(`/companion-relationships/${relationshipId}/accept`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ permissionLevel: 'view_travel' }),
+    });
+
+    if (response.ok) {
+      // Mark the notification as read first
+      await fetch(`/notifications/${notificationId}/read`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      // Remove the notification card
+      const card = document.querySelector(`[data-notification-id="${notificationId}"]`);
+      if (card) {
+        card.style.opacity = '0';
+        card.style.transition = 'opacity 0.3s ease-out';
+        setTimeout(() => {
+          card.remove();
+          // Check if list is now empty
+          const listContainer = document.getElementById('notifications-list');
+          if (listContainer.children.length === 0) {
+            location.reload();
+          }
+        }, 300);
+      }
+    } else {
+      alert('Failed to accept companion request');
+    }
+  } catch (error) {
+    console.error('Error accepting companion:', error);
+    alert('Error accepting companion request');
+  }
+}
+
+/**
+ * Decline companion request
+ */
+async function declineCompanion(notificationId, relationshipId, event) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  try {
+    const response = await fetch(`/companion-relationships/${relationshipId}/decline`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (response.ok) {
+      // Mark the notification as read first
+      await fetch(`/notifications/${notificationId}/read`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      // Remove the notification card
+      const card = document.querySelector(`[data-notification-id="${notificationId}"]`);
+      if (card) {
+        card.style.opacity = '0';
+        card.style.transition = 'opacity 0.3s ease-out';
+        setTimeout(() => {
+          card.remove();
+          // Check if list is now empty
+          const listContainer = document.getElementById('notifications-list');
+          if (listContainer.children.length === 0) {
+            location.reload();
+          }
+        }, 300);
+      }
+    } else {
+      alert('Failed to decline companion request');
+    }
+  } catch (error) {
+    console.error('Error declining companion:', error);
+    alert('Error declining companion request');
+  }
+}
+
+/**
+ * Join trip invitation
+ */
+async function joinTrip(notificationId, invitationId, event) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  console.log('joinTrip called with:', { notificationId, invitationId });
+
+  // Check if invitationId is valid
+  if (!invitationId || invitationId === 'null' || invitationId === 'undefined') {
+    console.error('Invalid invitationId:', invitationId);
+    alert('Error: Invalid invitation ID. Please refresh the page and try again.');
+    return;
+  }
+
+  const url = `/trip-invitations/${invitationId}/respond`;
+
+  try {
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ response: 'join' }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      // Mark the notification as read first
+      await fetch(`/notifications/${notificationId}/read`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      // Remove the notification card
+      const card = document.querySelector(`[data-notification-id="${notificationId}"]`);
+      if (card) {
+        card.style.opacity = '0';
+        card.style.transition = 'opacity 0.3s ease-out';
+        setTimeout(() => {
+          card.remove();
+          // Refresh page to show the new trip
+          setTimeout(() => location.reload(), 500);
+        }, 300);
+      }
+    } else {
+      console.error('Server error:', data);
+      alert(`Failed to join trip (${response.status}): ${data.message || 'Unknown error'}\n\nDebug info:\nResponse: ${JSON.stringify(data)}`);
+    }
+  } catch (error) {
+    console.error('Error joining trip:', error);
+    alert(`Error joining trip: ${error.message}\n\nPlease check that the URL is correct: ${url}`);
+  }
+}
+
+/**
+ * Decline trip invitation
+ */
+async function declineTrip(notificationId, invitationId, event) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  console.log('declineTrip called with:', { notificationId, invitationId });
+
+  // Check if invitationId is valid
+  if (!invitationId || invitationId === 'null' || invitationId === 'undefined') {
+    console.error('Invalid invitationId:', invitationId);
+    alert('Error: Invalid invitation ID. Please refresh the page and try again.');
+    return;
+  }
+
+  const url = `/trip-invitations/${invitationId}/respond`;
+
+  try {
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ response: 'decline' }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      // Mark the notification as read first
+      await fetch(`/notifications/${notificationId}/read`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      // Remove the notification card
+      const card = document.querySelector(`[data-notification-id="${notificationId}"]`);
+      if (card) {
+        card.style.opacity = '0';
+        card.style.transition = 'opacity 0.3s ease-out';
+        setTimeout(() => {
+          card.remove();
+          // Check if list is now empty
+          const listContainer = document.getElementById('notifications-list');
+          if (listContainer.children.length === 0) {
+            location.reload();
+          }
+        }, 300);
+      }
+    } else {
+      console.error('Server error:', data);
+      alert(`Failed to decline trip (${response.status}): ${data.message || 'Unknown error'}\n\nDebug info:\nResponse: ${JSON.stringify(data)}`);
+    }
+  } catch (error) {
+    console.error('Error declining trip:', error);
+    alert(`Error declining trip: ${error.message}\n\nPlease check that the URL is correct: ${url}`);
+  }
+}
+
+// Make function available globally
+window.initializeRelativeTime = initializeRelativeTime;
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', initializeRelativeTime);
+
+// Also initialize immediately in case the DOM is already loaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeRelativeTime);
+} else {
+  initializeRelativeTime();
+}
+</script>

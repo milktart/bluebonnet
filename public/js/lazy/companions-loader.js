@@ -68,6 +68,7 @@ export function autoLoadCompanions() {
     document.querySelector('[id*="companion"]') ||
     document.querySelector('[class*="companion"]') ||
     document.querySelector('#tripCompanionSearch') ||
+    document.querySelector('#companionSearch') ||
     document.querySelector('#companionSelector');
 
   if (hasCompanionUI) {
