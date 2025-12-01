@@ -525,19 +525,25 @@ exports.getAddForm = async (req, res) => {
   try {
     const { tripId } = req.params;
 
-    // Verify trip ownership
-    const trip = await Trip.findByPk(tripId);
-    if (!trip || trip.userId !== req.user.id) {
-      return res.status(403).send('Unauthorized');
+    // Verify trip ownership if tripId provided (for trip-associated items)
+    // If no tripId, this is a standalone form (allowed without trip)
+    if (tripId) {
+      const trip = await Trip.findByPk(tripId);
+      if (!trip || trip.userId !== req.user.id) {
+        return res.status(403).send('Unauthorized');
+      }
     }
 
+    // Get airline data for the form (used by lookupAirline function)
+    const airlineData = airportService.getAllAirlines();
+
     // Render form partial for sidebar (not modal)
-    // Airport and airline data will be loaded via AJAX
     res.render('partials/flight-form', {
-      tripId,
+      tripId: tripId || null,
       isEditing: false,
       data: null,
       isModal: false, // This tells the partial to render for sidebar
+      airlineData: JSON.stringify(airlineData), // Pass as JSON string for window.airlineData
     });
   } catch (error) {
     logger.error('Error fetching add form:', error);
@@ -635,8 +641,10 @@ exports.getEditForm = async (req, res) => {
     const arrivalDate = arrivalDateTime[0] || '';
     const arrivalTime = arrivalDateTime[1] || '';
 
+    // Get airline data for the form (used by lookupAirline function)
+    const airlineData = airportService.getAllAirlines();
+
     // Render form partial for sidebar (not modal)
-    // Airport and airline data will be loaded via AJAX
     res.render('partials/flight-form', {
       tripId: flight.tripId || '', // Use tripId if available, empty string otherwise
       trip: flight.trip ? { id: flight.trip.id } : { id: flight.tripId }, // Pass trip object for voucher panel
@@ -650,6 +658,7 @@ exports.getEditForm = async (req, res) => {
         arrivalTime,
       },
       isModal: false, // This tells the partial to render for sidebar
+      airlineData: JSON.stringify(airlineData), // Pass as JSON string for window.airlineData
     });
   } catch (error) {
     logger.error('Error fetching edit form:', error);

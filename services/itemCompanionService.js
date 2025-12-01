@@ -91,15 +91,25 @@ class ItemCompanionService {
         throw error;
       }
 
-      // Verify user owns the trip containing this item
-      const trip = await Trip.findOne({
-        where: { id: item.tripId, userId },
-      });
+      // Verify user owns the item or the trip containing this item
+      if (item.tripId) {
+        // Trip-associated item: verify user owns the trip
+        const trip = await Trip.findOne({
+          where: { id: item.tripId, userId },
+        });
 
-      if (!trip) {
-        const error = new Error('Not authorized to modify this item');
-        error.status = 403;
-        throw error;
+        if (!trip) {
+          const error = new Error('Not authorized to modify this item');
+          error.status = 403;
+          throw error;
+        }
+      } else {
+        // Standalone item: verify user owns the item directly
+        if (item.userId !== userId) {
+          const error = new Error('Not authorized to modify this item');
+          error.status = 403;
+          throw error;
+        }
       }
 
       // Get existing companions

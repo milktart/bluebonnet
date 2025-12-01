@@ -159,7 +159,9 @@ exports.listTrips = async (req, res, options = {}) => {
 
     // Get standalone items (not attached to any trip) - only for upcoming tab
     let standaloneFlights = [];
+    let standaloneHotels = [];
     let standaloneTransportation = [];
+    let standaloneCarRentals = [];
     let standaloneEvents = [];
 
     if (activeTab === 'upcoming' || activeTab === 'all') {
@@ -168,9 +170,19 @@ exports.listTrips = async (req, res, options = {}) => {
         order: [['departureDateTime', 'ASC']],
       });
 
+      standaloneHotels = await Hotel.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['checkInDateTime', 'ASC']],
+      });
+
       standaloneTransportation = await Transportation.findAll({
         where: { userId: req.user.id, tripId: null },
         order: [['departureDateTime', 'ASC']],
+      });
+
+      standaloneCarRentals = await CarRental.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['pickupDateTime', 'ASC']],
       });
 
       standaloneEvents = await Event.findAll({
@@ -218,7 +230,9 @@ exports.listTrips = async (req, res, options = {}) => {
       title: 'My Trips',
       trips: uniqueTrips,
       standaloneFlights,
+      standaloneHotels,
       standaloneTransportation,
+      standaloneCarRentals,
       standaloneEvents,
       pendingInvitations,
       openSettingsSidebar: options.openSettingsSidebar || false,

@@ -268,7 +268,25 @@ function showAddFormWithLayoverDates(
   }
 }
 
-function showAddForm(type) {
+function showAddForm(type, isStandalone = false) {
+  // Determine the URL based on context (standalone vs trip)
+  let formUrl;
+  if (isStandalone) {
+    // For standalone items, use the form loader endpoint
+    formUrl = `/forms/add/${type}`;
+  } else {
+    // For trip items, use the existing trip-based endpoint
+    formUrl = `/forms/add/${type}/${tripId}`;
+  }
+
+  // Use loadSidebarContent to maintain sidebar history properly
+  // This ensures the back button works by navigating through the history
+  if (typeof window.loadSidebarContent === 'function') {
+    window.loadSidebarContent(formUrl);
+  }
+  return;
+
+  // Legacy code below kept for reference but not used
   const formContainer = document.getElementById('secondary-sidebar-content');
   if (!formContainer) return;
 
@@ -278,7 +296,8 @@ function showAddForm(type) {
   switch (type) {
     case 'flight':
       // Fetch form via AJAX
-      fetch(`/flights/trips/${tripId}/form`)
+      const flightUrl = isStandalone ? '/flights/standalone/form' : `/flights/trips/${tripId}/form`;
+      fetch(flightUrl)
         .then((response) => response.text())
         .then(async (html) => {
           formContainer.innerHTML = html;
@@ -289,7 +308,7 @@ function showAddForm(type) {
             initializeFlightForm();
           }
           if (typeof setupAsyncFormSubmission === 'function') {
-            setupAsyncFormSubmission('addFlightForm');
+            setupAsyncFormSubmission(isStandalone ? 'addStandaloneFlightForm' : 'addFlightForm');
           }
           // Ensure companions are loaded before initializing
           await ensureCompanionsInitialized();
@@ -302,14 +321,15 @@ function showAddForm(type) {
       break;
     case 'hotel':
       // Fetch form via AJAX
-      fetch(`/hotels/trips/${tripId}/form`)
+      const hotelUrl = isStandalone ? '/hotels/standalone/form' : `/hotels/trips/${tripId}/form`;
+      fetch(hotelUrl)
         .then((response) => response.text())
         .then(async (html) => {
           formContainer.innerHTML = html;
           executeLoadedScripts(formContainer);
           // Call form initialization directly
           if (typeof setupAsyncFormSubmission === 'function') {
-            setupAsyncFormSubmission('addHotelForm');
+            setupAsyncFormSubmission(isStandalone ? 'addStandaloneHotelForm' : 'addHotelForm');
           }
           // Ensure companions are loaded before initializing
           await ensureCompanionsInitialized();
@@ -319,14 +339,15 @@ function showAddForm(type) {
       break;
     case 'transportation':
       // Fetch form via AJAX
-      fetch(`/transportation/trips/${tripId}/form`)
+      const transportationUrl = isStandalone ? '/transportation/standalone/form' : `/transportation/trips/${tripId}/form`;
+      fetch(transportationUrl)
         .then((response) => response.text())
         .then(async (html) => {
           formContainer.innerHTML = html;
           executeLoadedScripts(formContainer);
           // Call form initialization directly
           if (typeof setupAsyncFormSubmission === 'function') {
-            setupAsyncFormSubmission('addTransportationForm');
+            setupAsyncFormSubmission(isStandalone ? 'addStandaloneTransportationForm' : 'addTransportationForm');
           }
           // Ensure companions are loaded before initializing
           await ensureCompanionsInitialized();
@@ -337,14 +358,15 @@ function showAddForm(type) {
     case 'carRental':
     case 'car-rental':
       // Fetch form via AJAX
-      fetch(`/car-rentals/trips/${tripId}/form`)
+      const carRentalUrl = isStandalone ? '/car-rentals/standalone/form' : `/car-rentals/trips/${tripId}/form`;
+      fetch(carRentalUrl)
         .then((response) => response.text())
         .then(async (html) => {
           formContainer.innerHTML = html;
           executeLoadedScripts(formContainer);
           // Call form initialization directly
           if (typeof setupAsyncFormSubmission === 'function') {
-            setupAsyncFormSubmission('addCarRentalForm');
+            setupAsyncFormSubmission(isStandalone ? 'addStandaloneCarRentalForm' : 'addCarRentalForm');
           }
           // Ensure companions are loaded before initializing
           await ensureCompanionsInitialized();
@@ -354,14 +376,15 @@ function showAddForm(type) {
       break;
     case 'event':
       // Fetch form via AJAX
-      fetch(`/events/trips/${tripId}/form`)
+      const eventUrl = isStandalone ? '/events/standalone/form' : `/events/trips/${tripId}/form`;
+      fetch(eventUrl)
         .then((response) => response.text())
         .then(async (html) => {
           formContainer.innerHTML = html;
           executeLoadedScripts(formContainer);
           // Call form initialization directly
           if (typeof setupAsyncFormSubmission === 'function') {
-            setupAsyncFormSubmission('addEventForm');
+            setupAsyncFormSubmission(isStandalone ? 'addStandaloneEventForm' : 'addEventForm');
           }
           if (typeof initializeEventDateSync === 'function') {
             initializeEventDateSync();

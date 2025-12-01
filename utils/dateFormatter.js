@@ -5,6 +5,7 @@
  */
 
 const { MS_PER_HOUR } = require('./constants');
+const { formatInTimezone: formatInTimezoneHelper } = require('./timezoneHelper');
 
 // Constants
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -158,6 +159,18 @@ function getLayoverText(layoverDuration, airportCode) {
   return `${hoursPart}${minutes}m in ${airportCode}`;
 }
 
+/**
+ * Format a date/time string in a specific timezone
+ * Wrapper around timezoneHelper.formatInTimezone for EJS templates
+ * @param {Date|string} utcDate - UTC date
+ * @param {string} timezone - IANA timezone string (e.g., "America/New_York")
+ * @param {string} format - Moment.js format string (e.g., "HH:mm", "DD MMM YYYY HH:mm")
+ * @returns {string} - Formatted date/time string
+ */
+function formatInTimezone(utcDate, timezone, format = 'DD MMM YYYY HH:mm') {
+  return formatInTimezoneHelper(utcDate, timezone, format);
+}
+
 module.exports = {
   formatDate,
   formatTime,
@@ -169,4 +182,5 @@ module.exports = {
   formatLayoverDisplay,
   calculateLayover,
   getLayoverText,
+  formatInTimezone,
 };

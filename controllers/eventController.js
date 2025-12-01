@@ -399,19 +399,22 @@ exports.getAddForm = async (req, res) => {
   try {
     const { tripId } = req.params;
 
-    // Verify trip ownership
-    const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
-    if (!trip) {
-      return res.status(403).send('Trip not found');
+    // Verify trip ownership if tripId provided (for trip-associated items)
+    // If no tripId, this is a standalone form (allowed without trip)
+    if (tripId) {
+      const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
+      if (!trip) {
+        return res.status(403).send('Unauthorized');
+      }
     }
 
     res.render('partials/event-form', {
-      tripId,
+      tripId: tripId || null,
       isEditing: false,
       data: null,
     });
   } catch (error) {
-    logger.error(error);
+    logger.error('Error fetching add form:', error);
     res.status(500).send('Error loading form');
   }
 };

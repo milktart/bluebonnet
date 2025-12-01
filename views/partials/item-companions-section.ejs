@@ -1,14 +1,11 @@
-<!-- Travel Companions Section for Items -->
+<% if (data?.id) { %>
+<!-- Travel Companions Section for Items (Only show when editing existing items) -->
 <div class="form-section border-t border-gray-200 pt-4 mt-4">
   <h3 class="text-sm font-semibold text-gray-700 mb-3">
     <span class="material-symbols-outlined" style="display: inline-block; font-size: 18px; margin-right: 8px; vertical-align: middle;">group</span>Travel Companions
   </h3>
   <p class="text-xs text-gray-500 mb-3">
-    <% if (data?.id) { %>
-      Click the X on any companion to remove them from this item only (they remain on the trip).
-    <% } else { %>
-      Companions from the trip will be automatically added to this new item. You can remove them after creating the item if needed.
-    <% } %>
+    Click the X on any companion to remove them from this item only (they remain on the trip).
   </p>
 
   <!-- Current companions -->
@@ -39,3 +36,4 @@
   <!-- Hidden field for companion IDs to submit with form -->
   <input type="hidden" name="companions" id="itemCompanionsJson" value="[]">
 </div>
+<% } %>

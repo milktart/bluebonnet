@@ -225,6 +225,50 @@ function handleLoadEventSidebar(element, _event) {
 }
 
 /**
+ * Load sidebar content for standalone items (flight, hotel, transportation, car rental)
+ * Usage: <div data-action="loadStandaloneSidebar" data-item-type="flight" data-item-id="123">
+ */
+function handleLoadStandaloneSidebar(element, event) {
+  const { itemType, itemId } = getElementData(element);
+
+  console.log('handleLoadStandaloneSidebar called', { itemType, itemId, element });
+
+  if (!itemType || !itemId) {
+    console.warn('Missing itemType or itemId', { itemType, itemId });
+    return;
+  }
+
+  // Map item type to correct endpoint
+  const endpointMap = {
+    flight: `/flights/${itemId}/form`,
+    hotel: `/hotels/${itemId}/form`,
+    transportation: `/transportation/${itemId}/form`,
+    carRental: `/car-rentals/${itemId}/form`,
+  };
+
+  const url = endpointMap[itemType];
+  console.log('Resolved URL:', url);
+
+  if (url && typeof window.loadSidebarContent === 'function') {
+    // Stop propagation to prevent other handlers from interfering
+    event.stopPropagation();
+    window.loadSidebarContent(url);
+  } else {
+    console.warn('loadSidebarContent is not available or URL is invalid', { url, hasLoadSidebarContent: typeof window.loadSidebarContent });
+  }
+}
+
+/**
+ * Show new item menu (trip or standalone item creation)
+ * Usage: <button onclick="showNewItemMenu()">
+ */
+function handleShowNewItemMenu() {
+  if (typeof window.loadSidebarContent === 'function') {
+    window.loadSidebarContent('/new-item-menu');
+  }
+}
+
+/**
  * Register all dashboard handlers
  */
 function registerDashboardHandlers() {
@@ -246,7 +290,12 @@ function registerDashboardHandlers() {
     loadSidebarContent: handleLoadSidebarContent,
     navigateToTrip: handleNavigateToTrip,
     loadEventSidebar: handleLoadEventSidebar,
+    loadStandaloneSidebar: handleLoadStandaloneSidebar,
+    showNewItemMenu: handleShowNewItemMenu,
   });
+
+  // Expose showNewItemMenu globally for onclick handlers
+  window.showNewItemMenu = handleShowNewItemMenu;
 
   console.log('✅ Dashboard event handlers registered');
 }

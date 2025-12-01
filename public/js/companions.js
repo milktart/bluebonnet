@@ -727,7 +727,12 @@ export class ItemCompanionLoader {
       tripId: this.tripId,
     });
 
-    if (this.tripId) {
+    // Load companions for both trip-associated items and standalone items (if editing existing item)
+    if (this.itemId) {
+      // Editing existing item - load its current companions
+      await this.loadCompanions();
+    } else if (this.tripId) {
+      // Adding new item to trip - load trip-level companions
       await this.loadCompanions();
     }
 

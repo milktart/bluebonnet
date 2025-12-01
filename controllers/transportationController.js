@@ -132,8 +132,12 @@ exports.updateTransportation = async (req, res) => {
       originTimezone,
       destination,
       destinationTimezone,
-      departureDateTime,
-      arrivalDateTime,
+      departureDate,
+      departureTime,
+      arrivalDate,
+      arrivalTime,
+      departureDateTime: departureDateTimeCombined,
+      arrivalDateTime: arrivalDateTimeCombined,
       confirmationNumber,
       seat,
     } = req.body;
@@ -150,6 +154,20 @@ exports.updateTransportation = async (req, res) => {
         return res.status(403).json({ success: false, error: 'Transportation not found' });
       }
       return redirectAfterError(res, req, null, 'Transportation not found');
+    }
+
+    // Handle both combined datetime (from async form) and split date/time fields (from traditional forms)
+    let departureDateTime;
+    let arrivalDateTime;
+
+    if (departureDateTimeCombined && arrivalDateTimeCombined) {
+      // Async form submission sends combined datetime
+      departureDateTime = departureDateTimeCombined;
+      arrivalDateTime = arrivalDateTimeCombined;
+    } else {
+      // Traditional form submission sends split date/time fields
+      departureDateTime = `${departureDate}T${departureTime}`;
+      arrivalDateTime = `${arrivalDate}T${arrivalTime}`;
     }
 
     // Geocode origin and destination if they changed
@@ -289,15 +307,18 @@ exports.getAddForm = async (req, res) => {
   try {
     const { tripId } = req.params;
 
-    // Verify trip ownership
-    const trip = await Trip.findByPk(tripId);
-    if (!trip || trip.userId !== req.user.id) {
-      return res.status(403).send('Unauthorized');
+    // Verify trip ownership if tripId provided (for trip-associated items)
+    // If no tripId, this is a standalone form (allowed without trip)
+    if (tripId) {
+      const trip = await Trip.findByPk(tripId);
+      if (!trip || trip.userId !== req.user.id) {
+        return res.status(403).send('Unauthorized');
+      }
     }
 
     // Render form partial for sidebar (not modal)
     res.render('partials/transportation-form', {
-      tripId,
+      tripId: tripId || null,
       isEditing: false,
       data: null,
       isModal: false, // This tells the partial to render for sidebar
@@ -335,8 +356,27 @@ exports.getEditForm = async (req, res) => {
     );
 
     // Split the combined datetime into separate date and time fields for form input
-    const [departureDate, departureTime] = departureDateTimeLocal.split('T');
-    const [arrivalDate, arrivalTime] = arrivalDateTimeLocal.split('T');
+    // Handle empty strings by providing defaults
+    let departureDate = '';
+    let departureTime = '';
+    let arrivalDate = '';
+    let arrivalTime = '';
+
+    if (departureDateTimeLocal) {
+      const parts = departureDateTimeLocal.split('T');
+      if (parts.length === 2) {
+        departureDate = parts[0];
+        departureTime = parts[1];
+      }
+    }
+
+    if (arrivalDateTimeLocal) {
+      const parts = arrivalDateTimeLocal.split('T');
+      if (parts.length === 2) {
+        arrivalDate = parts[0];
+        arrivalTime = parts[1];
+      }
+    }
 
     // Render form partial for sidebar (not modal)
     res.render('partials/transportation-form', {

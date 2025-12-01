@@ -95,12 +95,15 @@ async function loadSidebarContent(url, options = {}) {
       },
     });
 
+    console.log(`[loadSidebarContent] Fetched ${url}: status ${response.status}`);
+
+    // Get the HTML content first
+    const html = await response.text();
+
     if (!response.ok) {
+      console.error(`[loadSidebarContent] Response not OK. Status: ${response.status}, Body:`, html);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-
-    // Get the HTML content
-    const html = await response.text();
 
     // Insert the content into the sidebar
     container.innerHTML = html;
@@ -169,6 +172,7 @@ async function loadSidebarContent(url, options = {}) {
 
     // Scripts in the loaded partials handle their own interactions via global listeners or inline handlers
   } catch (error) {
+    console.error('[loadSidebarContent] Error:', error);
     const container = document.getElementById('secondary-sidebar-content');
     if (container) {
       container.innerHTML =
@@ -225,6 +229,47 @@ function initializeSidebarContent() {
       if (typeof handleEventEditFormSubmit === 'function') {
         handleEventEditFormSubmit(e);
       }
+    });
+  }
+
+  // Set up async form submission for item forms
+  const formIds = [
+    'addFlightForm',
+    'editFlightForm',
+    'addHotelForm',
+    'editHotelForm',
+    'addTransportationForm',
+    'editTransportationForm',
+    'addCarRentalForm',
+    'editCarRentalForm',
+    'addEventForm',
+    'editEventForm',
+  ];
+
+  console.log('[initializeSidebarContent] Checking for forms to setup...');
+  console.log('[initializeSidebarContent] setupAsyncFormSubmission is:', typeof window.setupAsyncFormSubmission);
+
+  formIds.forEach((formId) => {
+    const form = document.getElementById(formId);
+    console.log(`[initializeSidebarContent] Looking for form: ${formId}, found:`, !!form);
+    if (form) {
+      if (typeof setupAsyncFormSubmission === 'function') {
+        console.log(`[initializeSidebarContent] Setting up async submission for form: ${formId}`);
+        setupAsyncFormSubmission(formId);
+      } else {
+        console.warn(`[initializeSidebarContent] setupAsyncFormSubmission function not available!`, {
+          typeOfFunction: typeof setupAsyncFormSubmission,
+          windowSetupAsyncFormSubmission: typeof window.setupAsyncFormSubmission
+        });
+      }
+    }
+  });
+
+  // Initialize item companions (for flight, hotel, transportation, car rental, and event forms)
+  if (typeof initializeItemCompanions === 'function') {
+    console.log('[initializeSidebarContent] Initializing item companions...');
+    initializeItemCompanions().catch((error) => {
+      console.error('[initializeSidebarContent] Error initializing item companions:', error);
     });
   }
 

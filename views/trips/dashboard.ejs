@@ -432,24 +432,15 @@
           </div>
           <h1 class="text-xl font-bold text-gray-900">My Trips</h1>
         </div>
-        <div class="flex items-center space-x-2">
+        <div>
           <button
-            data-action="showCreateEventForm"
-            class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            onclick="showNewItemMenu()"
+            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
-            Event
-          </button>
-          <button
-            data-action="showCreateTripForm"
-            class="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            Trip
+            New
           </button>
         </div>
       </div>
@@ -740,6 +731,22 @@
                 });
               }
 
+              if (typeof standaloneHotels !== 'undefined' && standaloneHotels) {
+                standaloneHotels.forEach(h => {
+                  const hotelCity = getCityName(h.address);
+                  allItemsWithTrip.push({
+                    type: 'hotel',
+                    time: new Date(h.checkInDateTime),
+                    data: h,
+                    tripId: null,
+                    trip: null,
+                    display: `<span class="material-symbols-outlined text-green-600 inline-icon" style="font-size: 16px;">hotel</span> ${h.hotelName}: ${hotelCity}`,
+                    hasSegment: false,
+                    marker: null
+                  });
+                });
+              }
+
               if (typeof standaloneTransportation !== 'undefined' && standaloneTransportation) {
                 standaloneTransportation.forEach(t => {
                   const originCity = getCityName(t.origin);
@@ -752,6 +759,23 @@
                     trip: null,
                     display: `<span class="material-symbols-outlined text-amber-600 inline-icon" style="font-size: 16px;">train</span> ${t.method}: ${originCity} → ${destinationCity}`,
                     hasSegment: true,
+                    marker: null
+                  });
+                });
+              }
+
+              if (typeof standaloneCarRentals !== 'undefined' && standaloneCarRentals) {
+                standaloneCarRentals.forEach(c => {
+                  const pickupCity = getCityName(c.pickupLocation);
+                  const dropoffCity = getCityName(c.dropoffLocation);
+                  allItemsWithTrip.push({
+                    type: 'carRental',
+                    time: new Date(c.pickupDateTime),
+                    data: c,
+                    tripId: null,
+                    trip: null,
+                    display: `<span class="material-symbols-outlined text-purple-600 inline-icon" style="font-size: 16px;">directions_car</span> ${c.company}: ${pickupCity} → ${dropoffCity}`,
+                    hasSegment: false,
                     marker: null
                   });
                 });
@@ -943,7 +967,7 @@
                   %>
                   <!-- Standalone item - single card with no accordion -->
                   <div class="border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md hover:border-gray-300 transition-all cursor-pointer"
-                       <% if (item.type === 'event') { %>data-action="loadEventSidebar" data-event-id="<%= item.data.id %>"<% } %>>
+                       <% if (item.type === 'event') { %>data-action="loadEventSidebar" data-event-id="<%= item.data.id %>"<% } else if (item.type === 'flight') { %>data-action="loadStandaloneSidebar" data-item-type="flight" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'hotel') { %>data-action="loadStandaloneSidebar" data-item-type="hotel" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'transportation') { %>data-action="loadStandaloneSidebar" data-item-type="transportation" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'carRental') { %>data-action="loadStandaloneSidebar" data-item-type="carRental" data-item-id="<%= item.data.id %>"<% } %>>
                     <div class="py-4 px-5 inline-flex items-center gap-x-3 w-full font-medium"> <!-- font-semibold -->
                       <%
                         const hours = String(item.time.getHours()).padStart(2, '0');
@@ -983,6 +1007,24 @@
                           const destCity = getCityName(item.data.destination);
                           startDateTime = `${formatDate(item.time)} ${hours}:${minutes}`;
                           location = `${originCity} → ${destCity}`;
+                        } else if (item.type === 'hotel') {
+                          standaloneIcon = 'hotel';
+                          standaloneColor = 'green';
+                          displayName = item.data.hotelName;
+                          const hotelCity = getCityName(item.data.address);
+                          const checkOutTime = new Date(item.data.checkOutDateTime);
+                          const checkOutDate = formatDate(checkOutTime);
+                          const checkOutHours = String(checkOutTime.getHours()).padStart(2, '0');
+                          const checkOutMinutes = String(checkOutTime.getMinutes()).padStart(2, '0');
+                          const checkInDate = formatDate(item.time);
+                          const checkInHours = String(item.time.getHours()).padStart(2, '0');
+                          const checkInMinutes = String(item.time.getMinutes()).padStart(2, '0');
+                          if (checkInDate === checkOutDate) {
+                            startDateTime = `${checkInDate} ${checkInHours}:${checkInMinutes} - ${checkOutHours}:${checkOutMinutes}`;
+                          } else {
+                            startDateTime = `${checkInDate} ${checkInHours}:${checkInMinutes} - ${checkOutDate} ${checkOutHours}:${checkOutMinutes}`;
+                          }
+                          location = hotelCity;
                         } else if (item.type === 'transportation') {
                           standaloneIcon = 'train';
                           standaloneColor = 'amber';
@@ -991,6 +1033,24 @@
                           const destCity = getCityName(item.data.destination);
                           startDateTime = `${formatDate(item.time)} ${hours}:${minutes}`;
                           location = `${originCity} → ${destCity}`;
+                        } else if (item.type === 'carRental') {
+                          standaloneIcon = 'directions_car';
+                          standaloneColor = 'purple';
+                          displayName = item.data.company;
+                          const pickupCity = getCityName(item.data.pickupLocation);
+                          const dropoffTime = new Date(item.data.dropoffDateTime);
+                          const dropoffDate = formatDate(dropoffTime);
+                          const dropoffHours = String(dropoffTime.getHours()).padStart(2, '0');
+                          const dropoffMinutes = String(dropoffTime.getMinutes()).padStart(2, '0');
+                          const pickupDate = formatDate(item.time);
+                          const pickupHours = String(item.time.getHours()).padStart(2, '0');
+                          const pickupMinutes = String(item.time.getMinutes()).padStart(2, '0');
+                          if (pickupDate === dropoffDate) {
+                            startDateTime = `${pickupDate} ${pickupHours}:${pickupMinutes} - ${dropoffHours}:${dropoffMinutes}`;
+                          } else {
+                            startDateTime = `${pickupDate} ${pickupHours}:${pickupMinutes} - ${dropoffDate} ${dropoffHours}:${dropoffMinutes}`;
+                          }
+                          location = pickupCity;
                         }
                       %>
                       <div class="w-8 h-8 bg-<%= standaloneColor %>-100 rounded-lg flex items-center justify-center flex-shrink-0">

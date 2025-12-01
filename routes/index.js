@@ -81,4 +81,41 @@ router.get('/manage/certificates/:voucherId', ensureAuthenticated, (req, res) =>
   });
 });
 
+// ===== Sidebar Content Routes =====
+
+// GET new item menu (used in dashboard secondary sidebar)
+router.get('/new-item-menu', ensureAuthenticated, (req, res) => {
+  res.render('partials/new-item-menu');
+});
+
+// GET form for adding a new item - unified endpoint for both trip and standalone contexts
+// /forms/add/:type - standalone item form
+// /forms/add/:type/:tripId - trip item form
+router.get('/forms/add/:type/:tripId?', ensureAuthenticated, (req, res) => {
+  const { type, tripId } = req.params;
+
+  // Validate item type
+  const validTypes = ['flight', 'hotel', 'transportation', 'carRental', 'car-rental', 'event'];
+  if (!validTypes.includes(type)) {
+    return res.status(400).send('Invalid item type');
+  }
+
+  // Route to appropriate controller based on type
+  switch (type) {
+    case 'flight':
+      return require('../controllers/flightController').getAddForm(req, res);
+    case 'hotel':
+      return require('../controllers/hotelController').getAddForm(req, res);
+    case 'transportation':
+      return require('../controllers/transportationController').getAddForm(req, res);
+    case 'carRental':
+    case 'car-rental':
+      return require('../controllers/carRentalController').getAddForm(req, res);
+    case 'event':
+      return require('../controllers/eventController').getAddForm(req, res);
+    default:
+      return res.status(400).send('Invalid item type');
+  }
+});
+
 module.exports = router;

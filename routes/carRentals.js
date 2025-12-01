@@ -7,8 +7,10 @@ const { ensureAuthenticated } = require('../middleware/auth');
 router.use(ensureAuthenticated);
 
 router.get('/trips/:tripId/form', carRentalController.getAddForm);
+router.get('/standalone/form', carRentalController.getAddForm); // Standalone car rental form (same as trip form)
 router.get('/:id/form', carRentalController.getEditForm);
 router.post('/trips/:tripId/car-rentals', carRentalController.createCarRental);
+router.post('/standalone', carRentalController.createCarRental); // Standalone car rentals
 router.put('/:id', carRentalController.updateCarRental);
 router.delete('/:id', carRentalController.deleteCarRental);
 router.post('/:id/restore', carRentalController.restoreCarRental);

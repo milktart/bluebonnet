@@ -9,7 +9,7 @@
 <div class="sidebar-form-container">
   <div class="flex items-start justify-between mb-6">
     <div class="flex items-center">
-      <button onclick="<%= isAddMode ? 'showAddItemMenu()' : 'closeSecondarySidebar()' %>" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
+      <button onclick="<%= isAddMode ? (tripId ? 'showAddItemMenu()' : 'goBackInSidebar()') : 'closeSecondarySidebar()' %>" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
         </svg>
@@ -21,11 +21,11 @@
     </div>
   </div>
 
-  <form id="<%= isAddMode ? 'addFlightForm' : 'editFlightForm' %>" action="<%= isAddMode ? `/flights/trips/${tripId}/flights` : `/flights/${data?.id}` %>" method="POST" class="space-y-4">
+  <form id="<%= isAddMode ? 'addFlightForm' : 'editFlightForm' %>" action="<%= isAddMode ? (tripId ? `/flights/trips/${tripId}/flights` : '/flights/standalone') : `/flights/${data?.id}` %>" method="POST" class="space-y-4">
     <% if (!isAddMode) { %>
       <input type="hidden" name="_method" value="PUT">
     <% } %>
-    <input type="hidden" name="tripId" value="<%= tripId %>">
+    <input type="hidden" name="tripId" value="<%= tripId || '' %>">
 
     <!-- Flight Number & Airline -->
     <div class="grid grid-cols-3 gap-3">
@@ -120,11 +120,23 @@
     <%- include('./item-companions-section') %>
 
     <!-- Set context for companion loading -->
+    <div id="airline-data" data-airlines="<%= airlineData ? airlineData : '[]' %>" style="display: none;"></div>
     <script>
       window.itemType = 'flight';
       window.itemId = '<%= data?.id || "" %>';
       window.tripId = '<%= tripId %>';
       // Companions are initialized by parent script (trip-view-sidebar.js) via ensureCompanionsInitialized()
+
+      // Initialize airline data for lookupAirline function
+      try {
+        const airlineDataEl = document.getElementById('airline-data');
+        if (airlineDataEl && airlineDataEl.getAttribute('data-airlines')) {
+          window.airlineData = JSON.parse(airlineDataEl.getAttribute('data-airlines'));
+        }
+      } catch (e) {
+        console.error('Error parsing airline data:', e);
+        window.airlineData = [];
+      }
     </script>
 
     <!-- Buttons -->

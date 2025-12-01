@@ -29,14 +29,17 @@ exports.createHotel = async (req, res) => {
       companions,
     } = req.body;
 
-    // Verify trip ownership
-    const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
-    if (!trip) {
-      const isAsync = req.headers['x-async-request'] === 'true';
-      if (isAsync) {
-        return res.status(403).json({ success: false, error: 'Trip not found' });
+    // Verify trip ownership if tripId provided (for trip-associated items)
+    // If no tripId, this is a standalone item (allowed without trip)
+    if (tripId) {
+      const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
+      if (!trip) {
+        const isAsync = req.headers['x-async-request'] === 'true';
+        if (isAsync) {
+          return res.status(403).json({ success: false, error: 'Trip not found' });
+        }
+        return redirectAfterError(res, req, null, 'Trip not found');
       }
-      return redirectAfterError(res, req, null, 'Trip not found');
     }
 
     // Combine date and time fields
@@ -139,6 +142,8 @@ exports.updateHotel = async (req, res) => {
       checkInTime,
       checkOutDate,
       checkOutTime,
+      checkInDateTime: checkInDateTimeCombined,
+      checkOutDateTime: checkOutDateTimeCombined,
       timezone,
       confirmationNumber,
       roomNumber,
@@ -150,17 +155,47 @@ exports.updateHotel = async (req, res) => {
     });
 
     // Verify ownership
-    if (!verifyResourceOwnershipViaTrip(hotel, req.user.id)) {
+    // For standalone items, check if user owns it; for trip items, check if user owns the trip
+    if (!hotel) {
       const isAsync = req.headers['x-async-request'] === 'true';
       if (isAsync) {
         return res.status(403).json({ success: false, error: 'Hotel not found' });
       }
       return redirectAfterError(res, req, null, 'Hotel not found');
     }
+    if (hotel.tripId) {
+      // Trip-associated hotel - verify trip ownership
+      if (!verifyResourceOwnershipViaTrip(hotel, req.user.id)) {
+        const isAsync = req.headers['x-async-request'] === 'true';
+        if (isAsync) {
+          return res.status(403).json({ success: false, error: 'Hotel not found' });
+        }
+        return redirectAfterError(res, req, null, 'Hotel not found');
+      }
+    } else {
+      // Standalone hotel - verify direct ownership
+      if (hotel.userId !== req.user.id) {
+        const isAsync = req.headers['x-async-request'] === 'true';
+        if (isAsync) {
+          return res.status(403).json({ success: false, error: 'Hotel not found' });
+        }
+        return redirectAfterError(res, req, null, 'Hotel not found');
+      }
+    }
 
-    // Combine date and time fields
-    const checkInDateTime = `${checkInDate}T${checkInTime}`;
-    const checkOutDateTime = `${checkOutDate}T${checkOutTime}`;
+    // Handle both combined datetime (from async form) and split date/time fields (from traditional forms)
+    let checkInDateTime;
+    let checkOutDateTime;
+
+    if (checkInDateTimeCombined && checkOutDateTimeCombined) {
+      // Async form submission sends combined datetime
+      checkInDateTime = checkInDateTimeCombined;
+      checkOutDateTime = checkOutDateTimeCombined;
+    } else {
+      // Traditional form submission sends split date/time fields
+      checkInDateTime = `${checkInDate}T${checkInTime}`;
+      checkOutDateTime = `${checkOutDate}T${checkOutTime}`;
+    }
 
     // Geocode address if changed
     const coords = await geocodeIfChanged(address, hotel.address, {
@@ -170,31 +205,50 @@ exports.updateHotel = async (req, res) => {
 
     // Infer timezone from location if not provided
     let finalTimezone = timezone;
+    logger.info('[Hotel Update] ========== TIMEZONE DEBUG ==========');
+    logger.info('[Hotel Update] Received timezone from form:', timezone);
+    logger.info('[Hotel Update] Hotel ID:', hotel.id);
+    logger.info('[Hotel Update] Hotel existing timezone:', hotel.timezone);
+    logger.info('[Hotel Update] checkInDateTime (before UTC conversion):', checkInDateTime);
+    logger.info('[Hotel Update] checkOutDateTime (before UTC conversion):', checkOutDateTime);
+
     if (!finalTimezone && coords?.lat && coords?.lng) {
       try {
         finalTimezone = await require('../services/geocodingService').inferTimezone(
           coords.lat,
           coords.lng
         );
+        logger.info('[Hotel Update] Inferred timezone from coordinates:', finalTimezone);
       } catch (error) {
         logger.error('Error inferring timezone:', error);
         finalTimezone = hotel.timezone || 'UTC';
       }
     }
     finalTimezone = finalTimezone || hotel.timezone || 'UTC';
+    logger.info('[Hotel Update] Final timezone will be:', finalTimezone);
+
+    const checkInUTC = convertToUTC(checkInDateTime, finalTimezone);
+    const checkOutUTC = convertToUTC(checkOutDateTime, finalTimezone);
+
+    logger.info('[Hotel Update] Converted to UTC:');
+    logger.info('[Hotel Update]   checkInDateTime:', checkInDateTime, '(', finalTimezone, ') -> UTC:', checkInUTC);
+    logger.info('[Hotel Update]   checkOutDateTime:', checkOutDateTime, '(', finalTimezone, ') -> UTC:', checkOutUTC);
 
     await hotel.update({
       hotelName,
       address,
       phone,
-      checkInDateTime: convertToUTC(checkInDateTime, finalTimezone),
-      checkOutDateTime: convertToUTC(checkOutDateTime, finalTimezone),
+      checkInDateTime: checkInUTC,
+      checkOutDateTime: checkOutUTC,
       timezone: finalTimezone,
       lat: coords?.lat,
       lng: coords?.lng,
       confirmationNumber,
       roomNumber,
     });
+
+    logger.info('[Hotel Update] After update - Hotel timezone stored:', hotel.timezone);
+    logger.info('[Hotel Update] ========== END DEBUG ==========');
 
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
@@ -222,12 +276,32 @@ exports.deleteHotel = async (req, res) => {
     });
 
     // Verify ownership
-    if (!verifyResourceOwnershipViaTrip(hotel, req.user.id)) {
+    // For standalone items, check if user owns it; for trip items, check if user owns the trip
+    if (!hotel) {
       const isAsync = req.headers['x-async-request'] === 'true';
       if (isAsync) {
         return res.status(403).json({ success: false, error: 'Hotel not found' });
       }
       return redirectAfterError(res, req, null, 'Hotel not found');
+    }
+    if (hotel.tripId) {
+      // Trip-associated hotel - verify trip ownership
+      if (!verifyResourceOwnershipViaTrip(hotel, req.user.id)) {
+        const isAsync = req.headers['x-async-request'] === 'true';
+        if (isAsync) {
+          return res.status(403).json({ success: false, error: 'Hotel not found' });
+        }
+        return redirectAfterError(res, req, null, 'Hotel not found');
+      }
+    } else {
+      // Standalone hotel - verify direct ownership
+      if (hotel.userId !== req.user.id) {
+        const isAsync = req.headers['x-async-request'] === 'true';
+        if (isAsync) {
+          return res.status(403).json({ success: false, error: 'Hotel not found' });
+        }
+        return redirectAfterError(res, req, null, 'Hotel not found');
+      }
     }
 
     const { tripId } = hotel;
@@ -289,10 +363,13 @@ exports.getAddForm = async (req, res) => {
     const { tripId } = req.params;
     const { checkInDateTime, checkOutDateTime, destinationTimezone } = req.query;
 
-    // Verify trip ownership
-    const trip = await Trip.findByPk(tripId);
-    if (!trip || trip.userId !== req.user.id) {
-      return res.status(403).send('Unauthorized');
+    // Verify trip ownership if tripId provided (for trip-associated items)
+    // If no tripId, this is a standalone form (allowed without trip)
+    if (tripId) {
+      const trip = await Trip.findByPk(tripId);
+      if (!trip || trip.userId !== req.user.id) {
+        return res.status(403).send('Unauthorized');
+      }
     }
 
     let formData = null;
@@ -307,8 +384,22 @@ exports.getAddForm = async (req, res) => {
       const checkOutDateTimeLocal = utcToLocal(checkOutDateTime, timezone);
 
       // Split into date and time
-      const [checkInDate, checkInTime] = checkInDateTimeLocal.split('T');
-      const [checkOutDate, checkOutTime] = checkOutDateTimeLocal.split('T');
+      let checkInDate = '';
+      let checkOutDate = '';
+
+      if (checkInDateTimeLocal) {
+        const parts = checkInDateTimeLocal.split('T');
+        if (parts.length === 2) {
+          checkInDate = parts[0];
+        }
+      }
+
+      if (checkOutDateTimeLocal) {
+        const parts = checkOutDateTimeLocal.split('T');
+        if (parts.length === 2) {
+          checkOutDate = parts[0];
+        }
+      }
 
       formData = {
         checkInDate,
@@ -320,7 +411,7 @@ exports.getAddForm = async (req, res) => {
 
     // Render form partial for sidebar (not modal)
     res.render('partials/hotel-form', {
-      tripId,
+      tripId: tripId || null,
       isEditing: false,
       data: formData,
       isModal: false, // This tells the partial to render for sidebar
@@ -342,8 +433,20 @@ exports.getEditForm = async (req, res) => {
     });
 
     // Verify ownership
-    if (!hotel || !verifyResourceOwnershipViaTrip(hotel, req.user.id)) {
+    // For standalone items, check if user owns it; for trip items, check if user owns the trip
+    if (!hotel) {
       return res.status(403).send('Unauthorized');
+    }
+    if (hotel.tripId) {
+      // Trip-associated hotel - verify trip ownership
+      if (!verifyResourceOwnershipViaTrip(hotel, req.user.id)) {
+        return res.status(403).send('Unauthorized');
+      }
+    } else {
+      // Standalone hotel - verify direct ownership
+      if (hotel.userId !== req.user.id) {
+        return res.status(403).send('Unauthorized');
+      }
     }
 
     // Convert UTC times to local timezone for display
@@ -353,8 +456,27 @@ exports.getEditForm = async (req, res) => {
     const checkOutDateTimeLocal = utcToLocal(hotel.checkOutDateTime, hotel.timezone || 'UTC');
 
     // Split the combined datetime into separate date and time fields for form input
-    const [checkInDate, checkInTime] = checkInDateTimeLocal.split('T');
-    const [checkOutDate, checkOutTime] = checkOutDateTimeLocal.split('T');
+    // Handle empty strings by providing defaults
+    let checkInDate = '';
+    let checkInTime = '14:00';
+    let checkOutDate = '';
+    let checkOutTime = '11:00';
+
+    if (checkInDateTimeLocal) {
+      const parts = checkInDateTimeLocal.split('T');
+      if (parts.length === 2) {
+        checkInDate = parts[0];
+        checkInTime = parts[1];
+      }
+    }
+
+    if (checkOutDateTimeLocal) {
+      const parts = checkOutDateTimeLocal.split('T');
+      if (parts.length === 2) {
+        checkOutDate = parts[0];
+        checkOutTime = parts[1];
+      }
+    }
 
     // Render form partial for sidebar (not modal)
     res.render('partials/hotel-form', {

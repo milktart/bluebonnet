@@ -172,6 +172,7 @@ app.use((req, res, next) => {
   res.locals.formatDate = dateFormatter.formatDate;
   res.locals.formatTime = dateFormatter.formatTime;
   res.locals.formatDateTime = dateFormatter.formatDateTime;
+  res.locals.formatInTimezone = dateFormatter.formatInTimezone;
   res.locals.getAirportCode = dateFormatter.getAirportCode;
   res.locals.getFlightNum = dateFormatter.getFlightNum;
   res.locals.getCityName = dateFormatter.getCityName;

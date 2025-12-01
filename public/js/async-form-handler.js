@@ -20,9 +20,64 @@ function setupAsyncFormSubmission(formId) {
     // Convert FormData to object
     const formData = new FormData(form);
     const data = Object.fromEntries(formData);
+
+    console.log('[Form Submit] Raw form data:', data);
+
+    // Log timezone fields for debugging
+    if (formId.includes('hotel')) {
+      console.log('[Form Submit] Hotel timezone field:', data.timezone);
+    }
+
+    // Combine date and time fields for flight, hotel, transportation, and car rental forms
+    if (data.departureDate && data.departureTime && !data.departureDateTime) {
+      data.departureDateTime = `${data.departureDate}T${data.departureTime}`;
+      delete data.departureDate;
+      delete data.departureTime;
+    }
+    if (data.arrivalDate && data.arrivalTime && !data.arrivalDateTime) {
+      data.arrivalDateTime = `${data.arrivalDate}T${data.arrivalTime}`;
+      delete data.arrivalDate;
+      delete data.arrivalTime;
+    }
+    if (data.checkInDate && data.checkInTime && !data.checkInDateTime) {
+      data.checkInDateTime = `${data.checkInDate}T${data.checkInTime}`;
+      delete data.checkInDate;
+      delete data.checkInTime;
+    }
+    if (data.checkOutDate && data.checkOutTime && !data.checkOutDateTime) {
+      data.checkOutDateTime = `${data.checkOutDate}T${data.checkOutTime}`;
+      delete data.checkOutDate;
+      delete data.checkOutTime;
+    }
+    if (data.pickupDate && data.pickupTime && !data.pickupDateTime) {
+      data.pickupDateTime = `${data.pickupDate}T${data.pickupTime}`;
+      delete data.pickupDate;
+      delete data.pickupTime;
+    }
+    if (data.dropoffDate && data.dropoffTime && !data.dropoffDateTime) {
+      data.dropoffDateTime = `${data.dropoffDate}T${data.dropoffTime}`;
+      delete data.dropoffDate;
+      delete data.dropoffTime;
+    }
+    if (data.startDate && data.startTime && !data.startDateTime) {
+      data.startDateTime = `${data.startDate}T${data.startTime}`;
+      delete data.startDate;
+      delete data.startTime;
+    }
+    if (data.endDate && data.endTime && !data.endDateTime) {
+      data.endDateTime = `${data.endDate}T${data.endTime}`;
+      delete data.endDate;
+      delete data.endTime;
+    }
+
     const { action } = form;
     const isUpdate = formData.get('_method') === 'PUT' || form.method.toUpperCase() === 'PUT';
     console.log('[Form Submit] Is update:', isUpdate, 'Action:', action);
+
+    // Log final data being sent for hotel forms
+    if (formId.includes('hotel')) {
+      console.log('[Form Submit] Final data being sent:', JSON.stringify(data, null, 2));
+    }
 
     try {
       const response = await fetch(action, {
@@ -51,8 +106,16 @@ function setupAsyncFormSubmission(formId) {
           closeSecondarySidebar();
         }
 
-        // Refresh the trip view async without page reload
-        await refreshTripView();
+        // For standalone items (no tripId), refresh the primary sidebar
+        // For trip items, refresh the trip view
+        const tripId = window.tripId || window.tripData?.id || extractTripIdFromUrl();
+        if (!tripId) {
+          // Standalone item on dashboard - refresh primary sidebar without page reload
+          await refreshDashboardSidebar();
+        } else {
+          // Trip item - refresh trip view async without page reload
+          await refreshTripView();
+        }
       } else {
         alert(`Error saving: ${result.error || result.message || 'Unknown error'}`);
       }
@@ -148,6 +211,23 @@ async function refreshTripView() {
 }
 
 /**
+ * Refresh dashboard primary sidebar to show updated standalone items
+ */
+async function refreshDashboardSidebar() {
+  try {
+    console.log('[refreshDashboardSidebar] Refreshing dashboard...');
+    // Reload the page to refresh all content properly
+    // Use a small delay to ensure the form submission completes first
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
+  } catch (error) {
+    console.error('[refreshDashboardSidebar] Error refreshing dashboard:', error);
+    window.location.reload();
+  }
+}
+
+/**
  * Extract trip ID from current URL
  */
 function extractTripIdFromUrl() {
@@ -158,3 +238,4 @@ function extractTripIdFromUrl() {
 // Expose functions globally for cross-module access
 window.setupAsyncFormSubmission = setupAsyncFormSubmission;
 window.refreshTripView = refreshTripView;
+window.refreshDashboardSidebar = refreshDashboardSidebar;

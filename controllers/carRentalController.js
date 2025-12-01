@@ -27,14 +27,17 @@ exports.createCarRental = async (req, res) => {
       companions,
     } = req.body;
 
-    // Verify trip ownership
-    const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
-    if (!trip) {
-      const isAsync = req.headers['x-async-request'] === 'true';
-      if (isAsync) {
-        return res.status(403).json({ success: false, error: 'Trip not found' });
+    // Verify trip ownership if tripId provided (for trip-associated items)
+    // If no tripId, this is a standalone item (allowed without trip)
+    if (tripId) {
+      const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
+      if (!trip) {
+        const isAsync = req.headers['x-async-request'] === 'true';
+        if (isAsync) {
+          return res.status(403).json({ success: false, error: 'Trip not found' });
+        }
+        return redirectAfterError(res, req, null, 'Trip not found');
       }
-      return redirectAfterError(res, req, null, 'Trip not found');
     }
 
     // Geocode pickup and dropoff locations
@@ -137,12 +140,32 @@ exports.updateCarRental = async (req, res) => {
     });
 
     // Verify ownership
-    if (!verifyResourceOwnershipViaTrip(carRental, req.user.id)) {
+    // For standalone items, check if user owns it; for trip items, check if user owns the trip
+    if (!carRental) {
       const isAsync = req.headers['x-async-request'] === 'true';
       if (isAsync) {
         return res.status(403).json({ success: false, error: 'Car rental not found' });
       }
       return redirectAfterError(res, req, null, 'Car rental not found');
+    }
+    if (carRental.tripId) {
+      // Trip-associated car rental - verify trip ownership
+      if (!verifyResourceOwnershipViaTrip(carRental, req.user.id)) {
+        const isAsync = req.headers['x-async-request'] === 'true';
+        if (isAsync) {
+          return res.status(403).json({ success: false, error: 'Car rental not found' });
+        }
+        return redirectAfterError(res, req, null, 'Car rental not found');
+      }
+    } else {
+      // Standalone car rental - verify direct ownership
+      if (carRental.userId !== req.user.id) {
+        const isAsync = req.headers['x-async-request'] === 'true';
+        if (isAsync) {
+          return res.status(403).json({ success: false, error: 'Car rental not found' });
+        }
+        return redirectAfterError(res, req, null, 'Car rental not found');
+      }
     }
 
     // Geocode locations if they changed
@@ -203,12 +226,32 @@ exports.deleteCarRental = async (req, res) => {
     });
 
     // Verify ownership
-    if (!verifyResourceOwnershipViaTrip(carRental, req.user.id)) {
+    // For standalone items, check if user owns it; for trip items, check if user owns the trip
+    if (!carRental) {
       const isAsync = req.headers['x-async-request'] === 'true';
       if (isAsync) {
         return res.status(403).json({ success: false, error: 'Car rental not found' });
       }
       return redirectAfterError(res, req, null, 'Car rental not found');
+    }
+    if (carRental.tripId) {
+      // Trip-associated car rental - verify trip ownership
+      if (!verifyResourceOwnershipViaTrip(carRental, req.user.id)) {
+        const isAsync = req.headers['x-async-request'] === 'true';
+        if (isAsync) {
+          return res.status(403).json({ success: false, error: 'Car rental not found' });
+        }
+        return redirectAfterError(res, req, null, 'Car rental not found');
+      }
+    } else {
+      // Standalone car rental - verify direct ownership
+      if (carRental.userId !== req.user.id) {
+        const isAsync = req.headers['x-async-request'] === 'true';
+        if (isAsync) {
+          return res.status(403).json({ success: false, error: 'Car rental not found' });
+        }
+        return redirectAfterError(res, req, null, 'Car rental not found');
+      }
     }
 
     const { tripId } = carRental;
@@ -274,14 +317,17 @@ exports.getAddForm = async (req, res) => {
   try {
     const { tripId } = req.params;
 
-    // Verify trip ownership
-    const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
-    if (!trip) {
-      return res.status(403).send('Trip not found');
+    // Verify trip ownership if tripId provided (for trip-associated items)
+    // If no tripId, this is a standalone form (allowed without trip)
+    if (tripId) {
+      const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
+      if (!trip) {
+        return res.status(403).send('Trip not found');
+      }
     }
 
     res.render('partials/car-rental-form', {
-      tripId,
+      tripId: tripId || null,
       isEditing: false,
       data: null,
     });
@@ -306,8 +352,17 @@ exports.getEditForm = async (req, res) => {
     }
 
     // Verify ownership
-    if (!verifyResourceOwnershipViaTrip(carRental, req.user.id)) {
-      return res.status(403).send('Car rental not found');
+    // For standalone items, check if user owns it; for trip items, check if user owns the trip
+    if (carRental.tripId) {
+      // Trip-associated car rental - verify trip ownership
+      if (!verifyResourceOwnershipViaTrip(carRental, req.user.id)) {
+        return res.status(403).send('Car rental not found');
+      }
+    } else {
+      // Standalone car rental - verify direct ownership
+      if (carRental.userId !== req.user.id) {
+        return res.status(403).send('Car rental not found');
+      }
     }
 
     // Format data for display
