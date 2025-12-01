@@ -154,10 +154,22 @@ function initializeHotelTimezoneUpdate() {
           if (data.timezone) {
             timezoneField.value = data.timezone;
             console.log('[Hotel] Updated timezone to:', data.timezone);
+            alert('[TIMEZONE UPDATE] Inferred timezone from address: ' + data.timezone);
           }
         }
       } catch (error) {
         console.error('[Hotel] Error inferring timezone:', error);
+      }
+    }
+
+    // IMPORTANT: Infer timezone on initial form load if address is present
+    // This ensures editing existing hotels gets the correct timezone
+    const initialAddress = addressInput.value;
+    if (initialAddress && initialAddress.trim().length > 0) {
+      // Only infer on load if timezone field is empty (form is being edited but timezone wasn't set)
+      if (!timezoneField.value || timezoneField.value === '') {
+        console.log('[Hotel] Form loaded with address, inferring timezone on initial load');
+        inferAndUpdateTimezone(initialAddress);
       }
     }
 
