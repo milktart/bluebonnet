@@ -227,12 +227,16 @@ exports.updateHotel = async (req, res) => {
     finalTimezone = finalTimezone || hotel.timezone || 'UTC';
     logger.info('[Hotel Update] Final timezone will be:', finalTimezone);
 
+    // Also log as error to make sure it appears in output
+    logger.error('[HOTEL TIMEZONE UPDATE] Received: ' + timezone + ' | Existing: ' + hotel.timezone + ' | Final: ' + finalTimezone);
+
     const checkInUTC = convertToUTC(checkInDateTime, finalTimezone);
     const checkOutUTC = convertToUTC(checkOutDateTime, finalTimezone);
 
     logger.info('[Hotel Update] Converted to UTC:');
     logger.info('[Hotel Update]   checkInDateTime:', checkInDateTime, '(', finalTimezone, ') -> UTC:', checkInUTC);
     logger.info('[Hotel Update]   checkOutDateTime:', checkOutDateTime, '(', finalTimezone, ') -> UTC:', checkOutUTC);
+    logger.error('[HOTEL CONVERSION] Local ' + checkInDateTime + ' (' + finalTimezone + ') -> UTC ' + checkInUTC);
 
     await hotel.update({
       hotelName,
@@ -248,6 +252,7 @@ exports.updateHotel = async (req, res) => {
     });
 
     logger.info('[Hotel Update] After update - Hotel timezone stored:', hotel.timezone);
+    logger.error('[HOTEL STORED] Hotel ID: ' + hotel.id + ' | Timezone: ' + finalTimezone + ' | CheckIn UTC: ' + checkInUTC);
     logger.info('[Hotel Update] ========== END DEBUG ==========');
 
     // Check if this is an async request

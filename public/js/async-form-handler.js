@@ -23,9 +23,9 @@ function setupAsyncFormSubmission(formId) {
 
     console.log('[Form Submit] Raw form data:', data);
 
-    // Log timezone fields for debugging
+    // Alert timezone fields for debugging
     if (formId.includes('hotel')) {
-      console.log('[Form Submit] Hotel timezone field:', data.timezone);
+      alert('[FORM DEBUG] Hotel timezone field value: ' + (data.timezone || '(empty)'));
     }
 
     // Combine date and time fields for flight, hotel, transportation, and car rental forms
@@ -74,9 +74,10 @@ function setupAsyncFormSubmission(formId) {
     const isUpdate = formData.get('_method') === 'PUT' || form.method.toUpperCase() === 'PUT';
     console.log('[Form Submit] Is update:', isUpdate, 'Action:', action);
 
-    // Log final data being sent for hotel forms
+    // Alert final data being sent for hotel forms
     if (formId.includes('hotel')) {
-      console.log('[Form Submit] Final data being sent:', JSON.stringify(data, null, 2));
+      const debugMsg = `[FINAL DATA TO SEND]\nTimezone: ${data.timezone || '(empty)'}\nCheckInDateTime: ${data.checkInDateTime}\nCheckOutDateTime: ${data.checkOutDateTime}`;
+      alert(debugMsg);
     }
 
     try {
