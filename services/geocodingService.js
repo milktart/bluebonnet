@@ -183,16 +183,21 @@ async function inferTimezone(lat, lng) {
 
 /**
  * Map country code to timezone
+ * For US, uses latitude/longitude to determine the correct timezone
  * @param {string} countryCode - Two-letter country code (e.g., 'US', 'GB')
- * @param {number} lat - Latitude (for fallback estimation)
- * @param {number} lng - Longitude (for fallback estimation)
+ * @param {number} lat - Latitude (required for US timezone determination)
+ * @param {number} lng - Longitude (required for US timezone determination)
  * @returns {string} - IANA timezone string
  */
 function getTimezoneForCountry(countryCode, lat, lng) {
+  // Special handling for US - determine timezone based on longitude
+  if (countryCode === 'US' && lng !== undefined) {
+    return getUSTimezone(lat, lng);
+  }
+
   // Country code to primary timezone mapping
   const countryTimezones = {
-    // Americas
-    US: 'America/New_York',
+    // Americas (non-US)
     CA: 'America/Toronto',
     MX: 'America/Mexico_City',
     BR: 'America/Sao_Paulo',
@@ -265,6 +270,51 @@ function getTimezoneForCountry(countryCode, lat, lng) {
   }
 
   return 'UTC';
+}
+
+/**
+ * Determine US timezone based on latitude and longitude
+ * Uses longitude to determine which US timezone zone the coordinate falls into
+ * @param {number} lat - Latitude
+ * @param {number} lng - Longitude
+ * @returns {string} - IANA timezone string
+ */
+function getUSTimezone(lat, lng) {
+  let timezone = null;
+
+  // Handle special cases: Alaska and Hawaii
+  if (lat < 30 && lng < -150) {
+    // Hawaii (roughly south of 30°N and west of 150°W)
+    timezone = 'Pacific/Honolulu';
+  } else if (lat > 50 && lng < -130) {
+    // Alaska (roughly north of 50°N and west of 130°W)
+    timezone = 'America/Anchorage';
+  } else {
+    // Continental US timezones based on longitude
+    // Longitude ranges (approximate):
+    // Eastern: > -85°
+    // Central: -90° to -85°
+    // Mountain: -105° to -90°
+    // Pacific: -125° to -105°
+
+    if (lng > -85) {
+      // Eastern Time
+      timezone = 'America/New_York';
+    } else if (lng > -90) {
+      // Central Time
+      timezone = 'America/Chicago';
+    } else if (lng > -105) {
+      // Mountain Time
+      timezone = 'America/Denver';
+    } else {
+      // Pacific Time (and anything further west in continental US)
+      timezone = 'America/Los_Angeles';
+    }
+  }
+
+  // Log the timezone inference for debugging
+  logger.info(`US timezone inference: (${lat}, ${lng}) -> ${timezone}`);
+  return timezone;
 }
 
 module.exports = {
