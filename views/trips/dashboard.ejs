@@ -978,22 +978,28 @@
                           standaloneIcon = 'event';
                           standaloneColor = 'red';
                           displayName = item.data.name;
-                          const startHours = String(item.time.getHours()).padStart(2, '0');
-                          const startMinutes = String(item.time.getMinutes()).padStart(2, '0');
-                          const startDateStr = formatDate(item.time);
-                          startDateTime = `${startDateStr} ${startHours}:${startMinutes}`;
+                          // Format event times in the event's timezone
+                          const eventTimezone = item.data.timezone || 'UTC';
+                          const eventStartFormatted = formatInTimezone(item.data.startDateTime, eventTimezone, 'DD MMM YYYY HH:mm');
+
+                          // Extract date and time parts for start
+                          const eventStartDateStr = eventStartFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
+                          const eventStartTimeStr = eventStartFormatted.substring(12); // "HH:mm"
+
+                          startDateTime = `${eventStartDateStr} ${eventStartTimeStr}`;
 
                           if (item.data.endDateTime && item.data.endDateTime !== item.data.startDateTime) {
-                            const endTime = new Date(item.data.endDateTime);
-                            const endDateStr = formatDate(endTime);
-                            const endHours = String(endTime.getHours()).padStart(2, '0');
-                            const endMinutes = String(endTime.getMinutes()).padStart(2, '0');
+                            const eventEndFormatted = formatInTimezone(item.data.endDateTime, eventTimezone, 'DD MMM YYYY HH:mm');
+
+                            // Extract date and time parts for end
+                            const eventEndDateStr = eventEndFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
+                            const eventEndTimeStr = eventEndFormatted.substring(12); // "HH:mm"
 
                             // If same date, only show time range. If different dates, show both
-                            if (startDateStr === endDateStr) {
-                              startDateTime = `${startDateStr} ${startHours}:${startMinutes} - ${endHours}:${endMinutes}`;
+                            if (eventStartDateStr === eventEndDateStr) {
+                              startDateTime = `${eventStartDateStr} ${eventStartTimeStr} - ${eventEndTimeStr}`;
                             } else {
-                              startDateTime += ` - ${endDateStr} ${endHours}:${endMinutes}`;
+                              startDateTime += ` - ${eventEndDateStr} ${eventEndTimeStr}`;
                             }
                           }
                           location = item.data.location || '';
@@ -1005,24 +1011,31 @@
                           displayName = `${airlineCode}${flightNum}`;
                           const originCity = getCityName(item.data.origin);
                           const destCity = getCityName(item.data.destination);
-                          startDateTime = `${formatDate(item.time)} ${hours}:${minutes}`;
+                          // Format flight departure time in the origin timezone
+                          const originTimezone = item.data.originTimezone || 'UTC';
+                          const departureFormatted = formatInTimezone(item.data.departureDateTime, originTimezone, 'DD MMM YYYY HH:mm');
+                          startDateTime = departureFormatted;
                           location = `${originCity} → ${destCity}`;
                         } else if (item.type === 'hotel') {
                           standaloneIcon = 'hotel';
                           standaloneColor = 'green';
                           displayName = item.data.hotelName;
                           const hotelCity = getCityName(item.data.address);
-                          const checkOutTime = new Date(item.data.checkOutDateTime);
-                          const checkOutDate = formatDate(checkOutTime);
-                          const checkOutHours = String(checkOutTime.getHours()).padStart(2, '0');
-                          const checkOutMinutes = String(checkOutTime.getMinutes()).padStart(2, '0');
-                          const checkInDate = formatDate(item.time);
-                          const checkInHours = String(item.time.getHours()).padStart(2, '0');
-                          const checkInMinutes = String(item.time.getMinutes()).padStart(2, '0');
-                          if (checkInDate === checkOutDate) {
-                            startDateTime = `${checkInDate} ${checkInHours}:${checkInMinutes} - ${checkOutHours}:${checkOutMinutes}`;
+                          // Format hotel check-in and check-out times in local timezone
+                          const timezone = item.data.timezone || 'UTC';
+                          const checkInFormatted = formatInTimezone ? formatInTimezone(item.data.checkInDateTime, timezone, 'DD MMM YYYY HH:mm') : formatDate(item.time);
+                          const checkOutFormatted = formatInTimezone ? formatInTimezone(item.data.checkOutDateTime, timezone, 'DD MMM YYYY HH:mm') : formatDate(new Date(item.data.checkOutDateTime));
+
+                          // Extract date and time parts
+                          const checkInDateStr = checkInFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
+                          const checkInTimeStr = checkInFormatted.substring(12); // "HH:mm"
+                          const checkOutDateStr = checkOutFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
+                          const checkOutTimeStr = checkOutFormatted.substring(12); // "HH:mm"
+
+                          if (checkInDateStr === checkOutDateStr) {
+                            startDateTime = `${checkInDateStr} ${checkInTimeStr} - ${checkOutTimeStr}`;
                           } else {
-                            startDateTime = `${checkInDate} ${checkInHours}:${checkInMinutes} - ${checkOutDate} ${checkOutHours}:${checkOutMinutes}`;
+                            startDateTime = `${checkInDateStr} ${checkInTimeStr} - ${checkOutDateStr} ${checkOutTimeStr}`;
                           }
                           location = hotelCity;
                         } else if (item.type === 'transportation') {
@@ -1031,24 +1044,32 @@
                           displayName = item.data.method;
                           const originCity = getCityName(item.data.origin);
                           const destCity = getCityName(item.data.destination);
-                          startDateTime = `${formatDate(item.time)} ${hours}:${minutes}`;
+                          // Format transportation departure time in the origin timezone
+                          const transportOriginTimezone = item.data.originTimezone || 'UTC';
+                          const transportDepartureFormatted = formatInTimezone(item.data.departureDateTime, transportOriginTimezone, 'DD MMM YYYY HH:mm');
+                          startDateTime = transportDepartureFormatted;
                           location = `${originCity} → ${destCity}`;
                         } else if (item.type === 'carRental') {
                           standaloneIcon = 'directions_car';
                           standaloneColor = 'purple';
                           displayName = item.data.company;
                           const pickupCity = getCityName(item.data.pickupLocation);
-                          const dropoffTime = new Date(item.data.dropoffDateTime);
-                          const dropoffDate = formatDate(dropoffTime);
-                          const dropoffHours = String(dropoffTime.getHours()).padStart(2, '0');
-                          const dropoffMinutes = String(dropoffTime.getMinutes()).padStart(2, '0');
-                          const pickupDate = formatDate(item.time);
-                          const pickupHours = String(item.time.getHours()).padStart(2, '0');
-                          const pickupMinutes = String(item.time.getMinutes()).padStart(2, '0');
-                          if (pickupDate === dropoffDate) {
-                            startDateTime = `${pickupDate} ${pickupHours}:${pickupMinutes} - ${dropoffHours}:${dropoffMinutes}`;
+                          // Format car rental pickup and dropoff times in their respective timezones
+                          const pickupTimezone = item.data.pickupTimezone || 'UTC';
+                          const dropoffTimezone = item.data.dropoffTimezone || 'UTC';
+                          const pickupFormatted = formatInTimezone(item.data.pickupDateTime, pickupTimezone, 'DD MMM YYYY HH:mm');
+                          const dropoffFormatted = formatInTimezone(item.data.dropoffDateTime, dropoffTimezone, 'DD MMM YYYY HH:mm');
+
+                          // Extract date and time parts
+                          const pickupDateStr = pickupFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
+                          const pickupTimeStr = pickupFormatted.substring(12); // "HH:mm"
+                          const dropoffDateStr = dropoffFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
+                          const dropoffTimeStr = dropoffFormatted.substring(12); // "HH:mm"
+
+                          if (pickupDateStr === dropoffDateStr) {
+                            startDateTime = `${pickupDateStr} ${pickupTimeStr} - ${dropoffTimeStr}`;
                           } else {
-                            startDateTime = `${pickupDate} ${pickupHours}:${pickupMinutes} - ${dropoffDate} ${dropoffHours}:${dropoffMinutes}`;
+                            startDateTime = `${pickupDateStr} ${pickupTimeStr} - ${dropoffDateStr} ${dropoffTimeStr}`;
                           }
                           location = pickupCity;
                         }

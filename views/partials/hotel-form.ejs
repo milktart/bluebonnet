@@ -154,7 +154,6 @@ function initializeHotelTimezoneUpdate() {
           if (data.timezone) {
             timezoneField.value = data.timezone;
             console.log('[Hotel] Updated timezone to:', data.timezone);
-            alert('[TIMEZONE UPDATE] Inferred timezone from address: ' + data.timezone);
           }
         }
       } catch (error) {
@@ -184,13 +183,31 @@ function initializeHotelTimezoneUpdate() {
   }
 }
 
+// Add form submission handler to ensure timezone is never empty
+function ensureTimezoneBeforeSubmit() {
+  const form = document.getElementById('addHotelForm') || document.getElementById('editHotelForm');
+  if (!form) return;
+
+  form.addEventListener('submit', function(e) {
+    const timezoneField = document.getElementById('hotelTimezone') || document.getElementById('edit_hotel_timezone');
+
+    // If timezone is still empty, set it to UTC as fallback
+    if (timezoneField && (!timezoneField.value || timezoneField.value.trim() === '')) {
+      console.log('[Hotel] Timezone was empty at submission, defaulting to UTC');
+      timezoneField.value = 'UTC';
+    }
+  });
+}
+
 // Call on initial page load
 document.addEventListener('DOMContentLoaded', () => {
   initializeHotelDateSync();
   initializeHotelTimezoneUpdate();
+  ensureTimezoneBeforeSubmit();
 });
 
 // Also call immediately in case the form is already loaded
 initializeHotelDateSync();
 initializeHotelTimezoneUpdate();
+ensureTimezoneBeforeSubmit();
 </script>

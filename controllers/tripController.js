@@ -226,12 +226,70 @@ exports.listTrips = async (req, res, options = {}) => {
       limit,
     };
 
+    // Enrich flights and transportation with airport timezones from database
+    const enrichedStandaloneFlights = standaloneFlights.map(flight => {
+      const flightWithTimezone = { ...flight.dataValues };
+      // Extract airport code from origin (format: "AMS - Amsterdam, Netherlands")
+      const originMatch = flightWithTimezone.origin.match(/^([A-Z]{3})/);
+      if (originMatch) {
+        const airportData = airportService.getAirportByCode(originMatch[1]);
+        if (airportData) {
+          flightWithTimezone.originTimezone = airportData.timezone || flightWithTimezone.originTimezone;
+        }
+      }
+      return flightWithTimezone;
+    });
+
+    const enrichedStandaloneTransportation = standaloneTransportation.map(item => {
+      const itemWithTimezone = { ...item.dataValues };
+      const originMatch = itemWithTimezone.origin.match(/^([A-Z]{3})/);
+      if (originMatch) {
+        const airportData = airportService.getAirportByCode(originMatch[1]);
+        if (airportData) {
+          itemWithTimezone.originTimezone = airportData.timezone || itemWithTimezone.originTimezone;
+        }
+      }
+      return itemWithTimezone;
+    });
+
+    // Enrich trips with airport timezones for flights and transportation
+    const enrichedTrips = uniqueTrips.map(trip => {
+      const tripData = trip.dataValues ? { ...trip.dataValues } : trip;
+      if (tripData.flights) {
+        tripData.flights = tripData.flights.map(flight => {
+          const flightWithTimezone = { ...flight.dataValues || flight };
+          const originMatch = flightWithTimezone.origin.match(/^([A-Z]{3})/);
+          if (originMatch) {
+            const airportData = airportService.getAirportByCode(originMatch[1]);
+            if (airportData) {
+              flightWithTimezone.originTimezone = airportData.timezone || flightWithTimezone.originTimezone;
+            }
+          }
+          return flightWithTimezone;
+        });
+      }
+      if (tripData.transportation) {
+        tripData.transportation = tripData.transportation.map(item => {
+          const itemWithTimezone = { ...item.dataValues || item };
+          const originMatch = itemWithTimezone.origin.match(/^([A-Z]{3})/);
+          if (originMatch) {
+            const airportData = airportService.getAirportByCode(originMatch[1]);
+            if (airportData) {
+              itemWithTimezone.originTimezone = airportData.timezone || itemWithTimezone.originTimezone;
+            }
+          }
+          return itemWithTimezone;
+        });
+      }
+      return tripData;
+    });
+
     const renderData = {
       title: 'My Trips',
-      trips: uniqueTrips,
-      standaloneFlights,
+      trips: enrichedTrips,
+      standaloneFlights: enrichedStandaloneFlights,
       standaloneHotels,
-      standaloneTransportation,
+      standaloneTransportation: enrichedStandaloneTransportation,
       standaloneCarRentals,
       standaloneEvents,
       pendingInvitations,
@@ -244,6 +302,7 @@ exports.listTrips = async (req, res, options = {}) => {
       activeTab,
       pagination,
       versionInfo,
+      formatInTimezone,
     };
 
     res.render('trips/dashboard', renderData);
