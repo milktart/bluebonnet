@@ -264,12 +264,14 @@
       </div>
       <div id="create-trip-form" style="display: none;">
         <div class="flex items-center justify-between mb-6">
-          <h2 class="text-lg font-bold text-gray-900">Create New Trip</h2>
-          <button data-action="closeSecondarySidebar" class="text-gray-400 hover:text-gray-600">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
+          <div class="flex items-center">
+            <button onclick="showNewItemMenu()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <h2 class="text-lg font-bold text-gray-900">Create New Trip</h2>
+          </div>
         </div>
 
       <form action="/trips" method="POST" class="space-y-4">

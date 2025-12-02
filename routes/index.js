@@ -83,6 +83,21 @@ router.get('/manage/certificates/:voucherId', ensureAuthenticated, (req, res) =>
 
 // ===== Sidebar Content Routes =====
 
+// GET primary sidebar content for dashboard (AJAX endpoint for refresh)
+// Returns the primary sidebar content for the specified active tab
+router.get('/dashboard/primary-sidebar', ensureAuthenticated, async (req, res) => {
+  try {
+    const activeTab = req.query.activeTab || 'upcoming';
+
+    // Reuse the trip controller to fetch and render the primary sidebar content
+    // This endpoint returns only the primary sidebar HTML, not the full page
+    await tripController.getPrimarySidebarContent(req, res, { activeTab });
+  } catch (error) {
+    console.error('Error fetching primary sidebar content:', error);
+    res.status(500).send('Error loading sidebar content');
+  }
+});
+
 // GET new item menu (used in dashboard secondary sidebar)
 router.get('/new-item-menu', ensureAuthenticated, (req, res) => {
   res.render('partials/new-item-menu');

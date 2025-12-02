@@ -215,12 +215,16 @@ function handleNavigateToTrip(element, event) {
 /**
  * Load sidebar content for standalone event
  * Usage: <div data-action="loadEventSidebar" data-event-id="123">
+ * NOTE: Now uses the same flow as other items - loads edit form directly
  */
-function handleLoadEventSidebar(element, _event) {
+function handleLoadEventSidebar(element, event) {
   const { eventId } = getElementData(element);
 
   if (eventId && typeof window.loadSidebarContent === 'function') {
-    window.loadSidebarContent(`/events/${eventId}/sidebar`);
+    // Stop propagation to prevent other handlers from interfering
+    event.stopPropagation();
+    // Load edit form directly - same as other item types for consistency
+    window.loadSidebarContent(`/events/${eventId}/form`);
   }
 }
 

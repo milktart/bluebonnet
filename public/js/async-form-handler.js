@@ -213,19 +213,143 @@ async function refreshTripView() {
 
 /**
  * Refresh dashboard primary sidebar to show updated standalone items
+ * Fetches updated primary sidebar HTML via AJAX and updates DOM without page reload
  */
 async function refreshDashboardSidebar() {
   try {
-    console.log('[refreshDashboardSidebar] Refreshing dashboard...');
-    // Reload the page to refresh all content properly
-    // Use a small delay to ensure the form submission completes first
+    console.log('[refreshDashboardSidebar] Refreshing dashboard primary sidebar...');
+
+    // Detect the currently active tab
+    const activeTab = getActiveDashboardTab();
+    console.log('[refreshDashboardSidebar] Active tab:', activeTab);
+
+    // Fetch updated primary sidebar HTML
+    const sidebarResponse = await fetch(`/dashboard/primary-sidebar?activeTab=${activeTab}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'text/html',
+        'X-Sidebar-Request': 'true',
+      },
+    });
+
+    if (!sidebarResponse.ok) {
+      console.error('[refreshDashboardSidebar] Failed to fetch sidebar:', sidebarResponse.status);
+      throw new Error(`HTTP error! status: ${sidebarResponse.status}`);
+    }
+
+    const sidebarHtml = await sidebarResponse.text();
+    console.log('[refreshDashboardSidebar] Received sidebar HTML, length:', sidebarHtml.length);
+
+    // Update the primary sidebar content
+    const sidebarContainer = document.querySelector('.sidebar-content');
+    if (!sidebarContainer) {
+      console.error('[refreshDashboardSidebar] Sidebar container not found');
+      throw new Error('Sidebar container not found');
+    }
+
+    // Update the DOM with new content
+    sidebarContainer.innerHTML = sidebarHtml;
+    console.log('[refreshDashboardSidebar] DOM updated with new sidebar content');
+
+    // Execute any scripts in the loaded content
+    const scripts = sidebarContainer.querySelectorAll('script');
+    console.log('[refreshDashboardSidebar] Found', scripts.length, 'scripts to execute');
+    scripts.forEach((script, index) => {
+      console.log('[refreshDashboardSidebar] Executing script', index);
+      const newScript = document.createElement('script');
+      if (script.src) {
+        newScript.src = script.src;
+      } else {
+        newScript.textContent = script.textContent;
+      }
+      document.head.appendChild(newScript);
+    });
+
+    // Restore the active tab styling after refresh
+    restoreActiveDashboardTab(activeTab);
+
+    console.log('[refreshDashboardSidebar] Dashboard primary sidebar refreshed successfully');
+
+    // Emit event bus notification for other components
+    if (typeof window.eventBus !== 'undefined' && typeof window.EventTypes !== 'undefined') {
+      window.eventBus.emit(window.EventTypes.DATA_SYNCED, {
+        type: 'dashboard',
+        activeTab: activeTab,
+      });
+    }
+  } catch (error) {
+    console.error('[refreshDashboardSidebar] Error refreshing dashboard:', error);
+    // Fallback to page reload on error
+    console.log('[refreshDashboardSidebar] Falling back to page reload');
     setTimeout(() => {
       window.location.reload();
     }, 500);
-  } catch (error) {
-    console.error('[refreshDashboardSidebar] Error refreshing dashboard:', error);
-    window.location.reload();
   }
+}
+
+/**
+ * Detect which dashboard tab is currently active
+ * @returns {string} 'upcoming', 'past', or 'settings'
+ */
+function getActiveDashboardTab() {
+  const upcomingTab = document.getElementById('upcoming-tab');
+  const pastTab = document.getElementById('past-tab');
+  const settingsTab = document.getElementById('settings-tab');
+
+  if (settingsTab && settingsTab.classList.contains('border-blue-500')) {
+    return 'settings';
+  }
+  if (pastTab && pastTab.classList.contains('border-blue-500')) {
+    return 'past';
+  }
+  // Default to upcoming
+  return 'upcoming';
+}
+
+/**
+ * Restore the active tab styling after sidebar content is refreshed
+ * @param {string} activeTab - The tab to restore ('upcoming', 'past', or 'settings')
+ */
+function restoreActiveDashboardTab(activeTab) {
+  const upcomingTab = document.getElementById('upcoming-tab');
+  const pastTab = document.getElementById('past-tab');
+  const settingsTab = document.getElementById('settings-tab');
+
+  const upcomingContent = document.getElementById('upcoming-content');
+  const pastContent = document.getElementById('past-content');
+  const settingsContent = document.getElementById('settings-content');
+
+  // Reset all tabs
+  const allTabs = [upcomingTab, pastTab, settingsTab];
+  allTabs.forEach(tab => {
+    if (tab) {
+      tab.classList.remove('border-blue-500', 'text-blue-600', 'bg-blue-50');
+      tab.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50', 'hover:border-gray-300');
+    }
+  });
+
+  // Reset all content sections
+  if (upcomingContent) upcomingContent.classList.add('hidden');
+  if (pastContent) pastContent.classList.add('hidden');
+  if (settingsContent) settingsContent.classList.add('hidden');
+
+  // Activate the appropriate tab and content
+  if (activeTab === 'past' && pastTab && pastContent) {
+    pastTab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50', 'hover:border-gray-300');
+    pastTab.classList.add('border-blue-500', 'text-blue-600', 'bg-blue-50');
+    pastContent.classList.remove('hidden');
+  } else if (activeTab === 'settings' && settingsTab && settingsContent) {
+    settingsTab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50', 'hover:border-gray-300');
+    settingsTab.classList.add('border-blue-500', 'text-blue-600', 'bg-blue-50');
+    settingsContent.classList.remove('hidden');
+  } else if (upcomingTab && upcomingContent) {
+    // Default to upcoming
+    upcomingTab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50', 'hover:border-gray-300');
+    upcomingTab.classList.add('border-blue-500', 'text-blue-600', 'bg-blue-50');
+    upcomingContent.classList.remove('hidden');
+  }
+
+  console.log('[restoreActiveDashboardTab] Restored active tab:', activeTab);
 }
 
 /**

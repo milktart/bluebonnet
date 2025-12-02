@@ -34,21 +34,42 @@
   backdrop-filter: blur(0.5px) !important;
 }
 
-/* ===== Date Input Styling ===== */
-/* Reset browser default styling that causes date inputs to overflow */
-input[type="date"] {
-  /* Ensure the input respects container width */
-  width: 100%;
-  box-sizing: border-box;
+/* ===== Universal Input Field Styling ===== */
+/* Apply consistent styling to all input types to ensure uniformity */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="url"],
+input[type="date"],
+input[type="time"],
+input[type="number"],
+textarea,
+select {
+  /* Remove all browser-specific default styling */
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
 
-  /* Remove browser-specific styling that can cause sizing issues */
-  -webkit-appearance: textfield;
-  -moz-appearance: textfield;
-  appearance: textfield;
+  /* Ensure proper sizing */
+  width: 100% !important;
+  box-sizing: border-box !important;
+  min-width: 0 !important;
 
-  /* Ensure proper sizing in flex/grid layouts */
-  min-width: 0;
-  max-width: 100%;
+  /* Consistent spacing */
+  padding: 0.5rem 0.75rem !important;
+  margin: 0 !important;
+
+  /* Consistent typography */
+  line-height: 1.5 !important;
+  font-size: 1rem !important;
+  font-family: inherit !important;
+}
+
+/* Ensure date/time inputs render at proper height even when empty */
+input[type="date"],
+input[type="time"] {
+  /* Match the height of text inputs: padding (0.5rem × 2) + line-height (1.5) + border (1px × 2) ≈ 2.625rem */
+  height: 2.625rem !important;
 }
 
 /* Style the calendar picker icon */
@@ -59,9 +80,4 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 input[type="date"]::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
-}
-
-/* Firefox date input styling */
-input[type="date"]::-moz-calendar-picker-indicator {
-  cursor: pointer;
 }

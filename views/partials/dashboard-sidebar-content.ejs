@@ -1,0 +1,919 @@
+<%
+  // Server-side formatting functions (must match datetime-formatter.js)
+  function formatDate(date) {
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, '0');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = months[d.getMonth()];
+    const year = d.getFullYear();
+    return `${day} ${month} ${year}`;
+  }
+
+  const now = new Date();
+  const upcomingTrips = [];
+  const pastTrips = [];
+
+  trips.forEach(trip => {
+    // Find the latest end date across all trip segments and the trip return date
+    let latestEndDate = new Date(trip.returnDate);
+
+    // Check flights for latest arrival
+    if (trip.flights && trip.flights.length > 0) {
+      trip.flights.forEach(f => {
+        if (f.arrivalDateTime) {
+          const arrivalDate = new Date(f.arrivalDateTime);
+          if (arrivalDate > latestEndDate) latestEndDate = arrivalDate;
+        }
+      });
+    }
+
+    // Check hotels for latest checkout
+    if (trip.hotels && trip.hotels.length > 0) {
+      trip.hotels.forEach(h => {
+        if (h.checkOutDateTime) {
+          const checkoutDate = new Date(h.checkOutDateTime);
+          if (checkoutDate > latestEndDate) latestEndDate = checkoutDate;
+        }
+      });
+    }
+
+    // Check transportation for latest arrival
+    if (trip.transportation && trip.transportation.length > 0) {
+      trip.transportation.forEach(t => {
+        if (t.arrivalDateTime) {
+          const arrivalDate = new Date(t.arrivalDateTime);
+          if (arrivalDate > latestEndDate) latestEndDate = arrivalDate;
+        }
+      });
+    }
+
+    // Check car rentals for latest dropoff
+    if (trip.carRentals && trip.carRentals.length > 0) {
+      trip.carRentals.forEach(c => {
+        if (c.dropoffDateTime) {
+          const dropoffDate = new Date(c.dropoffDateTime);
+          if (dropoffDate > latestEndDate) latestEndDate = dropoffDate;
+        }
+      });
+    }
+
+    // Check events for latest end
+    if (trip.events && trip.events.length > 0) {
+      trip.events.forEach(e => {
+        if (e.endDateTime) {
+          const endDate = new Date(e.endDateTime);
+          if (endDate > latestEndDate) latestEndDate = endDate;
+        }
+      });
+    }
+
+    // Trip is past only if the latest end date of all segments is in the past
+    if (latestEndDate < now) {
+      pastTrips.push(trip);
+    } else {
+      upcomingTrips.push(trip);
+    }
+  });
+
+  // Declare tripItems outside the if block so it's accessible later
+  let tripItems = [];
+%>
+
+<!-- Content only - no header (header stays in primary sidebar) -->
+
+  <% if (trips.length === 0 && (!standaloneFlights || standaloneFlights.length === 0) && (!standaloneEvents || standaloneEvents.length === 0)) { %>
+    <!-- No trips state -->
+    <script>
+      // Initialize empty data structures for no-trips state
+      window.allTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
+      window.upcomingTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
+      window.pastTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
+      window.globalMarkerAssignments = {};
+    </script>
+
+    <!-- Upcoming Trips Content (empty for no-trips state) -->
+    <div id="upcoming-content" class="<% if (activeTab !== 'upcoming') { %>hidden<% } %> space-y-4 p-6">
+      <div class="text-center py-12 px-6">
+        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+          </svg>
+        </div>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No trips yet</h3>
+        <p class="text-gray-500 mb-6">Get started by creating your first trip</p>
+        <button data-action="showCreateTripForm" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          Create first trip
+        </button>
+      </div>
+    </div>
+
+    <!-- Past Trips Content (empty for no-trips state) -->
+    <div id="past-content" class="<% if (activeTab !== 'past') { %>hidden<% } %> space-y-4 p-6">
+      <div class="text-center py-8">
+        <p class="text-gray-500">No past trips to display.</p>
+      </div>
+    </div>
+
+    <!-- Settings Content - Always rendered (works without trips) -->
+    <div id="settings-content" class="<% if (activeTab !== 'settings') { %>hidden<% } %> space-y-4 p-6">
+      <div class="space-y-3">
+        <button data-action="loadSidebarContent" data-url="/account/sidebar" data-full-width="true" data-update-history="true" data-history-path="/manage/account" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
+          <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+          </div>
+          <div class="flex-1 text-left">
+            <h3 class="text-sm font-medium text-gray-900">Account Settings</h3>
+            <p class="text-xs text-gray-500">Manage your profile and preferences</p>
+          </div>
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+
+        <button data-action="loadSidebarContent" data-url="/account/vouchers/sidebar" data-update-history="true" data-history-path="/manage/certificates" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
+          <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+            <span class="material-symbols-outlined text-amber-600" style="font-size: 18px;">wallet</span>
+          </div>
+          <div class="flex-1 text-left">
+            <h3 class="text-sm font-medium text-gray-900">Manage Certificates & Vouchers</h3>
+            <p class="text-xs text-gray-500">View and manage your travel credits</p>
+          </div>
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+
+        <button data-action="loadSidebarContent" data-url="/account/companions-sidebar" data-full-width="true" data-update-history="true" data-history-path="/manage/companions" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
+          <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+            <span class="material-symbols-outlined text-green-600" style="font-size: 18px;">group</span>
+          </div>
+          <div class="flex-1 text-left">
+            <h3 class="text-sm font-medium text-gray-900">Travel Companions</h3>
+            <p class="text-xs text-gray-500">Manage your travel companions</p>
+          </div>
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+
+        <a href="/auth/logout" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-red-200 hover:border-red-300 hover:bg-red-100 transition-colors bg-red-50">
+          <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+            <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+            </svg>
+          </div>
+          <div class="flex-1 text-left">
+            <h3 class="text-sm font-medium text-red-600">Sign Out</h3>
+            <p class="text-xs text-red-500">Sign out of your account</p>
+          </div>
+        </a>
+
+        <!-- Version Information -->
+        <div class="mt-6 pt-4 border-t border-gray-200">
+          <p class="text-xs text-gray-400 text-center">
+            <svg class="w-3 h-3 inline-block align-baseline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+            </svg>
+            Version <%= versionInfo.appVersion %> | Build <code class="text-gray-400"><%= versionInfo.gitCommit %></code>
+          </p>
+        </div>
+      </div>
+    </div>
+
+  <% } else { %>
+
+    <%
+      // Helper function to extract flight number without airline code
+      function getFlightNum(flightNumber) {
+        const match = flightNumber.match(/(\d+)$/);
+        return match ? match[1] : flightNumber;
+      }
+
+      // Helper function to extract city name from location string
+      function getCityName(location) {
+        if (location.includes(' - ')) {
+          const parts = location.split(' - ')[1];
+          if (parts && parts.includes(',')) {
+            return parts.split(',')[0].trim();
+          }
+          return parts;
+        }
+        return location.split(' - ')[0] || location;
+      }
+
+      // First, collect ALL items from all trips (with trip reference) AND standalone items
+      const allItemsWithTrip = [];
+
+      // Add standalone items first
+      if (typeof standaloneFlights !== 'undefined' && standaloneFlights) {
+        standaloneFlights.forEach(f => {
+          const flightNum = getFlightNum(f.flightNumber);
+          const airlineCode = f.flightNumber.replace(/\d+$/, '');
+          const originCity = getCityName(f.origin);
+          const destinationCity = getCityName(f.destination);
+          allItemsWithTrip.push({
+            type: 'flight',
+            time: new Date(f.departureDateTime),
+            data: f,
+            tripId: null,
+            trip: null,
+            display: `<span class="material-symbols-outlined text-blue-600 inline-icon" style="font-size: 16px;">flights</span> ${airlineCode}${flightNum}: ${originCity} → ${destinationCity}`,
+            hasSegment: true,
+            marker: null
+          });
+        });
+      }
+
+      if (typeof standaloneHotels !== 'undefined' && standaloneHotels) {
+        standaloneHotels.forEach(h => {
+          const hotelCity = getCityName(h.address);
+          allItemsWithTrip.push({
+            type: 'hotel',
+            time: new Date(h.checkInDateTime),
+            data: h,
+            tripId: null,
+            trip: null,
+            display: `<span class="material-symbols-outlined text-green-600 inline-icon" style="font-size: 16px;">hotel</span> ${h.hotelName}: ${hotelCity}`,
+            hasSegment: false,
+            marker: null
+          });
+        });
+      }
+
+      if (typeof standaloneTransportation !== 'undefined' && standaloneTransportation) {
+        standaloneTransportation.forEach(t => {
+          const originCity = getCityName(t.origin);
+          const destinationCity = getCityName(t.destination);
+          allItemsWithTrip.push({
+            type: 'transportation',
+            time: new Date(t.departureDateTime),
+            data: t,
+            tripId: null,
+            trip: null,
+            display: `<span class="material-symbols-outlined text-amber-600 inline-icon" style="font-size: 16px;">train</span> ${t.method}: ${originCity} → ${destinationCity}`,
+            hasSegment: true,
+            marker: null
+          });
+        });
+      }
+
+      if (typeof standaloneCarRentals !== 'undefined' && standaloneCarRentals) {
+        standaloneCarRentals.forEach(c => {
+          const pickupCity = getCityName(c.pickupLocation);
+          const dropoffCity = getCityName(c.dropoffLocation);
+          allItemsWithTrip.push({
+            type: 'carRental',
+            time: new Date(c.pickupDateTime),
+            data: c,
+            tripId: null,
+            trip: null,
+            display: `<span class="material-symbols-outlined text-purple-600 inline-icon" style="font-size: 16px;">directions_car</span> ${c.company}: ${pickupCity} → ${dropoffCity}`,
+            hasSegment: false,
+            marker: null
+          });
+        });
+      }
+
+      if (typeof standaloneEvents !== 'undefined' && standaloneEvents) {
+        standaloneEvents.forEach(e => {
+          allItemsWithTrip.push({
+            type: 'event',
+            time: new Date(e.startDateTime),
+            data: e,
+            tripId: null,
+            trip: null,
+            display: `<span class="material-symbols-outlined text-red-600 inline-icon" style="font-size: 16px;">event</span> ${e.name}`,
+            hasSegment: false,
+            marker: null
+          });
+        });
+      }
+
+      upcomingTrips.forEach(trip => {
+        // Add flights
+        if (trip.flights && Array.isArray(trip.flights)) {
+          trip.flights.forEach(f => {
+            const flightNum = getFlightNum(f.flightNumber);
+            const airlineCode = f.flightNumber.replace(/\d+$/, '');
+            const originCity = getCityName(f.origin);
+            const destinationCity = getCityName(f.destination);
+            allItemsWithTrip.push({
+              type: 'flight',
+              time: new Date(f.departureDateTime),
+              data: f,
+              tripId: trip.id,
+              trip: trip,
+              display: `<span class="material-symbols-outlined text-blue-600 inline-icon" style="font-size: 16px;">flight</span> ${airlineCode}${flightNum}: ${originCity} → ${destinationCity}`,
+              hasSegment: true,
+              marker: null
+            });
+          });
+        }
+
+        // Add transportation
+        if (trip.transportation && Array.isArray(trip.transportation)) {
+          trip.transportation.forEach(t => {
+            const originCity = getCityName(t.origin);
+            const destinationCity = getCityName(t.destination);
+            allItemsWithTrip.push({
+              type: 'transportation',
+              time: new Date(t.departureDateTime),
+              data: t,
+              tripId: trip.id,
+              trip: trip,
+              display: `<span class="material-symbols-outlined text-amber-600 inline-icon" style="font-size: 16px;">train</span> ${t.method}: ${originCity} → ${destinationCity}`,
+              hasSegment: true,
+              marker: null
+            });
+          });
+        }
+
+        // Add events
+        if (trip.events && Array.isArray(trip.events)) {
+          trip.events.forEach(e => {
+            allItemsWithTrip.push({
+              type: 'event',
+              time: new Date(e.startDateTime),
+              data: e,
+              tripId: trip.id,
+              trip: trip,
+              display: `<span class="material-symbols-outlined text-red-600 inline-icon" style="font-size: 16px;">event</span> ${e.name}`,
+              hasSegment: false,
+              marker: null
+            });
+          });
+        }
+      });
+
+      // Sort ALL items chronologically
+      allItemsWithTrip.sort((a, b) => a.time - b.time);
+
+      // Assign markers in chronological order
+      let mapMarkerCounter = 0;
+      allItemsWithTrip.forEach(item => {
+        if (item.hasSegment) {
+          mapMarkerCounter++;
+          item.marker = mapMarkerCounter;
+        }
+      });
+
+      // Now group items by trip for display
+      // Add standalone items as individual cards (not grouped)
+      const standaloneItems = allItemsWithTrip.filter(item => item.tripId === null);
+      standaloneItems.forEach(item => {
+        tripItems.push({
+          trip: null,
+          items: [item],
+          isStandalone: true,
+          standaloneType: item.type,
+          sortTime: item.time
+        });
+      });
+
+      upcomingTrips.forEach(trip => {
+        const items = allItemsWithTrip.filter(item => item.tripId === trip.id);
+
+        // Add trip even if it has no items
+        tripItems.push({
+          trip: trip,
+          items: items,
+          isStandalone: false,
+          sortTime: items.length > 0 ? items[0].time : new Date(trip.departureDate)
+        });
+      });
+
+      // Sort all items (trips and standalone events) chronologically
+      tripItems.sort((a, b) => a.sortTime - b.sortTime);
+    %>
+
+    <!-- Upcoming Trips Content -->
+    <div id="upcoming-content" class="<% if (activeTab !== 'upcoming') { %>hidden<% } %> space-y-4 p-6">
+      <!-- Pending Trip Invitations Section -->
+      <% if (typeof pendingInvitations !== 'undefined' && pendingInvitations && pendingInvitations.length > 0) { %>
+        <div class="border-l-4 border-blue-500 bg-blue-50 p-4 rounded-lg mb-4">
+          <h3 class="text-sm font-semibold text-blue-900 mb-3">
+            <i class="bi bi-envelope-open text-blue-600 me-2"></i>Pending Trip Invitations
+          </h3>
+          <div class="space-y-2">
+            <% pendingInvitations.forEach((invitation, idx) => { %>
+              <% const trip = invitation.trip; %>
+              <% if (trip) { %>
+                <div class="bg-white rounded border border-blue-200 p-3">
+                  <div class="flex items-start justify-between">
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-medium text-gray-900"><%= trip.name %></p>
+                      <p class="text-xs text-gray-600"><%= formatDate(trip.departureDate) %> - <%= formatDate(trip.returnDate) %></p>
+                      <p class="text-xs text-gray-500 mt-1">Invited by <%= invitation.invitedByUser ? (invitation.invitedByUser.firstName + ' ' + invitation.invitedByUser.lastName) : 'a companion' %></p>
+                    </div>
+                    <div class="flex gap-2 ml-2 flex-shrink-0">
+                      <button
+                        type="button"
+                        class="p-1 text-green-600 hover:bg-green-100 rounded transition-colors"
+                        title="Accept invitation"
+                        data-action="respondToTripInvitation"
+                        data-trip-id="<%= trip.id %>"
+                        data-response="join"
+                        data-invitation-id="<%= invitation.id %>"
+                      >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        class="p-1 text-red-600 hover:bg-red-100 rounded transition-colors"
+                        title="Decline invitation"
+                        data-action="respondToTripInvitation"
+                        data-trip-id="<%= trip.id %>"
+                        data-response="decline"
+                        data-invitation-id="<%= invitation.id %>"
+                      >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              <% } %>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
+
+      <% if (typeof tripItems === 'undefined' || tripItems.length === 0) { %>
+        <div class="text-center py-8">
+          <p class="text-gray-500">No upcoming trips to display.</p>
+        </div>
+      <% } else { %>
+        <div class="space-y-3">
+          <% tripItems.forEach((tripData, tripIndex) => { %>
+            <% if (tripData.isStandalone) { %>
+              <%
+                const item = tripData.items[0];
+              %>
+              <!-- Standalone item - single card with no accordion -->
+              <div class="border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md hover:border-gray-300 transition-all cursor-pointer"
+                   <% if (item.type === 'event') { %>data-action="loadEventSidebar" data-event-id="<%= item.data.id %>"<% } else if (item.type === 'flight') { %>data-action="loadStandaloneSidebar" data-item-type="flight" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'hotel') { %>data-action="loadStandaloneSidebar" data-item-type="hotel" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'transportation') { %>data-action="loadStandaloneSidebar" data-item-type="transportation" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'carRental') { %>data-action="loadStandaloneSidebar" data-item-type="carRental" data-item-id="<%= item.data.id %>"<% } %>>
+                <div class="py-4 px-5 inline-flex items-center gap-x-3 w-full font-medium">
+                  <%
+                    const hours = String(item.time.getHours()).padStart(2, '0');
+                    const minutes = String(item.time.getMinutes()).padStart(2, '0');
+                    let standaloneIcon, standaloneColor, standaloneLabel, displayName, startDateTime, endDateTime, location;
+
+                    if (item.type === 'event') {
+                      standaloneIcon = 'event';
+                      standaloneColor = 'red';
+                      displayName = item.data.name;
+                      // Format event times in the event's timezone
+                      const eventTimezone = item.data.timezone || 'UTC';
+                      const eventStartFormatted = formatInTimezone(item.data.startDateTime, eventTimezone, 'DD MMM YYYY HH:mm');
+
+                      // Extract date and time parts for start
+                      const eventStartDateStr = eventStartFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
+                      const eventStartTimeStr = eventStartFormatted.substring(12); // "HH:mm"
+
+                      startDateTime = `${eventStartDateStr} ${eventStartTimeStr}`;
+
+                      if (item.data.endDateTime && item.data.endDateTime !== item.data.startDateTime) {
+                        const eventEndFormatted = formatInTimezone(item.data.endDateTime, eventTimezone, 'DD MMM YYYY HH:mm');
+
+                        // Extract date and time parts for end
+                        const eventEndDateStr = eventEndFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
+                        const eventEndTimeStr = eventEndFormatted.substring(12); // "HH:mm"
+
+                        // If same date, only show time range. If different dates, show both
+                        if (eventStartDateStr === eventEndDateStr) {
+                          startDateTime = `${eventStartDateStr} ${eventStartTimeStr} - ${eventEndTimeStr}`;
+                        } else {
+                          startDateTime += ` - ${eventEndDateStr} ${eventEndTimeStr}`;
+                        }
+                      }
+                      location = item.data.location || '';
+                    } else if (item.type === 'flight') {
+                      standaloneIcon = 'flight';
+                      standaloneColor = 'blue';
+                      const flightNum = item.data.flightNumber.match(/(\d+)$/)?.[1] || '';
+                      const airlineCode = item.data.flightNumber.replace(/\d+$/, '');
+                      displayName = `${airlineCode}${flightNum}`;
+                      const originCity = getCityName(item.data.origin);
+                      const destCity = getCityName(item.data.destination);
+                      // Format flight departure time in the origin timezone
+                      const originTimezone = item.data.originTimezone || 'UTC';
+                      const departureFormatted = formatInTimezone(item.data.departureDateTime, originTimezone, 'DD MMM YYYY HH:mm');
+                      startDateTime = departureFormatted;
+                      location = `${originCity} → ${destCity}`;
+                    } else if (item.type === 'hotel') {
+                      standaloneIcon = 'hotel';
+                      standaloneColor = 'green';
+                      displayName = item.data.hotelName;
+                      const hotelCity = getCityName(item.data.address);
+                      // Format hotel check-in and check-out times in local timezone
+                      const timezone = item.data.timezone || 'UTC';
+                      const checkInFormatted = formatInTimezone ? formatInTimezone(item.data.checkInDateTime, timezone, 'DD MMM YYYY HH:mm') : formatDate(item.time);
+                      const checkOutFormatted = formatInTimezone ? formatInTimezone(item.data.checkOutDateTime, timezone, 'DD MMM YYYY HH:mm') : formatDate(new Date(item.data.checkOutDateTime));
+
+                      // Extract date and time parts
+                      const checkInDateStr = checkInFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
+                      const checkInTimeStr = checkInFormatted.substring(12); // "HH:mm"
+                      const checkOutDateStr = checkOutFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
+                      const checkOutTimeStr = checkOutFormatted.substring(12); // "HH:mm"
+
+                      if (checkInDateStr === checkOutDateStr) {
+                        startDateTime = `${checkInDateStr} ${checkInTimeStr} - ${checkOutTimeStr}`;
+                      } else {
+                        startDateTime = `${checkInDateStr} ${checkInTimeStr} - ${checkOutDateStr} ${checkOutTimeStr}`;
+                      }
+                      location = hotelCity;
+                    } else if (item.type === 'transportation') {
+                      standaloneIcon = 'train';
+                      standaloneColor = 'amber';
+                      displayName = item.data.method;
+                      const originCity = getCityName(item.data.origin);
+                      const destCity = getCityName(item.data.destination);
+                      // Format transportation departure time in the origin timezone
+                      const transportOriginTimezone = item.data.originTimezone || 'UTC';
+                      const transportDepartureFormatted = formatInTimezone(item.data.departureDateTime, transportOriginTimezone, 'DD MMM YYYY HH:mm');
+                      startDateTime = transportDepartureFormatted;
+                      location = `${originCity} → ${destCity}`;
+                    } else if (item.type === 'carRental') {
+                      standaloneIcon = 'directions_car';
+                      standaloneColor = 'purple';
+                      displayName = item.data.company;
+                      const pickupCity = getCityName(item.data.pickupLocation);
+                      // Format car rental pickup and dropoff times in their respective timezones
+                      const pickupTimezone = item.data.pickupTimezone || 'UTC';
+                      const dropoffTimezone = item.data.dropoffTimezone || 'UTC';
+                      const pickupFormatted = formatInTimezone(item.data.pickupDateTime, pickupTimezone, 'DD MMM YYYY HH:mm');
+                      const dropoffFormatted = formatInTimezone(item.data.dropoffDateTime, dropoffTimezone, 'DD MMM YYYY HH:mm');
+
+                      // Extract date and time parts
+                      const pickupDateStr = pickupFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
+                      const pickupTimeStr = pickupFormatted.substring(12); // "HH:mm"
+                      const dropoffDateStr = dropoffFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
+                      const dropoffTimeStr = dropoffFormatted.substring(12); // "HH:mm"
+
+                      if (pickupDateStr === dropoffDateStr) {
+                        startDateTime = `${pickupDateStr} ${pickupTimeStr} - ${dropoffTimeStr}`;
+                      } else {
+                        startDateTime = `${pickupDateStr} ${pickupTimeStr} - ${dropoffDateStr} ${dropoffTimeStr}`;
+                      }
+                      location = pickupCity;
+                    }
+                  %>
+                  <div class="w-8 h-8 bg-<%= standaloneColor %>-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-<%= standaloneColor %>-600" style="font-size: 16px;"><%= standaloneIcon %></span>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h3 class="text-sm font-medium text-gray-900"><%= displayName %></h3>
+                    <p class="text-xs text-gray-500"><%= startDateTime %></p>
+                    <% if (location) { %>
+                      <p class="text-xs text-gray-600 italic"><%= location %></p>
+                    <% } %>
+                  </div>
+                </div>
+              </div>
+            <% } else { %>
+              <!-- Trip card with accordion -->
+              <div class="border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md hover:border-gray-300 transition-all cursor-pointer accordion-button-container"
+                   data-action="navigateToTrip" data-trip-id="<%= tripData.trip.id %>">
+                <div class="w-full py-4 px-5 inline-flex items-center justify-between gap-x-3 font-medium text-start text-gray-800 hover:bg-gray-50 rounded-lg transition-colors">
+                  <div class="flex items-center space-x-3">
+                    <%
+                      // Determine icon based on trip purpose
+                      let tripIcon = 'flights_and_hotels'; // default
+                      let iconClass = 'text-blue-600';
+                      let bgClass = 'bg-blue-100';
+
+                      if (tripData.trip.purpose === 'business') {
+                        tripIcon = 'badge';
+                        iconClass = 'text-purple-600';
+                        bgClass = 'bg-purple-100';
+                      } else if (tripData.trip.purpose === 'leisure' || tripData.trip.purpose === 'family' || tripData.trip.purpose === 'romantic') {
+                        tripIcon = 'hotel';
+                        iconClass = 'text-green-600';
+                        bgClass = 'bg-green-100';
+                      }
+
+                      // Extract unique cities from all items in this trip (exclude events)
+                      const tripCities = new Set();
+                      tripData.items.forEach(item => {
+                        // Skip events - only extract from flights, hotels, transportation, and car rentals
+                        if (item.type === 'event') return;
+
+                        if (item.data.origin) {
+                          const originCity = getCityName(item.data.origin);
+                          if (originCity) tripCities.add(originCity);
+                        }
+                        if (item.data.destination) {
+                          const destCity = getCityName(item.data.destination);
+                          if (destCity) tripCities.add(destCity);
+                        }
+                        if (item.data.hotelName && item.data.address) {
+                          const hotelCity = getCityName(item.data.address);
+                          if (hotelCity) tripCities.add(hotelCity);
+                        }
+                        if (item.data.pickupLocation) {
+                          const pickupCity = getCityName(item.data.pickupLocation);
+                          if (pickupCity) tripCities.add(pickupCity);
+                        }
+                      });
+                      const citiesList = Array.from(tripCities).sort().join(', ');
+                    %>
+                    <div class="w-8 h-8 <%= bgClass %> rounded-lg flex items-center justify-center">
+                      <span class="material-symbols-outlined <%= iconClass %>" style="font-size: 16px;"><%= tripIcon %></span>
+                    </div>
+                    <div class="flex-1 text-left">
+                      <h3 class="text-sm font-medium text-gray-900 hover:text-blue-600"><%= tripData.trip.name %></h3>
+                      <p class="text-xs text-gray-500"><%= formatDate(tripData.trip.departureDate) %> - <%= formatDate(tripData.trip.returnDate) %></p>
+                      <% if (citiesList) { %>
+                        <p class="text-xs text-gray-600 italic"><%= citiesList %></p>
+                      <% } %>
+                    </div>
+                  </div>
+                  <button class="accordion-button w-4 h-4 flex-shrink-0 transition-transform duration-200 p-1 hover:bg-gray-200 rounded"
+                          data-action="toggleAccordion"
+                          data-accordion-id="upcoming-<%= tripIndex %>"
+                          data-stop-propagation="true"
+                          style="min-width: 16px;">
+                    <svg class="accordion-arrow w-4 h-4 flex-shrink-0 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="min-width: 16px;">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6"/>
+                    </svg>
+                  </button>
+                </div>
+
+                <div id="upcoming-<%= tripIndex %>" class="accordion-content hidden" data-trip-id="<%= tripData.trip.id %>">
+                  <div class="pb-4 px-5">
+                    <div class="flex items-center justify-center py-6">
+                      <div class="inline-flex items-center space-x-2">
+                        <div class="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                        <p class="text-sm text-gray-500">Loading trip details...</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <% } %>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Past Trips Content -->
+    <div id="past-content" class="<% if (activeTab !== 'past') { %>hidden<% } %> space-y-4 p-6">
+      <% if (pastTrips.length === 0) { %>
+        <div class="text-center py-8">
+          <p class="text-gray-500">No past trips to display.</p>
+        </div>
+      <% } else { %>
+        <%
+          // Helper function to extract flight number without airline code
+          function getFlightNum(flightNumber) {
+            const match = flightNumber.match(/(\d+)$/);
+            return match ? match[1] : flightNumber;
+          }
+
+          // Helper function to extract city name from location string
+          function getCityName(location) {
+            if (location.includes(' - ')) {
+              const parts = location.split(' - ')[1];
+              if (parts && parts.includes(',')) {
+                return parts.split(',')[0].trim();
+              }
+              return parts;
+            }
+            return location.split(' - ')[0] || location;
+          }
+
+          // Collect flights from past trips
+          const pastTripItems = [];
+
+          pastTrips.forEach(trip => {
+            // Add flights only (not events or transportation for past trips)
+            if (trip.flights && Array.isArray(trip.flights)) {
+              trip.flights.forEach(f => {
+                const flightNum = getFlightNum(f.flightNumber);
+                const airlineCode = f.flightNumber.replace(/\d+$/, '');
+                const originCity = getCityName(f.origin);
+                const destinationCity = getCityName(f.destination);
+                pastTripItems.push({
+                  type: 'flight',
+                  time: new Date(f.departureDateTime),
+                  data: f,
+                  tripId: trip.id,
+                  trip: trip,
+                  display: `<span class="material-symbols-outlined text-blue-600 inline-icon" style="font-size: 16px;">flight</span> ${airlineCode}${flightNum}: ${originCity} → ${destinationCity}`,
+                  hasSegment: true,
+                  marker: null
+                });
+              });
+            }
+          });
+
+          // Sort flights chronologically
+          pastTripItems.sort((a, b) => a.time - b.time);
+
+          // Assign markers in chronological order
+          let pastMapMarkerCounter = 0;
+          pastTripItems.forEach(item => {
+            if (item.hasSegment) {
+              pastMapMarkerCounter++;
+              item.marker = pastMapMarkerCounter;
+            }
+          });
+
+          // Group items by trip for display
+          const pastTripItemsGrouped = [];
+
+          pastTrips.forEach(trip => {
+            const items = pastTripItems.filter(item => item.tripId === trip.id);
+
+            pastTripItemsGrouped.push({
+              trip: trip,
+              items: items,
+              isStandalone: false
+            });
+          });
+
+          // Sort trips by earliest item time
+          pastTripItemsGrouped.sort((a, b) => {
+            const aTime = a.items.length > 0 ? a.items[0].time : (a.trip ? new Date(a.trip.departureDate) : new Date());
+            const bTime = b.items.length > 0 ? b.items[0].time : (b.trip ? new Date(b.trip.departureDate) : new Date());
+            return aTime - bTime;
+          });
+        %>
+
+        <div class="space-y-3">
+          <% pastTripItemsGrouped.forEach((tripData, tripIndex) => { %>
+            <div class="border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md hover:border-gray-300 transition-all cursor-pointer accordion-button-container"
+                 data-action="navigateToTrip" data-trip-id="<%= tripData.trip.id %>">
+              <!-- Accordion Header -->
+              <div class="w-full py-4 px-5 inline-flex items-center justify-between gap-x-3 font-medium text-start text-gray-800 hover:bg-gray-50 rounded-lg transition-colors">
+                <div class="flex items-center space-x-3">
+                  <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                  </div>
+                  <div class="flex-1 text-left">
+                    <h3 class="text-sm font-medium text-gray-700 hover:text-gray-900"><%= tripData.trip.name %></h3>
+                    <p class="text-xs text-gray-500"><%= formatDate(tripData.trip.departureDate) %> - <%= formatDate(tripData.trip.returnDate) %></p>
+                  </div>
+                </div>
+                <button class="accordion-button w-4 h-4 flex-shrink-0 transition-transform duration-200 p-1 hover:bg-gray-200 rounded"
+                        data-action="toggleAccordion"
+                        data-accordion-id="past-<%= tripIndex %>"
+                        data-stop-propagation="true"
+                        style="min-width: 16px;">
+                  <svg class="accordion-arrow w-4 h-4 flex-shrink-0 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="min-width: 16px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6"/>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Accordion Content -->
+              <div id="past-<%= tripIndex %>" class="accordion-content hidden" data-trip-id="<%= tripData.trip.id %>">
+                <div class="pb-4 px-5">
+                  <div class="flex items-center justify-center py-6">
+                    <div class="inline-flex items-center space-x-2">
+                      <div class="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                      <p class="text-sm text-gray-500">Loading trip details...</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Settings Content -->
+    <div id="settings-content" class="<% if (activeTab !== 'settings') { %>hidden<% } %> space-y-4 p-6">
+      <div class="space-y-3">
+        <button data-action="loadSidebarContent" data-url="/account/sidebar" data-full-width="true" data-update-history="true" data-history-path="/manage/account" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
+          <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+          </div>
+          <div class="flex-1 text-left">
+            <h3 class="text-sm font-medium text-gray-900">Account Settings</h3>
+            <p class="text-xs text-gray-500">Manage your profile and preferences</p>
+          </div>
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+
+        <button data-action="loadSidebarContent" data-url="/account/vouchers/sidebar" data-update-history="true" data-history-path="/manage/certificates" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
+          <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+            <span class="material-symbols-outlined text-amber-600" style="font-size: 18px;">wallet</span>
+          </div>
+          <div class="flex-1 text-left">
+            <h3 class="text-sm font-medium text-gray-900">Manage Certificates & Vouchers</h3>
+            <p class="text-xs text-gray-500">View and manage your travel credits</p>
+          </div>
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+
+        <button data-action="loadSidebarContent" data-url="/account/companions-sidebar" data-full-width="true" data-update-history="true" data-history-path="/manage/companions" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
+          <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+            <span class="material-symbols-outlined text-green-600" style="font-size: 18px;">group</span>
+          </div>
+          <div class="flex-1 text-left">
+            <h3 class="text-sm font-medium text-gray-900">Travel Companions</h3>
+            <p class="text-xs text-gray-500">Manage your travel companions</p>
+          </div>
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+
+        <a href="/auth/logout" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-red-200 hover:border-red-300 hover:bg-red-100 transition-colors bg-red-50">
+          <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+            <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+            </svg>
+          </div>
+          <div class="flex-1 text-left">
+            <h3 class="text-sm font-medium text-red-600">Sign Out</h3>
+            <p class="text-xs text-red-500">Sign out of your account</p>
+          </div>
+        </a>
+
+        <!-- Version Information -->
+        <div class="mt-6 pt-4 border-t border-gray-200">
+          <p class="text-xs text-gray-400 text-center">
+            <svg class="w-3 h-3 inline-block align-baseline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+            </svg>
+            Version <%= versionInfo.appVersion %> | Build <code class="text-gray-400"><%= versionInfo.gitCommit %></code>
+          </p>
+        </div>
+      </div>
+    </div>
+
+  <% } %>
+
+<script>
+  // Handle accordion expansion to load trip items via AJAX
+  window.loadTripItemsIfNeeded = async function(accordionId) {
+    const accordionContent = document.getElementById(accordionId);
+    if (!accordionContent) return;
+
+    const tripId = accordionContent.getAttribute('data-trip-id');
+    if (!tripId) return;
+
+    // Check if already loaded
+    if (accordionContent.getAttribute('data-loaded') === 'true') {
+      return;
+    }
+
+    try {
+      // Build URL with global marker assignments as query params
+      let url = `/trips/${tripId}/sidebar`;
+      if (window.globalMarkerAssignments && Object.keys(window.globalMarkerAssignments).length > 0) {
+        const params = new URLSearchParams();
+        for (const [key, value] of Object.entries(window.globalMarkerAssignments)) {
+          params.append('marker', `${key}=${value}`);
+        }
+        url += '?' + params.toString();
+      }
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to load trip items: ${response.status}`);
+      }
+      const html = await response.text();
+      accordionContent.innerHTML = html;
+      accordionContent.setAttribute('data-loaded', 'true');
+
+      // Execute any scripts in the loaded content
+      const scripts = accordionContent.querySelectorAll('script');
+      scripts.forEach(script => {
+        const newScript = document.createElement('script');
+        if (script.src) {
+          newScript.src = script.src;
+        } else {
+          newScript.textContent = script.textContent;
+        }
+        document.head.appendChild(newScript);
+      });
+
+      // Note: No need to re-attach hover handlers - they were already attached
+      // to the accordion button and will work with the newly loaded items
+    } catch (error) {
+      console.error('Error loading trip items:', error);
+      accordionContent.innerHTML = '<div class="p-4 text-red-600 text-sm">Error loading trip details. Please try again.</div>';
+      accordionContent.setAttribute('data-loaded', 'true');
+    }
+  };
+</script>

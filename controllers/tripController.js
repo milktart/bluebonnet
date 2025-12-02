@@ -20,6 +20,199 @@ const { formatInTimezone } = require('../utils/timezoneHelper');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
 const versionInfo = require('../utils/version');
 
+/**
+ * Get primary sidebar content for dashboard (AJAX endpoint for refresh)
+ * Returns only the primary sidebar content HTML for AJAX updates
+ */
+exports.getPrimarySidebarContent = async (req, res, options = {}) => {
+  try {
+    // Determine active tab from query parameter or options
+    const activeTab = req.query.activeTab || options.activeTab || 'upcoming';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Build date filter based on active tab (same logic as listTrips)
+    let dateFilter = {};
+    let orderDirection = 'ASC';
+
+    if (activeTab === 'upcoming') {
+      dateFilter = { returnDate: { [Op.gte]: today } };
+      orderDirection = 'ASC';
+    } else if (activeTab === 'past') {
+      dateFilter = { returnDate: { [Op.lt]: today } };
+      orderDirection = 'DESC';
+    }
+
+    // Get trips the user owns
+    const ownedTrips = await Trip.findAll({
+      where: { userId: req.user.id, ...dateFilter },
+      order: [['departureDate', orderDirection]],
+      include: [
+        { model: Flight, as: 'flights' },
+        { model: Hotel, as: 'hotels' },
+        { model: Transportation, as: 'transportation' },
+        { model: CarRental, as: 'carRentals' },
+        { model: Event, as: 'events' },
+        {
+          model: TripCompanion,
+          as: 'tripCompanions',
+          include: [
+            {
+              model: TravelCompanion,
+              as: 'companion',
+              include: [
+                {
+                  model: User,
+                  as: 'linkedAccount',
+                  attributes: ['id', 'firstName', 'lastName'],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    // Get standalone items (not attached to any trip)
+    let standaloneFlights = [];
+    let standaloneHotels = [];
+    let standaloneTransportation = [];
+    let standaloneCarRentals = [];
+    let standaloneEvents = [];
+
+    if (activeTab === 'upcoming' || activeTab === 'all') {
+      standaloneFlights = await Flight.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['departureDateTime', 'ASC']],
+      });
+
+      standaloneHotels = await Hotel.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['checkInDateTime', 'ASC']],
+      });
+
+      standaloneTransportation = await Transportation.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['departureDateTime', 'ASC']],
+      });
+
+      standaloneCarRentals = await CarRental.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['pickupDateTime', 'ASC']],
+      });
+
+      standaloneEvents = await Event.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['startDateTime', 'ASC']],
+      });
+    }
+
+    // Get pending trip invitations (only for upcoming tab)
+    let pendingInvitations = [];
+    if (activeTab === 'upcoming' || activeTab === 'all') {
+      pendingInvitations = await TripInvitation.findAll({
+        where: {
+          invitedUserId: req.user.id,
+          status: 'pending',
+        },
+        include: [
+          {
+            model: Trip,
+            as: 'trip',
+            include: [
+              { model: Flight, as: 'flights' },
+              { model: Hotel, as: 'hotels' },
+              { model: Transportation, as: 'transportation' },
+              { model: CarRental, as: 'carRentals' },
+              { model: Event, as: 'events' },
+            ],
+          },
+          {
+            model: User,
+            as: 'invitedByUser',
+            attributes: ['id', 'firstName', 'lastName'],
+          },
+        ],
+        order: [['createdAt', 'DESC']],
+      });
+    }
+
+    // Enrich flights and transportation with airport timezones
+    const enrichedStandaloneFlights = standaloneFlights.map(flight => {
+      const flightWithTimezone = { ...flight.dataValues };
+      const originMatch = flightWithTimezone.origin.match(/^([A-Z]{3})/);
+      if (originMatch) {
+        const airportData = airportService.getAirportByCode(originMatch[1]);
+        if (airportData) {
+          flightWithTimezone.originTimezone = airportData.timezone || flightWithTimezone.originTimezone;
+        }
+      }
+      return flightWithTimezone;
+    });
+
+    const enrichedStandaloneTransportation = standaloneTransportation.map(item => {
+      const itemWithTimezone = { ...item.dataValues };
+      const originMatch = itemWithTimezone.origin.match(/^([A-Z]{3})/);
+      if (originMatch) {
+        const airportData = airportService.getAirportByCode(originMatch[1]);
+        if (airportData) {
+          itemWithTimezone.originTimezone = airportData.timezone || itemWithTimezone.originTimezone;
+        }
+      }
+      return itemWithTimezone;
+    });
+
+    const enrichedTrips = ownedTrips.map(trip => {
+      const tripData = trip.dataValues ? { ...trip.dataValues } : trip;
+      if (tripData.flights) {
+        tripData.flights = tripData.flights.map(flight => {
+          const flightWithTimezone = { ...flight.dataValues || flight };
+          const originMatch = flightWithTimezone.origin.match(/^([A-Z]{3})/);
+          if (originMatch) {
+            const airportData = airportService.getAirportByCode(originMatch[1]);
+            if (airportData) {
+              flightWithTimezone.originTimezone = airportData.timezone || flightWithTimezone.originTimezone;
+            }
+          }
+          return flightWithTimezone;
+        });
+      }
+      if (tripData.transportation) {
+        tripData.transportation = tripData.transportation.map(item => {
+          const itemWithTimezone = { ...item.dataValues || item };
+          const originMatch = itemWithTimezone.origin.match(/^([A-Z]{3})/);
+          if (originMatch) {
+            const airportData = airportService.getAirportByCode(originMatch[1]);
+            if (airportData) {
+              itemWithTimezone.originTimezone = airportData.timezone || itemWithTimezone.originTimezone;
+            }
+          }
+          return itemWithTimezone;
+        });
+      }
+      return tripData;
+    });
+
+    // Render as partial with minimal HTML wrapper for AJAX injection
+    res.render('partials/dashboard-sidebar-content', {
+      trips: enrichedTrips,
+      standaloneFlights: enrichedStandaloneFlights,
+      standaloneHotels,
+      standaloneTransportation: enrichedStandaloneTransportation,
+      standaloneCarRentals,
+      standaloneEvents,
+      pendingInvitations,
+      activeTab,
+      versionInfo,
+      formatInTimezone,
+      layout: false, // Don't use main layout
+    });
+  } catch (error) {
+    logger.error('Error fetching primary sidebar content:', error);
+    res.status(500).send('<p class="text-red-600">Error loading sidebar content</p>');
+  }
+};
+
 exports.listTrips = async (req, res, options = {}) => {
   try {
     // Determine active tab from query parameter or options
