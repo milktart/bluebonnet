@@ -16,10 +16,16 @@ import '../time-input-formatter.js';
 import '../main.js';
 import '../notifications.js';
 
-// Initialize event delegation on DOM ready
-document.addEventListener('DOMContentLoaded', () => {
-  initializeEventDelegation();
-});
+// Initialize event delegation immediately (don't wait for DOMContentLoaded)
+// This ensures event delegation works even if the module loads after DOMContentLoaded fires
+initializeEventDelegation();
+
+// Also ensure it's reinitialized if DOMContentLoaded hasn't fired yet
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initializeEventDelegation();
+  });
+}
 
 // Log bundle load
 // eslint-disable-next-line no-console

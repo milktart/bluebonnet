@@ -19,8 +19,16 @@ import '../trips-list.js';
 // Event delegation handlers - MUST be imported before initializeEventDelegation()
 import '../dashboard-handlers.js';
 
-// Initialize event delegation (after handlers are registered)
+// Initialize event delegation immediately (after handlers are registered)
+// This ensures event delegation works even if the module loads after DOMContentLoaded fires
 initializeEventDelegation();
+
+// Also ensure it's reinitialized if DOMContentLoaded hasn't fired yet
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initializeEventDelegation();
+  });
+}
 
 // Log bundle load
 // eslint-disable-next-line no-console

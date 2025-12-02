@@ -1488,9 +1488,17 @@
       window.upcomingTripsData.flights.push(...<%- JSON.stringify(standaloneFlights) %>);
       window.pastTripsData.flights.push(...<%- JSON.stringify(standaloneFlights) %>);
     <% } %>
+    <% if (typeof standaloneHotels !== 'undefined' && standaloneHotels && standaloneHotels.length > 0) { %>
+      window.allTripsData.hotels.push(...<%- JSON.stringify(standaloneHotels) %>);
+      window.upcomingTripsData.hotels.push(...<%- JSON.stringify(standaloneHotels) %>);
+    <% } %>
     <% if (typeof standaloneTransportation !== 'undefined' && standaloneTransportation && standaloneTransportation.length > 0) { %>
       window.allTripsData.transportation.push(...<%- JSON.stringify(standaloneTransportation) %>);
       window.upcomingTripsData.transportation.push(...<%- JSON.stringify(standaloneTransportation) %>);
+    <% } %>
+    <% if (typeof standaloneCarRentals !== 'undefined' && standaloneCarRentals && standaloneCarRentals.length > 0) { %>
+      window.allTripsData.carRentals.push(...<%- JSON.stringify(standaloneCarRentals) %>);
+      window.upcomingTripsData.carRentals.push(...<%- JSON.stringify(standaloneCarRentals) %>);
     <% } %>
     <% if (typeof standaloneEvents !== 'undefined' && standaloneEvents && standaloneEvents.length > 0) { %>
       window.allTripsData.events.push(...<%- JSON.stringify(standaloneEvents) %>);

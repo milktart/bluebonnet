@@ -126,8 +126,74 @@ async function initializeMap(tripData, isPast = false) {
       }
     }
 
-    // NOTE: Transportation, hotels, and car rentals are intentionally excluded from the map
-    // Only flights (travel segments) and events (location markers) are displayed
+    // Process HOTELS (location markers only)
+    if (tripData.hotels && Array.isArray(tripData.hotels)) {
+      for (const hotel of tripData.hotels) {
+        if (!hotel.address) continue;
+
+        // Use stored coordinates from database
+        const lat = parseFloat(hotel.lat);
+        const lng = parseFloat(hotel.lng);
+
+        if (!isNaN(lat) && !isNaN(lng)) {
+          allLocations.push({
+            name: hotel.hotelName,
+            type: 'hotel',
+            details: hotel.address,
+            time: new Date(hotel.checkInDateTime),
+            lat,
+            lng,
+          });
+          allCoords.push([lat, lng]);
+        }
+      }
+    }
+
+    // Process CAR RENTALS (location markers only)
+    if (tripData.carRentals && Array.isArray(tripData.carRentals)) {
+      for (const carRental of tripData.carRentals) {
+        if (!carRental.pickupLocation) continue;
+
+        // Use stored coordinates from database
+        const lat = parseFloat(carRental.pickupLat);
+        const lng = parseFloat(carRental.pickupLng);
+
+        if (!isNaN(lat) && !isNaN(lng)) {
+          allLocations.push({
+            name: carRental.company,
+            type: 'carRental',
+            details: carRental.pickupLocation,
+            time: new Date(carRental.pickupDateTime),
+            lat,
+            lng,
+          });
+          allCoords.push([lat, lng]);
+        }
+      }
+    }
+
+    // Process TRANSPORTATION (location markers only)
+    if (tripData.transportation && Array.isArray(tripData.transportation)) {
+      for (const transportation of tripData.transportation) {
+        if (!transportation.origin) continue;
+
+        // Use stored coordinates from database
+        const lat = parseFloat(transportation.originLat);
+        const lng = parseFloat(transportation.originLng);
+
+        if (!isNaN(lat) && !isNaN(lng)) {
+          allLocations.push({
+            name: transportation.method,
+            type: 'transportation',
+            details: transportation.origin,
+            time: new Date(transportation.departureDateTime),
+            lat,
+            lng,
+          });
+          allCoords.push([lat, lng]);
+        }
+      }
+    }
 
     // Process EVENTS (points only)
     if (tripData.events && Array.isArray(tripData.events)) {
@@ -165,15 +231,20 @@ async function initializeMap(tripData, isPast = false) {
     }
 
     // Define marker colors (darker for past trips)
-    // Only flights and events are displayed on the map
     const colorMap = isPast
       ? {
           flight: '#084298',
           event: '#dc3545',
+          hotel: '#0d6e66',
+          carRental: '#6c757d',
+          transportation: '#bb6200',
         }
       : {
           flight: '#0d6efd',
           event: '#dc3545',
+          hotel: '#20c997',
+          carRental: '#6c757d',
+          transportation: '#fd7e14',
         };
 
     // Store markers to add after polylines for proper z-ordering
