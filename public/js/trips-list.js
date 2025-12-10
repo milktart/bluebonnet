@@ -24,31 +24,28 @@ const TAB_CONFIG = {
 // Update map with new trip data
 function updateMapData(newData, isPast = false) {
   console.log('[updateMapData] Called with isPast:', isPast);
-  console.log('[updateMapData] newData:', newData);
+  console.log('[updateMapData] newData flights count:', newData.flights.length);
   console.log('[updateMapData] currentMap initialized:', !!currentMap, 'mapInitialized:', mapInitialized);
 
-  if (!currentMap || !mapInitialized) {
-    console.warn('[updateMapData] Map not initialized, skipping update');
+  if (typeof initOverviewMap === 'undefined') {
+    console.warn('[updateMapData] initOverviewMap not defined yet');
     return;
   }
 
   // Stop any ongoing animations
   stopTripAnimation();
 
-  // Reinitialize the map with new data
-  if (typeof initOverviewMap !== 'undefined') {
-    console.log('[updateMapData] Calling initOverviewMap with', newData.flights.length, 'flights');
-    initOverviewMap(newData, 'tripMap', isPast)
-      .then((map) => {
-        console.log('[updateMapData] Map updated successfully');
-        currentMap = map;
-      })
-      .catch((error) => {
-        console.error('[updateMapData] Map update failed:', error);
-      });
-  } else {
-    console.warn('[updateMapData] initOverviewMap not found');
-  }
+  // Initialize or reinitialize the map with new data
+  console.log('[updateMapData] Calling initOverviewMap with', newData.flights.length, 'flights');
+  initOverviewMap(newData, 'tripMap', isPast)
+    .then((map) => {
+      console.log('[updateMapData] Map initialized/updated successfully');
+      mapInitialized = true;
+      currentMap = map;
+    })
+    .catch((error) => {
+      console.error('[updateMapData] Map update failed:', error);
+    });
 }
 
 function switchTab(activeTab) {
@@ -506,64 +503,52 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   setTimeout(() => {
-    if (!mapInitialized && typeof initOverviewMap !== 'undefined') {
-      // Initialize with upcoming trips data since the upcoming tab is shown by default
-      initOverviewMap(upcomingTripsData)
-        .then((map) => {
-          mapInitialized = true;
-          currentMap = map;
+    if (typeof initOverviewMap !== 'undefined') {
+      // NOTE: The map is initialized by dashboard.ejs via showUpcomingTrips() or showPastTrips()
+      // This code only sets up the accordion hover handlers after the map has been initialized
 
-          // Setup accordion hover handlers
-          const accordionContainers = document.querySelectorAll('.accordion-button-container');
-          accordionContainers.forEach((container, index) => {
-            const accordionContent = container.querySelector('[class*="accordion-content"]');
-            if (accordionContent && accordionContent.id) {
-              // Extract prefix (upcoming or past) and trip index
-              let tripIndex = '';
-              let prefix = 'upcoming';
+      // Setup accordion hover handlers
+      const accordionContainers = document.querySelectorAll('.accordion-button-container');
+      accordionContainers.forEach((container, index) => {
+        const accordionContent = container.querySelector('[class*="accordion-content"]');
+        if (accordionContent && accordionContent.id) {
+          // Extract prefix (upcoming or past) and trip index
+          let tripIndex = '';
+          let prefix = 'upcoming';
 
-              if (accordionContent.id.startsWith('upcoming-')) {
-                tripIndex = accordionContent.id.replace('upcoming-', '');
-                prefix = 'upcoming';
-              } else if (accordionContent.id.startsWith('past-')) {
-                tripIndex = accordionContent.id.replace('past-', '');
-                prefix = 'past';
-              }
-
-              if (tripIndex) {
-                container.addEventListener('mouseenter', async () => {
-                  const accordionId = `${prefix}-${tripIndex}`;
-                  const accordionContent = document.getElementById(accordionId);
-
-                  // Load items if not already loaded
-                  if (accordionContent && accordionContent.getAttribute('data-loaded') !== 'true') {
-                    if (typeof loadTripItemsIfNeeded === 'function') {
-                      await loadTripItemsIfNeeded(accordionId);
-                    }
-                  }
-
-                  // Now animate
-                  zoomToTripBounds(tripIndex, prefix);
-                  animateTripSegments(tripIndex, prefix);
-                });
-
-                container.addEventListener('mouseleave', () => {
-                  stopTripAnimation();
-                });
-              }
-            }
-          });
-        })
-        .catch((error) => {
-          const mapEl = document.getElementById('tripMap');
-          if (mapEl) {
-            mapEl.innerHTML = `<div class="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-yellow-700">Map failed to load: ${
-              error.message
-            }</div>`;
+          if (accordionContent.id.startsWith('upcoming-')) {
+            tripIndex = accordionContent.id.replace('upcoming-', '');
+            prefix = 'upcoming';
+          } else if (accordionContent.id.startsWith('past-')) {
+            tripIndex = accordionContent.id.replace('past-', '');
+            prefix = 'past';
           }
-        });
+
+          if (tripIndex) {
+            container.addEventListener('mouseenter', async () => {
+              const accordionId = `${prefix}-${tripIndex}`;
+              const accordionContent = document.getElementById(accordionId);
+
+              // Load items if not already loaded
+              if (accordionContent && accordionContent.getAttribute('data-loaded') !== 'true') {
+                if (typeof loadTripItemsIfNeeded === 'function') {
+                  await loadTripItemsIfNeeded(accordionId);
+                }
+              }
+
+              // Now animate
+              zoomToTripBounds(tripIndex, prefix);
+              animateTripSegments(tripIndex, prefix);
+            });
+
+            container.addEventListener('mouseleave', () => {
+              stopTripAnimation();
+            });
+          }
+        }
+      });
     }
-  }, 500);
+  }, 800);
 });
 
 // Expose functions globally for inline scripts and initialization

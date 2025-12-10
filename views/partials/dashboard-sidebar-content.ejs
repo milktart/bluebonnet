@@ -27,71 +27,11 @@
     return iconMap[methodLower] || { icon: 'train', color: 'amber' };
   }
 
-  const now = new Date();
-  const upcomingTrips = [];
-  const pastTrips = [];
-
-  trips.forEach(trip => {
-    // Find the latest end date across all trip segments and the trip return date
-    let latestEndDate = new Date(trip.returnDate);
-
-    // Check flights for latest arrival
-    if (trip.flights && trip.flights.length > 0) {
-      trip.flights.forEach(f => {
-        if (f.arrivalDateTime) {
-          const arrivalDate = new Date(f.arrivalDateTime);
-          if (arrivalDate > latestEndDate) latestEndDate = arrivalDate;
-        }
-      });
-    }
-
-    // Check hotels for latest checkout
-    if (trip.hotels && trip.hotels.length > 0) {
-      trip.hotels.forEach(h => {
-        if (h.checkOutDateTime) {
-          const checkoutDate = new Date(h.checkOutDateTime);
-          if (checkoutDate > latestEndDate) latestEndDate = checkoutDate;
-        }
-      });
-    }
-
-    // Check transportation for latest arrival
-    if (trip.transportation && trip.transportation.length > 0) {
-      trip.transportation.forEach(t => {
-        if (t.arrivalDateTime) {
-          const arrivalDate = new Date(t.arrivalDateTime);
-          if (arrivalDate > latestEndDate) latestEndDate = arrivalDate;
-        }
-      });
-    }
-
-    // Check car rentals for latest dropoff
-    if (trip.carRentals && trip.carRentals.length > 0) {
-      trip.carRentals.forEach(c => {
-        if (c.dropoffDateTime) {
-          const dropoffDate = new Date(c.dropoffDateTime);
-          if (dropoffDate > latestEndDate) latestEndDate = dropoffDate;
-        }
-      });
-    }
-
-    // Check events for latest end
-    if (trip.events && trip.events.length > 0) {
-      trip.events.forEach(e => {
-        if (e.endDateTime) {
-          const endDate = new Date(e.endDateTime);
-          if (endDate > latestEndDate) latestEndDate = endDate;
-        }
-      });
-    }
-
-    // Trip is past only if the latest end date of all segments is in the past
-    if (latestEndDate < now) {
-      pastTrips.push(trip);
-    } else {
-      upcomingTrips.push(trip);
-    }
-  });
+  // Use trips and pastTrips that are already passed from the controller
+  // The controller already categorizes them based on return date
+  const upcomingTrips = trips || [];
+  // pastTrips is already defined from the controller, or default to empty array
+  const pastTripsData = pastTrips || [];
 
   // Declare tripItems outside the if block so it's accessible later
   let tripItems = [];
@@ -102,6 +42,7 @@
   <%
     // Check if there are ANY items at all (upcoming or past)
     const hasAnyItems = trips.length > 0 ||
+                        pastTrips.length > 0 ||
                         (standaloneFlights && standaloneFlights.length > 0) ||
                         (standaloneHotels && standaloneHotels.length > 0) ||
                         (standaloneTransportation && standaloneTransportation.length > 0) ||
@@ -873,7 +814,7 @@
 
       <%
         // Check if there are any past items to display
-        const hasPastContent = pastTrips.length > 0 || pastStandaloneItems.length > 0;
+        const hasPastContent = pastTripsData.length > 0 || pastStandaloneItems.length > 0;
       %>
 
       <% if (!hasPastContent) { %>
@@ -903,7 +844,7 @@
           // Collect flights from past trips
           const pastTripItems = [];
 
-          pastTrips.forEach(trip => {
+          pastTripsData.forEach(trip => {
             // Add flights only (not events or transportation for past trips)
             if (trip.flights && Array.isArray(trip.flights)) {
               trip.flights.forEach(f => {
@@ -940,7 +881,7 @@
           // Group items by trip for display
           const pastTripItemsGrouped = [];
 
-          pastTrips.forEach(trip => {
+          pastTripsData.forEach(trip => {
             const items = pastTripItems.filter(item => item.tripId === trip.id);
 
             pastTripItemsGrouped.push({
