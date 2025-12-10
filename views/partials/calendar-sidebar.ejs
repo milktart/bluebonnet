@@ -1,0 +1,340 @@
+<%
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; // Monday start
+
+  function getDateKey(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function getMondayColumn(date) {
+    // Returns 0-6 where 0 = Monday, 6 = Sunday
+    const dayOfWeek = date.getDay();
+    return dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  }
+
+  // Create today's date in local timezone
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Helper function to parse DATEONLY strings (YYYY-MM-DD format)
+  const parseDateOnly = (dateStr) => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day, 0, 0, 0, 0);
+    return date;
+  };
+
+  // Calculate date range: 1 year past to 2 years future
+  const startDate = new Date(today);
+  startDate.setFullYear(today.getFullYear() - 1);
+  startDate.setMonth(0); // January
+  startDate.setDate(1);
+
+  const endDate = new Date(today);
+  endDate.setFullYear(today.getFullYear() + 2);
+  endDate.setMonth(11); // December
+  endDate.setDate(31);
+
+  // Build a flat list of all dates in range with their items
+  const dateToItems = {}; // { dateKey: [{ type, data }] }
+  const allDates = []; // All dates in order for continuous layout
+
+  // Generate all dates in range
+  let currentDate = new Date(startDate);
+  while (currentDate <= endDate) {
+    const key = getDateKey(currentDate);
+    dateToItems[key] = [];
+    allDates.push(new Date(currentDate));
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  // Add trips to dates
+  const safeTrips = trips || [];
+  safeTrips.forEach(trip => {
+    if (!trip.departureDate || !trip.returnDate) return;
+
+    const depDate = parseDateOnly(trip.departureDate);
+    const retDate = parseDateOnly(trip.returnDate);
+
+    let currentDate = new Date(depDate);
+    while (currentDate <= retDate) {
+      const key = getDateKey(currentDate);
+      if (dateToItems[key]) {
+        dateToItems[key].push({ type: 'trip', data: trip });
+      }
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+  });
+
+  // Add standalone items (flights, hotels, transportation, events not part of trips)
+  const safeStandaloneFlights = standaloneFlights || [];
+  const safeStandaloneHotels = standaloneHotels || [];
+  const safeStandaloneTransportation = standaloneTransportation || [];
+  const safeStandaloneCarRentals = standaloneCarRentals || [];
+  const safeStandaloneEvents = standaloneEvents || [];
+
+  // Add standalone flights
+  safeStandaloneFlights.forEach(flight => {
+    if (!flight.departureDateTime) return;
+    const flightDate = new Date(flight.departureDateTime);
+    flightDate.setHours(0, 0, 0, 0);
+    const key = getDateKey(flightDate);
+    if (dateToItems[key]) {
+      dateToItems[key].push({ type: 'flight', data: flight });
+    }
+  });
+
+  // Add standalone hotels
+  safeStandaloneHotels.forEach(hotel => {
+    if (!hotel.checkInDateTime) return;
+    const hotelDate = new Date(hotel.checkInDateTime);
+    hotelDate.setHours(0, 0, 0, 0);
+    const key = getDateKey(hotelDate);
+    if (dateToItems[key]) {
+      dateToItems[key].push({ type: 'hotel', data: hotel });
+    }
+  });
+
+  // Add standalone transportation
+  safeStandaloneTransportation.forEach(trans => {
+    if (!trans.departureDateTime) return;
+    const transDate = new Date(trans.departureDateTime);
+    transDate.setHours(0, 0, 0, 0);
+    const key = getDateKey(transDate);
+    if (dateToItems[key]) {
+      dateToItems[key].push({ type: 'transportation', data: trans });
+    }
+  });
+
+  // Add standalone car rentals
+  safeStandaloneCarRentals.forEach(carRental => {
+    if (!carRental.pickupDateTime) return;
+    const carDate = new Date(carRental.pickupDateTime);
+    carDate.setHours(0, 0, 0, 0);
+    const key = getDateKey(carDate);
+    if (dateToItems[key]) {
+      dateToItems[key].push({ type: 'carRental', data: carRental });
+    }
+  });
+
+  // Add standalone events
+  safeStandaloneEvents.forEach(event => {
+    if (!event.startDateTime) return;
+    const eventDate = new Date(event.startDateTime);
+    eventDate.setHours(0, 0, 0, 0);
+    const key = getDateKey(eventDate);
+    if (dateToItems[key]) {
+      dateToItems[key].push({ type: 'event', data: event });
+    }
+  });
+
+  // Function to get transportation icon based on method
+  function getTransportationIcon(method) {
+    const iconMap = {
+      'train': 'train',
+      'bus': 'directions_bus',
+      'ferry': 'directions_boat',
+      'shuttle': 'airport_shuttle',
+      'taxi': 'hail',
+      'rideshare': 'hail',
+      'taxi/rideshare': 'hail',
+      'subway': 'directions_subway',
+      'metro': 'directions_subway',
+      'subway/metro': 'directions_subway',
+      'tram': 'tram',
+      'funicular': 'funicular',
+      'gondola': 'gondola_lift',
+      'monorail': 'monorail',
+      'other': 'directions_run'
+    };
+    return iconMap[method?.toLowerCase()] || 'transportation';
+  }
+
+  // Generate calendar weeks (Monday-Sunday)
+  const weeks = [];
+  let weekDates = [];
+
+  // Start with the Monday of the first week
+  let calendarStart = new Date(startDate);
+  const mondayCol = getMondayColumn(calendarStart);
+  calendarStart.setDate(calendarStart.getDate() - mondayCol);
+
+  currentDate = new Date(calendarStart);
+  while (currentDate <= endDate) {
+    weekDates.push(new Date(currentDate));
+
+    if (weekDates.length === 7) {
+      weeks.push(weekDates);
+      weekDates = [];
+    }
+
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  // Add remaining dates as final week if needed
+  if (weekDates.length > 0) {
+    weeks.push(weekDates);
+  }
+
+%>
+
+<div class="calendar-sidebar h-full flex flex-col">
+  <div class="flex flex-1 overflow-hidden">
+    <!-- Calendar content -->
+    <div class="flex-1 overflow-y-auto" id="calendar-scroll">
+      <div class="p-4">
+        <!-- Day header -->
+        <div class="sticky top-0 z-10 pb-2 mb-0">
+          <div class="grid" style="grid-template-columns: 30px repeat(7, 1fr); gap: 0rem;">
+            <div class="text-center text-xs font-semibold text-gray-500 p-2"></div>
+            <% dayNames.forEach(day => { %>
+              <div class="text-center text-xs font-semibold text-gray-600 p-2">
+                <%= day %>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+
+        <!-- Continuous calendar weeks -->
+        <% weeks.forEach((week, weekIdx) => { %>
+          <%
+            // Check if this week contains the 1st of any month
+            let monthLabelForWeek = null;
+            week.forEach(day => {
+              if (day.getDate() === 1) {
+                monthLabelForWeek = {
+                  month: monthNames[day.getMonth()].substring(0, 3),
+                  year: String(day.getFullYear()).substring(2)
+                };
+              }
+            });
+          %>
+          <!-- Week row -->
+          <div class="grid" style="grid-template-columns: 30px repeat(7, 1fr); gap: 0rem; margin-top: 0rem; min-height: 60px;" data-week="<%= weekIdx %>">
+          <%
+            // Month label cell for this week (if month starts here)
+            let monthLabel = null;
+            if (monthLabelForWeek) {
+              monthLabel = monthLabelForWeek.month;
+            }
+          %>
+          <!-- Month label column -->
+          <div class="text-xs font-semibold text-gray-500 p-1 text-right">
+            <% if (monthLabelForWeek) { %>
+              <%= monthLabelForWeek.month %> '<%= monthLabelForWeek.year %>
+            <% } %>
+          </div>
+          <% week.forEach(date => { %>
+            <%
+              const dateKey = getDateKey(date);
+              const items = dateToItems[dateKey] || [];
+              const isToday = dateKey === getDateKey(today);
+              const isPast = date < today;
+            %>
+            <div class="bg-white p-2 hover:shadow-sm transition-shadow <% if (isToday) { %>bg-blue-50<% } %><% if (isPast && !isToday) { %>opacity-50<% } %>" style="border-left: 2px solid rgba(229,231,235,var(--tw-border-opacity)); overflow: hidden;" id="date-<%= dateKey %>">
+              <div class="text-xs font-semibold <%= isToday ? 'text-blue-700' : 'text-gray-800' %> mb-1">
+                <%= date.getDate() %>
+              </div>
+
+              <!-- Items in this day -->
+              <div class="space-y-1 overflow-hidden">
+                <% items.forEach(item => { %>
+                  <% if (item.type === 'trip') { %>
+                    <div class="bg-blue-100 text-blue-900 px-2 py-1 rounded text-xs truncate flex items-center gap-1">
+                      <span class="material-symbols-outlined text-blue-600" style="font-size: 14px; flex-shrink: 0;">luggage</span>
+                      <span class="truncate"><%= item.data.name %></span>
+                    </div>
+                  <% } else if (item.type === 'flight') { %>
+                    <div class="bg-blue-100 text-blue-900 px-2 py-1 rounded text-xs truncate flex items-center gap-1">
+                      <span class="material-symbols-outlined text-blue-600" style="font-size: 14px; flex-shrink: 0;">flight</span>
+                      <span class="truncate"><%= item.data.origin %> → <%= item.data.destination %></span>
+                    </div>
+                  <% } else if (item.type === 'hotel') { %>
+                    <div class="bg-green-100 text-green-900 px-2 py-1 rounded text-xs truncate flex items-center gap-1">
+                      <span class="material-symbols-outlined text-green-600" style="font-size: 14px; flex-shrink: 0;">hotel</span>
+                      <span class="truncate"><%= item.data.name %></span>
+                    </div>
+                  <% } else if (item.type === 'event') { %>
+                    <div class="bg-red-100 text-red-900 px-2 py-1 rounded text-xs truncate flex items-center gap-1">
+                      <span class="material-symbols-outlined text-red-600" style="font-size: 14px; flex-shrink: 0;">event</span>
+                      <span class="truncate"><%= item.data.name %></span>
+                    </div>
+                  <% } else if (item.type === 'transportation') { %>
+                    <div class="bg-amber-100 text-amber-900 px-2 py-1 rounded text-xs truncate flex items-center gap-1">
+                      <span class="material-symbols-outlined text-amber-600" style="font-size: 14px; flex-shrink: 0;"><%= getTransportationIcon(item.data.method) %></span>
+                      <span class="truncate"><%= item.data.origin %> → <%= item.data.destination %></span>
+                    </div>
+                  <% } else if (item.type === 'carRental') { %>
+                    <div class="bg-purple-100 text-purple-900 px-2 py-1 rounded text-xs truncate flex items-center gap-1">
+                      <span class="material-symbols-outlined text-purple-600" style="font-size: 14px; flex-shrink: 0;">directions_car</span>
+                      <span class="truncate"><%= item.data.company %></span>
+                    </div>
+                  <% } %>
+                <% }) %>
+              </div>
+            </div>
+          <% }) %>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+  </div>
+</div>
+
+<style>
+  .calendar-sidebar {
+    display: flex;
+    flex-direction: column;
+  }
+  .calendar-sidebar > div {
+    flex: 1;
+    overflow-y: auto;
+  }
+</style>
+
+<script>
+  // Scroll to center today's date
+  function scrollToToday() {
+    const scrollContainer = document.getElementById('calendar-scroll');
+    const todayElement = document.getElementById('date-<%= getDateKey(today) %>');
+
+    if (todayElement && scrollContainer) {
+      setTimeout(function() {
+        // Find the actual scrollable parent
+        let scrollableParent = scrollContainer.parentElement;
+        while (scrollableParent) {
+          if (scrollableParent.scrollHeight > scrollableParent.clientHeight) {
+            break;
+          }
+          scrollableParent = scrollableParent.parentElement;
+        }
+
+        if (!scrollableParent) {
+          scrollableParent = scrollContainer;
+        }
+
+        const scrollContainerHeight = scrollableParent.clientHeight;
+        const elementHeight = todayElement.clientHeight;
+
+        // Get the offset top relative to the scrollable parent
+        let offsetTop = 0;
+        let element = todayElement;
+        while (element && element !== scrollableParent) {
+          offsetTop += element.offsetTop;
+          element = element.offsetParent;
+        }
+
+        // Scroll to show today roughly 1/3 down from the top of the viewport
+        const targetScroll = offsetTop - (scrollContainerHeight / 3);
+        const finalScroll = Math.max(0, targetScroll);
+        scrollableParent.scrollTop = finalScroll;
+      }, 500);
+    }
+  }
+
+  // Call with delay
+  setTimeout(scrollToToday, 100);
+</script>

@@ -98,6 +98,10 @@ router.get('/dashboard/primary-sidebar', ensureAuthenticated, async (req, res) =
   }
 });
 
+// Calendar routes
+const calendarRouter = require('./calendar');
+router.use('/calendar', calendarRouter);
+
 // GET dashboard API data (returns all standalone items for map refresh)
 router.get('/dashboard/api', ensureAuthenticated, async (req, res) => {
   try {

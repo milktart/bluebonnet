@@ -49,11 +49,16 @@
           </div>
           <h1 class="text-xl font-bold text-gray-900">My Trips</h1>
         </div>
-        <button data-action="showNewItemMenu" class="flex items-center justify-center w-10 h-10 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors" title="Add new trip or item">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-          </svg>
-        </button>
+        <div class="flex items-center gap-2">
+          <button onclick="loadSidebarContent('/calendar/sidebar', { fullWidth: true })" class="flex items-center justify-center w-10 h-10 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors" title="View calendar">
+            <span class="material-symbols-outlined" style="font-size: 20px;">calendar_month</span>
+          </button>
+          <button data-action="showNewItemMenu" class="flex items-center justify-center w-10 h-10 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors" title="Add new trip or item">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <%- include('../partials/flash') %>
