@@ -455,21 +455,31 @@
       window.highlightItemOnMap = function(itemType, itemId) {
         if (!window.currentMap || !window.currentMap.segmentLayers) return;
 
-        // Find the segment matching this item
-        let foundSegment = false;
-        window.currentMap.segmentLayers.forEach((segment, index) => {
+        console.log(`[highlightItemOnMap] Looking for ${itemType} ${itemId}`);
+        console.log(`[highlightItemOnMap] Current map has ${window.currentMap.segmentLayers.length} segments`);
+
+        // Find ALL segments matching this item type and ID, then animate them
+        let foundSegments = [];
+        window.currentMap.segmentLayers.forEach((segment) => {
+          console.log(`[highlightItemOnMap] Checking segment: type=${segment.itemType}, id=${segment.itemId}, index=${segment.index}`);
           if (segment.itemType === itemType && segment.itemId === itemId) {
-            foundSegment = true;
-            // Use the segment's index + 1 as the marker ID
-            if (typeof window.highlightMapMarker === 'function') {
-              window.highlightMapMarker(segment.index);
-            }
+            foundSegments.push(segment);
+            console.log(`[highlightItemOnMap] FOUND MATCH! index=${segment.index}`);
           }
         });
 
-        if (!foundSegment) {
-          console.warn(`No map segment found for ${itemType} ${itemId}`);
+        if (foundSegments.length === 0) {
+          console.warn(`[highlightItemOnMap] No map segment found for ${itemType} ${itemId}`);
+          return;
         }
+
+        // Animate all matching segments (there should typically be just one)
+        foundSegments.forEach(segment => {
+          console.log(`[highlightItemOnMap] Animating segment with index ${segment.index}`);
+          if (typeof window.highlightMapMarker === 'function') {
+            window.highlightMapMarker(segment.index);
+          }
+        });
       };
 
       // Hover handler for trip cards
