@@ -392,8 +392,8 @@
                      data-item-type="<%= item.type %>"
                      data-marker="<%= item.marker || '' %>"
                      title="<%= nonParticipantTitle %>"
-                     onmouseover="highlightMapMarker('<%= item.marker || '' %>', '<%= item.type %>')"
-                     onmouseout="unhighlightMapMarker('<%= item.marker || '' %>')"
+                     onmouseover="highlightMapMarker('<%= item.type %>', '<%= item.id %>')"
+                     onmouseout="unhighlightMapMarker('<%= item.type %>-<%= item.id %>')"
                      onclick="editItem('<%= item.type %>', '<%= item.id %>')">
 
                   <!-- Left: Time and Icon in a column, aligned with flight number -->
@@ -440,8 +440,8 @@
                      data-item-type="<%= item.type %>"
                      data-marker="<%= item.marker || '' %>"
                      title="<%= nonParticipantTitle %>"
-                     onmouseover="highlightMapMarker('<%= item.marker || '' %>', '<%= item.type %>')"
-                     onmouseout="unhighlightMapMarker('<%= item.marker || '' %>')"
+                     onmouseover="highlightMapMarker('<%= item.type %>', '<%= item.id %>')"
+                     onmouseout="unhighlightMapMarker('<%= item.type %>-<%= item.id %>')"
                      onclick="editItem('<%= item.type %>', '<%= item.id %>')">
 
                   <!-- Left: Time and Icon in a column -->
