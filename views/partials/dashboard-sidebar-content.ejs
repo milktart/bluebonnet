@@ -338,7 +338,7 @@
       }
 
       upcomingTrips.forEach(trip => {
-        // Add flights
+        // Add flights from upcoming trips
         if (trip.flights && Array.isArray(trip.flights)) {
           trip.flights.forEach(f => {
             const flightNum = getFlightNum(f.flightNumber);
@@ -358,7 +358,7 @@
           });
         }
 
-        // Add transportation
+        // Add transportation from upcoming trips
         if (trip.transportation && Array.isArray(trip.transportation)) {
           trip.transportation.forEach(t => {
             const originCity = getCityName(t.origin);
@@ -377,7 +377,7 @@
           });
         }
 
-        // Add events
+        // Add events from upcoming trips
         if (trip.events && Array.isArray(trip.events)) {
           trip.events.forEach(e => {
             allItemsWithTrip.push({
@@ -390,6 +390,21 @@
               hasSegment: false,
               marker: null
             });
+          });
+        }
+      });
+
+      // Add flights from past trips to pastTripsData
+      pastTrips.forEach(trip => {
+        // Add flights from past trips
+        if (trip.flights && Array.isArray(trip.flights)) {
+          trip.flights.forEach(f => {
+            const flightNum = getFlightNum(f.flightNumber);
+            const airlineCode = f.flightNumber.replace(/\d+$/, '');
+            const originCity = getCityName(f.origin);
+            const destinationCity = getCityName(f.destination);
+            // NOTE: Only add past flights to pastTripItems, NOT to allItemsWithTrip
+            // This is handled in the past tab rendering below
           });
         }
       });
