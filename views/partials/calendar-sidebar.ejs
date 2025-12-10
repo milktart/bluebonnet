@@ -70,6 +70,82 @@
         durationDays: durationDays
       });
     }
+
+    // Add items within the trip (flights, hotels, transportation, car rentals, events)
+    if (trip.flights) {
+      trip.flights.forEach(flight => {
+        if (!flight.departureDateTime) return;
+        const startDate = new Date(flight.departureDateTime);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(flight.arrivalDateTime || flight.departureDateTime);
+        endDate.setHours(0, 0, 0, 0);
+        const flightDurationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        const key = getDateKey(startDate);
+        if (dateToItems[key]) {
+          dateToItems[key].push({ type: 'flight', data: flight, startDate, endDate, durationDays: flightDurationDays });
+        }
+      });
+    }
+
+    if (trip.hotels) {
+      trip.hotels.forEach(hotel => {
+        if (!hotel.checkInDateTime) return;
+        const startDate = new Date(hotel.checkInDateTime);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(hotel.checkOutDateTime || hotel.checkInDateTime);
+        endDate.setHours(0, 0, 0, 0);
+        const hotelDurationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        const key = getDateKey(startDate);
+        if (dateToItems[key]) {
+          dateToItems[key].push({ type: 'hotel', data: hotel, startDate, endDate, durationDays: hotelDurationDays });
+        }
+      });
+    }
+
+    if (trip.transportation) {
+      trip.transportation.forEach(trans => {
+        if (!trans.departureDateTime) return;
+        const startDate = new Date(trans.departureDateTime);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(trans.arrivalDateTime || trans.departureDateTime);
+        endDate.setHours(0, 0, 0, 0);
+        const transDurationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        const key = getDateKey(startDate);
+        if (dateToItems[key]) {
+          dateToItems[key].push({ type: 'transportation', data: trans, startDate, endDate, durationDays: transDurationDays });
+        }
+      });
+    }
+
+    if (trip.carRentals) {
+      trip.carRentals.forEach(carRental => {
+        if (!carRental.pickupDateTime) return;
+        const startDate = new Date(carRental.pickupDateTime);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(carRental.dropoffDateTime || carRental.pickupDateTime);
+        endDate.setHours(0, 0, 0, 0);
+        const carDurationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        const key = getDateKey(startDate);
+        if (dateToItems[key]) {
+          dateToItems[key].push({ type: 'carRental', data: carRental, startDate, endDate, durationDays: carDurationDays });
+        }
+      });
+    }
+
+    if (trip.events) {
+      trip.events.forEach(event => {
+        if (!event.startDateTime) return;
+        const startDate = new Date(event.startDateTime);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(event.endDateTime || event.startDateTime);
+        endDate.setHours(0, 0, 0, 0);
+        const eventDurationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        const key = getDateKey(startDate);
+        if (dateToItems[key]) {
+          dateToItems[key].push({ type: 'event', data: event, startDate, endDate, durationDays: eventDurationDays });
+        }
+      });
+    }
   });
 
   // Add standalone items (flights, hotels, transportation, events not part of trips)
@@ -391,14 +467,19 @@
                         <span class="truncate"><%= item.data.name %></span>
                       </div>
                     <% } else if (item.type === 'flight') { %>
+                      <%
+                        // Extract airport codes (first 3 letters)
+                        const originCode = item.data.origin ? item.data.origin.substring(0, 3).toUpperCase() : '';
+                        const destCode = item.data.destination ? item.data.destination.substring(0, 3).toUpperCase() : '';
+                      %>
                       <div class="multi-day-bar bg-blue-100 text-blue-900" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>;">
                         <span class="material-symbols-outlined text-blue-600" style="font-size: 14px; flex-shrink: 0;">flight</span>
-                        <span class="truncate"><%= item.data.origin %> → <%= item.data.destination %></span>
+                        <span class="truncate"><%= originCode %>→<%= destCode %></span>
                       </div>
                     <% } else if (item.type === 'hotel') { %>
                       <div class="multi-day-bar bg-green-100 text-green-900" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>;">
                         <span class="material-symbols-outlined text-green-600" style="font-size: 14px; flex-shrink: 0;">hotel</span>
-                        <span class="truncate"><%= item.data.name %></span>
+                        <span class="truncate"><%= item.data.hotelName %></span>
                       </div>
                     <% } else if (item.type === 'event') { %>
                       <div class="multi-day-bar bg-red-100 text-red-900" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>;">
