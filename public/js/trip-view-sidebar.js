@@ -283,6 +283,33 @@ function showAddForm(type, isStandalone = false) {
   // This ensures the back button works by navigating through the history
   if (typeof window.loadSidebarContent === 'function') {
     window.loadSidebarContent(formUrl);
+
+    // Add explicit form setup as a fallback (workaround for async script loading timing issue)
+    // This ensures the form submit handler is attached even if sidebar-loader's automatic setup doesn't work
+    setTimeout(() => {
+      if (typeof setupAsyncFormSubmission === 'function') {
+        // Map type to form ID
+        const formIdMap = {
+          'flight': 'addFlightForm',
+          'hotel': 'addHotelForm',
+          'transportation': 'addTransportationForm',
+          'carRental': 'addCarRentalForm',
+          'car-rental': 'addCarRentalForm',
+          'event': 'addEventForm'
+        };
+        const formId = formIdMap[type];
+
+        if (formId) {
+          const form = document.getElementById(formId);
+          if (form) {
+            console.log(`[showAddForm] Manually setting up ${type} form after delay (formId: ${formId})`);
+            setupAsyncFormSubmission(formId);
+          } else {
+            console.warn(`[showAddForm] Form not found with id: ${formId}`);
+          }
+        }
+      }
+    }, 100);
   }
   return;
 

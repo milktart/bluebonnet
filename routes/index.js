@@ -98,6 +98,18 @@ router.get('/dashboard/primary-sidebar', ensureAuthenticated, async (req, res) =
   }
 });
 
+// GET dashboard API data (returns all standalone items for map refresh)
+router.get('/dashboard/api', ensureAuthenticated, async (req, res) => {
+  try {
+    // Return all standalone items (flights, hotels, transportation, carRentals, events)
+    // This is used for async map refresh after editing standalone items
+    await tripController.getDashboardApiData(req, res);
+  } catch (error) {
+    console.error('Error fetching dashboard API data:', error);
+    res.status(500).json({ error: 'Error loading dashboard data' });
+  }
+});
+
 // GET new item menu (used in dashboard secondary sidebar)
 router.get('/new-item-menu', ensureAuthenticated, (req, res) => {
   res.render('partials/new-item-menu');

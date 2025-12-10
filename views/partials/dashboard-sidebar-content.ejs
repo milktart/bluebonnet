@@ -9,6 +9,24 @@
     return `${day} ${month} ${year}`;
   }
 
+  // Helper function to get the correct Material Symbol icon and color for transportation method
+  function getTransportationIconAndColor(method) {
+    const methodLower = (method || '').toLowerCase().trim();
+    const iconMap = {
+      'train': { icon: 'train', color: 'blue' },
+      'bus': { icon: 'directions_bus', color: 'amber' },
+      'ferry': { icon: 'directions_boat', color: 'cyan' },
+      'shuttle': { icon: 'local_taxi', color: 'purple' },
+      'taxi': { icon: 'local_taxi', color: 'orange' },
+      'rideshare': { icon: 'local_taxi', color: 'orange' },
+      'subway': { icon: 'subway', color: 'teal' },
+      'metro': { icon: 'subway', color: 'teal' },
+      'tram': { icon: 'tram', color: 'emerald' },
+      'other': { icon: 'directions_run', color: 'gray' }
+    };
+    return iconMap[methodLower] || { icon: 'train', color: 'amber' };
+  }
+
   const now = new Date();
   const upcomingTrips = [];
   const pastTrips = [];
@@ -81,7 +99,28 @@
 
 <!-- Content only - no header (header stays in primary sidebar) -->
 
-  <% if (trips.length === 0 && (!standaloneFlights || standaloneFlights.length === 0) && (!standaloneEvents || standaloneEvents.length === 0)) { %>
+  <%
+    // Check if there are ANY items at all (upcoming or past)
+    const hasAnyItems = trips.length > 0 ||
+                        (standaloneFlights && standaloneFlights.length > 0) ||
+                        (standaloneHotels && standaloneHotels.length > 0) ||
+                        (standaloneTransportation && standaloneTransportation.length > 0) ||
+                        (standaloneCarRentals && standaloneCarRentals.length > 0) ||
+                        (standaloneEvents && standaloneEvents.length > 0) ||
+                        (pastStandaloneFlights && pastStandaloneFlights.length > 0) ||
+                        (pastStandaloneHotels && pastStandaloneHotels.length > 0) ||
+                        (pastStandaloneTransportation && pastStandaloneTransportation.length > 0) ||
+                        (pastStandaloneCarRentals && pastStandaloneCarRentals.length > 0) ||
+                        (pastStandaloneEvents && pastStandaloneEvents.length > 0);
+
+    console.log('[dashboard-sidebar-content] activeTab:', activeTab);
+    console.log('[dashboard-sidebar-content] trips:', trips.length);
+    console.log('[dashboard-sidebar-content] standaloneFlights:', standaloneFlights ? standaloneFlights.length : 'undefined');
+    console.log('[dashboard-sidebar-content] pastStandaloneFlights:', pastStandaloneFlights ? pastStandaloneFlights.length : 'undefined');
+    console.log('[dashboard-sidebar-content] hasAnyItems:', hasAnyItems);
+  %>
+
+  <% if (!hasAnyItems) { %>
     <!-- No trips state -->
     <script>
       // Initialize empty data structures for no-trips state
@@ -249,13 +288,14 @@
         standaloneTransportation.forEach(t => {
           const originCity = getCityName(t.origin);
           const destinationCity = getCityName(t.destination);
+          const transportIconData = getTransportationIconAndColor(t.method);
           allItemsWithTrip.push({
             type: 'transportation',
             time: new Date(t.departureDateTime),
             data: t,
             tripId: null,
             trip: null,
-            display: `<span class="material-symbols-outlined text-amber-600 inline-icon" style="font-size: 16px;">train</span> ${t.method}: ${originCity} → ${destinationCity}`,
+            display: `<span class="material-symbols-outlined text-${transportIconData.color}-600 inline-icon" style="font-size: 16px;">${transportIconData.icon}</span> ${t.method}: ${originCity} → ${destinationCity}`,
             hasSegment: true,
             marker: null
           });
@@ -320,13 +360,14 @@
           trip.transportation.forEach(t => {
             const originCity = getCityName(t.origin);
             const destinationCity = getCityName(t.destination);
+            const transportIconData = getTransportationIconAndColor(t.method);
             allItemsWithTrip.push({
               type: 'transportation',
               time: new Date(t.departureDateTime),
               data: t,
               tripId: trip.id,
               trip: trip,
-              display: `<span class="material-symbols-outlined text-amber-600 inline-icon" style="font-size: 16px;">train</span> ${t.method}: ${originCity} → ${destinationCity}`,
+              display: `<span class="material-symbols-outlined text-${transportIconData.color}-600 inline-icon" style="font-size: 16px;">${transportIconData.icon}</span> ${t.method}: ${originCity} → ${destinationCity}`,
               hasSegment: true,
               marker: null
             });
@@ -353,12 +394,13 @@
       // Sort ALL items chronologically
       allItemsWithTrip.sort((a, b) => a.time - b.time);
 
-      // Assign markers in chronological order
-      let mapMarkerCounter = 0;
+      // Store item IDs for matching with map segments (don't rely on marker indices)
+      // The map creates segments in a different order than the sidebar sorts items
+      const segmentItemIds = {};
       allItemsWithTrip.forEach(item => {
         if (item.hasSegment) {
-          mapMarkerCounter++;
-          item.marker = mapMarkerCounter;
+          const key = `${item.type}-${item.data.id}`;
+          segmentItemIds[key] = true;
         }
       });
 
@@ -390,6 +432,218 @@
       // Sort all items (trips and standalone events) chronologically
       tripItems.sort((a, b) => a.sortTime - b.sortTime);
     %>
+
+    <script>
+      // Helper function to find map segment by item type and ID
+      window.findSegmentByItemId = function(itemType, itemId) {
+        if (!window.currentMap || !window.currentMap.segmentLayers) return null;
+
+        // Search through all segments to find one matching this item
+        // Segments store original item data
+        for (const segment of window.currentMap.segmentLayers) {
+          // Check if this segment's polyline data matches the item
+          // We'll store itemType and itemId on segments when we know how to
+          if (segment.itemType === itemType && segment.itemId === itemId) {
+            return segment;
+          }
+        }
+        return null;
+      };
+
+      // Hover handler for individual items (flights, transportation)
+      window.highlightItemOnMap = function(itemType, itemId) {
+        if (!window.currentMap || !window.currentMap.segmentLayers) return;
+
+        // Find ALL segments in this entire map (not just for one item)
+        // and highlight the ones that match this item
+        let foundSegment = false;
+        window.currentMap.segmentLayers.forEach(segment => {
+          if (segment.itemType === itemType && segment.itemId === itemId) {
+            foundSegment = true;
+            const coords = segment.polyline.getLatLngs();
+
+            // Create glow layers
+            if (!segment.hoverGlowOuter) {
+              segment.hoverGlowOuter = L.polyline(coords, {
+                color: '#6ea8fe',
+                weight: 8,
+                opacity: 0.7
+              }).addTo(window.currentMap);
+            }
+            if (!segment.hoverGlowMiddle) {
+              segment.hoverGlowMiddle = L.polyline(coords, {
+                color: '#cfe2ff',
+                weight: 5,
+                opacity: 0.9
+              }).addTo(window.currentMap);
+            }
+
+            // Brighten the main line
+            segment.polyline.setStyle({
+              color: '#ffffff',
+              weight: 2,
+              opacity: 1
+            });
+
+            // Bring to front
+            segment.hoverGlowOuter.bringToFront();
+            segment.hoverGlowMiddle.bringToFront();
+            segment.polyline.bringToFront();
+          }
+        });
+
+        if (!foundSegment) {
+          console.warn(`No map segment found for ${itemType} ${itemId}`);
+        }
+      };
+
+      // Hover handler for trip cards
+      window.setupTripHover = function(tripId) {
+        if (!window.currentMap || !window.currentMap.segmentLayers) return;
+
+        // Find all items belonging to this trip and highlight their segments
+        const tripItems = document.querySelectorAll(`.timeline-item.has-marker[data-trip-id="${tripId}"]`);
+
+        tripItems.forEach(card => {
+          const itemType = card.getAttribute('data-item-type');
+          const itemId = card.getAttribute('data-item-id');
+
+          if (itemType && itemId) {
+            window.highlightItemOnMap(itemType, itemId);
+          }
+        });
+      };
+
+      window.clearTripHover = function() {
+        if (!window.currentMap || !window.currentMap.segmentLayers) return;
+
+        window.currentMap.segmentLayers.forEach(segment => {
+          if (segment.hoverGlowOuter) {
+            window.currentMap.removeLayer(segment.hoverGlowOuter);
+            segment.hoverGlowOuter = null;
+          }
+          if (segment.hoverGlowMiddle) {
+            window.currentMap.removeLayer(segment.hoverGlowMiddle);
+            segment.hoverGlowMiddle = null;
+          }
+          segment.polyline.setStyle({
+            color: segment.originalColor,
+            weight: segment.originalWeight,
+            opacity: segment.originalOpacity
+          });
+        });
+      };
+
+      // Initialize or update window data structures for the map
+      if (!window.allTripsData) {
+        window.allTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
+      }
+      if (!window.upcomingTripsData) {
+        window.upcomingTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
+      }
+      if (!window.pastTripsData) {
+        window.pastTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
+      }
+      if (!window.globalMarkerAssignments) {
+        window.globalMarkerAssignments = {};
+      }
+
+      // Clear existing data (when sidebar is refreshed)
+      window.allTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
+      window.upcomingTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
+      window.pastTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
+
+      // Add upcoming standalone items to map data
+      <% if (typeof standaloneFlights !== 'undefined' && standaloneFlights && standaloneFlights.length > 0) { %>
+        window.allTripsData.flights.push(...<%- JSON.stringify(standaloneFlights) %>);
+        window.upcomingTripsData.flights.push(...<%- JSON.stringify(standaloneFlights) %>);
+      <% } %>
+      <% if (typeof standaloneHotels !== 'undefined' && standaloneHotels && standaloneHotels.length > 0) { %>
+        window.allTripsData.hotels.push(...<%- JSON.stringify(standaloneHotels) %>);
+        window.upcomingTripsData.hotels.push(...<%- JSON.stringify(standaloneHotels) %>);
+      <% } %>
+      <% if (typeof standaloneTransportation !== 'undefined' && standaloneTransportation && standaloneTransportation.length > 0) { %>
+        window.allTripsData.transportation.push(...<%- JSON.stringify(standaloneTransportation) %>);
+        window.upcomingTripsData.transportation.push(...<%- JSON.stringify(standaloneTransportation) %>);
+      <% } %>
+      <% if (typeof standaloneCarRentals !== 'undefined' && standaloneCarRentals && standaloneCarRentals.length > 0) { %>
+        window.allTripsData.carRentals.push(...<%- JSON.stringify(standaloneCarRentals) %>);
+        window.upcomingTripsData.carRentals.push(...<%- JSON.stringify(standaloneCarRentals) %>);
+      <% } %>
+      <% if (typeof standaloneEvents !== 'undefined' && standaloneEvents && standaloneEvents.length > 0) { %>
+        window.allTripsData.events.push(...<%- JSON.stringify(standaloneEvents) %>);
+        window.upcomingTripsData.events.push(...<%- JSON.stringify(standaloneEvents) %>);
+      <% } %>
+
+      // Add past standalone items to map data
+      <% if (typeof pastStandaloneFlights !== 'undefined' && pastStandaloneFlights && pastStandaloneFlights.length > 0) { %>
+        window.allTripsData.flights.push(...<%- JSON.stringify(pastStandaloneFlights) %>);
+        window.pastTripsData.flights.push(...<%- JSON.stringify(pastStandaloneFlights) %>);
+      <% } %>
+      <% if (typeof pastStandaloneHotels !== 'undefined' && pastStandaloneHotels && pastStandaloneHotels.length > 0) { %>
+        window.allTripsData.hotels.push(...<%- JSON.stringify(pastStandaloneHotels) %>);
+        window.pastTripsData.hotels.push(...<%- JSON.stringify(pastStandaloneHotels) %>);
+      <% } %>
+      <% if (typeof pastStandaloneTransportation !== 'undefined' && pastStandaloneTransportation && pastStandaloneTransportation.length > 0) { %>
+        window.allTripsData.transportation.push(...<%- JSON.stringify(pastStandaloneTransportation) %>);
+        window.pastTripsData.transportation.push(...<%- JSON.stringify(pastStandaloneTransportation) %>);
+      <% } %>
+      <% if (typeof pastStandaloneCarRentals !== 'undefined' && pastStandaloneCarRentals && pastStandaloneCarRentals.length > 0) { %>
+        window.allTripsData.carRentals.push(...<%- JSON.stringify(pastStandaloneCarRentals) %>);
+        window.pastTripsData.carRentals.push(...<%- JSON.stringify(pastStandaloneCarRentals) %>);
+      <% } %>
+      <% if (typeof pastStandaloneEvents !== 'undefined' && pastStandaloneEvents && pastStandaloneEvents.length > 0) { %>
+        window.allTripsData.events.push(...<%- JSON.stringify(pastStandaloneEvents) %>);
+        window.pastTripsData.events.push(...<%- JSON.stringify(pastStandaloneEvents) %>);
+      <% } %>
+
+      // Add trip items to map data (both upcoming and past)
+      <% upcomingTrips.forEach(trip => { %>
+        <% if (trip.flights && trip.flights.length > 0) { %>
+          window.allTripsData.flights.push(...<%- JSON.stringify(trip.flights) %>);
+          window.upcomingTripsData.flights.push(...<%- JSON.stringify(trip.flights) %>);
+        <% } %>
+        <% if (trip.hotels && trip.hotels.length > 0) { %>
+          window.allTripsData.hotels.push(...<%- JSON.stringify(trip.hotels) %>);
+          window.upcomingTripsData.hotels.push(...<%- JSON.stringify(trip.hotels) %>);
+        <% } %>
+        <% if (trip.transportation && trip.transportation.length > 0) { %>
+          window.allTripsData.transportation.push(...<%- JSON.stringify(trip.transportation) %>);
+          window.upcomingTripsData.transportation.push(...<%- JSON.stringify(trip.transportation) %>);
+        <% } %>
+        <% if (trip.carRentals && trip.carRentals.length > 0) { %>
+          window.allTripsData.carRentals.push(...<%- JSON.stringify(trip.carRentals) %>);
+          window.upcomingTripsData.carRentals.push(...<%- JSON.stringify(trip.carRentals) %>);
+        <% } %>
+        <% if (trip.events && trip.events.length > 0) { %>
+          window.allTripsData.events.push(...<%- JSON.stringify(trip.events) %>);
+          window.upcomingTripsData.events.push(...<%- JSON.stringify(trip.events) %>);
+        <% } %>
+      <% }) %>
+
+      <% pastTrips.forEach(trip => { %>
+        <% if (trip.flights && trip.flights.length > 0) { %>
+          window.allTripsData.flights.push(...<%- JSON.stringify(trip.flights) %>);
+          window.pastTripsData.flights.push(...<%- JSON.stringify(trip.flights) %>);
+        <% } %>
+        <% if (trip.hotels && trip.hotels.length > 0) { %>
+          window.allTripsData.hotels.push(...<%- JSON.stringify(trip.hotels) %>);
+          window.pastTripsData.hotels.push(...<%- JSON.stringify(trip.hotels) %>);
+        <% } %>
+        <% if (trip.transportation && trip.transportation.length > 0) { %>
+          window.allTripsData.transportation.push(...<%- JSON.stringify(trip.transportation) %>);
+          window.pastTripsData.transportation.push(...<%- JSON.stringify(trip.transportation) %>);
+        <% } %>
+        <% if (trip.carRentals && trip.carRentals.length > 0) { %>
+          window.allTripsData.carRentals.push(...<%- JSON.stringify(trip.carRentals) %>);
+          window.pastTripsData.carRentals.push(...<%- JSON.stringify(trip.carRentals) %>);
+        <% } %>
+        <% if (trip.events && trip.events.length > 0) { %>
+          window.allTripsData.events.push(...<%- JSON.stringify(trip.events) %>);
+          window.pastTripsData.events.push(...<%- JSON.stringify(trip.events) %>);
+        <% } %>
+      <% }) %>
+    </script>
 
     <!-- Upcoming Trips Content -->
     <div id="upcoming-content" class="<% if (activeTab !== 'upcoming') { %>hidden<% } %> space-y-4 p-6">
@@ -458,8 +712,12 @@
                 const item = tripData.items[0];
               %>
               <!-- Standalone item - single card with no accordion -->
-              <div class="border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md hover:border-gray-300 transition-all cursor-pointer"
-                   <% if (item.type === 'event') { %>data-action="loadEventSidebar" data-event-id="<%= item.data.id %>"<% } else if (item.type === 'flight') { %>data-action="loadStandaloneSidebar" data-item-type="flight" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'hotel') { %>data-action="loadStandaloneSidebar" data-item-type="hotel" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'transportation') { %>data-action="loadStandaloneSidebar" data-item-type="transportation" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'carRental') { %>data-action="loadStandaloneSidebar" data-item-type="carRental" data-item-id="<%= item.data.id %>"<% } %>>
+              <div class="border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md hover:border-gray-300 transition-all cursor-pointer timeline-item has-marker"
+                   data-item-type="<%= item.type %>"
+                   data-item-id="<%= item.data.id %>"
+                   <% if (item.type === 'event') { %>data-action="loadEventSidebar" data-event-id="<%= item.data.id %>"<% } else if (item.type === 'flight') { %>data-action="loadStandaloneSidebar" data-item-type="flight" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'hotel') { %>data-action="loadStandaloneSidebar" data-item-type="hotel" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'transportation') { %>data-action="loadStandaloneSidebar" data-item-type="transportation" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'carRental') { %>data-action="loadStandaloneSidebar" data-item-type="carRental" data-item-id="<%= item.data.id %>"<% } %>
+                   onmouseover="highlightItemOnMap('<%= item.type %>', '<%= item.data.id %>')"
+                   onmouseout="clearTripHover()">
                 <div class="py-4 px-5 inline-flex items-center gap-x-3 w-full font-medium">
                   <%
                     const hours = String(item.time.getHours()).padStart(2, '0');
@@ -531,8 +789,9 @@
                       }
                       location = hotelCity;
                     } else if (item.type === 'transportation') {
-                      standaloneIcon = 'train';
-                      standaloneColor = 'amber';
+                      const transportIconData = getTransportationIconAndColor(item.data.method);
+                      standaloneIcon = transportIconData.icon;
+                      standaloneColor = transportIconData.color;
                       displayName = item.data.method;
                       const originCity = getCityName(item.data.origin);
                       const destCity = getCityName(item.data.destination);
@@ -580,8 +839,10 @@
               </div>
             <% } else { %>
               <!-- Trip card with accordion -->
-              <div class="border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md hover:border-gray-300 transition-all cursor-pointer accordion-button-container"
-                   data-action="navigateToTrip" data-trip-id="<%= tripData.trip.id %>">
+              <div class="border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md hover:border-gray-300 transition-all cursor-pointer accordion-button-container trip-header"
+                   data-action="navigateToTrip" data-trip-id="<%= tripData.trip.id %>"
+                   onmouseover="setupTripHover('<%= tripData.trip.id %>')"
+                   onmouseout="clearTripHover()">
                 <div class="w-full py-4 px-5 inline-flex items-center justify-between gap-x-3 font-medium text-start text-gray-800 hover:bg-gray-50 rounded-lg transition-colors">
                   <div class="flex items-center space-x-3">
                     <%
@@ -666,7 +927,89 @@
 
     <!-- Past Trips Content -->
     <div id="past-content" class="<% if (activeTab !== 'past') { %>hidden<% } %> space-y-4 p-6">
-      <% if (pastTrips.length === 0) { %>
+      <%
+        // Collect past standalone items for display in past tab
+        // NOTE: This MUST be calculated before the condition check below
+        let pastStandaloneItems = [];
+
+        console.log('[past-tab] typeof pastStandaloneFlights:', typeof pastStandaloneFlights);
+        console.log('[past-tab] pastStandaloneFlights value:', pastStandaloneFlights);
+
+        if (typeof pastStandaloneFlights !== 'undefined' && pastStandaloneFlights) {
+          console.log('[past-tab] Processing pastStandaloneFlights, count:', pastStandaloneFlights.length);
+          pastStandaloneFlights.forEach(f => {
+            pastStandaloneItems.push({
+              type: 'flight',
+              time: new Date(f.arrivalDateTime || f.departureDateTime),
+              data: f,
+              tripId: null
+            });
+          });
+        }
+
+        if (typeof pastStandaloneHotels !== 'undefined' && pastStandaloneHotels) {
+          pastStandaloneHotels.forEach(h => {
+            pastStandaloneItems.push({
+              type: 'hotel',
+              time: new Date(h.checkOutDateTime),
+              data: h,
+              tripId: null
+            });
+          });
+        }
+
+        if (typeof pastStandaloneTransportation !== 'undefined' && pastStandaloneTransportation) {
+          pastStandaloneTransportation.forEach(t => {
+            pastStandaloneItems.push({
+              type: 'transportation',
+              time: new Date(t.arrivalDateTime || t.departureDateTime),
+              data: t,
+              tripId: null
+            });
+          });
+        }
+
+        if (typeof pastStandaloneCarRentals !== 'undefined' && pastStandaloneCarRentals) {
+          pastStandaloneCarRentals.forEach(c => {
+            pastStandaloneItems.push({
+              type: 'carRental',
+              time: new Date(c.dropoffDateTime),
+              data: c,
+              tripId: null
+            });
+          });
+        }
+
+        if (typeof pastStandaloneEvents !== 'undefined' && pastStandaloneEvents) {
+          pastStandaloneEvents.forEach(e => {
+            pastStandaloneItems.push({
+              type: 'event',
+              time: new Date(e.endDateTime || e.startDateTime),
+              data: e,
+              tripId: null
+            });
+          });
+        }
+
+        // Sort past standalone items chronologically (most recent first)
+        pastStandaloneItems.sort((a, b) => b.time - a.time);
+
+        // Assign markers to past standalone items with segments
+        pastStandaloneItems.forEach(item => {
+          if (item.type === 'flight' || item.type === 'transportation') {
+            // These item types have map segments (flight paths, etc)
+            // Markers will be assigned in chronological order if they're displayed
+            item.marker = null; // Will be assigned if needed
+          }
+        });
+      %>
+
+      <%
+        // Check if there are any past items to display
+        const hasPastContent = pastTrips.length > 0 || pastStandaloneItems.length > 0;
+      %>
+
+      <% if (!hasPastContent) { %>
         <div class="text-center py-8">
           <p class="text-gray-500">No past trips to display.</p>
         </div>
@@ -749,9 +1092,118 @@
         %>
 
         <div class="space-y-3">
+          <!-- Display past standalone items first (most recent) -->
+          <% pastStandaloneItems.forEach((item, itemIndex) => { %>
+            <%
+              const getCityName = (location) => {
+                if (location.includes(' - ')) {
+                  const parts = location.split(' - ')[1];
+                  if (parts && parts.includes(',')) {
+                    return parts.split(',')[0].trim();
+                  }
+                  return parts;
+                }
+                return location.split(' - ')[0] || location;
+              };
+
+              let standaloneIcon, standaloneColor, displayName, startDateTime, location;
+
+              if (item.type === 'event') {
+                standaloneIcon = 'event';
+                standaloneColor = 'red';
+                displayName = item.data.name;
+                const eventTimezone = item.data.timezone || 'UTC';
+                const eventStartFormatted = formatInTimezone(item.data.startDateTime, eventTimezone, 'DD MMM YYYY HH:mm');
+                const eventStartDateStr = eventStartFormatted.substring(0, 11).trim();
+                const eventStartTimeStr = eventStartFormatted.substring(12);
+                startDateTime = `${eventStartDateStr} ${eventStartTimeStr}`;
+                location = item.data.location || '';
+              } else if (item.type === 'flight') {
+                standaloneIcon = 'flight';
+                standaloneColor = 'blue';
+                const flightNum = item.data.flightNumber.match(/(\d+)$/)?.[1] || '';
+                const airlineCode = item.data.flightNumber.replace(/\d+$/, '');
+                displayName = `${airlineCode}${flightNum}`;
+                const originCity = getCityName(item.data.origin);
+                const destCity = getCityName(item.data.destination);
+                const originTimezone = item.data.originTimezone || 'UTC';
+                const departureFormatted = formatInTimezone(item.data.departureDateTime, originTimezone, 'DD MMM YYYY HH:mm');
+                startDateTime = departureFormatted;
+                location = `${originCity} → ${destCity}`;
+              } else if (item.type === 'hotel') {
+                standaloneIcon = 'hotel';
+                standaloneColor = 'green';
+                displayName = item.data.hotelName;
+                const hotelCity = getCityName(item.data.address);
+                const timezone = item.data.timezone || 'UTC';
+                const checkInFormatted = formatInTimezone(item.data.checkInDateTime, timezone, 'DD MMM YYYY HH:mm');
+                const checkOutFormatted = formatInTimezone(item.data.checkOutDateTime, timezone, 'DD MMM YYYY HH:mm');
+                const checkInDateStr = checkInFormatted.substring(0, 11).trim();
+                const checkInTimeStr = checkInFormatted.substring(12);
+                const checkOutDateStr = checkOutFormatted.substring(0, 11).trim();
+                const checkOutTimeStr = checkOutFormatted.substring(12);
+                startDateTime = checkInDateStr === checkOutDateStr ?
+                  `${checkInDateStr} ${checkInTimeStr} - ${checkOutTimeStr}` :
+                  `${checkInDateStr} ${checkInTimeStr} - ${checkOutDateStr} ${checkOutTimeStr}`;
+                location = hotelCity;
+              } else if (item.type === 'transportation') {
+                const transportIconData = getTransportationIconAndColor(item.data.method);
+                standaloneIcon = transportIconData.icon;
+                standaloneColor = transportIconData.color;
+                displayName = item.data.method;
+                const originCity = getCityName(item.data.origin);
+                const destCity = getCityName(item.data.destination);
+                const transportOriginTimezone = item.data.originTimezone || 'UTC';
+                const transportDepartureFormatted = formatInTimezone(item.data.departureDateTime, transportOriginTimezone, 'DD MMM YYYY HH:mm');
+                startDateTime = transportDepartureFormatted;
+                location = `${originCity} → ${destCity}`;
+              } else if (item.type === 'carRental') {
+                standaloneIcon = 'directions_car';
+                standaloneColor = 'purple';
+                displayName = item.data.company;
+                const pickupCity = getCityName(item.data.pickupLocation);
+                const pickupTimezone = item.data.pickupTimezone || 'UTC';
+                const dropoffTimezone = item.data.dropoffTimezone || 'UTC';
+                const pickupFormatted = formatInTimezone(item.data.pickupDateTime, pickupTimezone, 'DD MMM YYYY HH:mm');
+                const dropoffFormatted = formatInTimezone(item.data.dropoffDateTime, dropoffTimezone, 'DD MMM YYYY HH:mm');
+                const pickupDateStr = pickupFormatted.substring(0, 11).trim();
+                const pickupTimeStr = pickupFormatted.substring(12);
+                const dropoffDateStr = dropoffFormatted.substring(0, 11).trim();
+                const dropoffTimeStr = dropoffFormatted.substring(12);
+                startDateTime = pickupDateStr === dropoffDateStr ?
+                  `${pickupDateStr} ${pickupTimeStr} - ${dropoffTimeStr}` :
+                  `${pickupDateStr} ${pickupTimeStr} - ${dropoffDateStr} ${dropoffTimeStr}`;
+                location = pickupCity;
+              }
+            %>
+            <!-- Past standalone item card -->
+            <div class="border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md hover:border-gray-300 transition-all cursor-pointer timeline-item has-marker"
+                 data-item-type="<%= item.type %>"
+                 data-item-id="<%= item.data.id %>"
+                 <% if (item.type === 'event') { %>data-action="loadEventSidebar" data-event-id="<%= item.data.id %>"<% } else if (item.type === 'flight') { %>data-action="loadStandaloneSidebar" data-item-type="flight" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'hotel') { %>data-action="loadStandaloneSidebar" data-item-type="hotel" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'transportation') { %>data-action="loadStandaloneSidebar" data-item-type="transportation" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'carRental') { %>data-action="loadStandaloneSidebar" data-item-type="carRental" data-item-id="<%= item.data.id %>"<% } %>
+                 onmouseover="highlightItemOnMap('<%= item.type %>', '<%= item.data.id %>')"
+                 onmouseout="clearTripHover()">
+              <div class="py-4 px-5 inline-flex items-center gap-x-3 w-full font-medium">
+                <div class="w-8 h-8 bg-<%= standaloneColor %>-100 rounded-lg flex items-center justify-center flex-shrink-0 opacity-60">
+                  <span class="material-symbols-outlined text-<%= standaloneColor %>-600" style="font-size: 16px;"><%= standaloneIcon %></span>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-sm font-medium text-gray-700"><%= displayName %></h3>
+                  <p class="text-xs text-gray-500"><%= startDateTime %></p>
+                  <% if (location) { %>
+                    <p class="text-xs text-gray-600 italic"><%= location %></p>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+
+          <!-- Display past trips -->
           <% pastTripItemsGrouped.forEach((tripData, tripIndex) => { %>
-            <div class="border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md hover:border-gray-300 transition-all cursor-pointer accordion-button-container"
-                 data-action="navigateToTrip" data-trip-id="<%= tripData.trip.id %>">
+            <div class="border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md hover:border-gray-300 transition-all cursor-pointer accordion-button-container trip-header"
+                 data-action="navigateToTrip" data-trip-id="<%= tripData.trip.id %>"
+                 onmouseover="setupTripHover('<%= tripData.trip.id %>')"
+                 onmouseout="clearTripHover()">
               <!-- Accordion Header -->
               <div class="w-full py-4 px-5 inline-flex items-center justify-between gap-x-3 font-medium text-start text-gray-800 hover:bg-gray-50 rounded-lg transition-colors">
                 <div class="flex items-center space-x-3">

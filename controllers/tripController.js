@@ -31,22 +31,14 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Build date filter based on active tab (same logic as listTrips)
-    let dateFilter = {};
-    let orderDirection = 'ASC';
+    // Note: We fetch ALL trips (not filtered by date) because the template needs both
+    // upcoming and past trips to determine which tab to display. The active tab only
+    // controls which standalone items to fetch and which content section to show.
 
-    if (activeTab === 'upcoming') {
-      dateFilter = { returnDate: { [Op.gte]: today } };
-      orderDirection = 'ASC';
-    } else if (activeTab === 'past') {
-      dateFilter = { returnDate: { [Op.lt]: today } };
-      orderDirection = 'DESC';
-    }
-
-    // Get trips the user owns
+    // Get ALL trips the user owns (no date filter)
     const ownedTrips = await Trip.findAll({
-      where: { userId: req.user.id, ...dateFilter },
-      order: [['departureDate', orderDirection]],
+      where: { userId: req.user.id },
+      order: [['departureDate', 'ASC']],
       include: [
         { model: Flight, as: 'flights' },
         { model: Hotel, as: 'hotels' },
@@ -73,37 +65,143 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
       ],
     });
 
-    // Get standalone items (not attached to any trip)
+    // Get standalone items (not attached to any trip) and filter by end date
     let standaloneFlights = [];
     let standaloneHotels = [];
     let standaloneTransportation = [];
     let standaloneCarRentals = [];
     let standaloneEvents = [];
+    let pastStandaloneFlights = [];
+    let pastStandaloneHotels = [];
+    let pastStandaloneTransportation = [];
+    let pastStandaloneCarRentals = [];
+    let pastStandaloneEvents = [];
 
     if (activeTab === 'upcoming' || activeTab === 'all') {
-      standaloneFlights = await Flight.findAll({
+      // Get all standalone flights and filter by arrival date
+      const allStandaloneFlights = await Flight.findAll({
         where: { userId: req.user.id, tripId: null },
         order: [['departureDateTime', 'ASC']],
       });
+      allStandaloneFlights.forEach(f => {
+        const arrivalDate = new Date(f.arrivalDateTime || f.departureDateTime);
+        if (arrivalDate >= today) {
+          standaloneFlights.push(f);
+        } else {
+          pastStandaloneFlights.push(f);
+        }
+      });
 
-      standaloneHotels = await Hotel.findAll({
+      // Get all standalone hotels and filter by checkout date
+      const allStandaloneHotels = await Hotel.findAll({
         where: { userId: req.user.id, tripId: null },
         order: [['checkInDateTime', 'ASC']],
       });
+      allStandaloneHotels.forEach(h => {
+        const checkoutDate = new Date(h.checkOutDateTime);
+        if (checkoutDate >= today) {
+          standaloneHotels.push(h);
+        } else {
+          pastStandaloneHotels.push(h);
+        }
+      });
 
-      standaloneTransportation = await Transportation.findAll({
+      // Get all standalone transportation and filter by arrival date
+      const allStandaloneTransportation = await Transportation.findAll({
         where: { userId: req.user.id, tripId: null },
         order: [['departureDateTime', 'ASC']],
       });
+      allStandaloneTransportation.forEach(t => {
+        const arrivalDate = new Date(t.arrivalDateTime || t.departureDateTime);
+        if (arrivalDate >= today) {
+          standaloneTransportation.push(t);
+        } else {
+          pastStandaloneTransportation.push(t);
+        }
+      });
 
-      standaloneCarRentals = await CarRental.findAll({
+      // Get all standalone car rentals and filter by dropoff date
+      const allStandaloneCarRentals = await CarRental.findAll({
         where: { userId: req.user.id, tripId: null },
         order: [['pickupDateTime', 'ASC']],
       });
+      allStandaloneCarRentals.forEach(c => {
+        const dropoffDate = new Date(c.dropoffDateTime);
+        if (dropoffDate >= today) {
+          standaloneCarRentals.push(c);
+        } else {
+          pastStandaloneCarRentals.push(c);
+        }
+      });
 
-      standaloneEvents = await Event.findAll({
+      // Get all standalone events and filter by end date
+      const allStandaloneEvents = await Event.findAll({
         where: { userId: req.user.id, tripId: null },
         order: [['startDateTime', 'ASC']],
+      });
+      allStandaloneEvents.forEach(e => {
+        const endDate = new Date(e.endDateTime || e.startDateTime);
+        if (endDate >= today) {
+          standaloneEvents.push(e);
+        } else {
+          pastStandaloneEvents.push(e);
+        }
+      });
+    } else if (activeTab === 'past') {
+      // For past tab, fetch past standalone items
+      const allStandaloneFlights = await Flight.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['departureDateTime', 'DESC']],
+      });
+      allStandaloneFlights.forEach(f => {
+        const arrivalDate = new Date(f.arrivalDateTime || f.departureDateTime);
+        if (arrivalDate < today) {
+          pastStandaloneFlights.push(f);
+        }
+      });
+
+      const allStandaloneHotels = await Hotel.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['checkInDateTime', 'DESC']],
+      });
+      allStandaloneHotels.forEach(h => {
+        const checkoutDate = new Date(h.checkOutDateTime);
+        if (checkoutDate < today) {
+          pastStandaloneHotels.push(h);
+        }
+      });
+
+      const allStandaloneTransportation = await Transportation.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['departureDateTime', 'DESC']],
+      });
+      allStandaloneTransportation.forEach(t => {
+        const arrivalDate = new Date(t.arrivalDateTime || t.departureDateTime);
+        if (arrivalDate < today) {
+          pastStandaloneTransportation.push(t);
+        }
+      });
+
+      const allStandaloneCarRentals = await CarRental.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['pickupDateTime', 'DESC']],
+      });
+      allStandaloneCarRentals.forEach(c => {
+        const dropoffDate = new Date(c.dropoffDateTime);
+        if (dropoffDate < today) {
+          pastStandaloneCarRentals.push(c);
+        }
+      });
+
+      const allStandaloneEvents = await Event.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['startDateTime', 'DESC']],
+      });
+      allStandaloneEvents.forEach(e => {
+        const endDate = new Date(e.endDateTime || e.startDateTime);
+        if (endDate < today) {
+          pastStandaloneEvents.push(e);
+        }
       });
     }
 
@@ -193,6 +291,45 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
       return tripData;
     });
 
+    // Enrich past standalone flights and transportation with airport timezones
+    const enrichedPastStandaloneFlights = pastStandaloneFlights.map(flight => {
+      const flightData = flight.dataValues || flight;
+      const flightWithTimezone = { ...flightData };
+      const originMatch = flightWithTimezone.origin.match(/^([A-Z]{3})/);
+      if (originMatch) {
+        const airportData = airportService.getAirportByCode(originMatch[1]);
+        if (airportData) {
+          flightWithTimezone.originTimezone = airportData.timezone || flightWithTimezone.originTimezone;
+        }
+      }
+      return flightWithTimezone;
+    });
+
+    const enrichedPastStandaloneTransportation = pastStandaloneTransportation.map(item => {
+      const itemData = item.dataValues || item;
+      const itemWithTimezone = { ...itemData };
+      const originMatch = itemWithTimezone.origin.match(/^([A-Z]{3})/);
+      if (originMatch) {
+        const airportData = airportService.getAirportByCode(originMatch[1]);
+        if (airportData) {
+          itemWithTimezone.originTimezone = airportData.timezone || itemWithTimezone.originTimezone;
+        }
+      }
+      return itemWithTimezone;
+    });
+
+    const enrichedPastStandaloneHotels = pastStandaloneHotels.map(hotel => {
+      return hotel.dataValues || hotel;
+    });
+
+    const enrichedPastStandaloneCarRentals = pastStandaloneCarRentals.map(carRental => {
+      return carRental.dataValues || carRental;
+    });
+
+    const enrichedPastStandaloneEvents = pastStandaloneEvents.map(event => {
+      return event.dataValues || event;
+    });
+
     // Render as partial with minimal HTML wrapper for AJAX injection
     res.render('partials/dashboard-sidebar-content', {
       trips: enrichedTrips,
@@ -201,6 +338,11 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
       standaloneTransportation: enrichedStandaloneTransportation,
       standaloneCarRentals,
       standaloneEvents,
+      pastStandaloneFlights: enrichedPastStandaloneFlights,
+      pastStandaloneHotels: enrichedPastStandaloneHotels,
+      pastStandaloneTransportation: enrichedPastStandaloneTransportation,
+      pastStandaloneCarRentals: enrichedPastStandaloneCarRentals,
+      pastStandaloneEvents: enrichedPastStandaloneEvents,
       pendingInvitations,
       activeTab,
       versionInfo,
@@ -225,21 +367,9 @@ exports.listTrips = async (req, res, options = {}) => {
     const limit = 20; // 20 trips per page for past trips
     const offset = (page - 1) * limit;
 
-    // Build date filter based on active tab
-    let dateFilter = {};
-    let orderDirection = 'ASC';
-
-    if (activeTab === 'upcoming') {
-      // Upcoming: trips that haven't ended yet (includes in-progress trips)
-      // Upcoming: returnDate >= today (includes in-progress trips)
-      dateFilter = { returnDate: { [Op.gte]: today } };
-      orderDirection = 'ASC'; // Soonest first
-    } else if (activeTab === 'past') {
-      // Past: trips that have completely ended
-      dateFilter = { returnDate: { [Op.lt]: today } };
-      orderDirection = 'DESC'; // Most recent first
-    }
-    // 'all' tab has no date filter
+    // Note: We fetch ALL trips (not filtered by date) because the template needs both
+    // upcoming and past trips to determine which tab to display. The active tab only
+    // controls which standalone items to fetch and which content section to show.
 
     // Common include structure for trips
     const tripIncludes = [
@@ -267,28 +397,12 @@ exports.listTrips = async (req, res, options = {}) => {
       },
     ];
 
-    // Get trips the user owns (with pagination for past trips)
-    const ownedTripsQuery = {
-      where: { userId: req.user.id, ...dateFilter },
-      order: [['departureDate', orderDirection]],
+    // Get trips the user owns (no date filter - template handles categorization)
+    const ownedTrips = await Trip.findAll({
+      where: { userId: req.user.id },
+      order: [['departureDate', 'ASC']],
       include: tripIncludes,
-    };
-
-    // Add pagination only for past trips tab
-    if (activeTab === 'past') {
-      ownedTripsQuery.limit = limit;
-      ownedTripsQuery.offset = offset;
-    }
-
-    const ownedTrips = await Trip.findAll(ownedTripsQuery);
-
-    // Get count for pagination (past trips only)
-    let totalPastTrips = 0;
-    if (activeTab === 'past') {
-      totalPastTrips = await Trip.count({
-        where: { userId: req.user.id, ...dateFilter },
-      });
-    }
+    });
 
     // Get trips where the user is a companion (but exclude trips with pending invitations)
     // First, get trip IDs with pending invitations for this user
@@ -301,9 +415,8 @@ exports.listTrips = async (req, res, options = {}) => {
       raw: true,
     }).then(invitations => invitations.map(inv => inv.tripId));
 
-    const companionTripsQuery = {
+    const companionTrips = await Trip.findAll({
       where: {
-        ...dateFilter,
         // Exclude trips with pending invitations
         ...(pendingTripIds.length > 0 && {
           id: {
@@ -333,16 +446,8 @@ exports.listTrips = async (req, res, options = {}) => {
           ],
         },
       ],
-      order: [['departureDate', orderDirection]],
-    };
-
-    // Add pagination for past companion trips
-    if (activeTab === 'past') {
-      companionTripsQuery.limit = limit;
-      companionTripsQuery.offset = offset;
-    }
-
-    const companionTrips = await Trip.findAll(companionTripsQuery);
+      order: [['departureDate', 'ASC']],
+    });
 
     // Combine and deduplicate trips
     const allTrips = [...ownedTrips, ...companionTrips];
@@ -350,39 +455,88 @@ exports.listTrips = async (req, res, options = {}) => {
       (trip, index, self) => index === self.findIndex((t) => t.id === trip.id)
     );
 
-    // Get standalone items (not attached to any trip) - only for upcoming tab
+    // Fetch ALL standalone items ALWAYS (template needs both upcoming and past)
     let standaloneFlights = [];
     let standaloneHotels = [];
     let standaloneTransportation = [];
     let standaloneCarRentals = [];
     let standaloneEvents = [];
+    let pastStandaloneFlights = [];
+    let pastStandaloneHotels = [];
+    let pastStandaloneTransportation = [];
+    let pastStandaloneCarRentals = [];
+    let pastStandaloneEvents = [];
 
-    if (activeTab === 'upcoming' || activeTab === 'all') {
-      standaloneFlights = await Flight.findAll({
-        where: { userId: req.user.id, tripId: null },
-        order: [['departureDateTime', 'ASC']],
-      });
+    // Fetch and categorize flights
+    const allFlights = await Flight.findAll({
+      where: { userId: req.user.id, tripId: null },
+      order: [['departureDateTime', 'ASC']],
+    });
+    allFlights.forEach(f => {
+      const arrivalDate = new Date(f.arrivalDateTime || f.departureDateTime);
+      const isUpcoming = arrivalDate >= today;
+      if (isUpcoming) {
+        standaloneFlights.push(f);
+      } else {
+        pastStandaloneFlights.push(f);
+      }
+    });
 
-      standaloneHotels = await Hotel.findAll({
-        where: { userId: req.user.id, tripId: null },
-        order: [['checkInDateTime', 'ASC']],
-      });
+    // Fetch and categorize hotels
+    const allHotels = await Hotel.findAll({
+      where: { userId: req.user.id, tripId: null },
+      order: [['checkInDateTime', 'ASC']],
+    });
+    allHotels.forEach(h => {
+      const checkoutDate = new Date(h.checkOutDateTime);
+      if (checkoutDate >= today) {
+        standaloneHotels.push(h);
+      } else {
+        pastStandaloneHotels.push(h);
+      }
+    });
 
-      standaloneTransportation = await Transportation.findAll({
-        where: { userId: req.user.id, tripId: null },
-        order: [['departureDateTime', 'ASC']],
-      });
+    // Fetch and categorize transportation
+    const allTransportation = await Transportation.findAll({
+      where: { userId: req.user.id, tripId: null },
+      order: [['departureDateTime', 'ASC']],
+    });
+    allTransportation.forEach(t => {
+      const arrivalDate = new Date(t.arrivalDateTime || t.departureDateTime);
+      if (arrivalDate >= today) {
+        standaloneTransportation.push(t);
+      } else {
+        pastStandaloneTransportation.push(t);
+      }
+    });
 
-      standaloneCarRentals = await CarRental.findAll({
-        where: { userId: req.user.id, tripId: null },
-        order: [['pickupDateTime', 'ASC']],
-      });
+    // Fetch and categorize car rentals
+    const allCarRentals = await CarRental.findAll({
+      where: { userId: req.user.id, tripId: null },
+      order: [['pickupDateTime', 'ASC']],
+    });
+    allCarRentals.forEach(c => {
+      const dropoffDate = new Date(c.dropoffDateTime);
+      if (dropoffDate >= today) {
+        standaloneCarRentals.push(c);
+      } else {
+        pastStandaloneCarRentals.push(c);
+      }
+    });
 
-      standaloneEvents = await Event.findAll({
-        where: { userId: req.user.id, tripId: null },
-        order: [['startDateTime', 'ASC']],
-      });
-    }
+    // Fetch and categorize events
+    const allEvents = await Event.findAll({
+      where: { userId: req.user.id, tripId: null },
+      order: [['startDateTime', 'ASC']],
+    });
+    allEvents.forEach(e => {
+      const endDate = new Date(e.endDateTime || e.startDateTime);
+      if (endDate >= today) {
+        standaloneEvents.push(e);
+      } else {
+        pastStandaloneEvents.push(e);
+      }
+    });
 
     // Get pending trip invitations (only for upcoming tab)
     let pendingInvitations = [];
@@ -408,14 +562,13 @@ exports.listTrips = async (req, res, options = {}) => {
       });
     }
 
-    // Calculate pagination metadata for past trips
-    const totalPages = activeTab === 'past' ? Math.ceil(totalPastTrips / limit) : 1;
+    // Pagination metadata (not used since we fetch all trips for template categorization)
     const pagination = {
-      currentPage: page,
-      totalPages,
-      totalTrips: totalPastTrips,
-      hasNextPage: page < totalPages,
-      hasPrevPage: page > 1,
+      currentPage: 1,
+      totalPages: 1,
+      totalTrips: uniqueTrips.length,
+      hasNextPage: false,
+      hasPrevPage: false,
       limit,
     };
 
@@ -477,15 +630,74 @@ exports.listTrips = async (req, res, options = {}) => {
       return tripData;
     });
 
+    // Separate trips into upcoming and past
+    const upcomingTrips = enrichedTrips.filter(trip => {
+      const returnDate = new Date(trip.returnDate);
+      returnDate.setHours(23, 59, 59, 999);
+      return returnDate >= today;
+    });
+
+    const pastTrips = enrichedTrips.filter(trip => {
+      const returnDate = new Date(trip.returnDate);
+      returnDate.setHours(23, 59, 59, 999);
+      return returnDate < today;
+    });
+
+    // Enrich past standalone flights and transportation with airport timezones
+    const enrichedPastStandaloneFlights = pastStandaloneFlights.map(flight => {
+      const flightData = flight.dataValues || flight;
+      const flightWithTimezone = { ...flightData };
+      const originMatch = flightWithTimezone.origin.match(/^([A-Z]{3})/);
+      if (originMatch) {
+        const airportData = airportService.getAirportByCode(originMatch[1]);
+        if (airportData) {
+          flightWithTimezone.originTimezone = airportData.timezone || flightWithTimezone.originTimezone;
+        }
+      }
+      return flightWithTimezone;
+    });
+
+    const enrichedPastStandaloneTransportation = pastStandaloneTransportation.map(item => {
+      const itemData = item.dataValues || item;
+      const itemWithTimezone = { ...itemData };
+      const originMatch = itemWithTimezone.origin.match(/^([A-Z]{3})/);
+      if (originMatch) {
+        const airportData = airportService.getAirportByCode(originMatch[1]);
+        if (airportData) {
+          itemWithTimezone.originTimezone = airportData.timezone || itemWithTimezone.originTimezone;
+        }
+      }
+      return itemWithTimezone;
+    });
+
+    const enrichedPastStandaloneHotels = pastStandaloneHotels.map(hotel => {
+      return hotel.dataValues || hotel;
+    });
+
+    const enrichedPastStandaloneCarRentals = pastStandaloneCarRentals.map(carRental => {
+      return carRental.dataValues || carRental;
+    });
+
+    const enrichedPastStandaloneEvents = pastStandaloneEvents.map(event => {
+      return event.dataValues || event;
+    });
+
     const renderData = {
       title: 'My Trips',
-      trips: enrichedTrips,
+      trips: upcomingTrips,
+      pastTrips,
       standaloneFlights: enrichedStandaloneFlights,
       standaloneHotels,
       standaloneTransportation: enrichedStandaloneTransportation,
       standaloneCarRentals,
       standaloneEvents,
+      pastStandaloneFlights: enrichedPastStandaloneFlights,
+      pastStandaloneHotels: enrichedPastStandaloneHotels,
+      pastStandaloneTransportation: enrichedPastStandaloneTransportation,
+      pastStandaloneCarRentals: enrichedPastStandaloneCarRentals,
+      pastStandaloneEvents: enrichedPastStandaloneEvents,
       pendingInvitations,
+      globalMarkerMap: {},
       openSettingsSidebar: options.openSettingsSidebar || false,
       openAccountSettings: options.openAccountSettings || false,
       openCertificatesSidebar: options.openCertificatesSidebar || false,
@@ -1355,5 +1567,111 @@ exports.getTripSidebarHtml = async (req, res) => {
   } catch (error) {
     logger.error('Error fetching sidebar HTML:', error);
     res.status(500).send('<p class="text-red-600">Error loading sidebar</p>');
+  }
+};
+
+exports.getDashboardApiData = async (req, res) => {
+  try {
+    // Fetch ALL items (both standalone and trip items) for the current user
+    // This includes items from trips the user owns and trips they're a companion on
+
+    // Get all trips the user owns or is a companion on
+    const userTrips = await Trip.findAll({
+      where: {
+        [Op.or]: [
+          { userId: req.user.id }, // Trips user owns
+        ]
+      },
+      attributes: ['id'],
+    });
+
+    // Also get trips where user is a companion
+    const companionTrips = await Trip.findAll({
+      include: [
+        {
+          model: TripCompanion,
+          as: 'tripCompanions',
+          required: true,
+          include: [
+            {
+              model: TravelCompanion,
+              as: 'companion',
+              where: { userId: req.user.id },
+              required: true,
+            },
+          ],
+        },
+      ],
+      attributes: ['id'],
+    });
+
+    // Combine trip IDs
+    const tripIds = [
+      ...userTrips.map(t => t.id),
+      ...companionTrips.map(t => t.id),
+    ];
+
+    // Fetch all items (standalone + trip items)
+    const flights = await Flight.findAll({
+      where: {
+        [Op.or]: [
+          { userId: req.user.id, tripId: null }, // Standalone
+          { tripId: { [Op.in]: tripIds } }, // Trip items
+        ]
+      },
+      order: [['departureDateTime', 'ASC']],
+    });
+
+    const hotels = await Hotel.findAll({
+      where: {
+        [Op.or]: [
+          { userId: req.user.id, tripId: null },
+          { tripId: { [Op.in]: tripIds } },
+        ]
+      },
+      order: [['checkInDateTime', 'ASC']],
+    });
+
+    const transportation = await Transportation.findAll({
+      where: {
+        [Op.or]: [
+          { userId: req.user.id, tripId: null },
+          { tripId: { [Op.in]: tripIds } },
+        ]
+      },
+      order: [['departureDateTime', 'ASC']],
+    });
+
+    const carRentals = await CarRental.findAll({
+      where: {
+        [Op.or]: [
+          { userId: req.user.id, tripId: null },
+          { tripId: { [Op.in]: tripIds } },
+        ]
+      },
+      order: [['pickupDateTime', 'ASC']],
+    });
+
+    const events = await Event.findAll({
+      where: {
+        [Op.or]: [
+          { userId: req.user.id, tripId: null },
+          { tripId: { [Op.in]: tripIds } },
+        ]
+      },
+      order: [['startDateTime', 'ASC']],
+    });
+
+    // Return data in format expected by the map
+    res.json({
+      flights,
+      hotels,
+      transportation,
+      carRentals,
+      events,
+    });
+  } catch (error) {
+    logger.error('Error fetching dashboard API data:', error);
+    res.status(500).json({ error: 'Failed to fetch dashboard data' });
   }
 };

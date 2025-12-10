@@ -4,427 +4,42 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %></title>
-  <!-- Core Application CSS -->
   <link rel="stylesheet" href="/css/core.css">
-  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <!-- Google Material Symbols -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-  <!-- Tailwind CSS -->
   <link href="https://unpkg.com/tailwindcss@^2.0/dist/tailwind.min.css" rel="stylesheet">
-  <!-- Trips Styles -->
   <link href="/css/trips.css" rel="stylesheet">
-  <!-- Socket.IO Client Library -->
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
 </head>
 <body class="overflow-hidden">
 <script>
-  // Set current user's full name
   window.currentUserName = '<%= user ? (user.firstName + " " + user.lastName) : "You" %>';
-
-  // Define critical functions immediately in head to avoid ReferenceError
-  // These must be defined BEFORE any HTML elements reference them
   window.openSecondarySidebar = function() {
     const sidebar = document.getElementById('secondary-sidebar');
-    if (sidebar) {
-      sidebar.classList.add('open');
-    }
+    if (sidebar) sidebar.classList.add('open');
   };
-
   window.closeSecondarySidebar = function() {
     const sidebar = document.getElementById('secondary-sidebar');
-    if (sidebar) {
-      sidebar.classList.remove('open');
-    }
-  };
-
-  window.showCreateTripForm = function() {
-    const content = document.getElementById('secondary-sidebar-content');
-    const form = document.getElementById('create-trip-form');
-    if (content && form) {
-      content.innerHTML = '';
-      form.style.display = 'none';
-      const formContent = form.innerHTML;
-      content.innerHTML = formContent;
-      const formElement = content.querySelector('form');
-      if (formElement) {
-        formElement.reset();
-      }
-      window.openSecondarySidebar();
-
-      // Add trip owner as initial companion
-      const companionsContainer = content.querySelector('#tripCompanions');
-      const companionsJson = content.querySelector('#tripCompanionsJson');
-      const userName = window.currentUserName || 'You';
-      const ownerCompanionEl = document.createElement('div');
-      ownerCompanionEl.className = 'inline-flex items-center gap-2 bg-blue-100 text-blue-900 px-3 py-2 rounded-lg text-sm mr-2 mb-2';
-      ownerCompanionEl.innerHTML = `
-        <span>${userName}</span>
-        <button type="button" class="text-blue-900 hover:text-blue-700 font-bold ml-1 focus:outline-none" data-action="removeCompanionFromTrip" data-companion-id="owner" style="font-size: 1.2em; line-height: 1;">
-          ×
-        </button>
-      `;
-      companionsContainer.appendChild(ownerCompanionEl);
-
-      // Initialize trip date sync after form is loaded
-      const departureDateInput = content.querySelector('input[name="departureDate"]');
-      const returnDateInput = content.querySelector('input[name="returnDate"]');
-
-      if (departureDateInput && returnDateInput) {
-        departureDateInput.addEventListener('change', function() {
-          const departureDate = this.value;
-          const returnDate = returnDateInput.value;
-
-          // Case 1: Return date is blank - auto-fill with departure date
-          if (!returnDate) {
-            returnDateInput.value = departureDate;
-          }
-          // Case 2: Departure date is after return date - update return date to match departure date
-          else if (departureDate > returnDate) {
-            returnDateInput.value = departureDate;
-          }
-          // Case 3: Departure date is before return date - leave return date unchanged
-        });
-      }
-
-      // Initialize companion search functionality
-      initializeTripCompanionSearch(content);
-    }
-  };
-
-  // Initialize trip companion search
-  function initializeTripCompanionSearch(formContainer) {
-    const searchInput = formContainer.querySelector('#tripCompanionSearch');
-    const searchResults = formContainer.querySelector('#tripCompanionSearchResults');
-    const companionsContainer = formContainer.querySelector('#tripCompanions');
-    const companionsJson = formContainer.querySelector('#tripCompanionsJson');
-
-    let selectedCompanions = [];
-
-    console.log('initializeTripCompanionSearch called', { searchInput, searchResults, companionsContainer, companionsJson });
-
-    if (!searchInput) {
-      console.log('searchInput not found - companion search will not be initialized');
-      return;
-    }
-
-    // Handle search input
-    searchInput.addEventListener('input', async function(e) {
-      const query = this.value.trim().toLowerCase();
-      console.log('Trip companion search input event', { query, queryLength: query.length });
-
-      if (query.length < 2) {
-        console.log('Query too short, hiding results');
-        searchResults.classList.add('hidden');
-        return;
-      }
-
-      console.log('Fetching companions for query:', query);
-      try {
-        const response = await fetch(`/companions/api/search?q=${encodeURIComponent(query)}`);
-        console.log('Fetch response status:', response.status);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-
-        // Handle both array and object responses
-        const companions = Array.isArray(data) ? data : (data.companions || []);
-        const results = companions.filter(c => !selectedCompanions.find(sc => sc.id === c.id));
-
-        if (results.length > 0) {
-          searchResults.innerHTML = results.map(companion => `
-            <div class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm" data-action="addCompanionToTrip" data-companion-id="${companion.id}" data-companion-name="${companion.name}">
-              <div class="font-medium text-gray-900">${companion.name}</div>
-              <div class="text-xs text-gray-500">${companion.email}</div>
-            </div>
-          `).join('');
-          searchResults.classList.remove('hidden');
-        } else {
-          searchResults.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">No companions found</div>';
-          searchResults.classList.remove('hidden');
-        }
-      } catch (error) {
-        console.error('Error searching companions:', error);
-        searchResults.innerHTML = '<div class="px-4 py-2 text-sm text-red-500">Error searching companions</div>';
-        searchResults.classList.remove('hidden');
-      }
-    });
-
-    // Close search results when clicking elsewhere
-    document.addEventListener('click', function(e) {
-      if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-        searchResults.classList.add('hidden');
-      }
-    });
-
-    // Make addCompanionToTrip accessible globally
-    window.addCompanionToTrip = function(companionId, companionName, event) {
-      event.preventDefault();
-      event.stopPropagation();
-
-      const companion = { id: companionId, name: companionName };
-      selectedCompanions.push(companion);
-
-      // Add to display
-      const companionEl = document.createElement('div');
-      companionEl.className = 'inline-flex items-center gap-2 bg-blue-100 text-blue-900 px-3 py-2 rounded-lg text-sm mr-2 mb-2';
-      companionEl.innerHTML = `
-        <span>${companionName}</span>
-        <button type="button" class="text-blue-900 hover:text-blue-700 font-bold ml-1 focus:outline-none" data-action="removeCompanionFromTrip" data-companion-id="${companionId}" style="font-size: 1.2em; line-height: 1;">
-          ×
-        </button>
-      `;
-      companionsContainer.appendChild(companionEl);
-
-      // Update hidden field
-      companionsJson.value = JSON.stringify(selectedCompanions.map(c => c.id));
-
-      // Clear search
-      searchInput.value = '';
-      searchResults.classList.add('hidden');
-    };
-
-    window.removeCompanionFromTrip = function(companionId, button) {
-      event.preventDefault();
-      event.stopPropagation();
-
-      if (companionId !== 'owner') {
-        selectedCompanions = selectedCompanions.filter(c => c.id !== companionId);
-      }
-      button.closest('div').remove();
-
-      // Update hidden field
-      companionsJson.value = JSON.stringify(selectedCompanions.map(c => c.id));
-    };
-  }
-
-  window.showCreateEventForm = function() {
-    const content = document.getElementById('secondary-sidebar-content');
-    if (!content) return;
-
-    // Load the form via AJAX to use the unified form component
-    fetch('/events/standalone/form')
-      .then(response => response.text())
-      .then(html => {
-        content.innerHTML = html;
-
-        // Execute any scripts in the loaded form
-        const scripts = content.querySelectorAll('script');
-        scripts.forEach(script => {
-          const newScript = document.createElement('script');
-          if (script.src) {
-            newScript.src = script.src;
-          } else {
-            newScript.textContent = script.textContent;
-          }
-          document.head.appendChild(newScript);
-        });
-
-        // Initialize the event date sync
-        if (typeof initializeEventDateSync === 'function') {
-          initializeEventDateSync();
-        }
-
-        // Initialize date picker auto-close for the newly loaded form inputs
-        if (typeof initializeDateTimePickerClosing === 'function') {
-          initializeDateTimePickerClosing();
-        }
-
-        // Initialize time input formatting (24-hour format with validation)
-        if (typeof initializeTimeInputs === 'function') {
-          initializeTimeInputs();
-        }
-
-        window.openSecondarySidebar();
-      })
-      .catch(error => {
-        console.error('Error loading event form:', error);
-        content.innerHTML = '<p class="text-red-600">Error loading form</p>';
-      });
+    if (sidebar) sidebar.classList.remove('open');
   };
 </script>
-  <!-- Full-screen map -->
+
   <div id="tripMap"></div>
 
-  <!-- Tertiary Sidebar - for editing forms -->
   <div id="tertiary-sidebar" class="tertiary-sidebar sidebar">
     <div class="p-6">
-      <div id="tertiary-sidebar-content">
-        <!-- Dynamic edit content will be inserted here -->
-      </div>
+      <div id="tertiary-sidebar-content"></div>
     </div>
   </div>
 
-  <!-- Secondary Sidebar - for dynamic content (Account Settings, Companions, etc.) -->
   <div id="secondary-sidebar" class="secondary-sidebar sidebar">
     <div class="p-6">
-      <div id="secondary-sidebar-content">
-        <!-- Account Settings and Companions content will be loaded here -->
-      </div>
-      <div id="create-trip-form" style="display: none;">
-        <div class="flex items-center justify-between mb-6">
-          <div class="flex items-center">
-            <button onclick="showNewItemMenu()" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-              </svg>
-            </button>
-            <h2 class="text-lg font-bold text-gray-900">Create New Trip</h2>
-          </div>
-        </div>
-
-      <form action="/trips" method="POST" class="space-y-4">
-        <div>
-          <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Trip Name *</label>
-          <input type="text" id="name" name="name" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g., Tokyo Adventure">
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <!-- Departure Date -->
-          <div>
-            <label for="departureDate" class="block text-sm font-medium text-gray-700 mb-1">Departure Date *</label>
-            <input type="date" id="departureDate" name="departureDate" required
-                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-          </div>
-
-          <!-- Return Date -->
-          <div>
-            <label for="returnDate" class="block text-sm font-medium text-gray-700 mb-1">Return Date *</label>
-            <input type="date" id="returnDate" name="returnDate" required
-                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-          </div>
-        </div>
-
-        <div>
-          <label for="purpose" class="block text-sm font-medium text-gray-700 mb-1">Purpose</label>
-          <select id="purpose" name="purpose" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white">
-            <option value="pleasure" selected>Pleasure</option>
-            <option value="business">Business</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-
-        <div>
-          <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-          <textarea id="description" name="description" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Brief description of your trip..."></textarea>
-        </div>
-
-        <!-- Travel Companions Section -->
-        <div class="form-section border-t border-gray-200 pt-4 mt-4">
-          <h3 class="text-sm font-semibold text-gray-700 mb-3">
-            <span class="material-symbols-outlined" style="display: inline; font-size: 18px; margin-right: 8px; vertical-align: middle;">group</span>Travel Companions
-          </h3>
-          <p class="text-xs text-gray-500 mb-3">
-            You will automatically be added to this trip. Add other companions if desired.
-          </p>
-
-          <!-- Current companions -->
-          <div id="tripCompanions" class="flex flex-wrap gap-2 mb-4">
-            <!-- Companions will be added here -->
-          </div>
-
-          <!-- Add companion section -->
-          <div class="mt-4 pt-4 border-t border-gray-200">
-            <label class="block text-xs font-semibold text-gray-700 mb-2">Add Companions</label>
-            <div class="relative">
-              <input
-                type="text"
-                id="tripCompanionSearch"
-                placeholder="Search by name or email..."
-                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                autocomplete="off"
-              >
-              <div id="tripCompanionSearchResults" class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 hidden max-h-48 overflow-y-auto">
-                <!-- Search results will appear here -->
-              </div>
-            </div>
-            <p class="text-xs text-gray-500 mt-2">
-              Search for companions from your saved list to add them to this trip.
-            </p>
-          </div>
-
-          <!-- Hidden field for companion IDs to submit with form -->
-          <input type="hidden" name="companions" id="tripCompanionsJson" value="[]">
-        </div>
-
-        <div class="flex space-x-3 pt-4">
-          <button type="submit" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
-            Create Trip
-          </button>
-          <button type="button" data-action="closeSecondarySidebar" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors">
-            Cancel
-          </button>
-        </div>
-      </form>
-      </div>
-
-      <div id="create-event-form" style="display: none;">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-lg font-bold text-gray-900">Create Event</h2>
-          <button data-action="closeSecondarySidebar" class="text-gray-400 hover:text-gray-600">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
-        </div>
-
-        <form action="/events/standalone" method="POST" class="space-y-4">
-          <div>
-            <label for="eventName" class="block text-sm font-medium text-gray-700 mb-1">Event Name *</label>
-            <input type="text" id="eventName" name="name" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g., Conference, Concert">
-          </div>
-
-          <div>
-            <label for="eventLocation" class="block text-sm font-medium text-gray-700 mb-1">Location *</label>
-            <input type="text" id="eventLocation" name="location" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g., San Francisco, CA">
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label for="eventStartDate" class="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
-              <input type="date" id="eventStartDate" name="startDate" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-            </div>
-            <div>
-              <label for="eventStartTime" class="block text-sm font-medium text-gray-700 mb-1">Start Time *</label>
-              <input type="text" id="eventStartTime" name="startTime" data-time-input required placeholder="HH:MM" maxlength="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label for="eventEndDate" class="block text-sm font-medium text-gray-700 mb-1">End Date *</label>
-              <input type="date" id="eventEndDate" name="endDate" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-            </div>
-            <div>
-              <label for="eventEndTime" class="block text-sm font-medium text-gray-700 mb-1">End Time *</label>
-              <input type="text" id="eventEndTime" name="endTime" data-time-input required placeholder="HH:MM" maxlength="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-            </div>
-          </div>
-
-          <div>
-            <label for="eventDescription" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea id="eventDescription" name="description" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Add notes about this event..."></textarea>
-          </div>
-
-          <div class="flex space-x-3 pt-4">
-            <button type="submit" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
-              Create Event
-            </button>
-            <button type="button" data-action="closeSecondarySidebar" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors">
-              Cancel
-            </button>
-          </div>
-        </form>
-      </div>
+      <div id="secondary-sidebar-content"></div>
     </div>
   </div>
 
-  <!-- Primary Sidebar -->
   <div class="primary-sidebar sidebar">
-    <!-- Fixed Header -->
     <div class="sidebar-header p-6">
-      <!-- Header -->
       <div class="flex items-center justify-between mb-6">
         <div class="flex items-center space-x-3">
           <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -434,32 +49,14 @@
           </div>
           <h1 class="text-xl font-bold text-gray-900">My Trips</h1>
         </div>
-        <div>
-          <button
-            onclick="showNewItemMenu()"
-            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            New
-          </button>
-        </div>
       </div>
 
-      <!-- Flash messages -->
       <%- include('../partials/flash') %>
 
-      <!-- Tabs for Upcoming/Past/Settings -->
       <div class="border-b border-gray-200 -mx-6">
         <nav class="-mb-px flex justify-between px-6">
           <div class="flex">
-            <button
-              id="upcoming-tab"
-              class="py-3 px-4 border-b-2 border-blue-500 font-medium text-sm text-blue-600 bg-blue-50 rounded-t-lg transition-all duration-200"
-              data-action="showUpcomingTrips"
-              data-update-history="true"
-            >
+            <button id="upcoming-tab" class="py-3 px-4 border-b-2 border-blue-500 font-medium text-sm text-blue-600 bg-blue-50 rounded-t-lg transition-all duration-200" data-action="showUpcomingTrips" data-update-history="true">
               <div class="flex items-center space-x-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -467,12 +64,7 @@
                 <span>Upcoming</span>
               </div>
             </button>
-            <button
-              id="past-tab"
-              class="py-3 px-4 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-t-lg transition-all duration-200"
-              data-action="showPastTrips"
-              data-update-history="true"
-            >
+            <button id="past-tab" class="py-3 px-4 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-t-lg transition-all duration-200" data-action="showPastTrips" data-update-history="true">
               <div class="flex items-center space-x-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
@@ -481,12 +73,7 @@
               </div>
             </button>
           </div>
-          <button
-            id="settings-tab"
-            class="py-3 px-4 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-t-lg transition-all duration-200"
-            data-action="showSettings"
-            data-update-history="true"
-          >
+          <button id="settings-tab" class="py-3 px-4 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 hover:border-gray-300 rounded-t-lg transition-all duration-200" data-action="showSettings" data-update-history="true">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -496,1211 +83,172 @@
       </div>
     </div>
 
-    <!-- Scrollable Content -->
     <div class="sidebar-content">
-
-      <!-- No trips state -->
       <% if (trips.length === 0) { %>
-      <script>
-        // Initialize empty data structures for no-trips state
-        window.allTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
-        window.upcomingTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
-        window.pastTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
-        window.globalMarkerAssignments = {};
-      </script>
-
-      <!-- Upcoming Trips Content (empty for no-trips state) -->
-      <div id="upcoming-content" class="space-y-4 p-6">
-        <div class="text-center py-12 px-6">
-          <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-            </svg>
+        <div id="upcoming-content" class="space-y-4 p-6">
+          <div class="text-center py-12 px-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No trips yet</h3>
+            <p class="text-gray-500">Get started by creating your first trip</p>
           </div>
-          <h3 class="text-lg font-medium text-gray-900 mb-2">No trips yet</h3>
-          <p class="text-gray-500 mb-6">Get started by creating your first trip</p>
-          <button data-action="showCreateTripForm" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            Create first trip
-          </button>
         </div>
-      </div>
-
-      <!-- Past Trips Content (empty for no-trips state) -->
-      <div id="past-content" class="space-y-4 p-6 hidden">
-        <div class="text-center py-8">
+        <div id="past-content" class="space-y-4 p-6 hidden">
           <p class="text-gray-500">No past trips to display.</p>
         </div>
-      </div>
-
-      <!-- Settings Content - Always rendered (works without trips) -->
-      <div id="settings-content" class="space-y-4 p-6 hidden">
-        <div class="space-y-3">
-          <button data-action="loadSidebarContent" data-url="/account/sidebar" data-full-width="true" data-update-history="true" data-history-path="/manage/account" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
-            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-              </svg>
-            </div>
-            <div class="flex-1 text-left">
-              <h3 class="text-sm font-medium text-gray-900">Account Settings</h3>
-              <p class="text-xs text-gray-500">Manage your profile and preferences</p>
-            </div>
-            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-            </svg>
-          </button>
-
-          <button data-action="loadSidebarContent" data-url="/account/vouchers/sidebar" data-update-history="true" data-history-path="/manage/certificates" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
-            <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-              <span class="material-symbols-outlined text-amber-600" style="font-size: 18px;">wallet</span>
-            </div>
-            <div class="flex-1 text-left">
-              <h3 class="text-sm font-medium text-gray-900">Manage Certificates & Vouchers</h3>
-              <p class="text-xs text-gray-500">View and manage your travel credits</p>
-            </div>
-            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-            </svg>
-          </button>
-
-          <button data-action="loadSidebarContent" data-url="/account/companions-sidebar" data-full-width="true" data-update-history="true" data-history-path="/manage/companions" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
-            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-              <span class="material-symbols-outlined text-green-600" style="font-size: 18px;">group</span>
-            </div>
-            <div class="flex-1 text-left">
-              <h3 class="text-sm font-medium text-gray-900">Travel Companions</h3>
-              <p class="text-xs text-gray-500">Manage your travel companions</p>
-            </div>
-            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-            </svg>
-          </button>
-
-          <a href="/auth/logout" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-red-200 hover:border-red-300 hover:bg-red-100 transition-colors bg-red-50">
-            <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-              <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-              </svg>
-            </div>
-            <div class="flex-1 text-left">
-              <h3 class="text-sm font-medium text-red-600">Sign Out</h3>
-              <p class="text-xs text-red-500">Sign out of your account</p>
-            </div>
-          </a>
-
-          <!-- Version Information -->
-          <div class="mt-6 pt-4 border-t border-gray-200">
-            <p class="text-xs text-gray-400 text-center">
-              <svg class="w-3 h-3 inline-block align-baseline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
-              </svg>
-              Version <%= versionInfo.appVersion %> | Build <code class="text-gray-400"><%= versionInfo.gitCommit %></code>
-            </p>
-          </div>
-        </div>
-      </div>
-
       <% } else { %>
 
-      <%
-        // Server-side formatting functions (must match datetime-formatter.js)
-        function formatDate(date) {
-          const d = new Date(date);
-          const day = String(d.getDate()).padStart(2, '0');
-          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-          const month = months[d.getMonth()];
-          const year = d.getFullYear();
-          return `${day} ${month} ${year}`;
-        }
+      <%- include('../partials/dashboard-sidebar-content') %>
 
-        const now = new Date();
-        const upcomingTrips = [];
-        const pastTrips = [];
+      <% } %>
 
-        trips.forEach(trip => {
-          // Find the latest end date across all trip segments and the trip return date
-          let latestEndDate = new Date(trip.returnDate);
-
-          // Check flights for latest arrival
-          if (trip.flights && trip.flights.length > 0) {
-            trip.flights.forEach(f => {
-              if (f.arrivalDateTime) {
-                const arrivalDate = new Date(f.arrivalDateTime);
-                if (arrivalDate > latestEndDate) latestEndDate = arrivalDate;
-              }
-            });
-          }
-
-          // Check hotels for latest checkout
-          if (trip.hotels && trip.hotels.length > 0) {
-            trip.hotels.forEach(h => {
-              if (h.checkOutDateTime) {
-                const checkoutDate = new Date(h.checkOutDateTime);
-                if (checkoutDate > latestEndDate) latestEndDate = checkoutDate;
-              }
-            });
-          }
-
-          // Check transportation for latest arrival
-          if (trip.transportation && trip.transportation.length > 0) {
-            trip.transportation.forEach(t => {
-              if (t.arrivalDateTime) {
-                const arrivalDate = new Date(t.arrivalDateTime);
-                if (arrivalDate > latestEndDate) latestEndDate = arrivalDate;
-              }
-            });
-          }
-
-          // Check car rentals for latest dropoff
-          if (trip.carRentals && trip.carRentals.length > 0) {
-            trip.carRentals.forEach(c => {
-              if (c.dropoffDateTime) {
-                const dropoffDate = new Date(c.dropoffDateTime);
-                if (dropoffDate > latestEndDate) latestEndDate = dropoffDate;
-              }
-            });
-          }
-
-          // Check events for latest end
-          if (trip.events && trip.events.length > 0) {
-            trip.events.forEach(e => {
-              if (e.endDateTime) {
-                const endDate = new Date(e.endDateTime);
-                if (endDate > latestEndDate) latestEndDate = endDate;
-              }
-            });
-          }
-
-          // Trip is past only if the latest end date of all segments is in the past
-          if (latestEndDate < now) {
-            pastTrips.push(trip);
-          } else {
-            upcomingTrips.push(trip);
-          }
-        });
-
-        // Declare tripItems outside the if block so it's accessible later
-        let tripItems = [];
-      %>
-
-          <%
-            // Initialize global marker map (will be populated below and exported to client)
-            var globalMarkerMap = {};
-
-            // Process upcoming trips data only if there are any
-            if (upcomingTrips.length > 0) {
-              // Helper function to extract flight number without airline code
-              function getFlightNum(flightNumber) {
-                const match = flightNumber.match(/(\d+)$/);
-                return match ? match[1] : flightNumber;
-              }
-
-              // Helper function to extract city name from location string
-              function getCityName(location) {
-                if (location.includes(' - ')) {
-                  const parts = location.split(' - ')[1];
-                  if (parts && parts.includes(',')) {
-                    return parts.split(',')[0].trim();
-                  }
-                  return parts;
-                }
-                return location.split(' - ')[0] || location;
-              }
-
-              // First, collect ALL items from all trips (with trip reference) AND standalone items
-              const allItemsWithTrip = [];
-
-              // Add standalone items first
-              if (typeof standaloneFlights !== 'undefined' && standaloneFlights) {
-                standaloneFlights.forEach(f => {
-                  const flightNum = getFlightNum(f.flightNumber);
-                  const airlineCode = f.flightNumber.replace(/\d+$/, '');
-                  const originCity = getCityName(f.origin);
-                  const destinationCity = getCityName(f.destination);
-                  allItemsWithTrip.push({
-                    type: 'flight',
-                    time: new Date(f.departureDateTime),
-                    data: f,
-                    tripId: null,
-                    trip: null,
-                    display: `<span class="material-symbols-outlined text-blue-600 inline-icon" style="font-size: 16px;">flights</span> ${airlineCode}${flightNum}: ${originCity} → ${destinationCity}`,
-                    hasSegment: true,
-                    marker: null
-                  });
-                });
-              }
-
-              if (typeof standaloneHotels !== 'undefined' && standaloneHotels) {
-                standaloneHotels.forEach(h => {
-                  const hotelCity = getCityName(h.address);
-                  allItemsWithTrip.push({
-                    type: 'hotel',
-                    time: new Date(h.checkInDateTime),
-                    data: h,
-                    tripId: null,
-                    trip: null,
-                    display: `<span class="material-symbols-outlined text-green-600 inline-icon" style="font-size: 16px;">hotel</span> ${h.hotelName}: ${hotelCity}`,
-                    hasSegment: false,
-                    marker: null
-                  });
-                });
-              }
-
-              if (typeof standaloneTransportation !== 'undefined' && standaloneTransportation) {
-                standaloneTransportation.forEach(t => {
-                  const originCity = getCityName(t.origin);
-                  const destinationCity = getCityName(t.destination);
-                  allItemsWithTrip.push({
-                    type: 'transportation',
-                    time: new Date(t.departureDateTime),
-                    data: t,
-                    tripId: null,
-                    trip: null,
-                    display: `<span class="material-symbols-outlined text-amber-600 inline-icon" style="font-size: 16px;">train</span> ${t.method}: ${originCity} → ${destinationCity}`,
-                    hasSegment: true,
-                    marker: null
-                  });
-                });
-              }
-
-              if (typeof standaloneCarRentals !== 'undefined' && standaloneCarRentals) {
-                standaloneCarRentals.forEach(c => {
-                  const pickupCity = getCityName(c.pickupLocation);
-                  const dropoffCity = getCityName(c.dropoffLocation);
-                  allItemsWithTrip.push({
-                    type: 'carRental',
-                    time: new Date(c.pickupDateTime),
-                    data: c,
-                    tripId: null,
-                    trip: null,
-                    display: `<span class="material-symbols-outlined text-purple-600 inline-icon" style="font-size: 16px;">directions_car</span> ${c.company}: ${pickupCity} → ${dropoffCity}`,
-                    hasSegment: false,
-                    marker: null
-                  });
-                });
-              }
-
-              if (typeof standaloneEvents !== 'undefined' && standaloneEvents) {
-                standaloneEvents.forEach(e => {
-                  allItemsWithTrip.push({
-                    type: 'event',
-                    time: new Date(e.startDateTime),
-                    data: e,
-                    tripId: null,
-                    trip: null,
-                    display: `<span class="material-symbols-outlined text-red-600 inline-icon" style="font-size: 16px;">event</span> ${e.name}`,
-                    hasSegment: false,
-                    marker: null
-                  });
-                });
-              }
-
-              upcomingTrips.forEach(trip => {
-                // Add flights
-                if (trip.flights && Array.isArray(trip.flights)) {
-                  trip.flights.forEach(f => {
-                    const flightNum = getFlightNum(f.flightNumber);
-                    const airlineCode = f.flightNumber.replace(/\d+$/, '');
-                    const originCity = getCityName(f.origin);
-                    const destinationCity = getCityName(f.destination);
-                    allItemsWithTrip.push({
-                      type: 'flight',
-                      time: new Date(f.departureDateTime),
-                      data: f,
-                      tripId: trip.id,
-                      trip: trip,
-                      display: `<span class="material-symbols-outlined text-blue-600 inline-icon" style="font-size: 16px;">flight</span> ${airlineCode}${flightNum}: ${originCity} → ${destinationCity}`,
-                      hasSegment: true,
-                      marker: null
-                    });
-                  });
-                }
-
-                // Add transportation
-                if (trip.transportation && Array.isArray(trip.transportation)) {
-                  trip.transportation.forEach(t => {
-                    const originCity = getCityName(t.origin);
-                    const destinationCity = getCityName(t.destination);
-                    allItemsWithTrip.push({
-                      type: 'transportation',
-                      time: new Date(t.departureDateTime),
-                      data: t,
-                      tripId: trip.id,
-                      trip: trip,
-                      display: `<span class="material-symbols-outlined text-amber-600 inline-icon" style="font-size: 16px;">train</span> ${t.method}: ${originCity} → ${destinationCity}`,
-                      hasSegment: true,
-                      marker: null
-                    });
-                  });
-                }
-
-                // Add events
-                if (trip.events && Array.isArray(trip.events)) {
-                  trip.events.forEach(e => {
-                    allItemsWithTrip.push({
-                      type: 'event',
-                      time: new Date(e.startDateTime),
-                      data: e,
-                      tripId: trip.id,
-                      trip: trip,
-                      display: `<span class="material-symbols-outlined text-red-600 inline-icon" style="font-size: 16px;">event</span> ${e.name}`,
-                      hasSegment: false,
-                      marker: null
-                    });
-                  });
-                }
-              });
-
-              // Sort ALL items chronologically
-              allItemsWithTrip.sort((a, b) => a.time - b.time);
-
-              // Assign markers in chronological order
-              let mapMarkerCounter = 0;
-              allItemsWithTrip.forEach(item => {
-                if (item.hasSegment) {
-                  mapMarkerCounter++;
-                  item.marker = mapMarkerCounter;
-                  // Store for passing to sidebar
-                  const key = `${item.type}-${item.data.id}`;
-                  globalMarkerMap[key] = mapMarkerCounter;
-                }
-              });
-
-              // Now group items by trip for display
-              // tripItems already declared outside the if block
-
-              // Add standalone items as individual cards (not grouped)
-              const standaloneItems = allItemsWithTrip.filter(item => item.tripId === null);
-              standaloneItems.forEach(item => {
-                tripItems.push({
-                  trip: null,
-                  items: [item],
-                  isStandalone: true,
-                  standaloneType: item.type,
-                  sortTime: item.time
-                });
-              });
-
-              upcomingTrips.forEach(trip => {
-                const items = allItemsWithTrip.filter(item => item.tripId === trip.id);
-
-                // Add trip even if it has no items
-                tripItems.push({
-                  trip: trip,
-                  items: items,
-                  isStandalone: false,
-                  sortTime: items.length > 0 ? items[0].time : new Date(trip.departureDate)
-                });
-              });
-
-              // Sort all items (trips and standalone events) chronologically
-              tripItems.sort((a, b) => a.sortTime - b.sortTime);
-            }
-            %>
-
-        <!-- Upcoming Trips Content -->
-        <div id="upcoming-content" class="space-y-4 p-6">
-          <!-- Pending Trip Invitations Section -->
-          <% if (typeof pendingInvitations !== 'undefined' && pendingInvitations && pendingInvitations.length > 0) { %>
-            <div class="border-l-4 border-blue-500 bg-blue-50 p-4 rounded-lg mb-4">
-              <h3 class="text-sm font-semibold text-blue-900 mb-3">
-                <i class="bi bi-envelope-open text-blue-600 me-2"></i>Pending Trip Invitations
-              </h3>
-              <div class="space-y-2">
-                <% pendingInvitations.forEach((invitation, idx) => { %>
-                  <% const trip = invitation.trip; %>
-                  <% if (trip) { %>
-                    <div class="bg-white rounded border border-blue-200 p-3">
-                      <div class="flex items-start justify-between">
-                        <div class="flex-1 min-w-0">
-                          <p class="text-sm font-medium text-gray-900"><%= trip.name %></p>
-                          <p class="text-xs text-gray-600"><%= formatDate(trip.departureDate) %> - <%= formatDate(trip.returnDate) %></p>
-                          <p class="text-xs text-gray-500 mt-1">Invited by <%= invitation.invitedByUser ? (invitation.invitedByUser.firstName + ' ' + invitation.invitedByUser.lastName) : 'a companion' %></p>
-                        </div>
-                        <div class="flex gap-2 ml-2 flex-shrink-0">
-                          <button
-                            type="button"
-                            class="p-1 text-green-600 hover:bg-green-100 rounded transition-colors"
-                            title="Accept invitation"
-                            data-action="respondToTripInvitation"
-                            data-trip-id="<%= trip.id %>"
-                            data-response="join"
-                            data-invitation-id="<%= invitation.id %>"
-                          >
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                          </button>
-                          <button
-                            type="button"
-                            class="p-1 text-red-600 hover:bg-red-100 rounded transition-colors"
-                            title="Decline invitation"
-                            data-action="respondToTripInvitation"
-                            data-trip-id="<%= trip.id %>"
-                            data-response="decline"
-                            data-invitation-id="<%= invitation.id %>"
-                          >
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  <% } %>
-                <% }) %>
-              </div>
-            </div>
-          <% } %>
-
-          <% if (typeof tripItems === 'undefined' || tripItems.length === 0) { %>
-            <div class="text-center py-8">
-              <p class="text-gray-500">No upcoming trips to display.</p>
-            </div>
-          <% } else { %>
-            <div class="space-y-3">
-              <% tripItems.forEach((tripData, tripIndex) => { %>
-                <% if (tripData.isStandalone) { %>
-                  <%
-                    const item = tripData.items[0];
-                  %>
-                  <!-- Standalone item - single card with no accordion -->
-                  <div class="border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md hover:border-gray-300 transition-all cursor-pointer"
-                       <% if (item.type === 'event') { %>data-action="loadEventSidebar" data-event-id="<%= item.data.id %>"<% } else if (item.type === 'flight') { %>data-action="loadStandaloneSidebar" data-item-type="flight" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'hotel') { %>data-action="loadStandaloneSidebar" data-item-type="hotel" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'transportation') { %>data-action="loadStandaloneSidebar" data-item-type="transportation" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'carRental') { %>data-action="loadStandaloneSidebar" data-item-type="carRental" data-item-id="<%= item.data.id %>"<% } %>>
-                    <div class="py-4 px-5 inline-flex items-center gap-x-3 w-full font-medium"> <!-- font-semibold -->
-                      <%
-                        const hours = String(item.time.getHours()).padStart(2, '0');
-                        const minutes = String(item.time.getMinutes()).padStart(2, '0');
-                        let standaloneIcon, standaloneColor, standaloneLabel, displayName, startDateTime, endDateTime, location;
-
-                        if (item.type === 'event') {
-                          standaloneIcon = 'event';
-                          standaloneColor = 'red';
-                          displayName = item.data.name;
-                          // Format event times in the event's timezone
-                          const eventTimezone = item.data.timezone || 'UTC';
-                          const eventStartFormatted = formatInTimezone(item.data.startDateTime, eventTimezone, 'DD MMM YYYY HH:mm');
-
-                          // Extract date and time parts for start
-                          const eventStartDateStr = eventStartFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
-                          const eventStartTimeStr = eventStartFormatted.substring(12); // "HH:mm"
-
-                          startDateTime = `${eventStartDateStr} ${eventStartTimeStr}`;
-
-                          if (item.data.endDateTime && item.data.endDateTime !== item.data.startDateTime) {
-                            const eventEndFormatted = formatInTimezone(item.data.endDateTime, eventTimezone, 'DD MMM YYYY HH:mm');
-
-                            // Extract date and time parts for end
-                            const eventEndDateStr = eventEndFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
-                            const eventEndTimeStr = eventEndFormatted.substring(12); // "HH:mm"
-
-                            // If same date, only show time range. If different dates, show both
-                            if (eventStartDateStr === eventEndDateStr) {
-                              startDateTime = `${eventStartDateStr} ${eventStartTimeStr} - ${eventEndTimeStr}`;
-                            } else {
-                              startDateTime += ` - ${eventEndDateStr} ${eventEndTimeStr}`;
-                            }
-                          }
-                          location = item.data.location || '';
-                        } else if (item.type === 'flight') {
-                          standaloneIcon = 'flight';
-                          standaloneColor = 'blue';
-                          const flightNum = item.data.flightNumber.match(/(\d+)$/)?.[1] || '';
-                          const airlineCode = item.data.flightNumber.replace(/\d+$/, '');
-                          displayName = `${airlineCode}${flightNum}`;
-                          const originCity = getCityName(item.data.origin);
-                          const destCity = getCityName(item.data.destination);
-                          // Format flight departure time in the origin timezone
-                          const originTimezone = item.data.originTimezone || 'UTC';
-                          const departureFormatted = formatInTimezone(item.data.departureDateTime, originTimezone, 'DD MMM YYYY HH:mm');
-                          startDateTime = departureFormatted;
-                          location = `${originCity} → ${destCity}`;
-                        } else if (item.type === 'hotel') {
-                          standaloneIcon = 'hotel';
-                          standaloneColor = 'green';
-                          displayName = item.data.hotelName;
-                          const hotelCity = getCityName(item.data.address);
-                          // Format hotel check-in and check-out times in local timezone
-                          const timezone = item.data.timezone || 'UTC';
-                          const checkInFormatted = formatInTimezone ? formatInTimezone(item.data.checkInDateTime, timezone, 'DD MMM YYYY HH:mm') : formatDate(item.time);
-                          const checkOutFormatted = formatInTimezone ? formatInTimezone(item.data.checkOutDateTime, timezone, 'DD MMM YYYY HH:mm') : formatDate(new Date(item.data.checkOutDateTime));
-
-                          // Extract date and time parts
-                          const checkInDateStr = checkInFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
-                          const checkInTimeStr = checkInFormatted.substring(12); // "HH:mm"
-                          const checkOutDateStr = checkOutFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
-                          const checkOutTimeStr = checkOutFormatted.substring(12); // "HH:mm"
-
-                          if (checkInDateStr === checkOutDateStr) {
-                            startDateTime = `${checkInDateStr} ${checkInTimeStr} - ${checkOutTimeStr}`;
-                          } else {
-                            startDateTime = `${checkInDateStr} ${checkInTimeStr} - ${checkOutDateStr} ${checkOutTimeStr}`;
-                          }
-                          location = hotelCity;
-                        } else if (item.type === 'transportation') {
-                          standaloneIcon = 'train';
-                          standaloneColor = 'amber';
-                          displayName = item.data.method;
-                          const originCity = getCityName(item.data.origin);
-                          const destCity = getCityName(item.data.destination);
-                          // Format transportation departure time in the origin timezone
-                          const transportOriginTimezone = item.data.originTimezone || 'UTC';
-                          const transportDepartureFormatted = formatInTimezone(item.data.departureDateTime, transportOriginTimezone, 'DD MMM YYYY HH:mm');
-                          startDateTime = transportDepartureFormatted;
-                          location = `${originCity} → ${destCity}`;
-                        } else if (item.type === 'carRental') {
-                          standaloneIcon = 'directions_car';
-                          standaloneColor = 'purple';
-                          displayName = item.data.company;
-                          const pickupCity = getCityName(item.data.pickupLocation);
-                          // Format car rental pickup and dropoff times in their respective timezones
-                          const pickupTimezone = item.data.pickupTimezone || 'UTC';
-                          const dropoffTimezone = item.data.dropoffTimezone || 'UTC';
-                          const pickupFormatted = formatInTimezone(item.data.pickupDateTime, pickupTimezone, 'DD MMM YYYY HH:mm');
-                          const dropoffFormatted = formatInTimezone(item.data.dropoffDateTime, dropoffTimezone, 'DD MMM YYYY HH:mm');
-
-                          // Extract date and time parts
-                          const pickupDateStr = pickupFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
-                          const pickupTimeStr = pickupFormatted.substring(12); // "HH:mm"
-                          const dropoffDateStr = dropoffFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
-                          const dropoffTimeStr = dropoffFormatted.substring(12); // "HH:mm"
-
-                          if (pickupDateStr === dropoffDateStr) {
-                            startDateTime = `${pickupDateStr} ${pickupTimeStr} - ${dropoffTimeStr}`;
-                          } else {
-                            startDateTime = `${pickupDateStr} ${pickupTimeStr} - ${dropoffDateStr} ${dropoffTimeStr}`;
-                          }
-                          location = pickupCity;
-                        }
-                      %>
-                      <div class="w-8 h-8 bg-<%= standaloneColor %>-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined text-<%= standaloneColor %>-600" style="font-size: 16px;"><%= standaloneIcon %></span>
-                      </div>
-                      <div class="flex-1 min-w-0">
-                        <h3 class="text-sm font-medium text-gray-900"><%= displayName %></h3>
-                        <p class="text-xs text-gray-500"><%= startDateTime %></p>
-                        <% if (location) { %>
-                          <p class="text-xs text-gray-600 italic"><%= location %></p>
-                        <% } %>
-                      </div>
-                    </div>
-                  </div>
-                <% } else { %>
-                  <!-- Trip card with accordion -->
-                  <div class="border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md hover:border-gray-300 transition-all cursor-pointer accordion-button-container"
-                       data-action="navigateToTrip" data-trip-id="<%= tripData.trip.id %>">
-                    <div class="w-full py-4 px-5 inline-flex items-center justify-between gap-x-3 font-medium text-start text-gray-800 hover:bg-gray-50 rounded-lg transition-colors">
-                      <div class="flex items-center space-x-3">
-                        <%
-                          // Determine icon based on trip purpose
-                          let tripIcon = 'flights_and_hotels'; // default
-                          let iconClass = 'text-blue-600';
-                          let bgClass = 'bg-blue-100';
-
-                          if (tripData.trip.purpose === 'business') {
-                            tripIcon = 'badge';
-                            iconClass = 'text-purple-600';
-                            bgClass = 'bg-purple-100';
-                          } else if (tripData.trip.purpose === 'leisure' || tripData.trip.purpose === 'family' || tripData.trip.purpose === 'romantic') {
-                            tripIcon = 'hotel';
-                            iconClass = 'text-green-600';
-                            bgClass = 'bg-green-100';
-                          }
-
-                          // Extract unique cities from all items in this trip (exclude events)
-                          const tripCities = new Set();
-                          tripData.items.forEach(item => {
-                            // Skip events - only extract from flights, hotels, transportation, and car rentals
-                            if (item.type === 'event') return;
-
-                            if (item.data.origin) {
-                              const originCity = getCityName(item.data.origin);
-                              if (originCity) tripCities.add(originCity);
-                            }
-                            if (item.data.destination) {
-                              const destCity = getCityName(item.data.destination);
-                              if (destCity) tripCities.add(destCity);
-                            }
-                            if (item.data.hotelName && item.data.address) {
-                              const hotelCity = getCityName(item.data.address);
-                              if (hotelCity) tripCities.add(hotelCity);
-                            }
-                            if (item.data.pickupLocation) {
-                              const pickupCity = getCityName(item.data.pickupLocation);
-                              if (pickupCity) tripCities.add(pickupCity);
-                            }
-                          });
-                          const citiesList = Array.from(tripCities).sort().join(', ');
-                        %>
-                        <div class="w-8 h-8 <%= bgClass %> rounded-lg flex items-center justify-center">
-                          <span class="material-symbols-outlined <%= iconClass %>" style="font-size: 16px;"><%= tripIcon %></span>
-                        </div>
-                        <div class="flex-1 text-left">
-                          <h3 class="text-sm font-medium text-gray-900 hover:text-blue-600"><%= tripData.trip.name %></h3>
-                          <p class="text-xs text-gray-500"><%= formatDate(tripData.trip.departureDate) %> - <%= formatDate(tripData.trip.returnDate) %></p>
-                          <% if (citiesList) { %>
-                            <p class="text-xs text-gray-600 italic"><%= citiesList %></p>
-                          <% } %>
-                        </div>
-                      </div>
-                      <button class="accordion-button w-4 h-4 flex-shrink-0 transition-transform duration-200 p-1 hover:bg-gray-200 rounded"
-                              data-action="toggleAccordion"
-                              data-accordion-id="upcoming-<%= tripIndex %>"
-                              data-stop-propagation="true"
-                              style="min-width: 16px;">
-                        <svg class="accordion-arrow w-4 h-4 flex-shrink-0 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="min-width: 16px;">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6"/>
-                        </svg>
-                      </button>
-                    </div>
-
-                    <div id="upcoming-<%= tripIndex %>" class="accordion-content hidden" data-trip-id="<%= tripData.trip.id %>">
-                      <div class="pb-4 px-5">
-                        <div class="flex items-center justify-center py-6">
-                          <div class="inline-flex items-center space-x-2">
-                            <div class="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                            <p class="text-sm text-gray-500">Loading trip details...</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                <% } %>
-              <% }) %>
-            </div>
-          <% } %>
-        </div>
-
-        <!-- Past Trips Content -->
-        <div id="past-content" class="space-y-4 p-6 hidden">
-          <% if (pastTrips.length === 0) { %>
-            <div class="text-center py-8">
-              <p class="text-gray-500">No past trips to display.</p>
-            </div>
-          <% } else { %>
-            <%
-              // Helper function to extract flight number without airline code
-              function getFlightNum(flightNumber) {
-                const match = flightNumber.match(/(\d+)$/);
-                return match ? match[1] : flightNumber;
-              }
-
-              // Helper function to extract city name from location string
-              function getCityName(location) {
-                if (location.includes(' - ')) {
-                  const parts = location.split(' - ')[1];
-                  if (parts && parts.includes(',')) {
-                    return parts.split(',')[0].trim();
-                  }
-                  return parts;
-                }
-                return location.split(' - ')[0] || location;
-              }
-
-              // Collect flights from past trips
-              const pastTripItems = [];
-
-              pastTrips.forEach(trip => {
-                // Add flights only (not events or transportation for past trips)
-                if (trip.flights && Array.isArray(trip.flights)) {
-                  trip.flights.forEach(f => {
-                    const flightNum = getFlightNum(f.flightNumber);
-                    const airlineCode = f.flightNumber.replace(/\d+$/, '');
-                    const originCity = getCityName(f.origin);
-                    const destinationCity = getCityName(f.destination);
-                    pastTripItems.push({
-                      type: 'flight',
-                      time: new Date(f.departureDateTime),
-                      data: f,
-                      tripId: trip.id,
-                      trip: trip,
-                      display: `<span class="material-symbols-outlined text-blue-600 inline-icon" style="font-size: 16px;">flight</span> ${airlineCode}${flightNum}: ${originCity} → ${destinationCity}`,
-                      hasSegment: true,
-                      marker: null
-                    });
-                  });
-                }
-              });
-
-              // Sort flights chronologically
-              pastTripItems.sort((a, b) => a.time - b.time);
-
-              // Assign markers in chronological order
-              let pastMapMarkerCounter = 0;
-              pastTripItems.forEach(item => {
-                if (item.hasSegment) {
-                  pastMapMarkerCounter++;
-                  item.marker = pastMapMarkerCounter;
-                }
-              });
-
-              // Group items by trip for display
-              const pastTripItemsGrouped = [];
-
-              pastTrips.forEach(trip => {
-                const items = pastTripItems.filter(item => item.tripId === trip.id);
-
-                pastTripItemsGrouped.push({
-                  trip: trip,
-                  items: items,
-                  isStandalone: false
-                });
-              });
-
-              // Sort trips by earliest item time
-              pastTripItemsGrouped.sort((a, b) => {
-                const aTime = a.items.length > 0 ? a.items[0].time : (a.trip ? new Date(a.trip.departureDate) : new Date());
-                const bTime = b.items.length > 0 ? b.items[0].time : (b.trip ? new Date(b.trip.departureDate) : new Date());
-                return aTime - bTime;
-              });
-            %>
-
-            <div class="space-y-3">
-              <% pastTripItemsGrouped.forEach((tripData, tripIndex) => { %>
-                <div class="border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md hover:border-gray-300 transition-all cursor-pointer accordion-button-container"
-                     data-action="navigateToTrip" data-trip-id="<%= tripData.trip.id %>">
-                  <!-- Accordion Header -->
-                  <div class="w-full py-4 px-5 inline-flex items-center justify-between gap-x-3 font-medium text-start text-gray-800 hover:bg-gray-50 rounded-lg transition-colors">
-                    <div class="flex items-center space-x-3">
-                      <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                        </svg>
-                      </div>
-                      <div class="flex-1 text-left">
-                        <h3 class="text-sm font-medium text-gray-700 hover:text-gray-900"><%= tripData.trip.name %></h3>
-                        <p class="text-xs text-gray-500"><%= formatDate(tripData.trip.departureDate) %> - <%= formatDate(tripData.trip.returnDate) %></p>
-                      </div>
-                    </div>
-                    <button class="accordion-button w-4 h-4 flex-shrink-0 transition-transform duration-200 p-1 hover:bg-gray-200 rounded"
-                            data-action="toggleAccordion"
-                            data-accordion-id="past-<%= tripIndex %>"
-                            data-stop-propagation="true"
-                            style="min-width: 16px;">
-                      <svg class="accordion-arrow w-4 h-4 flex-shrink-0 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="min-width: 16px;">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6"/>
-                      </svg>
-                    </button>
-                  </div>
-
-                  <!-- Accordion Content -->
-                  <div id="past-<%= tripIndex %>" class="accordion-content hidden" data-trip-id="<%= tripData.trip.id %>">
-                    <div class="pb-4 px-5">
-                      <div class="flex items-center justify-center py-6">
-                        <div class="inline-flex items-center space-x-2">
-                          <div class="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                          <p class="text-sm text-gray-500">Loading trip details...</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              <% }) %>
-            </div>
-          <% } %>
-        </div>
-
-        <!-- Settings Content -->
-        <div id="settings-content" class="space-y-4 p-6 hidden">
-          <div class="space-y-3">
-            <button data-action="loadSidebarContent" data-url="/account/sidebar" data-full-width="true" data-update-history="true" data-history-path="/manage/account" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
-              <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                </svg>
-              </div>
-              <div class="flex-1 text-left">
-                <h3 class="text-sm font-medium text-gray-900">Account Settings</h3>
-                <p class="text-xs text-gray-500">Manage your profile and preferences</p>
-              </div>
-              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-              </svg>
-            </button>
-
-            <button data-action="loadSidebarContent" data-url="/account/vouchers/sidebar" data-update-history="true" data-history-path="/manage/certificates" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
-              <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-                <span class="material-symbols-outlined text-amber-600" style="font-size: 18px;">wallet</span>
-              </div>
-              <div class="flex-1 text-left">
-                <h3 class="text-sm font-medium text-gray-900">Manage Certificates & Vouchers</h3>
-                <p class="text-xs text-gray-500">View and manage your travel credits</p>
-              </div>
-              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-              </svg>
-            </button>
-
-            <button data-action="loadSidebarContent" data-url="/account/companions-sidebar" data-full-width="true" data-update-history="true" data-history-path="/manage/companions" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
-              <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                <span class="material-symbols-outlined text-green-600" style="font-size: 18px;">group</span>
-              </div>
-              <div class="flex-1 text-left">
-                <h3 class="text-sm font-medium text-gray-900">Travel Companions</h3>
-                <p class="text-xs text-gray-500">Manage your travel companions</p>
-              </div>
-              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-              </svg>
-            </button>
-
-            <a href="/auth/logout" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-red-200 hover:border-red-300 hover:bg-red-100 transition-colors bg-red-50">
-              <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-                <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                </svg>
-              </div>
-              <div class="flex-1 text-left">
-                <h3 class="text-sm font-medium text-red-600">Sign Out</h3>
-                <p class="text-xs text-red-500">Sign out of your account</p>
-              </div>
-            </a>
-
-            <!-- Version Information -->
-            <div class="mt-6 pt-4 border-t border-gray-200">
-              <p class="text-xs text-gray-400 text-center">
-                <svg class="w-3 h-3 inline-block align-baseline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
-                </svg>
-                Version <%= versionInfo.appVersion %> | Build <code class="text-gray-400"><%= versionInfo.gitCommit %></code>
-              </p>
-            </div>
+      <div id="settings-content" class="space-y-4 p-6 hidden">
+        <button data-action="loadSidebarContent" data-url="/account/sidebar" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 bg-white">
+          <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
           </div>
-        </div>
-
+          <div class="flex-1 text-left">
+            <h3 class="text-sm font-medium text-gray-900">Account Settings</h3>
+          </div>
+        </button>
+        <a href="/auth/logout" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-red-200 hover:border-red-300 hover:bg-red-100 bg-red-50">
+          <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+            <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+            </svg>
+          </div>
+          <div class="flex-1 text-left">
+            <h3 class="text-sm font-medium text-red-600">Sign Out</h3>
+          </div>
+        </a>
+      </div>
     </div>
   </div>
 
   <script>
-    // Handle accordion expansion to load trip items via AJAX
+    console.log('[EJS DEBUG] Dashboard loaded successfully');
+    console.log('[EJS DEBUG] Trips count: <%= trips ? trips.length : 0 %>');
+    console.log('[EJS DEBUG] Past trips count: <%= pastTrips ? pastTrips.length : 0 %>');
+
     window.loadTripItemsIfNeeded = async function(accordionId) {
+      console.log('[EJS DEBUG] Loading trip items for accordion:', accordionId);
       const accordionContent = document.getElementById(accordionId);
       if (!accordionContent) return;
-
       const tripId = accordionContent.getAttribute('data-trip-id');
       if (!tripId) return;
-
-      // Check if already loaded
-      if (accordionContent.getAttribute('data-loaded') === 'true') {
-        return;
-      }
-
+      if (accordionContent.getAttribute('data-loaded') === 'true') return;
       try {
-        // Build URL with global marker assignments as query params
-        let url = `/trips/${tripId}/sidebar`;
-        if (window.globalMarkerAssignments && Object.keys(window.globalMarkerAssignments).length > 0) {
-          const params = new URLSearchParams();
-          for (const [key, value] of Object.entries(window.globalMarkerAssignments)) {
-            params.append('marker', `${key}=${value}`);
-          }
-          url += '?' + params.toString();
-        }
-
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(`Failed to load trip items: ${response.status}`);
-        }
+        const response = await fetch(`/trips/${tripId}/sidebar`);
+        if (!response.ok) throw new Error(`Status: ${response.status}`);
         const html = await response.text();
         accordionContent.innerHTML = html;
         accordionContent.setAttribute('data-loaded', 'true');
-
-        // Execute any scripts in the loaded content
-        const scripts = accordionContent.querySelectorAll('script');
-        scripts.forEach(script => {
-          const newScript = document.createElement('script');
-          if (script.src) {
-            newScript.src = script.src;
-          } else {
-            newScript.textContent = script.textContent;
-          }
-          document.head.appendChild(newScript);
-        });
-
-        // Note: No need to re-attach hover handlers - they were already attached
-        // to the accordion button and will work with the newly loaded items
       } catch (error) {
-        console.error('Error loading trip items:', error);
-        accordionContent.innerHTML = '<div class="p-4 text-red-600 text-sm">Error loading trip details. Please try again.</div>';
-        accordionContent.setAttribute('data-loaded', 'true');
+        console.error('[EJS DEBUG] Error loading trip items:', error);
+        accordionContent.innerHTML = '<div class="p-4 text-red-600 text-sm">Error loading trip details</div>';
       }
     };
-  </script>
 
-  <script>
-    // Handle trip invitation response
-    async function respondToTripInvitation(tripId, response, invitationId) {
-      try {
-        const respondRes = await fetch(`/trip-invitations/${invitationId}/respond`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ response })
-        });
+    // Initialize global data structures
+    window.globalMarkerAssignments = <%- JSON.stringify(globalMarkerMap || {}) %>;
+    window.allTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
+    window.upcomingTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
+    window.pastTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
 
-        if (respondRes.ok) {
-          // Show success message without alert - just reload the page
-          setTimeout(() => location.reload(), 300);
-        } else {
-          console.error('Error responding to invitation');
-          // Silently handle error - could add a toast notification here
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        // Silently handle error - could add a toast notification here
-      }
-    }
-
-    // Prepare trip data for map (window-scoped for access from trips-list.js)
-    window.allTripsData = {
-      flights: [],
-      hotels: [],
-      transportation: [],
-      carRentals: [],
-      events: []
-    };
-
-    // Prepare data for upcoming trips (flights and events)
-    window.upcomingTripsData = {
-      flights: [],
-      hotels: [],
-      transportation: [],
-      carRentals: [],
-      events: []
-    };
-
-    // Prepare data for past trips (flights only)
-    window.pastTripsData = {
-      flights: [],
-      hotels: [],
-      transportation: [],
-      carRentals: [],
-      events: []
-    };
-
-    // Store global marker assignments for sidebar loading
-    window.globalMarkerAssignments = <%- JSON.stringify(globalMarkerMap) %>;
-
-    // Add standalone items to all data and upcoming data
-    <% if (typeof standaloneFlights !== 'undefined' && standaloneFlights && standaloneFlights.length > 0) { %>
-      window.allTripsData.flights.push(...<%- JSON.stringify(standaloneFlights) %>);
-      window.upcomingTripsData.flights.push(...<%- JSON.stringify(standaloneFlights) %>);
-      window.pastTripsData.flights.push(...<%- JSON.stringify(standaloneFlights) %>);
-    <% } %>
-    <% if (typeof standaloneHotels !== 'undefined' && standaloneHotels && standaloneHotels.length > 0) { %>
-      window.allTripsData.hotels.push(...<%- JSON.stringify(standaloneHotels) %>);
-      window.upcomingTripsData.hotels.push(...<%- JSON.stringify(standaloneHotels) %>);
-    <% } %>
-    <% if (typeof standaloneTransportation !== 'undefined' && standaloneTransportation && standaloneTransportation.length > 0) { %>
-      window.allTripsData.transportation.push(...<%- JSON.stringify(standaloneTransportation) %>);
-      window.upcomingTripsData.transportation.push(...<%- JSON.stringify(standaloneTransportation) %>);
-    <% } %>
-    <% if (typeof standaloneCarRentals !== 'undefined' && standaloneCarRentals && standaloneCarRentals.length > 0) { %>
-      window.allTripsData.carRentals.push(...<%- JSON.stringify(standaloneCarRentals) %>);
-      window.upcomingTripsData.carRentals.push(...<%- JSON.stringify(standaloneCarRentals) %>);
-    <% } %>
-    <% if (typeof standaloneEvents !== 'undefined' && standaloneEvents && standaloneEvents.length > 0) { %>
-      window.allTripsData.events.push(...<%- JSON.stringify(standaloneEvents) %>);
-      window.upcomingTripsData.events.push(...<%- JSON.stringify(standaloneEvents) %>);
+    // Add standalone flights to data
+    <% if (standaloneFlights && standaloneFlights.length > 0) { %>
+      const standaloneFlightsData = <%- JSON.stringify(standaloneFlights) %>;
+      window.allTripsData.flights.push(...standaloneFlightsData);
+      window.upcomingTripsData.flights.push(...standaloneFlightsData);
+      console.log('[EJS DEBUG] Added %d standalone flights', standaloneFlightsData.length);
     <% } %>
 
-    // Collect all upcoming items for sorting
-    const upcomingFlights = [];
-    const upcomingEvents = [];
-    const upcomingTransportation = [];
+    // Add standalone hotels to data
+    <% if (standaloneHotels && standaloneHotels.length > 0) { %>
+      const standaloneHotelsData = <%- JSON.stringify(standaloneHotels) %>;
+      window.allTripsData.hotels.push(...standaloneHotelsData);
+      window.upcomingTripsData.hotels.push(...standaloneHotelsData);
+      console.log('[EJS DEBUG] Added %d standalone hotels', standaloneHotelsData.length);
+    <% } %>
 
-    <% upcomingTrips.forEach(trip => { %>
+    // Add standalone transportation to data
+    <% if (standaloneTransportation && standaloneTransportation.length > 0) { %>
+      const standaloneTransportationData = <%- JSON.stringify(standaloneTransportation) %>;
+      window.allTripsData.transportation.push(...standaloneTransportationData);
+      window.upcomingTripsData.transportation.push(...standaloneTransportationData);
+      console.log('[EJS DEBUG] Added %d standalone transportation items', standaloneTransportationData.length);
+    <% } %>
+
+    // Add standalone car rentals to data
+    <% if (standaloneCarRentals && standaloneCarRentals.length > 0) { %>
+      const standaloneCarRentalsData = <%- JSON.stringify(standaloneCarRentals) %>;
+      window.allTripsData.carRentals.push(...standaloneCarRentalsData);
+      window.upcomingTripsData.carRentals.push(...standaloneCarRentalsData);
+      console.log('[EJS DEBUG] Added %d standalone car rentals', standaloneCarRentalsData.length);
+    <% } %>
+
+    // Add standalone events to data
+    <% if (standaloneEvents && standaloneEvents.length > 0) { %>
+      const standaloneEventsData = <%- JSON.stringify(standaloneEvents) %>;
+      window.allTripsData.events.push(...standaloneEventsData);
+      window.upcomingTripsData.events.push(...standaloneEventsData);
+      console.log('[EJS DEBUG] Added %d standalone events', standaloneEventsData.length);
+    <% } %>
+
+    // Add past standalone flights to data
+    <% if (pastStandaloneFlights && pastStandaloneFlights.length > 0) { %>
+      const pastStandaloneFlightsData = <%- JSON.stringify(pastStandaloneFlights) %>;
+      window.allTripsData.flights.push(...pastStandaloneFlightsData);
+      window.pastTripsData.flights.push(...pastStandaloneFlightsData);
+      console.log('[EJS DEBUG] Added %d past standalone flights', pastStandaloneFlightsData.length);
+    <% } %>
+
+    // Add trip flights to data
+    <% trips.forEach(trip => { %>
       <% if (trip.flights && trip.flights.length > 0) { %>
-        upcomingFlights.push(...<%- JSON.stringify(trip.flights) %>);
+        const tripFlights_<%= trip.id.replace(/-/g, '_') %> = <%- JSON.stringify(trip.flights) %>;
+        window.allTripsData.flights.push(...tripFlights_<%= trip.id.replace(/-/g, '_') %>);
+        window.upcomingTripsData.flights.push(...tripFlights_<%= trip.id.replace(/-/g, '_') %>);
+        console.log('[EJS DEBUG] Added %d flights for trip <%= trip.name %>', tripFlights_<%= trip.id.replace(/-/g, '_') %>.length);
+      <% } %>
+      <% if (trip.hotels && trip.hotels.length > 0) { %>
+        const tripHotels_<%= trip.id.replace(/-/g, '_') %> = <%- JSON.stringify(trip.hotels) %>;
+        window.allTripsData.hotels.push(...tripHotels_<%= trip.id.replace(/-/g, '_') %>);
+        window.upcomingTripsData.hotels.push(...tripHotels_<%= trip.id.replace(/-/g, '_') %>);
       <% } %>
       <% if (trip.transportation && trip.transportation.length > 0) { %>
-        upcomingTransportation.push(...<%- JSON.stringify(trip.transportation) %>);
+        const tripTrans_<%= trip.id.replace(/-/g, '_') %> = <%- JSON.stringify(trip.transportation) %>;
+        window.allTripsData.transportation.push(...tripTrans_<%= trip.id.replace(/-/g, '_') %>);
+        window.upcomingTripsData.transportation.push(...tripTrans_<%= trip.id.replace(/-/g, '_') %>);
       <% } %>
       <% if (trip.events && trip.events.length > 0) { %>
-        upcomingEvents.push(...<%- JSON.stringify(trip.events) %>);
+        const tripEvents_<%= trip.id.replace(/-/g, '_') %> = <%- JSON.stringify(trip.events) %>;
+        window.allTripsData.events.push(...tripEvents_<%= trip.id.replace(/-/g, '_') %>);
+        window.upcomingTripsData.events.push(...tripEvents_<%= trip.id.replace(/-/g, '_') %>);
       <% } %>
     <% }) %>
 
-    // Sort upcoming items chronologically and add to data
-    upcomingFlights.forEach(f => {
-      window.allTripsData.flights.push(f);
-      window.upcomingTripsData.flights.push(f);
-    });
-    upcomingEvents.forEach(e => {
-      window.allTripsData.events.push(e);
-      window.upcomingTripsData.events.push(e);
-    });
-    upcomingTransportation.forEach(t => {
-      window.allTripsData.transportation.push(t);
-      window.upcomingTripsData.transportation.push(t);
-    });
-
-    // Collect all past flights for sorting
-    const pastFlights = [];
-
-    <% pastTrips.forEach(trip => { %>
-      <% if (trip.flights && trip.flights.length > 0) { %>
-        pastFlights.push(...<%- JSON.stringify(trip.flights) %>);
-      <% } %>
-    <% }) %>
-
-    // Sort past flights chronologically and add to data
-    pastFlights.sort((a, b) => {
-      const timeA = new Date(a.departureDateTime).getTime();
-      const timeB = new Date(b.departureDateTime).getTime();
-      return timeA - timeB;
-    });
-
-    pastFlights.forEach(f => {
-      window.allTripsData.flights.push(f);
-      window.pastTripsData.flights.push(f);
-    });
-
-    // Auto-open settings sidebar if requested
-    <% if (openSettingsSidebar) { %>
-      window.addEventListener('DOMContentLoaded', function() {
-        // Switch to settings tab
-        showSettings();
-        // Load account settings sidebar content
-        setTimeout(function() {
-          loadSidebarContent('/account/sidebar', { fullWidth: true });
-        }, 50);
-      });
+    // Add past trip flights to data
+    <% if (pastTrips && pastTrips.length > 0) { %>
+      <% pastTrips.forEach(trip => { %>
+        <% if (trip.flights && trip.flights.length > 0) { %>
+          const pastTripFlights_<%= trip.id.replace(/-/g, '_') %> = <%- JSON.stringify(trip.flights) %>;
+          window.allTripsData.flights.push(...pastTripFlights_<%= trip.id.replace(/-/g, '_') %>);
+          window.pastTripsData.flights.push(...pastTripFlights_<%= trip.id.replace(/-/g, '_') %>);
+          console.log('[EJS DEBUG] Added %d past flights for trip <%= trip.name %>', pastTripFlights_<%= trip.id.replace(/-/g, '_') %>.length);
+        <% } %>
+      <% }) %>
     <% } %>
 
-    // Auto-open certificates sidebar if requested
-    <% if (openCertificatesSidebar) { %>
-      window.addEventListener('DOMContentLoaded', function() {
-        // Switch to settings tab
-        showSettings();
-        // Load certificates sidebar content
-        setTimeout(function() {
-          loadSidebarContent('/account/vouchers/sidebar');
-          // If specific certificate details requested, load them too
-          <% if (openCertificateDetails) { %>
-            setTimeout(function() {
-              loadCertificateDetails('<%= openCertificateDetails %>');
-            }, 100);
-          <% } %>
-        }, 50);
-      });
-    <% } %>
-
-    // Auto-open companions sidebar if requested
-    <% if (openCompanionsSidebar) { %>
-      window.addEventListener('DOMContentLoaded', function() {
-        // Switch to settings tab
-        showSettings();
-        // Load companions sidebar content
-        setTimeout(function() {
-          loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
-        }, 50);
-      });
-    <% } %>
-
-    // Auto-open account settings if requested (nested under settings)
-    <% if (openAccountSettings) { %>
-      window.addEventListener('DOMContentLoaded', function() {
-        // Switch to settings tab
-        showSettings();
-        // Load account settings sidebar content
-        setTimeout(function() {
-          loadSidebarContent('/account/sidebar', { fullWidth: true });
-        }, 50);
-      });
-    <% } %>
-
-    // Auto-open past trips tab if requested
-    <% if (activeTab === 'past') { %>
-      window.addEventListener('DOMContentLoaded', function() {
-        showPastTrips();
-      });
-    <% } %>
-
-    // Auto-open settings tab without sidebar if requested
-    <% if (showSettingsTab) { %>
-      window.addEventListener('DOMContentLoaded', function() {
-        showSettings();
-        // Make sure secondary sidebar is closed
-        const secondarySidebar = document.getElementById('secondary-sidebar');
-        if (secondarySidebar && secondarySidebar.classList.contains('open')) {
-          closeSecondarySidebar();
-        }
-      });
-    <% } %>
-
-    // Function to load certificate details
-    function loadCertificateDetails(voucherId) {
-      try {
-        console.log('Loading certificate details for:', voucherId);
-
-        // Fetch the voucher details
-        fetch(`/account/vouchers/${voucherId}/details`)
-          .then(response => {
-            if (!response.ok) {
-              console.error('Failed to fetch voucher details:', response.status);
-              return;
-            }
-            return response.text();
-          })
-          .then(html => {
-            if (!html) return;
-
-            console.log('Received voucher details HTML');
-
-            // Load content into tertiary sidebar
-            const tertiaryContent = document.getElementById('tertiary-sidebar-content');
-            if (!tertiaryContent) {
-              console.error('tertiary-sidebar-content not found');
-              return;
-            }
-
-            tertiaryContent.innerHTML = html;
-
-            // Execute any scripts in the loaded content
-            const scripts = tertiaryContent.querySelectorAll('script');
-            scripts.forEach(script => {
-              const newScript = document.createElement('script');
-              if (script.src) {
-                newScript.src = script.src;
-              } else {
-                newScript.textContent = script.textContent;
-              }
-              document.head.appendChild(newScript);
-            });
-
-            // Open the tertiary sidebar
-            console.log('Calling openTertiarySidebar');
-            if (typeof openTertiarySidebar === 'function') {
-              openTertiarySidebar();
-              console.log('Tertiary sidebar opened');
-            } else {
-              console.error('openTertiarySidebar function not found');
-            }
-          })
-          .catch(error => {
-            console.error('Error loading certificate details:', error);
-          });
-      } catch (error) {
-        console.error('Error in loadCertificateDetails:', error);
-      }
-    }
-
+    console.log('[EJS DEBUG] Final allTripsData:', window.allTripsData);
+    console.log('[EJS DEBUG] Final upcomingTripsData:', window.upcomingTripsData);
+    console.log('[EJS DEBUG] Final pastTripsData:', window.pastTripsData);
   </script>
-  <% } %>
 
-  <!-- Scripts -->
-  <!-- External dependencies (CDN) -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <!-- Configuration -->
   <script>
-    // Map configuration
     window.MAP_TILE_URL = '<%- mapTileUrl %>';
   </script>
-
-  <!-- Bundled JavaScript (with code splitting and minification) -->
   <script type="module" src="<%= getBundle('common') %>"></script>
   <script type="module" src="<%= getBundle('dashboard') %>"></script>
 

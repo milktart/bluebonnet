@@ -121,6 +121,8 @@ async function initializeMap(tripData, isPast = false) {
             to: [destLat, destLng],
             time: new Date(flight.departureDateTime),
             color: '#0d6efd',
+            itemType: 'flight',
+            itemId: flight.id,
           });
         }
       }
@@ -172,25 +174,77 @@ async function initializeMap(tripData, isPast = false) {
       }
     }
 
-    // Process TRANSPORTATION (location markers only)
+    // Process TRANSPORTATION - these create travel segments (like flights)
     if (tripData.transportation && Array.isArray(tripData.transportation)) {
-      for (const transportation of tripData.transportation) {
-        if (!transportation.origin) continue;
+      console.log('[initializeMap] Processing', tripData.transportation.length, 'transportation items');
+      for (let i = 0; i < tripData.transportation.length; i++) {
+        const transportation = tripData.transportation[i];
+        console.log('[initializeMap] Transportation', i + ':', transportation.origin, '->', transportation.destination);
+        console.log('[initializeMap] Coords:', {
+          originLat: transportation.originLat,
+          originLng: transportation.originLng,
+          destLat: transportation.destinationLat,
+          destLng: transportation.destinationLng,
+        });
+
+        if (!transportation.origin || !transportation.destination) {
+          console.log('[initializeMap] SKIPPING - missing origin or destination');
+          continue;
+        }
 
         // Use stored coordinates from database
-        const lat = parseFloat(transportation.originLat);
-        const lng = parseFloat(transportation.originLng);
+        const originLat = parseFloat(transportation.originLat);
+        const originLng = parseFloat(transportation.originLng);
+        const destLat = parseFloat(transportation.destinationLat);
+        const destLng = parseFloat(transportation.destinationLng);
 
-        if (!isNaN(lat) && !isNaN(lng)) {
+        console.log('[initializeMap] Parsed:', {
+          originLat: isNaN(originLat) ? 'NaN' : originLat,
+          originLng: isNaN(originLng) ? 'NaN' : originLng,
+          destLat: isNaN(destLat) ? 'NaN' : destLat,
+          destLng: isNaN(destLng) ? 'NaN' : destLng,
+        });
+
+        if (!isNaN(originLat) && !isNaN(originLng)) {
+          console.log('[initializeMap] Adding origin location');
           allLocations.push({
             name: transportation.method,
             type: 'transportation',
             details: transportation.origin,
             time: new Date(transportation.departureDateTime),
-            lat,
-            lng,
+            lat: originLat,
+            lng: originLng,
           });
-          allCoords.push([lat, lng]);
+          allCoords.push([originLat, originLng]);
+        }
+
+        if (!isNaN(destLat) && !isNaN(destLng)) {
+          console.log('[initializeMap] Adding destination location');
+          allLocations.push({
+            name: transportation.method,
+            type: 'transportation',
+            details: transportation.destination,
+            time: new Date(transportation.arrivalDateTime),
+            lat: destLat,
+            lng: destLng,
+          });
+          allCoords.push([destLat, destLng]);
+        }
+
+        // Add travel segment if both coords are valid
+        if (!isNaN(originLat) && !isNaN(originLng) && !isNaN(destLat) && !isNaN(destLng)) {
+          console.log('[initializeMap] Adding transportation travel segment');
+          travelSegments.push({
+            type: 'transportation',
+            from: [originLat, originLng],
+            to: [destLat, destLng],
+            time: new Date(transportation.departureDateTime),
+            color: '#fd7e14', // Transportation orange color
+            itemType: 'transportation',
+            itemId: transportation.id,
+          });
+        } else {
+          console.log('[initializeMap] SKIPPING segment - invalid coordinates');
         }
       }
     }
@@ -226,6 +280,8 @@ async function initializeMap(tripData, isPast = false) {
       travelSegments.forEach((segment) => {
         if (segment.type === 'flight') {
           segment.color = '#084298';
+        } else if (segment.type === 'transportation') {
+          segment.color = '#bb6200'; // Darker transportation orange
         }
       });
     }
@@ -293,6 +349,9 @@ async function initializeMap(tripData, isPast = false) {
           originalColor: segment.color,
           originalWeight: 2,
           originalOpacity: 1,
+          // Store item type and ID for sidebar matching
+          itemType: segment.itemType,
+          itemId: segment.itemId,
         });
       });
     }
@@ -463,21 +522,25 @@ function initOverviewMap(tripData, mapElementId = 'tripMap', isPast = false) {
 
           // Wait for map to be fully ready before setting as currentMap
           map.whenReady(() => {
+            console.log('[initOverviewMap] Map is ready, setting as currentMap');
             window.currentMap = map;
 
             // Force map to recalculate size after a delay to ensure proper rendering
             setTimeout(() => {
               try {
                 if (map._container) {
+                  console.log('[initOverviewMap] Invalidating map size');
                   map.invalidateSize(false);
                 }
               } catch (e) {
                 // Silently ignore if map isn't ready
               }
             }, 500);
-          });
 
-          resolve(map);
+            // Resolve after map is fully ready and configured
+            console.log('[initOverviewMap] Resolving promise with fully initialized map');
+            resolve(map);
+          });
         })
         .catch((error) => {
           console.error('Map initialization failed:', error);
