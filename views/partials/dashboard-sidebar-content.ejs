@@ -227,6 +227,9 @@
   <% } else { %>
 
     <%
+      // IMPORTANT: Data initialization has been moved to dashboard.ejs to avoid duplication
+      // See lines 152-256 in dashboard.ejs for data initialization
+
       // Helper function to extract flight number without airline code
       function getFlightNum(flightNumber) {
         const match = flightNumber.match(/(\d+)$/);
@@ -434,24 +437,13 @@
     %>
 
     <script>
-      // Helper function to find map segment by item type and ID
-      window.findSegmentByItemId = function(itemType, itemId) {
-        if (!window.currentMap || !window.currentMap.segmentLayers) return null;
-
-        // Search through all segments to find one matching this item
-        // Segments store original item data
-        for (const segment of window.currentMap.segmentLayers) {
-          // Check if this segment's polyline data matches the item
-          // We'll store itemType and itemId on segments when we know how to
-          if (segment.itemType === itemType && segment.itemId === itemId) {
-            return segment;
-          }
-        }
-        return null;
-      };
+      // ============================================================================
+      // HOVER HANDLERS FOR MAP SEGMENT HIGHLIGHTING
+      // These functions are called from the EJS templates via onmouseover/onmouseout
+      // They delegate to the proper map module functions in maps.js
+      // ============================================================================
 
       // Hover handler for individual items (flights, transportation)
-      // Displays a small animated dot following the travel path
       window.highlightItemOnMap = function(itemType, itemId) {
         if (!window.currentMap || !window.currentMap.segmentLayers) return;
 
@@ -467,7 +459,7 @@
           return;
         }
 
-        // Animate all matching segments (there should typically be just one)
+        // Animate all matching segments using stable ID-based lookup
         foundSegments.forEach(segment => {
           if (typeof window.highlightMapMarker === 'function') {
             window.highlightMapMarker(segment.itemType, segment.itemId);
@@ -476,7 +468,6 @@
       };
 
       // Hover handler for trip cards
-      // Highlights all segments belonging to the trip with animated dots
       window.setupTripHover = function(tripId) {
         if (!window.currentMap || !window.currentMap.segmentLayers) return;
 
@@ -500,120 +491,10 @@
         // Stop all active animations
         Object.keys(window.activeAnimations).forEach(markerId => {
           if (typeof window.unhighlightMapMarker === 'function') {
-            window.unhighlightMapMarker(parseInt(markerId, 10));
+            window.unhighlightMapMarker(markerId);
           }
         });
       };
-
-      // Initialize or update window data structures for the map
-      if (!window.allTripsData) {
-        window.allTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
-      }
-      if (!window.upcomingTripsData) {
-        window.upcomingTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
-      }
-      if (!window.pastTripsData) {
-        window.pastTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
-      }
-      if (!window.globalMarkerAssignments) {
-        window.globalMarkerAssignments = {};
-      }
-
-      // Clear existing data (when sidebar is refreshed)
-      window.allTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
-      window.upcomingTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
-      window.pastTripsData = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
-
-      // Add upcoming standalone items to map data
-      <% if (typeof standaloneFlights !== 'undefined' && standaloneFlights && standaloneFlights.length > 0) { %>
-        window.allTripsData.flights.push(...<%- JSON.stringify(standaloneFlights) %>);
-        window.upcomingTripsData.flights.push(...<%- JSON.stringify(standaloneFlights) %>);
-      <% } %>
-      <% if (typeof standaloneHotels !== 'undefined' && standaloneHotels && standaloneHotels.length > 0) { %>
-        window.allTripsData.hotels.push(...<%- JSON.stringify(standaloneHotels) %>);
-        window.upcomingTripsData.hotels.push(...<%- JSON.stringify(standaloneHotels) %>);
-      <% } %>
-      <% if (typeof standaloneTransportation !== 'undefined' && standaloneTransportation && standaloneTransportation.length > 0) { %>
-        window.allTripsData.transportation.push(...<%- JSON.stringify(standaloneTransportation) %>);
-        window.upcomingTripsData.transportation.push(...<%- JSON.stringify(standaloneTransportation) %>);
-      <% } %>
-      <% if (typeof standaloneCarRentals !== 'undefined' && standaloneCarRentals && standaloneCarRentals.length > 0) { %>
-        window.allTripsData.carRentals.push(...<%- JSON.stringify(standaloneCarRentals) %>);
-        window.upcomingTripsData.carRentals.push(...<%- JSON.stringify(standaloneCarRentals) %>);
-      <% } %>
-      <% if (typeof standaloneEvents !== 'undefined' && standaloneEvents && standaloneEvents.length > 0) { %>
-        window.allTripsData.events.push(...<%- JSON.stringify(standaloneEvents) %>);
-        window.upcomingTripsData.events.push(...<%- JSON.stringify(standaloneEvents) %>);
-      <% } %>
-
-      // Add past standalone items to map data
-      <% if (typeof pastStandaloneFlights !== 'undefined' && pastStandaloneFlights && pastStandaloneFlights.length > 0) { %>
-        window.allTripsData.flights.push(...<%- JSON.stringify(pastStandaloneFlights) %>);
-        window.pastTripsData.flights.push(...<%- JSON.stringify(pastStandaloneFlights) %>);
-      <% } %>
-      <% if (typeof pastStandaloneHotels !== 'undefined' && pastStandaloneHotels && pastStandaloneHotels.length > 0) { %>
-        window.allTripsData.hotels.push(...<%- JSON.stringify(pastStandaloneHotels) %>);
-        window.pastTripsData.hotels.push(...<%- JSON.stringify(pastStandaloneHotels) %>);
-      <% } %>
-      <% if (typeof pastStandaloneTransportation !== 'undefined' && pastStandaloneTransportation && pastStandaloneTransportation.length > 0) { %>
-        window.allTripsData.transportation.push(...<%- JSON.stringify(pastStandaloneTransportation) %>);
-        window.pastTripsData.transportation.push(...<%- JSON.stringify(pastStandaloneTransportation) %>);
-      <% } %>
-      <% if (typeof pastStandaloneCarRentals !== 'undefined' && pastStandaloneCarRentals && pastStandaloneCarRentals.length > 0) { %>
-        window.allTripsData.carRentals.push(...<%- JSON.stringify(pastStandaloneCarRentals) %>);
-        window.pastTripsData.carRentals.push(...<%- JSON.stringify(pastStandaloneCarRentals) %>);
-      <% } %>
-      <% if (typeof pastStandaloneEvents !== 'undefined' && pastStandaloneEvents && pastStandaloneEvents.length > 0) { %>
-        window.allTripsData.events.push(...<%- JSON.stringify(pastStandaloneEvents) %>);
-        window.pastTripsData.events.push(...<%- JSON.stringify(pastStandaloneEvents) %>);
-      <% } %>
-
-      // Add trip items to map data (both upcoming and past)
-      <% upcomingTrips.forEach(trip => { %>
-        <% if (trip.flights && trip.flights.length > 0) { %>
-          window.allTripsData.flights.push(...<%- JSON.stringify(trip.flights) %>);
-          window.upcomingTripsData.flights.push(...<%- JSON.stringify(trip.flights) %>);
-        <% } %>
-        <% if (trip.hotels && trip.hotels.length > 0) { %>
-          window.allTripsData.hotels.push(...<%- JSON.stringify(trip.hotels) %>);
-          window.upcomingTripsData.hotels.push(...<%- JSON.stringify(trip.hotels) %>);
-        <% } %>
-        <% if (trip.transportation && trip.transportation.length > 0) { %>
-          window.allTripsData.transportation.push(...<%- JSON.stringify(trip.transportation) %>);
-          window.upcomingTripsData.transportation.push(...<%- JSON.stringify(trip.transportation) %>);
-        <% } %>
-        <% if (trip.carRentals && trip.carRentals.length > 0) { %>
-          window.allTripsData.carRentals.push(...<%- JSON.stringify(trip.carRentals) %>);
-          window.upcomingTripsData.carRentals.push(...<%- JSON.stringify(trip.carRentals) %>);
-        <% } %>
-        <% if (trip.events && trip.events.length > 0) { %>
-          window.allTripsData.events.push(...<%- JSON.stringify(trip.events) %>);
-          window.upcomingTripsData.events.push(...<%- JSON.stringify(trip.events) %>);
-        <% } %>
-      <% }) %>
-
-      <% pastTrips.forEach(trip => { %>
-        <% if (trip.flights && trip.flights.length > 0) { %>
-          window.allTripsData.flights.push(...<%- JSON.stringify(trip.flights) %>);
-          window.pastTripsData.flights.push(...<%- JSON.stringify(trip.flights) %>);
-        <% } %>
-        <% if (trip.hotels && trip.hotels.length > 0) { %>
-          window.allTripsData.hotels.push(...<%- JSON.stringify(trip.hotels) %>);
-          window.pastTripsData.hotels.push(...<%- JSON.stringify(trip.hotels) %>);
-        <% } %>
-        <% if (trip.transportation && trip.transportation.length > 0) { %>
-          window.allTripsData.transportation.push(...<%- JSON.stringify(trip.transportation) %>);
-          window.pastTripsData.transportation.push(...<%- JSON.stringify(trip.transportation) %>);
-        <% } %>
-        <% if (trip.carRentals && trip.carRentals.length > 0) { %>
-          window.allTripsData.carRentals.push(...<%- JSON.stringify(trip.carRentals) %>);
-          window.pastTripsData.carRentals.push(...<%- JSON.stringify(trip.carRentals) %>);
-        <% } %>
-        <% if (trip.events && trip.events.length > 0) { %>
-          window.allTripsData.events.push(...<%- JSON.stringify(trip.events) %>);
-          window.pastTripsData.events.push(...<%- JSON.stringify(trip.events) %>);
-        <% } %>
-      <% }) %>
     </script>
 
     <!-- Upcoming Trips Content -->

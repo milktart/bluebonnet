@@ -126,12 +126,8 @@
   </div>
 
   <script>
-    console.log('[EJS DEBUG] Dashboard loaded successfully');
-    console.log('[EJS DEBUG] Trips count: <%= trips ? trips.length : 0 %>');
-    console.log('[EJS DEBUG] Past trips count: <%= pastTrips ? pastTrips.length : 0 %>');
-
+    // Load trip items via AJAX when accordion is expanded
     window.loadTripItemsIfNeeded = async function(accordionId) {
-      console.log('[EJS DEBUG] Loading trip items for accordion:', accordionId);
       const accordionContent = document.getElementById(accordionId);
       if (!accordionContent) return;
       const tripId = accordionContent.getAttribute('data-trip-id');
@@ -144,7 +140,7 @@
         accordionContent.innerHTML = html;
         accordionContent.setAttribute('data-loaded', 'true');
       } catch (error) {
-        console.error('[EJS DEBUG] Error loading trip items:', error);
+        console.error('Error loading trip items:', error);
         accordionContent.innerHTML = '<div class="p-4 text-red-600 text-sm">Error loading trip details</div>';
       }
     };
@@ -160,7 +156,6 @@
       const standaloneFlightsData = <%- JSON.stringify(standaloneFlights) %>;
       window.allTripsData.flights.push(...standaloneFlightsData);
       window.upcomingTripsData.flights.push(...standaloneFlightsData);
-      console.log('[EJS DEBUG] Added %d standalone flights', standaloneFlightsData.length);
     <% } %>
 
     // Add standalone hotels to data
@@ -168,7 +163,6 @@
       const standaloneHotelsData = <%- JSON.stringify(standaloneHotels) %>;
       window.allTripsData.hotels.push(...standaloneHotelsData);
       window.upcomingTripsData.hotels.push(...standaloneHotelsData);
-      console.log('[EJS DEBUG] Added %d standalone hotels', standaloneHotelsData.length);
     <% } %>
 
     // Add standalone transportation to data
@@ -176,7 +170,6 @@
       const standaloneTransportationData = <%- JSON.stringify(standaloneTransportation) %>;
       window.allTripsData.transportation.push(...standaloneTransportationData);
       window.upcomingTripsData.transportation.push(...standaloneTransportationData);
-      console.log('[EJS DEBUG] Added %d standalone transportation items', standaloneTransportationData.length);
     <% } %>
 
     // Add standalone car rentals to data
@@ -184,7 +177,6 @@
       const standaloneCarRentalsData = <%- JSON.stringify(standaloneCarRentals) %>;
       window.allTripsData.carRentals.push(...standaloneCarRentalsData);
       window.upcomingTripsData.carRentals.push(...standaloneCarRentalsData);
-      console.log('[EJS DEBUG] Added %d standalone car rentals', standaloneCarRentalsData.length);
     <% } %>
 
     // Add standalone events to data
@@ -192,7 +184,6 @@
       const standaloneEventsData = <%- JSON.stringify(standaloneEvents) %>;
       window.allTripsData.events.push(...standaloneEventsData);
       window.upcomingTripsData.events.push(...standaloneEventsData);
-      console.log('[EJS DEBUG] Added %d standalone events', standaloneEventsData.length);
     <% } %>
 
     // Add past standalone flights to data
@@ -200,7 +191,6 @@
       const pastStandaloneFlightsData = <%- JSON.stringify(pastStandaloneFlights) %>;
       window.allTripsData.flights.push(...pastStandaloneFlightsData);
       window.pastTripsData.flights.push(...pastStandaloneFlightsData);
-      console.log('[EJS DEBUG] Added %d past standalone flights', pastStandaloneFlightsData.length);
     <% } %>
 
     // Add trip flights to data (only upcoming trips)
@@ -209,7 +199,6 @@
         const tripFlights_<%= trip.id.replace(/-/g, '_') %> = <%- JSON.stringify(trip.flights) %>;
         window.allTripsData.flights.push(...tripFlights_<%= trip.id.replace(/-/g, '_') %>);
         window.upcomingTripsData.flights.push(...tripFlights_<%= trip.id.replace(/-/g, '_') %>);
-        console.log('[EJS DEBUG] Added %d flights for trip <%= trip.name %>', tripFlights_<%= trip.id.replace(/-/g, '_') %>.length);
       <% } %>
       <% if (trip.hotels && trip.hotels.length > 0) { %>
         const tripHotels_<%= trip.id.replace(/-/g, '_') %> = <%- JSON.stringify(trip.hotels) %>;
@@ -235,7 +224,6 @@
           const pastTripFlights_<%= trip.id.replace(/-/g, '_') %> = <%- JSON.stringify(trip.flights) %>;
           window.allTripsData.flights.push(...pastTripFlights_<%= trip.id.replace(/-/g, '_') %>);
           window.pastTripsData.flights.push(...pastTripFlights_<%= trip.id.replace(/-/g, '_') %>);
-          console.log('[EJS DEBUG] Added %d past flights for trip <%= trip.name %>', pastTripFlights_<%= trip.id.replace(/-/g, '_') %>.length);
         <% } %>
         <% if (trip.hotels && trip.hotels.length > 0) { %>
           const pastTripHotels_<%= trip.id.replace(/-/g, '_') %> = <%- JSON.stringify(trip.hotels) %>;
@@ -255,9 +243,6 @@
       <% }) %>
     <% } %>
 
-    console.log('[EJS DEBUG] Final allTripsData:', window.allTripsData);
-    console.log('[EJS DEBUG] Final upcomingTripsData:', window.upcomingTripsData);
-    console.log('[EJS DEBUG] Final pastTripsData:', window.pastTripsData);
   </script>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
