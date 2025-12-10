@@ -767,10 +767,13 @@ function getPointAtDistance(from, to, percent) {
 
 /**
  * Highlight a map marker with animation
- * @param {number} markerId - ID of the marker to highlight
- * @param {string} type - Type of marker (flight, hotel, etc.)
+ * Can be called with either:
+ * - highlightMapMarker(segmentIndex) - for backward compatibility
+ * - highlightMapMarker(itemType, itemId) - for stable item identification
+ * @param {number|string} markerIdOrItemType - Segment index OR item type (flight, hotel, etc.)
+ * @param {string} itemIdParam - Item ID (optional, only used if markerIdOrItemType is itemType)
  */
-function highlightMapMarker(markerId, _type) {
+function highlightMapMarker(markerIdOrItemType, itemIdParam) {
   if (!window.currentMap) return;
 
   // Verify the map is still valid and in the DOM
@@ -784,77 +787,102 @@ function highlightMapMarker(markerId, _type) {
     window.activeAnimations = {};
   }
 
-  if (markerId && window.currentMap.segmentLayers) {
-    const segment = window.currentMap.segmentLayers.find((s) => s.index === parseInt(markerId));
+  let segment = null;
+  let markerId = null;
+
+  if (!window.currentMap.segmentLayers) return;
+
+  // Determine how we're being called
+  if (typeof markerIdOrItemType === 'string' && itemIdParam) {
+    // Called with (itemType, itemId) - preferred method for stable identification
+    const itemType = markerIdOrItemType;
+    const itemId = itemIdParam;
+
+    // Find segment by item type and ID (stable identifier)
+    segment = window.currentMap.segmentLayers.find(
+      (s) => s.itemType === itemType && s.itemId === itemId
+    );
+
     if (segment) {
-      if (window.activeAnimations[markerId]) {
-        clearInterval(window.activeAnimations[markerId].interval);
-        if (window.activeAnimations[markerId].marker) {
-          try {
-            window.currentMap.removeLayer(window.activeAnimations[markerId].marker);
-          } catch (e) {
-            console.warn('Error removing marker:', e);
-          }
-        }
-      }
+      markerId = `${itemType}-${itemId}`;
+    }
+  } else {
+    // Called with (segmentIndex) - backward compatibility
+    markerId = markerIdOrItemType;
+    segment = window.currentMap.segmentLayers.find((s) => s.index === parseInt(markerId));
+  }
 
-      const startPoint = segment.polyline.getLatLngs()[0];
-      const endPoint = segment.polyline.getLatLngs()[segment.polyline.getLatLngs().length - 1];
+  if (!segment) {
+    console.warn(`[highlightMapMarker] No segment found for ${markerIdOrItemType} ${itemIdParam || ''}`);
+    return;
+  }
 
-      const distance = calculateDistance(
-        [startPoint.lat, startPoint.lng],
-        [endPoint.lat, endPoint.lng]
-      );
-
-      const currentZoom = window.currentMap.getZoom();
-      const zoomFactor = Math.max(0.75, 2 ** (4 - currentZoom));
-      const durationMs = (distance / 6000) * 5000 * zoomFactor;
-      const frameTime = 50;
-      const animationSpeed = frameTime / durationMs;
-
+  if (window.activeAnimations[markerId]) {
+    clearInterval(window.activeAnimations[markerId].interval);
+    if (window.activeAnimations[markerId].marker) {
       try {
-        const movingMarker = L.marker(startPoint, {
-          icon: L.divIcon({
-            className: 'moving-dot-marker',
-            html: `<div style="
-              width: 12px;
-              height: 12px;
-              background: ${segment.originalColor};
-              border-radius: 50%;
-              box-shadow: 0 0 10px ${segment.originalColor}, 0 0 20px ${segment.originalColor}, inset 0 0 5px rgba(255,255,255,0.5);
-              border: 2px solid white;
-            "></div>`,
-            iconSize: [16, 16],
-            iconAnchor: [8, 8],
-          }),
-        }).addTo(window.currentMap);
-
-        let progress = 0;
-
-        const animationInterval = setInterval(() => {
-          progress += animationSpeed;
-
-          if (progress >= 1) {
-            progress = 0;
-          }
-
-          const newPos = getPointAtDistance(
-            [startPoint.lat, startPoint.lng],
-            [endPoint.lat, endPoint.lng],
-            progress
-          );
-
-          movingMarker.setLatLng(L.latLng(newPos[0], newPos[1]));
-        }, frameTime);
-
-        window.activeAnimations[markerId] = {
-          marker: movingMarker,
-          interval: animationInterval,
-        };
+        window.currentMap.removeLayer(window.activeAnimations[markerId].marker);
       } catch (e) {
-        console.warn('Error creating marker animation:', e);
+        console.warn('Error removing marker:', e);
       }
     }
+  }
+
+  const startPoint = segment.polyline.getLatLngs()[0];
+  const endPoint = segment.polyline.getLatLngs()[segment.polyline.getLatLngs().length - 1];
+
+  const distance = calculateDistance(
+    [startPoint.lat, startPoint.lng],
+    [endPoint.lat, endPoint.lng]
+  );
+
+  const currentZoom = window.currentMap.getZoom();
+  const zoomFactor = Math.max(0.75, 2 ** (4 - currentZoom));
+  const durationMs = (distance / 6000) * 5000 * zoomFactor;
+  const frameTime = 50;
+  const animationSpeed = frameTime / durationMs;
+
+  try {
+    const movingMarker = L.marker(startPoint, {
+      icon: L.divIcon({
+        className: 'moving-dot-marker',
+        html: `<div style="
+          width: 12px;
+          height: 12px;
+          background: ${segment.originalColor};
+          border-radius: 50%;
+          box-shadow: 0 0 10px ${segment.originalColor}, 0 0 20px ${segment.originalColor}, inset 0 0 5px rgba(255,255,255,0.5);
+          border: 2px solid white;
+        "></div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+      }),
+    }).addTo(window.currentMap);
+
+    let progress = 0;
+
+    const animationInterval = setInterval(() => {
+      progress += animationSpeed;
+
+      if (progress >= 1) {
+        progress = 0;
+      }
+
+      const newPos = getPointAtDistance(
+        [startPoint.lat, startPoint.lng],
+        [endPoint.lat, endPoint.lng],
+        progress
+      );
+
+      movingMarker.setLatLng(L.latLng(newPos[0], newPos[1]));
+    }, frameTime);
+
+    window.activeAnimations[markerId] = {
+      marker: movingMarker,
+      interval: animationInterval,
+    };
+  } catch (e) {
+    console.warn('Error creating marker animation:', e);
   }
 }
 

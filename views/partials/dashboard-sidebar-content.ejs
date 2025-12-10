@@ -455,29 +455,22 @@
       window.highlightItemOnMap = function(itemType, itemId) {
         if (!window.currentMap || !window.currentMap.segmentLayers) return;
 
-        console.log(`[highlightItemOnMap] Looking for ${itemType} ${itemId}`);
-        console.log(`[highlightItemOnMap] Current map has ${window.currentMap.segmentLayers.length} segments`);
-
         // Find ALL segments matching this item type and ID, then animate them
         let foundSegments = [];
         window.currentMap.segmentLayers.forEach((segment) => {
-          console.log(`[highlightItemOnMap] Checking segment: type=${segment.itemType}, id=${segment.itemId}, index=${segment.index}`);
           if (segment.itemType === itemType && segment.itemId === itemId) {
             foundSegments.push(segment);
-            console.log(`[highlightItemOnMap] FOUND MATCH! index=${segment.index}`);
           }
         });
 
         if (foundSegments.length === 0) {
-          console.warn(`[highlightItemOnMap] No map segment found for ${itemType} ${itemId}`);
           return;
         }
 
         // Animate all matching segments (there should typically be just one)
         foundSegments.forEach(segment => {
-          console.log(`[highlightItemOnMap] Animating segment with index ${segment.index}`);
           if (typeof window.highlightMapMarker === 'function') {
-            window.highlightMapMarker(segment.index);
+            window.highlightMapMarker(segment.itemType, segment.itemId);
           }
         });
       };
