@@ -195,14 +195,15 @@
       window.pastTripsData.flights.push(...pastStandaloneFlightsData);
     <% } %>
 
-    // Add trip flights to data - categorize each flight by its actual arrival date, not trip return date
+    // Add trip data - categorize each item by its actual date, not trip return date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     <% trips.forEach(trip => { %>
       <% if (trip.flights && trip.flights.length > 0) { %>
         const tripFlights_<%= trip.id.replace(/-/g, '_') %> = <%- JSON.stringify(trip.flights) %>;
         window.allTripsData.flights.push(...tripFlights_<%= trip.id.replace(/-/g, '_') %>);
         // Filter flights by their actual dates, not trip dates
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
         tripFlights_<%= trip.id.replace(/-/g, '_') %>.forEach(flight => {
           const arrivalDate = new Date(flight.arrivalDateTime || flight.departureDateTime);
           if (arrivalDate >= today) {
@@ -216,8 +217,6 @@
         const tripHotels_<%= trip.id.replace(/-/g, '_') %> = <%- JSON.stringify(trip.hotels) %>;
         window.allTripsData.hotels.push(...tripHotels_<%= trip.id.replace(/-/g, '_') %>);
         // Filter hotels by their actual dates, not trip dates
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
         tripHotels_<%= trip.id.replace(/-/g, '_') %>.forEach(hotel => {
           const checkoutDate = new Date(hotel.checkOutDateTime);
           if (checkoutDate >= today) {
@@ -231,8 +230,6 @@
         const tripTrans_<%= trip.id.replace(/-/g, '_') %> = <%- JSON.stringify(trip.transportation) %>;
         window.allTripsData.transportation.push(...tripTrans_<%= trip.id.replace(/-/g, '_') %>);
         // Filter transportation by their actual dates, not trip dates
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
         tripTrans_<%= trip.id.replace(/-/g, '_') %>.forEach(trans => {
           const arrivalDate = new Date(trans.arrivalDateTime || trans.departureDateTime);
           if (arrivalDate >= today) {
@@ -246,8 +243,6 @@
         const tripEvents_<%= trip.id.replace(/-/g, '_') %> = <%- JSON.stringify(trip.events) %>;
         window.allTripsData.events.push(...tripEvents_<%= trip.id.replace(/-/g, '_') %>);
         // Filter events by their actual dates, not trip dates
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
         tripEvents_<%= trip.id.replace(/-/g, '_') %>.forEach(event => {
           const endDate = new Date(event.endDateTime || event.startDateTime);
           if (endDate >= today) {
