@@ -195,55 +195,72 @@
       window.pastTripsData.flights.push(...pastStandaloneFlightsData);
     <% } %>
 
-    // Add trip flights to data (only upcoming trips - trip.returnDate >= today)
+    // Add trip flights to data - categorize each flight by its actual arrival date, not trip return date
     <% trips.forEach(trip => { %>
       <% if (trip.flights && trip.flights.length > 0) { %>
         const tripFlights_<%= trip.id.replace(/-/g, '_') %> = <%- JSON.stringify(trip.flights) %>;
         window.allTripsData.flights.push(...tripFlights_<%= trip.id.replace(/-/g, '_') %>);
-        window.upcomingTripsData.flights.push(...tripFlights_<%= trip.id.replace(/-/g, '_') %>);
+        // Filter flights by their actual dates, not trip dates
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        tripFlights_<%= trip.id.replace(/-/g, '_') %>.forEach(flight => {
+          const arrivalDate = new Date(flight.arrivalDateTime || flight.departureDateTime);
+          if (arrivalDate >= today) {
+            window.upcomingTripsData.flights.push(flight);
+          } else {
+            window.pastTripsData.flights.push(flight);
+          }
+        });
       <% } %>
       <% if (trip.hotels && trip.hotels.length > 0) { %>
         const tripHotels_<%= trip.id.replace(/-/g, '_') %> = <%- JSON.stringify(trip.hotels) %>;
         window.allTripsData.hotels.push(...tripHotels_<%= trip.id.replace(/-/g, '_') %>);
-        window.upcomingTripsData.hotels.push(...tripHotels_<%= trip.id.replace(/-/g, '_') %>);
+        // Filter hotels by their actual dates, not trip dates
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        tripHotels_<%= trip.id.replace(/-/g, '_') %>.forEach(hotel => {
+          const checkoutDate = new Date(hotel.checkOutDateTime);
+          if (checkoutDate >= today) {
+            window.upcomingTripsData.hotels.push(hotel);
+          } else {
+            window.pastTripsData.hotels.push(hotel);
+          }
+        });
       <% } %>
       <% if (trip.transportation && trip.transportation.length > 0) { %>
         const tripTrans_<%= trip.id.replace(/-/g, '_') %> = <%- JSON.stringify(trip.transportation) %>;
         window.allTripsData.transportation.push(...tripTrans_<%= trip.id.replace(/-/g, '_') %>);
-        window.upcomingTripsData.transportation.push(...tripTrans_<%= trip.id.replace(/-/g, '_') %>);
+        // Filter transportation by their actual dates, not trip dates
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        tripTrans_<%= trip.id.replace(/-/g, '_') %>.forEach(trans => {
+          const arrivalDate = new Date(trans.arrivalDateTime || trans.departureDateTime);
+          if (arrivalDate >= today) {
+            window.upcomingTripsData.transportation.push(trans);
+          } else {
+            window.pastTripsData.transportation.push(trans);
+          }
+        });
       <% } %>
       <% if (trip.events && trip.events.length > 0) { %>
         const tripEvents_<%= trip.id.replace(/-/g, '_') %> = <%- JSON.stringify(trip.events) %>;
         window.allTripsData.events.push(...tripEvents_<%= trip.id.replace(/-/g, '_') %>);
-        window.upcomingTripsData.events.push(...tripEvents_<%= trip.id.replace(/-/g, '_') %>);
+        // Filter events by their actual dates, not trip dates
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        tripEvents_<%= trip.id.replace(/-/g, '_') %>.forEach(event => {
+          const endDate = new Date(event.endDateTime || event.startDateTime);
+          if (endDate >= today) {
+            window.upcomingTripsData.events.push(event);
+          } else {
+            window.pastTripsData.events.push(event);
+          }
+        });
       <% } %>
     <% }) %>
 
-    // Add past trip data to pastTripsData only (trip.returnDate < today)
-    <% if (pastTrips && pastTrips.length > 0) { %>
-      <% pastTrips.forEach(trip => { %>
-        <% if (trip.flights && trip.flights.length > 0) { %>
-          const pastTripFlights_<%= trip.id.replace(/-/g, '_') %> = <%- JSON.stringify(trip.flights) %>;
-          window.allTripsData.flights.push(...pastTripFlights_<%= trip.id.replace(/-/g, '_') %>);
-          window.pastTripsData.flights.push(...pastTripFlights_<%= trip.id.replace(/-/g, '_') %>);
-        <% } %>
-        <% if (trip.hotels && trip.hotels.length > 0) { %>
-          const pastTripHotels_<%= trip.id.replace(/-/g, '_') %> = <%- JSON.stringify(trip.hotels) %>;
-          window.allTripsData.hotels.push(...pastTripHotels_<%= trip.id.replace(/-/g, '_') %>);
-          window.pastTripsData.hotels.push(...pastTripHotels_<%= trip.id.replace(/-/g, '_') %>);
-        <% } %>
-        <% if (trip.transportation && trip.transportation.length > 0) { %>
-          const pastTripTrans_<%= trip.id.replace(/-/g, '_') %> = <%- JSON.stringify(trip.transportation) %>;
-          window.allTripsData.transportation.push(...pastTripTrans_<%= trip.id.replace(/-/g, '_') %>);
-          window.pastTripsData.transportation.push(...pastTripTrans_<%= trip.id.replace(/-/g, '_') %>);
-        <% } %>
-        <% if (trip.events && trip.events.length > 0) { %>
-          const pastTripEvents_<%= trip.id.replace(/-/g, '_') %> = <%- JSON.stringify(trip.events) %>;
-          window.allTripsData.events.push(...pastTripEvents_<%= trip.id.replace(/-/g, '_') %>);
-          window.pastTripsData.events.push(...pastTripEvents_<%= trip.id.replace(/-/g, '_') %>);
-        <% } %>
-      <% }) %>
-    <% } %>
+    // Note: pastTrips items are now categorized by their actual dates above,
+    // so we don't need a separate loop for past trip items
 
     // DEBUG LOGGING - Remove this after debugging
     console.log('=== DASHBOARD DATA INITIALIZATION ===');
