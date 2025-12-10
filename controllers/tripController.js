@@ -1572,8 +1572,10 @@ exports.getTripSidebarHtml = async (req, res) => {
 
 exports.getDashboardApiData = async (req, res) => {
   try {
-    // Fetch ALL items (both standalone and trip items) for the current user
-    // This includes items from trips the user owns and trips they're a companion on
+    // Determine active tab from query parameter
+    const activeTab = req.query.activeTab || 'upcoming';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     // Get all trips the user owns or is a companion on
     const userTrips = await Trip.findAll({
@@ -1582,7 +1584,7 @@ exports.getDashboardApiData = async (req, res) => {
           { userId: req.user.id }, // Trips user owns
         ]
       },
-      attributes: ['id'],
+      attributes: ['id', 'returnDate'],
     });
 
     // Also get trips where user is a companion
@@ -1602,65 +1604,193 @@ exports.getDashboardApiData = async (req, res) => {
           ],
         },
       ],
-      attributes: ['id'],
+      attributes: ['id', 'returnDate'],
     });
 
-    // Combine trip IDs
-    const tripIds = [
-      ...userTrips.map(t => t.id),
-      ...companionTrips.map(t => t.id),
-    ];
+    // Combine all trips
+    const allTrips = [...userTrips, ...companionTrips];
+    const uniqueTrips = allTrips.filter(
+      (trip, index, self) => index === self.findIndex((t) => t.id === trip.id)
+    );
 
-    // Fetch all items (standalone + trip items)
-    const flights = await Flight.findAll({
-      where: {
-        [Op.or]: [
-          { userId: req.user.id, tripId: null }, // Standalone
-          { tripId: { [Op.in]: tripIds } }, // Trip items
-        ]
-      },
-      order: [['departureDateTime', 'ASC']],
-    });
+    // Filter trips based on active tab
+    let tripIds = [];
+    if (activeTab === 'upcoming') {
+      // Only upcoming trips
+      tripIds = uniqueTrips
+        .filter(trip => {
+          const returnDate = new Date(trip.returnDate);
+          returnDate.setHours(23, 59, 59, 999);
+          return returnDate >= today;
+        })
+        .map(t => t.id);
+    } else if (activeTab === 'past') {
+      // Only past trips
+      tripIds = uniqueTrips
+        .filter(trip => {
+          const returnDate = new Date(trip.returnDate);
+          returnDate.setHours(23, 59, 59, 999);
+          return returnDate < today;
+        })
+        .map(t => t.id);
+    }
 
-    const hotels = await Hotel.findAll({
-      where: {
-        [Op.or]: [
-          { userId: req.user.id, tripId: null },
-          { tripId: { [Op.in]: tripIds } },
-        ]
-      },
-      order: [['checkInDateTime', 'ASC']],
-    });
+    // Fetch items based on active tab
+    let flights = [];
+    let hotels = [];
+    let transportation = [];
+    let carRentals = [];
+    let events = [];
 
-    const transportation = await Transportation.findAll({
-      where: {
-        [Op.or]: [
-          { userId: req.user.id, tripId: null },
-          { tripId: { [Op.in]: tripIds } },
-        ]
-      },
-      order: [['departureDateTime', 'ASC']],
-    });
+    if (activeTab === 'upcoming') {
+      // Fetch upcoming standalone items
+      const upcomingStandaloneFlights = await Flight.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['departureDateTime', 'ASC']],
+      });
+      flights = upcomingStandaloneFlights.filter(f => {
+        const arrivalDate = new Date(f.arrivalDateTime || f.departureDateTime);
+        return arrivalDate >= today;
+      });
 
-    const carRentals = await CarRental.findAll({
-      where: {
-        [Op.or]: [
-          { userId: req.user.id, tripId: null },
-          { tripId: { [Op.in]: tripIds } },
-        ]
-      },
-      order: [['pickupDateTime', 'ASC']],
-    });
+      // Fetch items from upcoming trips
+      const tripFlights = await Flight.findAll({
+        where: { tripId: { [Op.in]: tripIds } },
+        order: [['departureDateTime', 'ASC']],
+      });
+      flights.push(...tripFlights);
 
-    const events = await Event.findAll({
-      where: {
-        [Op.or]: [
-          { userId: req.user.id, tripId: null },
-          { tripId: { [Op.in]: tripIds } },
-        ]
-      },
-      order: [['startDateTime', 'ASC']],
-    });
+      // Similar for other item types
+      const upcomingHotels = await Hotel.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['checkInDateTime', 'ASC']],
+      });
+      hotels = upcomingHotels.filter(h => {
+        const checkoutDate = new Date(h.checkOutDateTime);
+        return checkoutDate >= today;
+      });
+      const tripHotels = await Hotel.findAll({
+        where: { tripId: { [Op.in]: tripIds } },
+        order: [['checkInDateTime', 'ASC']],
+      });
+      hotels.push(...tripHotels);
+
+      const upcomingTransportation = await Transportation.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['departureDateTime', 'ASC']],
+      });
+      transportation = upcomingTransportation.filter(t => {
+        const arrivalDate = new Date(t.arrivalDateTime || t.departureDateTime);
+        return arrivalDate >= today;
+      });
+      const tripTransportation = await Transportation.findAll({
+        where: { tripId: { [Op.in]: tripIds } },
+        order: [['departureDateTime', 'ASC']],
+      });
+      transportation.push(...tripTransportation);
+
+      const upcomingCarRentals = await CarRental.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['pickupDateTime', 'ASC']],
+      });
+      carRentals = upcomingCarRentals.filter(c => {
+        const dropoffDate = new Date(c.dropoffDateTime);
+        return dropoffDate >= today;
+      });
+      const tripCarRentals = await CarRental.findAll({
+        where: { tripId: { [Op.in]: tripIds } },
+        order: [['pickupDateTime', 'ASC']],
+      });
+      carRentals.push(...tripCarRentals);
+
+      const upcomingEvents = await Event.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['startDateTime', 'ASC']],
+      });
+      events = upcomingEvents.filter(e => {
+        const endDate = new Date(e.endDateTime || e.startDateTime);
+        return endDate >= today;
+      });
+      const tripEvents = await Event.findAll({
+        where: { tripId: { [Op.in]: tripIds } },
+        order: [['startDateTime', 'ASC']],
+      });
+      events.push(...tripEvents);
+    } else if (activeTab === 'past') {
+      // Fetch past standalone items
+      const pastStandaloneFlights = await Flight.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['departureDateTime', 'DESC']],
+      });
+      flights = pastStandaloneFlights.filter(f => {
+        const arrivalDate = new Date(f.arrivalDateTime || f.departureDateTime);
+        return arrivalDate < today;
+      });
+
+      // Fetch items from past trips
+      const tripFlights = await Flight.findAll({
+        where: { tripId: { [Op.in]: tripIds } },
+        order: [['departureDateTime', 'DESC']],
+      });
+      flights.push(...tripFlights);
+
+      // Similar for other item types
+      const pastHotels = await Hotel.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['checkInDateTime', 'DESC']],
+      });
+      hotels = pastHotels.filter(h => {
+        const checkoutDate = new Date(h.checkOutDateTime);
+        return checkoutDate < today;
+      });
+      const tripHotels = await Hotel.findAll({
+        where: { tripId: { [Op.in]: tripIds } },
+        order: [['checkInDateTime', 'DESC']],
+      });
+      hotels.push(...tripHotels);
+
+      const pastTransportation = await Transportation.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['departureDateTime', 'DESC']],
+      });
+      transportation = pastTransportation.filter(t => {
+        const arrivalDate = new Date(t.arrivalDateTime || t.departureDateTime);
+        return arrivalDate < today;
+      });
+      const tripTransportation = await Transportation.findAll({
+        where: { tripId: { [Op.in]: tripIds } },
+        order: [['departureDateTime', 'DESC']],
+      });
+      transportation.push(...tripTransportation);
+
+      const pastCarRentals = await CarRental.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['pickupDateTime', 'DESC']],
+      });
+      carRentals = pastCarRentals.filter(c => {
+        const dropoffDate = new Date(c.dropoffDateTime);
+        return dropoffDate < today;
+      });
+      const tripCarRentals = await CarRental.findAll({
+        where: { tripId: { [Op.in]: tripIds } },
+        order: [['pickupDateTime', 'DESC']],
+      });
+      carRentals.push(...tripCarRentals);
+
+      const pastEvents = await Event.findAll({
+        where: { userId: req.user.id, tripId: null },
+        order: [['startDateTime', 'DESC']],
+      });
+      events = pastEvents.filter(e => {
+        const endDate = new Date(e.endDateTime || e.startDateTime);
+        return endDate < today;
+      });
+      const tripEvents = await Event.findAll({
+        where: { tripId: { [Op.in]: tripIds } },
+        order: [['startDateTime', 'DESC']],
+      });
+      events.push(...tripEvents);
+    }
 
     // Return data in format expected by the map
     res.json({

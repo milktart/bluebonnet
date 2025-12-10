@@ -287,8 +287,8 @@ async function refreshDashboardSidebar() {
     // Now refresh the map with fresh data from the API
     console.log('[refreshDashboardSidebar] Fetching fresh trip data for map refresh...');
     try {
-      // Fetch all standalone items from the dashboard API
-      const dashboardDataResponse = await fetch('/dashboard/api', {
+      // Fetch dashboard items from the API, filtered by active tab
+      const dashboardDataResponse = await fetch(`/dashboard/api?activeTab=${activeTab}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
