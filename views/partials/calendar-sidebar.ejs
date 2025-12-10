@@ -58,13 +58,17 @@
     const depDate = parseDateOnly(trip.departureDate);
     const retDate = parseDateOnly(trip.returnDate);
 
-    let currentDate = new Date(depDate);
-    while (currentDate <= retDate) {
-      const key = getDateKey(currentDate);
-      if (dateToItems[key]) {
-        dateToItems[key].push({ type: 'trip', data: trip });
-      }
-      currentDate.setDate(currentDate.getDate() + 1);
+    // For multi-day trips, only add to start date with duration info
+    const durationDays = Math.ceil((retDate - depDate) / (1000 * 60 * 60 * 24)) + 1;
+    const startKey = getDateKey(depDate);
+    if (dateToItems[startKey]) {
+      dateToItems[startKey].push({
+        type: 'trip',
+        data: trip,
+        startDate: depDate,
+        endDate: retDate,
+        durationDays: durationDays
+      });
     }
   });
 
@@ -78,55 +82,70 @@
   // Add standalone flights
   safeStandaloneFlights.forEach(flight => {
     if (!flight.departureDateTime) return;
-    const flightDate = new Date(flight.departureDateTime);
-    flightDate.setHours(0, 0, 0, 0);
-    const key = getDateKey(flightDate);
+    const startDate = new Date(flight.departureDateTime);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(flight.arrivalDateTime || flight.departureDateTime);
+    endDate.setHours(0, 0, 0, 0);
+    const durationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+    const key = getDateKey(startDate);
     if (dateToItems[key]) {
-      dateToItems[key].push({ type: 'flight', data: flight });
+      dateToItems[key].push({ type: 'flight', data: flight, startDate, endDate, durationDays });
     }
   });
 
   // Add standalone hotels
   safeStandaloneHotels.forEach(hotel => {
     if (!hotel.checkInDateTime) return;
-    const hotelDate = new Date(hotel.checkInDateTime);
-    hotelDate.setHours(0, 0, 0, 0);
-    const key = getDateKey(hotelDate);
+    const startDate = new Date(hotel.checkInDateTime);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(hotel.checkOutDateTime || hotel.checkInDateTime);
+    endDate.setHours(0, 0, 0, 0);
+    const durationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+    const key = getDateKey(startDate);
     if (dateToItems[key]) {
-      dateToItems[key].push({ type: 'hotel', data: hotel });
+      dateToItems[key].push({ type: 'hotel', data: hotel, startDate, endDate, durationDays });
     }
   });
 
   // Add standalone transportation
   safeStandaloneTransportation.forEach(trans => {
     if (!trans.departureDateTime) return;
-    const transDate = new Date(trans.departureDateTime);
-    transDate.setHours(0, 0, 0, 0);
-    const key = getDateKey(transDate);
+    const startDate = new Date(trans.departureDateTime);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(trans.arrivalDateTime || trans.departureDateTime);
+    endDate.setHours(0, 0, 0, 0);
+    const durationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+    const key = getDateKey(startDate);
     if (dateToItems[key]) {
-      dateToItems[key].push({ type: 'transportation', data: trans });
+      dateToItems[key].push({ type: 'transportation', data: trans, startDate, endDate, durationDays });
     }
   });
 
   // Add standalone car rentals
   safeStandaloneCarRentals.forEach(carRental => {
     if (!carRental.pickupDateTime) return;
-    const carDate = new Date(carRental.pickupDateTime);
-    carDate.setHours(0, 0, 0, 0);
-    const key = getDateKey(carDate);
+    const startDate = new Date(carRental.pickupDateTime);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(carRental.dropoffDateTime || carRental.pickupDateTime);
+    endDate.setHours(0, 0, 0, 0);
+    const durationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+    const key = getDateKey(startDate);
     if (dateToItems[key]) {
-      dateToItems[key].push({ type: 'carRental', data: carRental });
+      dateToItems[key].push({ type: 'carRental', data: carRental, startDate, endDate, durationDays });
     }
   });
 
   // Add standalone events
   safeStandaloneEvents.forEach(event => {
     if (!event.startDateTime) return;
-    const eventDate = new Date(event.startDateTime);
-    eventDate.setHours(0, 0, 0, 0);
-    const key = getDateKey(eventDate);
+    const startDate = new Date(event.startDateTime);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(event.endDateTime || event.startDateTime);
+    endDate.setHours(0, 0, 0, 0);
+    const durationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+    const key = getDateKey(startDate);
     if (dateToItems[key]) {
-      dateToItems[key].push({ type: 'event', data: event });
+      dateToItems[key].push({ type: 'event', data: event, startDate, endDate, durationDays });
     }
   });
 
@@ -150,6 +169,23 @@
       'other': 'directions_run'
     };
     return iconMap[method?.toLowerCase()] || 'transportation';
+  }
+
+  // Helper function to check if an item spans multiple days
+  function isMultiDay(item) {
+    return item.durationDays > 1;
+  }
+
+  // Helper function to find the grid column index for a date
+  function getDateGridColumn(dateKey, weeks, dayNames) {
+    for (let weekIdx = 0; weekIdx < weeks.length; weekIdx++) {
+      for (let dayIdx = 0; dayIdx < weeks[weekIdx].length; dayIdx++) {
+        if (getDateKey(weeks[weekIdx][dayIdx]) === dateKey) {
+          return { weekIdx, dayIdx };
+        }
+      }
+    }
+    return null;
   }
 
   // Generate calendar weeks (Monday-Sunday)
@@ -177,6 +213,9 @@
   if (weekDates.length > 0) {
     weeks.push(weekDates);
   }
+
+  // Track which multi-day items have been rendered to avoid duplicates
+  const renderedMultiDayItems = new Set();
 
 %>
 
@@ -211,71 +250,198 @@
               }
             });
           %>
-          <!-- Week row -->
-          <div class="grid" style="grid-template-columns: 30px repeat(7, 1fr); gap: 0rem; margin-top: 0rem; min-height: 60px;" data-week="<%= weekIdx %>">
-          <%
-            // Month label cell for this week (if month starts here)
-            let monthLabel = null;
-            if (monthLabelForWeek) {
-              monthLabel = monthLabelForWeek.month;
-            }
-          %>
-          <!-- Month label column -->
-          <div class="text-xs font-semibold text-gray-500 p-1 text-right">
-            <% if (monthLabelForWeek) { %>
-              <%= monthLabelForWeek.month %> '<%= monthLabelForWeek.year %>
-            <% } %>
-          </div>
-          <% week.forEach(date => { %>
-            <%
-              const dateKey = getDateKey(date);
-              const items = dateToItems[dateKey] || [];
-              const isToday = dateKey === getDateKey(today);
-              const isPast = date < today;
-            %>
-            <div class="bg-white p-2 hover:shadow-sm transition-shadow <% if (isToday) { %>bg-blue-50<% } %><% if (isPast && !isToday) { %>opacity-50<% } %>" style="border-left: 2px solid rgba(229,231,235,var(--tw-border-opacity)); overflow: hidden;" id="date-<%= dateKey %>">
-              <div class="text-xs font-semibold <%= isToday ? 'text-blue-700' : 'text-gray-800' %> mb-1">
-                <%= date.getDate() %>
+          <!-- Week row wrapper -->
+          <div class="calendar-week-wrapper" data-week="<%= weekIdx %>">
+            <!-- Floating items layer (positioned absolutely) -->
+            <div class="calendar-multi-day-layer">
+              <%
+                // Collect all items for this week organized by day and row
+                const weekItems = [];
+
+                // First, collect items starting in this week
+                week.forEach((date, dayIdx) => {
+                  const dateKey = getDateKey(date);
+                  const items = dateToItems[dateKey] || [];
+
+                  items.forEach(item => {
+                    const itemId = item.data.id;
+                    const isFirstDay = dateKey === getDateKey(item.startDate);
+                    if (isFirstDay && !renderedMultiDayItems.has(itemId)) {
+                      renderedMultiDayItems.add(itemId);
+                      weekItems.push({ item, dayIdx, itemId, isContinuation: false });
+                    }
+                  });
+                });
+
+                // Check for items from previous weeks that continue into this week
+                if (weekIdx > 0) {
+                  const weekStartDate = week[0];
+                  const continuationItemsThisWeek = new Set();
+
+                  // Look at ALL items added to dates in previous weeks
+                  const allPreviousItems = new Set();
+                  for (let prevWeekIdx = 0; prevWeekIdx < weekIdx; prevWeekIdx++) {
+                    weeks[prevWeekIdx].forEach((date) => {
+                      const dateKey = getDateKey(date);
+                      const items = dateToItems[dateKey] || [];
+                      items.forEach(item => {
+                        allPreviousItems.add(item.data.id);
+                      });
+                    });
+                  }
+
+                  // Check each previous item to see if it continues into this week
+                  allPreviousItems.forEach(itemId => {
+                    // Find the item in dateToItems
+                    let foundItem = null;
+                    for (let prevWeekIdx = 0; prevWeekIdx < weekIdx; prevWeekIdx++) {
+                      weeks[prevWeekIdx].forEach((date) => {
+                        const dateKey = getDateKey(date);
+                        const items = dateToItems[dateKey] || [];
+                        items.forEach(item => {
+                          if (item.data.id === itemId && !foundItem) {
+                            foundItem = item;
+                          }
+                        });
+                      });
+                    }
+
+                    // If item ends on or after this week's start, it's a continuation
+                    if (foundItem && foundItem.endDate >= weekStartDate && !continuationItemsThisWeek.has(itemId)) {
+                      continuationItemsThisWeek.add(itemId);
+                      weekItems.push({ item: foundItem, dayIdx: 0, itemId, isContinuation: true });
+                    }
+                  });
+                }
+
+                // Sort items by start date ascending (earliest first), with stable sort for items on same day
+                weekItems.sort((a, b) => {
+                  const dateA = a.item.startDate;
+                  const dateB = b.item.startDate;
+                  if (dateA.getTime() === dateB.getTime()) {
+                    // For items starting on the same day, maintain original order (stable sort)
+                    // by comparing their dayIdx values for starting items, or use item ID as tiebreaker
+                    return a.dayIdx - b.dayIdx;
+                  }
+                  return dateA - dateB;
+                });
+
+                // Assign row numbers - items can share a row if they don't overlap
+                // Track occupied column ranges for each row
+                const rowOccupancy = []; // Array of arrays: [{ startCol, endCol }, ...]
+
+                weekItems.forEach((item) => {
+                  // Calculate the actual column range for this item
+                  let startCol, endCol;
+                  if (item.isContinuation) {
+                    // For continuations, they always start from the beginning of the week (column 0)
+                    startCol = 0;
+                    const daysUntilWeekEnd = 7;
+                    const daysUntilItemEnd = Math.ceil((item.item.endDate - week[0]) / (1000 * 60 * 60 * 24)) + 1;
+                    endCol = Math.min(daysUntilItemEnd, daysUntilWeekEnd);
+                  } else {
+                    // For starting items, they begin at dayIdx
+                    startCol = item.dayIdx;
+                    endCol = item.dayIdx + Math.min(item.item.durationDays, 7 - item.dayIdx);
+                  }
+
+                  // Find the first row where this item doesn't overlap
+                  let assignedRow = -1;
+                  for (let rowIdx = 0; rowIdx < rowOccupancy.length; rowIdx++) {
+                    const occupiedRanges = rowOccupancy[rowIdx];
+                    let canFitInRow = true;
+
+                    // Check if this item overlaps with any occupied range in this row
+                    for (const range of occupiedRanges) {
+                      // Items overlap if: itemStart < rangeEnd AND itemEnd > rangeStart
+                      if (startCol < range.endCol && endCol > range.startCol) {
+                        canFitInRow = false;
+                        break;
+                      }
+                    }
+
+                    if (canFitInRow) {
+                      assignedRow = rowIdx;
+                      occupiedRanges.push({ startCol: startCol, endCol: endCol });
+                      break;
+                    }
+                  }
+
+                  // If no suitable row found, create a new one
+                  if (assignedRow === -1) {
+                    assignedRow = rowOccupancy.length;
+                    rowOccupancy.push([{ startCol: startCol, endCol: endCol }]);
+                  }
+
+                  // Store calculated column range for rendering
+                  item.rowInDay = assignedRow;
+                  item.renderStartCol = startCol;
+                  item.renderEndCol = endCol;
+                });
+              %>
+              <% weekItems.forEach((itemData) => { %>
+                <%
+                  const { item, dayIdx, rowInDay, isContinuation, renderStartCol, renderEndCol } = itemData;
+                  // Use pre-calculated column range for rendering
+                  const daysSpanned = renderEndCol - renderStartCol;
+              %>
+                    <% if (item.type === 'trip') { %>
+                      <div class="multi-day-bar bg-blue-100 text-blue-900" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>;">
+                        <span class="material-symbols-outlined text-blue-600" style="font-size: 14px; flex-shrink: 0;">luggage</span>
+                        <span class="truncate"><%= item.data.name %></span>
+                      </div>
+                    <% } else if (item.type === 'flight') { %>
+                      <div class="multi-day-bar bg-blue-100 text-blue-900" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>;">
+                        <span class="material-symbols-outlined text-blue-600" style="font-size: 14px; flex-shrink: 0;">flight</span>
+                        <span class="truncate"><%= item.data.origin %> → <%= item.data.destination %></span>
+                      </div>
+                    <% } else if (item.type === 'hotel') { %>
+                      <div class="multi-day-bar bg-green-100 text-green-900" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>;">
+                        <span class="material-symbols-outlined text-green-600" style="font-size: 14px; flex-shrink: 0;">hotel</span>
+                        <span class="truncate"><%= item.data.name %></span>
+                      </div>
+                    <% } else if (item.type === 'event') { %>
+                      <div class="multi-day-bar bg-red-100 text-red-900" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>;">
+                        <span class="material-symbols-outlined text-red-600" style="font-size: 14px; flex-shrink: 0;">event</span>
+                        <span class="truncate"><%= item.data.name %></span>
+                      </div>
+                    <% } else if (item.type === 'transportation') { %>
+                      <div class="multi-day-bar bg-amber-100 text-amber-900" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>;">
+                        <span class="material-symbols-outlined text-amber-600" style="font-size: 14px; flex-shrink: 0;"><%= getTransportationIcon(item.data.method) %></span>
+                        <span class="truncate"><%= item.data.origin %> → <%= item.data.destination %></span>
+                      </div>
+                    <% } else if (item.type === 'carRental') { %>
+                      <div class="multi-day-bar bg-purple-100 text-purple-900" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>;">
+                        <span class="material-symbols-outlined text-purple-600" style="font-size: 14px; flex-shrink: 0;">directions_car</span>
+                        <span class="truncate"><%= item.data.company %></span>
+                      </div>
+                    <% } %>
+                <% }) %>
+            </div>
+
+            <!-- Grid with date cells (empty - just shows days) -->
+            <div class="calendar-week">
+              <!-- Month label column -->
+              <div class="text-xs font-semibold text-gray-500 p-1 text-right">
+                <% if (monthLabelForWeek) { %>
+                  <%= monthLabelForWeek.month %> '<%= monthLabelForWeek.year %>
+                <% } %>
               </div>
 
-              <!-- Items in this day -->
-              <div class="space-y-1 overflow-hidden">
-                <% items.forEach(item => { %>
-                  <% if (item.type === 'trip') { %>
-                    <div class="bg-blue-100 text-blue-900 px-2 py-1 rounded text-xs truncate flex items-center gap-1">
-                      <span class="material-symbols-outlined text-blue-600" style="font-size: 14px; flex-shrink: 0;">luggage</span>
-                      <span class="truncate"><%= item.data.name %></span>
-                    </div>
-                  <% } else if (item.type === 'flight') { %>
-                    <div class="bg-blue-100 text-blue-900 px-2 py-1 rounded text-xs truncate flex items-center gap-1">
-                      <span class="material-symbols-outlined text-blue-600" style="font-size: 14px; flex-shrink: 0;">flight</span>
-                      <span class="truncate"><%= item.data.origin %> → <%= item.data.destination %></span>
-                    </div>
-                  <% } else if (item.type === 'hotel') { %>
-                    <div class="bg-green-100 text-green-900 px-2 py-1 rounded text-xs truncate flex items-center gap-1">
-                      <span class="material-symbols-outlined text-green-600" style="font-size: 14px; flex-shrink: 0;">hotel</span>
-                      <span class="truncate"><%= item.data.name %></span>
-                    </div>
-                  <% } else if (item.type === 'event') { %>
-                    <div class="bg-red-100 text-red-900 px-2 py-1 rounded text-xs truncate flex items-center gap-1">
-                      <span class="material-symbols-outlined text-red-600" style="font-size: 14px; flex-shrink: 0;">event</span>
-                      <span class="truncate"><%= item.data.name %></span>
-                    </div>
-                  <% } else if (item.type === 'transportation') { %>
-                    <div class="bg-amber-100 text-amber-900 px-2 py-1 rounded text-xs truncate flex items-center gap-1">
-                      <span class="material-symbols-outlined text-amber-600" style="font-size: 14px; flex-shrink: 0;"><%= getTransportationIcon(item.data.method) %></span>
-                      <span class="truncate"><%= item.data.origin %> → <%= item.data.destination %></span>
-                    </div>
-                  <% } else if (item.type === 'carRental') { %>
-                    <div class="bg-purple-100 text-purple-900 px-2 py-1 rounded text-xs truncate flex items-center gap-1">
-                      <span class="material-symbols-outlined text-purple-600" style="font-size: 14px; flex-shrink: 0;">directions_car</span>
-                      <span class="truncate"><%= item.data.company %></span>
-                    </div>
-                  <% } %>
-                <% }) %>
-              </div>
+              <!-- Render empty date cells -->
+              <% week.forEach((date, dayIdx) => { %>
+                <%
+                  const dateKey = getDateKey(date);
+                  const isToday = dateKey === getDateKey(today);
+                  const isPast = date < today;
+                %>
+                <div class="calendar-date-cell bg-white hover:shadow-sm transition-shadow <% if (isToday) { %>bg-blue-50<% } %><% if (isPast && !isToday) { %>opacity-50<% } %>" id="date-<%= dateKey %>" data-date="<%= dateKey %>">
+                  <div class="text-xs font-semibold <%= isToday ? 'text-blue-700' : 'text-gray-800' %> mb-1">
+                    <%= date.getDate() %>
+                  </div>
+                </div>
+              <% }) %>
             </div>
-          <% }) %>
           </div>
         <% }) %>
       </div>
@@ -292,6 +458,100 @@
   .calendar-sidebar > div {
     flex: 1;
     overflow-y: auto;
+  }
+
+  /* Week wrapper - contains both grid and floating layer */
+  .calendar-week-wrapper {
+    position: relative;
+    margin-top: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Floating layer for multi-day items - positioned absolutely over the grid */
+  .calendar-multi-day-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* Multi-day bar item - floating absolutely positioned */
+  .multi-day-bar {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 1.5rem;
+    pointer-events: auto;
+    /* Use CSS Grid column tracking for responsive positioning */
+    /* Calculate left position: 30px label width + start-col columns worth of width */
+    left: calc(30px + var(--start-col) * calc((100% - 30px) / 7) + 0.5rem);
+    /* Width calculation: responsive - span columns with responsive column width */
+    width: calc(var(--span) * calc((100% - 30px) / 7) - 1rem);
+    /* Vertical positioning: float to top with stacking below date number */
+    /* Account for date cell padding (0.5rem) + date text height (~1rem) + margin (0.25rem) */
+    top: calc(1.75rem + var(--row-in-day) * 1.75rem);
+  }
+
+  /* Week grid container - fixed column widths */
+  .calendar-week {
+    display: grid;
+    grid-template-columns: 30px repeat(7, minmax(120px, 1fr));
+    gap: 0;
+    margin-top: 0;
+    width: 100%;
+  }
+
+  /* Date cell - individual day container */
+  .calendar-date-cell {
+    border-left: 2px solid rgba(229, 231, 235, var(--tw-border-opacity));
+    padding: 0.5rem;
+    overflow: visible;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 120px;
+    width: 100%;
+  }
+
+  /* Stack single-day items vertically */
+  .single-day-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    overflow: hidden;
+  }
+
+  .single-day-items > div {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 0; /* Allow flex children to shrink below content size */
+  }
+
+  .single-day-items > div > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 </style>
 
