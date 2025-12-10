@@ -23,7 +23,12 @@ const TAB_CONFIG = {
 
 // Update map with new trip data
 function updateMapData(newData, isPast = false) {
+  console.log('[updateMapData] Called with isPast:', isPast);
+  console.log('[updateMapData] newData:', newData);
+  console.log('[updateMapData] currentMap initialized:', !!currentMap, 'mapInitialized:', mapInitialized);
+
   if (!currentMap || !mapInitialized) {
+    console.warn('[updateMapData] Map not initialized, skipping update');
     return;
   }
 
@@ -32,13 +37,17 @@ function updateMapData(newData, isPast = false) {
 
   // Reinitialize the map with new data
   if (typeof initOverviewMap !== 'undefined') {
+    console.log('[updateMapData] Calling initOverviewMap with', newData.flights.length, 'flights');
     initOverviewMap(newData, 'tripMap', isPast)
       .then((map) => {
+        console.log('[updateMapData] Map updated successfully');
         currentMap = map;
       })
       .catch((error) => {
-        // Map update failed silently
+        console.error('[updateMapData] Map update failed:', error);
       });
+  } else {
+    console.warn('[updateMapData] initOverviewMap not found');
   }
 }
 
@@ -75,6 +84,7 @@ function switchTab(activeTab) {
 }
 
 export function showUpcomingTrips() {
+  console.log('[showUpcomingTrips] Called');
   switchTab('upcoming');
   // Close secondary sidebar if open
   const secondarySidebar = document.getElementById('secondary-sidebar');
@@ -88,11 +98,16 @@ export function showUpcomingTrips() {
   }
   // Update map to show upcoming trips data (flights and events)
   if (typeof upcomingTripsData !== 'undefined') {
+    console.log('[showUpcomingTrips] Updating map with upcomingTripsData:', upcomingTripsData);
+    console.log('[showUpcomingTrips] upcomingTripsData.flights:', upcomingTripsData.flights.length, 'flights');
     updateMapData(upcomingTripsData);
+  } else {
+    console.warn('[showUpcomingTrips] upcomingTripsData not defined!');
   }
 }
 
 export function showPastTrips() {
+  console.log('[showPastTrips] Called');
   switchTab('past');
   // Close secondary sidebar if open
   const secondarySidebar = document.getElementById('secondary-sidebar');
@@ -106,7 +121,11 @@ export function showPastTrips() {
   }
   // Update map to show past trips data (flights only) with darker colors
   if (typeof pastTripsData !== 'undefined') {
+    console.log('[showPastTrips] Updating map with pastTripsData:', pastTripsData);
+    console.log('[showPastTrips] pastTripsData.flights:', pastTripsData.flights.length, 'flights');
     updateMapData(pastTripsData, true);
+  } else {
+    console.warn('[showPastTrips] pastTripsData not defined!');
   }
 }
 

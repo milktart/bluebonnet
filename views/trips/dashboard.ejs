@@ -243,6 +243,29 @@
       <% }) %>
     <% } %>
 
+    // DEBUG LOGGING - Remove this after debugging
+    console.log('=== DASHBOARD DATA INITIALIZATION ===');
+    console.log('trips (from controller - should be upcoming only):', <%- JSON.stringify(trips.length) %>);
+    console.log('pastTrips (from controller - should be past only):', <%- JSON.stringify(pastTrips.length) %>);
+    console.log('upcomingTripsData:', window.upcomingTripsData);
+    console.log('pastTripsData:', window.pastTripsData);
+
+    // Log individual trip data
+    console.log('=== UPCOMING TRIPS FROM CONTROLLER ===');
+    <% trips.forEach((trip, idx) => { %>
+      console.log(`Trip ${idx}: ${trip.name} (ID: ${trip.id}) - flights: ${trip.flights ? trip.flights.length : 0}, returnDate: ${trip.returnDate}`);
+    <% }); %>
+
+    console.log('=== PAST TRIPS FROM CONTROLLER ===');
+    <% pastTrips.forEach((trip, idx) => { %>
+      console.log(`PastTrip ${idx}: ${trip.name} (ID: ${trip.id}) - flights: ${trip.flights ? trip.flights.length : 0}, returnDate: ${trip.returnDate}`);
+    <% }); %>
+
+    console.log('=== FINAL DATA SUMMARY ===');
+    console.log('upcomingTripsData.flights count:', window.upcomingTripsData.flights.length);
+    console.log('pastTripsData.flights count:', window.pastTripsData.flights.length);
+    console.log('allTripsData.flights count:', window.allTripsData.flights.length);
+
   </script>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
