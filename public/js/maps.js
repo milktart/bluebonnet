@@ -563,169 +563,18 @@ function initOverviewMap(tripData, mapElementId = 'tripMap', isPast = false) {
 }
 
 /**
- * Setup timeline hover effects to highlight map segments
- * @param {Object} map - Leaflet map instance with segmentLayers
+ * DEPRECATED: setupTimelineHoverEffects was replaced by better implementations
+ *
+ * This function has been replaced by:
+ * - dashboard-sidebar-content.ejs: highlightItemOnMap() and setupTripHover()
+ * - These use stable itemType/itemId lookup instead of volatile segment indices
+ *
+ * This stub exists only for backward compatibility with old code that may call it.
+ * Remove this after verifying no other code relies on it.
  */
 function setupTimelineHoverEffects(map) {
-  if (!map || !map.segmentLayers) {
-    console.warn('Map or segment layers not available for hover effects');
-    return;
-  }
-
-  // Setup individual timeline item hover effects
-  const timelineItems = document.querySelectorAll('.timeline-item.has-marker');
-
-  timelineItems.forEach((item) => {
-    const marker = item.getAttribute('data-marker');
-
-    item.addEventListener('mouseenter', function () {
-      const segment = map.segmentLayers.find((s) => s.index === parseInt(marker, 10));
-      if (segment && segment.polyline) {
-        const coords = segment.polyline.getLatLngs();
-
-        // Create glow effect with multiple layers
-        if (!segment.glowLayer1) {
-          segment.glowLayer1 = L.polyline(coords, {
-            color: '#6ea8fe',
-            weight: 8,
-            opacity: 0.7,
-            dashArray: '',
-          }).addTo(map);
-        }
-
-        if (!segment.glowLayer2) {
-          segment.glowLayer2 = L.polyline(coords, {
-            color: '#cfe2ff',
-            weight: 5,
-            opacity: 0.9,
-            dashArray: '',
-          }).addTo(map);
-        }
-
-        segment.polyline.setStyle({
-          color: '#ffffff',
-          weight: 2,
-          opacity: 1,
-          dashArray: '',
-        });
-
-        segment.glowLayer1.bringToFront();
-        segment.glowLayer2.bringToFront();
-        segment.polyline.bringToFront();
-      }
-    });
-
-    item.addEventListener('mouseleave', function () {
-      const segment = map.segmentLayers.find((s) => s.index === parseInt(marker, 10));
-      if (segment && segment.polyline) {
-        // Remove glow layers
-        if (segment.glowLayer1) {
-          map.removeLayer(segment.glowLayer1);
-          segment.glowLayer1 = null;
-        }
-        if (segment.glowLayer2) {
-          map.removeLayer(segment.glowLayer2);
-          segment.glowLayer2 = null;
-        }
-
-        // Restore original style
-        segment.polyline.setStyle({
-          color: segment.originalColor,
-          weight: segment.originalWeight,
-          opacity: segment.originalOpacity,
-          dashArray: segment.originalDashArray,
-        });
-      }
-    });
-  });
-
-  // Setup trip header hover effects (for list view)
-  const tripHeaders = document.querySelectorAll('.trip-header');
-
-  tripHeaders.forEach((header) => {
-    const tripId = header.getAttribute('data-trip-id');
-
-    header.addEventListener('mouseenter', function (e) {
-      e.stopPropagation();
-
-      // Find all timeline items belonging to this trip
-      const tripItems = document.querySelectorAll(
-        `.timeline-item[data-trip-id="${tripId}"].has-marker`
-      );
-
-      tripItems.forEach((item) => {
-        const marker = item.getAttribute('data-marker');
-        if (marker) {
-          const segment = map.segmentLayers.find((s) => s.index === parseInt(marker, 10));
-          if (segment && segment.polyline) {
-            const coords = segment.polyline.getLatLngs();
-
-            if (!segment.glowLayer1) {
-              segment.glowLayer1 = L.polyline(coords, {
-                color: '#6ea8fe',
-                weight: 8,
-                opacity: 0.7,
-                dashArray: '',
-              }).addTo(map);
-            }
-
-            if (!segment.glowLayer2) {
-              segment.glowLayer2 = L.polyline(coords, {
-                color: '#cfe2ff',
-                weight: 5,
-                opacity: 0.9,
-                dashArray: '',
-              }).addTo(map);
-            }
-
-            segment.polyline.setStyle({
-              color: '#ffffff',
-              weight: 2,
-              opacity: 1,
-              dashArray: '',
-            });
-
-            segment.glowLayer1.bringToFront();
-            segment.glowLayer2.bringToFront();
-            segment.polyline.bringToFront();
-          }
-        }
-      });
-    });
-
-    header.addEventListener('mouseleave', function (e) {
-      e.stopPropagation();
-
-      // Find all timeline items belonging to this trip
-      const tripItems = document.querySelectorAll(
-        `.timeline-item[data-trip-id="${tripId}"].has-marker`
-      );
-
-      tripItems.forEach((item) => {
-        const marker = item.getAttribute('data-marker');
-        if (marker) {
-          const segment = map.segmentLayers.find((s) => s.index === parseInt(marker, 10));
-          if (segment && segment.polyline) {
-            if (segment.glowLayer1) {
-              map.removeLayer(segment.glowLayer1);
-              segment.glowLayer1 = null;
-            }
-            if (segment.glowLayer2) {
-              map.removeLayer(segment.glowLayer2);
-              segment.glowLayer2 = null;
-            }
-
-            segment.polyline.setStyle({
-              color: segment.originalColor,
-              weight: segment.originalWeight,
-              opacity: segment.originalOpacity,
-              dashArray: segment.originalDashArray,
-            });
-          }
-        }
-      });
-    });
-  });
+  // No-op: hover effects are now handled by dashboard-sidebar-content.ejs
+  console.log('[setupTimelineHoverEffects] This function is deprecated. Hover effects are handled elsewhere.');
 }
 
 // ============================================================================
