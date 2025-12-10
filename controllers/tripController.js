@@ -475,6 +475,15 @@ exports.listTrips = async (req, res, options = {}) => {
     allFlights.forEach(f => {
       const arrivalDate = new Date(f.arrivalDateTime || f.departureDateTime);
       const isUpcoming = arrivalDate >= today;
+      console.log('[listTrips] Flight categorization:', {
+        flightNumber: f.flightNumber,
+        arrivalDateTime: f.arrivalDateTime,
+        departureDateTime: f.departureDateTime,
+        arrivalDate: arrivalDate.toISOString(),
+        today: today.toISOString(),
+        isUpcoming,
+        willBePast: !isUpcoming
+      });
       if (isUpcoming) {
         standaloneFlights.push(f);
       } else {
