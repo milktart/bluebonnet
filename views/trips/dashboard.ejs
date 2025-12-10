@@ -189,6 +189,8 @@
     // Add past standalone flights to data
     <% if (pastStandaloneFlights && pastStandaloneFlights.length > 0) { %>
       const pastStandaloneFlightsData = <%- JSON.stringify(pastStandaloneFlights) %>;
+      console.log('pastStandaloneFlights count:', <%- JSON.stringify(pastStandaloneFlights.length) %>);
+      console.log('pastStandaloneFlights data:', pastStandaloneFlightsData);
       window.allTripsData.flights.push(...pastStandaloneFlightsData);
       window.pastTripsData.flights.push(...pastStandaloneFlightsData);
     <% } %>
