@@ -727,6 +727,18 @@ exports.listTrips = async (req, res, options = {}) => {
   }
 };
 
+exports.getCreateForm = async (req, res) => {
+  try {
+    // Render the create trip form partial
+    res.render('partials/trip-create-form', {
+      layout: false, // Don't use main layout, just render the partial
+    });
+  } catch (error) {
+    logger.error('Error fetching create trip form:', error);
+    res.status(500).send('Error loading trip form');
+  }
+};
+
 exports.createTrip = async (req, res) => {
   try {
     const { name, departureDate, returnDate, companions, purpose, defaultCompanionEditPermission } =

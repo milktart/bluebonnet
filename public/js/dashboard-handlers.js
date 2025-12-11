@@ -55,8 +55,8 @@ function handleGoBackInSidebar(_element, _event) {
  * Show create trip form
  */
 function handleShowCreateTripForm(_element, _event) {
-  if (typeof window.showCreateTripForm === 'function') {
-    window.showCreateTripForm();
+  if (typeof window.loadSidebarContent === 'function') {
+    window.loadSidebarContent('/trips/form');
   }
 }
 
@@ -64,8 +64,8 @@ function handleShowCreateTripForm(_element, _event) {
  * Show create event form
  */
 function handleShowCreateEventForm(_element, _event) {
-  if (typeof window.showCreateEventForm === 'function') {
-    window.showCreateEventForm();
+  if (typeof window.loadSidebarContent === 'function') {
+    window.loadSidebarContent('/events/form');
   }
 }
 
@@ -290,8 +290,10 @@ function registerDashboardHandlers() {
     showNewItemMenu: handleShowNewItemMenu,
   });
 
-  // Expose showNewItemMenu globally for onclick handlers
+  // Expose functions globally for onclick handlers
   window.showNewItemMenu = handleShowNewItemMenu;
+  window.showCreateTripForm = handleShowCreateTripForm;
+  window.showCreateEventForm = handleShowCreateEventForm;
 }
 
 // Initialize on module load

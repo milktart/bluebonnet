@@ -119,6 +119,15 @@ router.get('/new-item-menu', ensureAuthenticated, (req, res) => {
   res.render('partials/new-item-menu');
 });
 
+// GET form for creating a new trip (sidebar form)
+router.get('/trips/form', ensureAuthenticated, async (req, res) => {
+  try {
+    return require('../controllers/tripController').getCreateForm(req, res);
+  } catch (error) {
+    res.status(500).send('Error loading trip form');
+  }
+});
+
 // GET form for adding a new item - unified endpoint for both trip and standalone contexts
 // /forms/add/:type - standalone item form
 // /forms/add/:type/:tripId - trip item form
