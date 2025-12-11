@@ -7,7 +7,7 @@
   <div class="relative">
     <% if (currentTripId) { %>
       <!-- Currently attached to a trip -->
-      <div class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors" onclick="document.getElementById('tripSelectorDropdown').classList.toggle('hidden'); return false;">
+      <div id="tripSelectorDisplay" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors">
         <span><%= currentTripName %></span>
         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
@@ -15,8 +15,8 @@
       </div>
     <% } else { %>
       <!-- Not attached to any trip -->
-      <div class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-500 text-sm flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors" onclick="document.getElementById('tripSelectorDropdown').classList.toggle('hidden'); return false;">
-        <span>Select a trip (optional)</span>
+      <div id="tripSelectorDisplay" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-500 text-sm flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors">
+        <span>+ Add to trip</span>
         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
         </svg>
@@ -90,6 +90,30 @@
     currentTripId: '<%= currentTripId || "" %>',
     currentTripName: '<%= currentTripName || "" %>'
   };
+
+  // Add click handler to the display field
+  document.addEventListener('DOMContentLoaded', function() {
+    const displayField = document.getElementById('tripSelectorDisplay');
+    if (displayField) {
+      displayField.addEventListener('click', function() {
+        const dropdown = document.getElementById('tripSelectorDropdown');
+        if (dropdown) {
+          dropdown.classList.toggle('hidden');
+        }
+      });
+    }
+  });
+
+  // Also try immediately in case DOMContentLoaded already fired
+  const displayField = document.getElementById('tripSelectorDisplay');
+  if (displayField) {
+    displayField.addEventListener('click', function() {
+      const dropdown = document.getElementById('tripSelectorDropdown');
+      if (dropdown) {
+        dropdown.classList.toggle('hidden');
+      }
+    });
+  }
 
   window.selectTrip = function(tripId, tripName) {
     window.tripSelectorState.currentTripId = tripId;
