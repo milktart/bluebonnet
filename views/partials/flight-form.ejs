@@ -25,7 +25,9 @@
     <% if (!isAddMode) { %>
       <input type="hidden" name="_method" value="PUT">
     <% } %>
-    <input type="hidden" name="tripId" value="<%= tripId || '' %>">
+
+    <!-- Trip Selector Field -->
+    <%- include('./trip-selector-field', { currentTripId, currentTripName, availableTrips }) %>
 
     <!-- Flight Number & Airline -->
     <div class="grid grid-cols-3 gap-3">

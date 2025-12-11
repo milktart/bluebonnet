@@ -10,6 +10,10 @@ const {
   verifyResourceOwnership,
   convertToUTC,
 } = require('./helpers/resourceController');
+const {
+  getTripSelectorData,
+  verifyTripEditAccess,
+} = require('./helpers/tripSelectorHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 
 exports.createTransportation = async (req, res) => {
@@ -140,6 +144,7 @@ exports.updateTransportation = async (req, res) => {
       arrivalDateTime: arrivalDateTimeCombined,
       confirmationNumber,
       seat,
+      tripId: newTripId,
     } = req.body;
 
     // Find transportation with trip
@@ -154,6 +159,18 @@ exports.updateTransportation = async (req, res) => {
         return res.status(403).json({ success: false, error: 'Transportation not found' });
       }
       return redirectAfterError(res, req, null, 'Transportation not found');
+    }
+
+    // Verify trip edit access if changing trips
+    if (newTripId && newTripId !== transportation.tripId) {
+      const hasAccess = await verifyTripEditAccess(newTripId, req.user.id);
+      if (!hasAccess) {
+        const isAsync = req.headers['x-async-request'] === 'true';
+        if (isAsync) {
+          return res.status(403).json({ success: false, error: 'Cannot attach to this trip' });
+        }
+        return redirectAfterError(res, req, null, 'Cannot attach to this trip');
+      }
     }
 
     // Handle both combined datetime (from async form) and split date/time fields (from traditional forms)
@@ -195,6 +212,7 @@ exports.updateTransportation = async (req, res) => {
       arrivalDateTime: convertToUTC(arrivalDateTime, destinationTimezone),
       confirmationNumber,
       seat,
+      tripId: newTripId || null,
     });
 
     // Check if this is an async request
@@ -316,12 +334,21 @@ exports.getAddForm = async (req, res) => {
       }
     }
 
+    // Get available trips for trip selector
+    const tripSelectorData = await getTripSelectorData(
+      { tripId: tripId || null },
+      req.user.id
+    );
+
     // Render form partial for sidebar (not modal)
     res.render('partials/transportation-form', {
       tripId: tripId || null,
       isEditing: false,
       data: null,
       isModal: false, // This tells the partial to render for sidebar
+      currentTripId: tripSelectorData.currentTripId,
+      currentTripName: tripSelectorData.currentTripName,
+      availableTrips: tripSelectorData.availableTrips,
     });
   } catch (error) {
     logger.error('Error fetching add form:', error);
@@ -378,6 +405,9 @@ exports.getEditForm = async (req, res) => {
       }
     }
 
+    // Get available trips for trip selector
+    const tripSelectorData = await getTripSelectorData(transportation, req.user.id);
+
     // Render form partial for sidebar (not modal)
     res.render('partials/transportation-form', {
       tripId: transportation.tripId || '', // Use tripId if available, empty string otherwise
@@ -390,6 +420,9 @@ exports.getEditForm = async (req, res) => {
         arrivalTime,
       },
       isModal: false, // This tells the partial to render for sidebar
+      currentTripId: tripSelectorData.currentTripId,
+      currentTripName: tripSelectorData.currentTripName,
+      availableTrips: tripSelectorData.availableTrips,
     });
   } catch (error) {
     logger.error('Error fetching edit form:', error);

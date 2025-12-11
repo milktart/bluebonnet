@@ -25,8 +25,10 @@
     <% if (!isAddMode) { %>
       <input type="hidden" name="_method" value="PUT">
     <% } %>
-    <input type="hidden" name="tripId" value="<%= tripId || '' %>">
     <input type="hidden" name="timezone" id="<%= isAddMode ? 'hotelTimezone' : 'edit_hotel_timezone' %>" value="<%= data?.timezone || '' %>">
+
+    <!-- Trip Selector Field -->
+    <%- include('./trip-selector-field', { currentTripId, currentTripName, availableTrips }) %>
 
     <!-- Hotel Name -->
     <div>

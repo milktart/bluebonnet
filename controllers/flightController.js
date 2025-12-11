@@ -11,6 +11,10 @@ const {
   convertToUTC,
   geocodeWithAirportFallback,
 } = require('./helpers/resourceController');
+const {
+  getTripSelectorData,
+  verifyTripEditAccess,
+} = require('./helpers/tripSelectorHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 
 exports.searchAirports = async (req, res) => {
@@ -246,6 +250,7 @@ exports.updateFlight = async (req, res) => {
       pnr,
       seat,
       companions,
+      tripId: newTripId,
     } = req.body;
     let {
       airline,
@@ -277,6 +282,18 @@ exports.updateFlight = async (req, res) => {
         return res.status(403).json({ success: false, error: 'Flight not found' });
       }
       return redirectAfterError(res, req, null, 'Flight not found');
+    }
+
+    // Verify trip edit access if changing trips
+    if (newTripId && newTripId !== flight.tripId) {
+      const hasAccess = await verifyTripEditAccess(newTripId, req.user.id);
+      if (!hasAccess) {
+        const isAsync = req.headers['x-async-request'] === 'true';
+        if (isAsync) {
+          return res.status(403).json({ success: false, error: 'Cannot attach to this trip' });
+        }
+        return redirectAfterError(res, req, null, 'Cannot attach to this trip');
+      }
     }
 
     // Auto-populate airline from flight number if not provided
@@ -392,6 +409,7 @@ exports.updateFlight = async (req, res) => {
       destinationLng: destResult.coords?.lng,
       pnr,
       seat,
+      tripId: newTripId || null,
     });
 
     // Update companions for this flight
@@ -534,6 +552,12 @@ exports.getAddForm = async (req, res) => {
       }
     }
 
+    // Get available trips for trip selector
+    const tripSelectorData = await getTripSelectorData(
+      { tripId: tripId || null },
+      req.user.id
+    );
+
     // Get airline data for the form (used by lookupAirline function)
     const airlineData = airportService.getAllAirlines();
 
@@ -544,6 +568,9 @@ exports.getAddForm = async (req, res) => {
       data: null,
       isModal: false, // This tells the partial to render for sidebar
       airlineData: JSON.stringify(airlineData), // Pass as JSON string for window.airlineData
+      currentTripId: tripSelectorData.currentTripId,
+      currentTripName: tripSelectorData.currentTripName,
+      availableTrips: tripSelectorData.availableTrips,
     });
   } catch (error) {
     logger.error('Error fetching add form:', error);
@@ -644,6 +671,9 @@ exports.getEditForm = async (req, res) => {
     // Get airline data for the form (used by lookupAirline function)
     const airlineData = airportService.getAllAirlines();
 
+    // Get available trips for trip selector
+    const tripSelectorData = await getTripSelectorData(flight, req.user.id);
+
     // Render form partial for sidebar (not modal)
     res.render('partials/flight-form', {
       tripId: flight.tripId || '', // Use tripId if available, empty string otherwise
@@ -659,6 +689,9 @@ exports.getEditForm = async (req, res) => {
       },
       isModal: false, // This tells the partial to render for sidebar
       airlineData: JSON.stringify(airlineData), // Pass as JSON string for window.airlineData
+      currentTripId: tripSelectorData.currentTripId,
+      currentTripName: tripSelectorData.currentTripName,
+      availableTrips: tripSelectorData.availableTrips,
     });
   } catch (error) {
     logger.error('Error fetching edit form:', error);

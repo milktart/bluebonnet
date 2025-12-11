@@ -482,3 +482,5 @@ All pull requests must:
 Tests run automatically in GitHub Actions on:
 - Every push to main/develop
 - Every pull request
+- trip items are independant items and do not require to be attached to a trip. Attaching to a trip is optional.
+- all changes to existing functionality and new features added should follow the architechture guidelines set out in claude.md

@@ -1,0 +1,150 @@
+/**
+ * Trip Selector Helper
+ * Handles fetching available trips, verifying edit access, and managing item-to-trip associations
+ */
+
+const { Trip, TripCompanion, Sequelize } = require('../../models');
+const logger = require('../../utils/logger');
+
+/**
+ * Get all upcoming/in-progress trips for a user
+ * @param {string} userId - User ID to fetch trips for
+ * @returns {Promise<Array>} - Array of trips with id and name
+ */
+async function getAvailableTrips(userId) {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const trips = await Trip.findAll({
+      where: {
+        userId,
+        departureDate: {
+          [Sequelize.Op.gte]: today,
+        },
+      },
+      attributes: ['id', 'name', 'departureDate', 'returnDate'],
+      order: [['departureDate', 'ASC']],
+    });
+
+    return trips;
+  } catch (error) {
+    logger.error('Error fetching available trips:', error);
+    return [];
+  }
+}
+
+/**
+ * Verify if a user has edit access to a specific trip
+ * Edit access is granted to:
+ * - Trip owner
+ * - Companions with manage_travel permission
+ *
+ * @param {string} tripId - Trip ID
+ * @param {string} userId - User ID
+ * @returns {Promise<boolean>} - True if user has edit access
+ */
+async function verifyTripEditAccess(tripId, userId) {
+  try {
+    // Check if user is trip owner
+    const trip = await Trip.findOne({
+      where: { id: tripId, userId },
+    });
+
+    if (trip) {
+      return true;
+    }
+
+    // TODO: Check if user has manage_travel permission on the trip
+    // This would be implemented when companion permissions are available
+
+    return false;
+  } catch (error) {
+    logger.error('Error verifying trip edit access:', error);
+    return false;
+  }
+}
+
+/**
+ * Verify if a user can edit a specific item
+ * Edit access is granted to:
+ * - Item owner
+ * - Trip owner (if item is attached to a trip)
+ * - Companions with edit permission on the item
+ *
+ * @param {Object} item - Item object with userId and tripId
+ * @param {string} userId - User ID
+ * @returns {Promise<boolean>} - True if user has edit access
+ */
+async function verifyItemEditAccess(item, userId) {
+  try {
+    // Check if user is item owner
+    if (item.userId === userId) {
+      return true;
+    }
+
+    // Check if user is trip owner (if item is attached to a trip)
+    if (item.tripId) {
+      const trip = await Trip.findOne({
+        where: { id: item.tripId, userId },
+      });
+
+      if (trip) {
+        return true;
+      }
+    }
+
+    // TODO: Check if user is a companion with edit permission on the item
+    // This would be implemented when companion permissions are available
+
+    return false;
+  } catch (error) {
+    logger.error('Error verifying item edit access:', error);
+    return false;
+  }
+}
+
+/**
+ * Prepare trip selector data for forms
+ * Returns current trip info and available trips for the user
+ *
+ * @param {Object} item - Item object (flight, hotel, etc.) with optional tripId
+ * @param {string} userId - User ID
+ * @returns {Promise<Object>} - {currentTripId, currentTripName, availableTrips}
+ */
+async function getTripSelectorData(item, userId) {
+  try {
+    let currentTrip = null;
+
+    // If item is attached to a trip, fetch trip details
+    if (item && item.tripId) {
+      currentTrip = await Trip.findOne({
+        where: { id: item.tripId },
+        attributes: ['id', 'name'],
+      });
+    }
+
+    // Fetch all available trips for user
+    const availableTrips = await getAvailableTrips(userId);
+
+    return {
+      currentTripId: item?.tripId || null,
+      currentTripName: currentTrip?.name || null,
+      availableTrips,
+    };
+  } catch (error) {
+    logger.error('Error preparing trip selector data:', error);
+    return {
+      currentTripId: null,
+      currentTripName: null,
+      availableTrips: [],
+    };
+  }
+}
+
+module.exports = {
+  getAvailableTrips,
+  verifyTripEditAccess,
+  verifyItemEditAccess,
+  getTripSelectorData,
+};

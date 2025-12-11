@@ -1,0 +1,141 @@
+<!-- Trip Selector Field - Reusable partial for all item edit forms -->
+
+<div class="mb-4 pb-4 border-b border-gray-200">
+  <label class="block text-sm font-medium text-gray-700 mb-2">Trip Association</label>
+
+  <% if (currentTripId) { %>
+    <!-- Item is currently attached to a trip -->
+    <div class="flex items-center gap-2 mb-3">
+      <div class="flex-1 px-3 py-2 bg-blue-50 border border-blue-200 rounded-md text-sm text-gray-900">
+        📌 <strong><%= currentTripName %></strong>
+      </div>
+      <button
+        type="button"
+        onclick="document.getElementById('tripSelectorDropdown').classList.toggle('hidden'); return false;"
+        class="px-3 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+      >
+        Change
+      </button>
+    </div>
+  <% } else { %>
+    <!-- Item is standalone (not attached to any trip) -->
+    <div class="mb-3">
+      <button
+        type="button"
+        onclick="document.getElementById('tripSelectorDropdown').classList.toggle('hidden'); return false;"
+        class="w-full px-3 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+      >
+        + Add to trip
+      </button>
+    </div>
+  <% } %>
+
+  <!-- Trip Selection Dropdown -->
+  <div
+    id="tripSelectorDropdown"
+    class="hidden mb-3 border border-gray-200 rounded-md bg-white shadow-sm overflow-hidden"
+  >
+    <div class="max-h-48 overflow-y-auto">
+      <% if (availableTrips && availableTrips.length > 0) { %>
+        <% availableTrips.forEach(function(trip) { %>
+          <% const isCurrentTrip = trip.id === currentTripId; %>
+          <button
+            type="button"
+            class="w-full text-left px-4 py-3 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors <%= isCurrentTrip ? 'bg-blue-100 font-medium text-blue-900' : 'text-gray-900' %>"
+            onclick="selectTrip('<%= trip.id %>', '<%= trip.name.replace(/'/g, "&apos;") %>'); return false;"
+          >
+            <%= isCurrentTrip ? '✓ ' : '' %><%= trip.name %>
+          </button>
+        <% }); %>
+      <% } else { %>
+        <div class="px-4 py-3 text-sm text-gray-500">
+          No upcoming trips available
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Divider -->
+    <% if (currentTripId && availableTrips && availableTrips.length > 0) { %>
+      <div class="border-t border-gray-200"></div>
+    <% } %>
+
+    <!-- Remove Trip Option (only show if currently attached) -->
+    <% if (currentTripId) { %>
+      <button
+        type="button"
+        class="w-full text-left px-4 py-3 hover:bg-red-50 text-red-600 text-sm font-medium transition-colors"
+        onclick="removeTrip(); return false;"
+      >
+        ✕ Remove trip association
+      </button>
+    <% } %>
+  </div>
+
+  <!-- Hidden input to store selected tripId -->
+  <input
+    type="hidden"
+    id="tripSelectorInput"
+    name="tripId"
+    value="<%= currentTripId || '' %>"
+  >
+</div>
+
+<script>
+  // Initialize trip selector state
+  let currentTripId = '<%= currentTripId || "" %>';
+  let currentTripName = '<%= currentTripName || "" %>';
+
+  function selectTrip(tripId, tripName) {
+    currentTripId = tripId;
+    currentTripName = tripName;
+
+    // Update hidden input
+    document.getElementById('tripSelectorInput').value = tripId;
+
+    // Close dropdown
+    const dropdown = document.getElementById('tripSelectorDropdown');
+    if (dropdown) {
+      dropdown.classList.add('hidden');
+    }
+
+    // Update UI to reflect selection
+    updateTripSelectorUI();
+  }
+
+  function removeTrip() {
+    currentTripId = '';
+    currentTripName = '';
+
+    // Update hidden input
+    document.getElementById('tripSelectorInput').value = '';
+
+    // Close dropdown
+    const dropdown = document.getElementById('tripSelectorDropdown');
+    if (dropdown) {
+      dropdown.classList.add('hidden');
+    }
+
+    // Update UI to reflect removal
+    updateTripSelectorUI();
+  }
+
+  function updateTripSelectorUI() {
+    // This function updates the UI after selection/removal
+    // In a real implementation, you might want to re-render the component
+    // For now, we just log the state for debugging
+    console.log('Trip selector updated:', {
+      tripId: currentTripId,
+      tripName: currentTripName,
+    });
+  }
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('tripSelectorDropdown');
+    const tripSelector = e.target.closest('[id$="Dropdown"], button[onclick*="tripSelectorDropdown"]');
+
+    if (!tripSelector && dropdown && !dropdown.classList.contains('hidden')) {
+      dropdown.classList.add('hidden');
+    }
+  });
+</script>
