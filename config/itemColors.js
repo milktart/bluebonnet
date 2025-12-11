@@ -32,8 +32,8 @@ const ITEM_COLORS = {
  * Colors for approval/confirmation and decline/cancel/delete actions
  */
 const ACTION_COLORS = {
-  approve: '#00a651',     // Approval and confirmation buttons - darker, more saturated green
-  decline: '#d6006a',     // Decline, cancel, and delete buttons - darker red/pink
+  approve: '#4CAF50',     // Approval and confirmation buttons - pleasant medium green
+  decline: '#E74C3C',     // Decline, cancel, and delete buttons - warm red-orange
 };
 
 /**
