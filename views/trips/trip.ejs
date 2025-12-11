@@ -38,21 +38,20 @@
 
             // Determine icon based on trip purpose
             let tripIcon = 'flights_and_hotels'; // default
-            let iconClass = 'text-blue-600';
-            let bgClass = 'bg-blue-100';
 
             if (trip.purpose === 'business') {
               tripIcon = 'badge';
-              iconClass = 'text-purple-600';
-              bgClass = 'bg-purple-100';
             } else if (trip.purpose === 'leisure' || trip.purpose === 'family' || trip.purpose === 'romantic') {
               tripIcon = 'hotel';
-              iconClass = 'text-green-600';
-              bgClass = 'bg-green-100';
             }
+
+            // Use centralized color system - business trips get special color
+            const tripColorHex = trip.purpose === 'business' ?
+              getItemHexColor('business') :
+              getItemHexColor('trip');
           %>
-          <div class="w-8 h-8 <%= bgClass %> rounded-lg flex items-center justify-center mr-3 ml-0 mr-1">
-            <span class="material-symbols-outlined <%= iconClass %>" style="font-size: 16px;"><%= tripIcon %></span>
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 ml-0 mr-1" style="background-color: <%= tripColorHex %>22;">
+            <span class="material-symbols-outlined" style="font-size: 16px; color: <%= tripColorHex %>;"><%= tripIcon %></span>
           </div>
           <div>
             <h1 class="text-xl font-bold text-gray-900"><%- trip.name %></h1>
