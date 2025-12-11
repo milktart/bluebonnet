@@ -11,7 +11,7 @@ const ITEM_COLORS = {
     hex: '#0f4c6b',     // Main color - darker, high contrast
   },
   flight: {
-    hex: '#d4a500',     // Main color - darker gold with better contrast
+    hex: '#a68900',     // Main color - much darker gold/brown for better contrast
   },
   hotel: {
     hex: '#7c2d8f',     // Main color - darker purple with better contrast
