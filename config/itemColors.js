@@ -20,7 +20,7 @@ const ITEM_COLORS = {
     hex: '#7c2d8f',     // Main color - darker purple with better contrast
   },
   carRental: {
-    hex: '#B6ACA5',     // Main color - warm taupe/beige
+    hex: '#7c5a3a',     // Main color - darker brown with better contrast
   },
   transportation: {
     hex: '#0066cc',     // Main color - darker, more saturated blue
