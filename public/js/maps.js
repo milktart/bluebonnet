@@ -364,25 +364,25 @@ async function initializeMap(tripData, isPast = false) {
       const lngSpan = bounds.getEast() - bounds.getWest();
       const maxSpan = Math.max(latSpan, lngSpan);
 
-      // Determine maxZoom based on span
+      // Determine maxZoom based on span - allows zooming out more for better default view
       let maxZoom;
       if (maxSpan > 150) {
-        maxZoom = 2;
+        maxZoom = 1.5;
       } else if (maxSpan > 50) {
-        maxZoom = 3;
+        maxZoom = 2.5;
       } else if (maxSpan > 20) {
-        maxZoom = 4;
+        maxZoom = 3.5;
       } else if (maxSpan > 10) {
-        maxZoom = 5;
+        maxZoom = 4.5;
       } else {
-        maxZoom = 6;
+        maxZoom = 5.5;
       }
 
       // Fit bounds accounting for primary sidebar on left
       map.fitBounds(bounds, {
         paddingTopLeft: [425, 1],
         paddingBottomRight: [0, 80],
-        maxZoom: maxZoom + 0.5,
+        maxZoom,
       });
     } else {
       // No locations - zoom in slightly more for better initial view
