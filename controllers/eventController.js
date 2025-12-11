@@ -12,6 +12,7 @@ const {
 const { utcToLocal } = require('../utils/timezoneHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 const { formatDate, formatTime } = require('../utils/dateFormatter');
+const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
 
 exports.createEvent = async (req, res) => {
   try {
@@ -169,6 +170,7 @@ exports.updateEvent = async (req, res) => {
       startTime,
       endDate,
       endTime,
+      tripId: newTripId,
     } = req.body;
 
     // Convert separate date/time fields to datetime strings if provided
@@ -206,6 +208,19 @@ exports.updateEvent = async (req, res) => {
         return res.status(403).json({ success: false, error: 'Unauthorized' });
       }
       return redirectAfterError(res, req, null, 'Event not found');
+    }
+
+    // Verify trip edit access if changing trip association
+    if (newTripId && newTripId !== event.tripId) {
+      const hasAccess = await verifyTripEditAccess(newTripId, req.user.id);
+      if (!hasAccess) {
+        const isAsync = req.headers['x-async-request'] === 'true';
+        if (isAsync) {
+          return res.status(403).json({ success: false, error: 'Cannot attach to this trip' });
+        }
+        req.flash('error_msg', 'Cannot attach to this trip');
+        return res.redirect('back');
+      }
     }
 
     // Geocode location if changed
@@ -251,6 +266,7 @@ exports.updateEvent = async (req, res) => {
       contactPhone: sanitizedContactPhone,
       contactEmail: sanitizedContactEmail,
       description: sanitizedDescription,
+      tripId: newTripId || null,
     });
 
     // Check if this is an async request
@@ -433,10 +449,16 @@ exports.getAddForm = async (req, res) => {
       }
     }
 
+    // Fetch trip selector data
+    const tripSelectorData = await getTripSelectorData(null, req.user.id);
+
     res.render('partials/event-form', {
       tripId: tripId || null,
       isEditing: false,
       data: null,
+      currentTripId: tripSelectorData.currentTripId,
+      currentTripName: tripSelectorData.currentTripName,
+      availableTrips: tripSelectorData.availableTrips,
     });
   } catch (error) {
     logger.error('Error fetching add form:', error);
@@ -481,10 +503,16 @@ exports.getEditForm = async (req, res) => {
       contactEmail: event.contactEmail,
     };
 
+    // Fetch trip selector data
+    const tripSelectorData = await getTripSelectorData(event, req.user.id);
+
     res.render('partials/event-form', {
       tripId: event.tripId,
       isEditing: true,
       data: formattedData,
+      currentTripId: tripSelectorData.currentTripId,
+      currentTripName: tripSelectorData.currentTripName,
+      availableTrips: tripSelectorData.availableTrips,
     });
   } catch (error) {
     logger.error(error);

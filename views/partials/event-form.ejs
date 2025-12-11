@@ -25,9 +25,9 @@
     <% if (!isAddMode) { %>
       <input type="hidden" name="_method" value="PUT">
     <% } %>
-    <% if (tripId) { %>
-      <input type="hidden" name="tripId" value="<%= tripId %>">
-    <% } %>
+
+    <!-- Trip Selector -->
+    <%- include('./trip-selector-field', { currentTripId, currentTripName, availableTrips }) %>
 
     <!-- Event Name -->
     <div>
