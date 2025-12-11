@@ -638,8 +638,15 @@
                       location = pickupCity;
                     }
                   %>
-                  <div class="w-8 h-8 bg-<%= standaloneColor %>-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span class="material-symbols-outlined text-<%= standaloneColor %>-600" style="font-size: 16px;"><%= standaloneIcon %></span>
+                  <%
+                    const colorHex = item.type === 'event' ? getItemHexColor('event') :
+                                     item.type === 'flight' ? getItemHexColor('flight') :
+                                     item.type === 'hotel' ? getItemHexColor('hotel') :
+                                     item.type === 'transportation' ? getItemHexColor('transportation') :
+                                     item.type === 'carRental' ? getItemHexColor('carRental') : '#999';
+                  %>
+                  <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: <%= colorHex %>22;">
+                    <span class="material-symbols-outlined" style="font-size: 16px; color: <%= colorHex %>;"><%= standaloneIcon %></span>
                   </div>
                   <div class="flex-1 min-w-0">
                     <h3 class="text-sm font-medium text-gray-900"><%= displayName %></h3>
@@ -661,17 +668,11 @@
                     <%
                       // Determine icon based on trip purpose
                       let tripIcon = 'flights_and_hotels'; // default
-                      let iconClass = 'text-blue-600';
-                      let bgClass = 'bg-blue-100';
 
                       if (tripData.trip.purpose === 'business') {
                         tripIcon = 'badge';
-                        iconClass = 'text-purple-600';
-                        bgClass = 'bg-purple-100';
                       } else if (tripData.trip.purpose === 'leisure' || tripData.trip.purpose === 'family' || tripData.trip.purpose === 'romantic') {
                         tripIcon = 'hotel';
-                        iconClass = 'text-green-600';
-                        bgClass = 'bg-green-100';
                       }
 
                       // Extract unique cities from all items in this trip (exclude events)
@@ -698,9 +699,12 @@
                         }
                       });
                       const citiesList = Array.from(tripCities).sort().join(', ');
+
+                      // Use centralized color system for trip cards
+                      const tripColorHex = getItemHexColor('trip');
                     %>
-                    <div class="w-8 h-8 <%= bgClass %> rounded-lg flex items-center justify-center">
-                      <span class="material-symbols-outlined <%= iconClass %>" style="font-size: 16px;"><%= tripIcon %></span>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: <%= tripColorHex %>22;">
+                      <span class="material-symbols-outlined" style="font-size: 16px; color: <%= tripColorHex %>;"><%= tripIcon %></span>
                     </div>
                     <div class="flex-1 text-left">
                       <h3 class="text-sm font-medium text-gray-900 hover:text-blue-600"><%= tripData.trip.name %></h3>
@@ -1015,8 +1019,15 @@
                  onmouseover="highlightItemOnMap('<%= item.type %>', '<%= item.data.id %>')"
                  onmouseout="clearTripHover()">
               <div class="py-4 px-5 inline-flex items-center gap-x-3 w-full font-medium">
-                <div class="w-8 h-8 bg-<%= standaloneColor %>-100 rounded-lg flex items-center justify-center flex-shrink-0 opacity-60">
-                  <span class="material-symbols-outlined text-<%= standaloneColor %>-600" style="font-size: 16px;"><%= standaloneIcon %></span>
+                <%
+                  const colorHex = item.type === 'event' ? getItemHexColor('event') :
+                                   item.type === 'flight' ? getItemHexColor('flight') :
+                                   item.type === 'hotel' ? getItemHexColor('hotel') :
+                                   item.type === 'transportation' ? getItemHexColor('transportation') :
+                                   item.type === 'carRental' ? getItemHexColor('carRental') : '#999';
+                %>
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 opacity-60" style="background-color: <%= colorHex %>22;">
+                  <span class="material-symbols-outlined" style="font-size: 16px; color: <%= colorHex %>;"><%= standaloneIcon %></span>
                 </div>
                 <div class="flex-1 min-w-0">
                   <h3 class="text-sm font-medium text-gray-700"><%= displayName %></h3>
