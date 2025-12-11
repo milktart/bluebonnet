@@ -109,6 +109,19 @@
       input.value = tripId;
     }
 
+    // Update display field text and styling
+    const displayField = document.getElementById('tripSelectorDisplay');
+    if (displayField) {
+      // Update the span text to show trip name instead of "+ Add to trip"
+      const span = displayField.querySelector('span');
+      if (span) {
+        span.textContent = tripName;
+      }
+      // Change from gray text (standalone) to black text (attached)
+      displayField.classList.remove('text-gray-500');
+      displayField.classList.add('text-gray-900');
+    }
+
     // Close dropdown
     const dropdown = document.getElementById('tripSelectorDropdown');
     if (dropdown) {
@@ -127,6 +140,19 @@
     const input = document.getElementById('tripSelectorInput');
     if (input) {
       input.value = '';
+    }
+
+    // Update display field text and styling back to standalone state
+    const displayField = document.getElementById('tripSelectorDisplay');
+    if (displayField) {
+      // Update the span text back to "+ Add to trip"
+      const span = displayField.querySelector('span');
+      if (span) {
+        span.textContent = '+ Add to trip';
+      }
+      // Change from black text (attached) to gray text (standalone)
+      displayField.classList.remove('text-gray-900');
+      displayField.classList.add('text-gray-500');
     }
 
     // Close dropdown
