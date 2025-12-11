@@ -91,29 +91,13 @@
     currentTripName: '<%= currentTripName || "" %>'
   };
 
-  // Add click handler to the display field
-  document.addEventListener('DOMContentLoaded', function() {
-    const displayField = document.getElementById('tripSelectorDisplay');
-    if (displayField) {
-      displayField.addEventListener('click', function() {
-        const dropdown = document.getElementById('tripSelectorDropdown');
-        if (dropdown) {
-          dropdown.classList.toggle('hidden');
-        }
-      });
+  window.toggleTripSelector = function() {
+    const dropdown = document.getElementById('tripSelectorDropdown');
+    if (dropdown) {
+      dropdown.classList.toggle('hidden');
     }
-  });
-
-  // Also try immediately in case DOMContentLoaded already fired
-  const displayField = document.getElementById('tripSelectorDisplay');
-  if (displayField) {
-    displayField.addEventListener('click', function() {
-      const dropdown = document.getElementById('tripSelectorDropdown');
-      if (dropdown) {
-        dropdown.classList.toggle('hidden');
-      }
-    });
-  }
+    return false;
+  };
 
   window.selectTrip = function(tripId, tripName) {
     window.tripSelectorState.currentTripId = tripId;
@@ -132,6 +116,7 @@
     }
 
     console.log('Trip selected:', { tripId, tripName });
+    return false;
   };
 
   window.removeTrip = function() {
@@ -151,27 +136,37 @@
     }
 
     console.log('Trip detached');
+    return false;
   };
 
-  // Close dropdown when clicking outside (once DOM is ready)
-  document.addEventListener('DOMContentLoaded', function() {
-    document.addEventListener('click', function(e) {
-      const dropdown = document.getElementById('tripSelectorDropdown');
-      const tripSelector = e.target.closest('[id$="Dropdown"], button[onclick*="tripSelectorDropdown"]');
-
-      if (!tripSelector && dropdown && !dropdown.classList.contains('hidden')) {
-        dropdown.classList.add('hidden');
-      }
-    });
-  });
-
-  // Also attach immediately in case DOMContentLoaded already fired
-  document.addEventListener('click', function(e) {
+  // Initialize event handlers when DOM is ready
+  function initializeTripSelector() {
+    const displayField = document.getElementById('tripSelectorDisplay');
     const dropdown = document.getElementById('tripSelectorDropdown');
-    const tripSelector = e.target.closest('[id$="Dropdown"], button[onclick*="tripSelectorDropdown"]');
+    const parent = displayField?.parentElement;
 
-    if (!tripSelector && dropdown && !dropdown.classList.contains('hidden')) {
-      dropdown.classList.add('hidden');
+    // Setup display field click handler
+    if (displayField) {
+      displayField.onclick = function(e) {
+        e.stopPropagation();
+        window.toggleTripSelector();
+      };
     }
-  });
+
+    // Close dropdown when clicking outside the entire trip selector
+    if (parent) {
+      document.addEventListener('click', function(e) {
+        if (!parent.contains(e.target) && dropdown && !dropdown.classList.contains('hidden')) {
+          dropdown.classList.add('hidden');
+        }
+      });
+    }
+  }
+
+  // Setup handlers when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeTripSelector);
+  } else {
+    initializeTripSelector();
+  }
 </script>
