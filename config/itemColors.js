@@ -3,8 +3,7 @@
  * Centralized color definitions for all travel item types
  * Update hex codes here and they'll be reflected throughout the application
  *
- * IMPORTANT: Change the hex values to customize colors. All other values
- * are automatically computed from the hex codes.
+ * IMPORTANT: Change the hex values to customize colors.
  */
 
 const ITEM_COLORS = {
@@ -26,6 +25,15 @@ const ITEM_COLORS = {
   event: {
     hex: '#ff99c9',     // Main color - UPDATE THIS
   },
+};
+
+/**
+ * Button Action Colors
+ * Colors for approval/confirmation and decline/cancel/delete actions
+ */
+const ACTION_COLORS = {
+  approve: '#54f5a7',     // Approval and confirmation buttons - UPDATE THIS
+  decline: '#f24073',     // Decline, cancel, and delete buttons - UPDATE THIS
 };
 
 /**
@@ -72,9 +80,39 @@ function getItemColorStyle(itemType, property = 'backgroundColor') {
   return `${property}: ${hex}`;
 }
 
+/**
+ * Get action color (approve or decline)
+ * @param {string} action - 'approve' or 'decline'
+ * @returns {string} Hex color code
+ */
+function getActionColor(action) {
+  const normalized = String(action || '').toLowerCase();
+  return ACTION_COLORS[normalized] || ACTION_COLORS.decline;
+}
+
+/**
+ * Get approval/confirmation button color
+ * @returns {string} Hex color code for approve actions
+ */
+function getApproveColor() {
+  return ACTION_COLORS.approve;
+}
+
+/**
+ * Get decline/cancel/delete button color
+ * @returns {string} Hex color code for decline actions
+ */
+function getDeclineColor() {
+  return ACTION_COLORS.decline;
+}
+
 module.exports = {
   ITEM_COLORS,
+  ACTION_COLORS,
   getItemColor,
   getItemHexColor,
   getItemColorStyle,
+  getActionColor,
+  getApproveColor,
+  getDeclineColor,
 };

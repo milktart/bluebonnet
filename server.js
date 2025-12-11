@@ -182,9 +182,12 @@ app.use((req, res, next) => {
   res.locals.getLayoverText = dateFormatter.getLayoverText;
 
   // Make item color utilities available to all EJS templates
-  const { getItemHexColor, getItemColorStyle } = require('./config/itemColors');
+  const { getItemHexColor, getItemColorStyle, getActionColor, getApproveColor, getDeclineColor } = require('./config/itemColors');
   res.locals.getItemHexColor = getItemHexColor;
   res.locals.getItemColorStyle = getItemColorStyle;
+  res.locals.getActionColor = getActionColor;
+  res.locals.getApproveColor = getApproveColor;
+  res.locals.getDeclineColor = getDeclineColor;
 
   next();
 });

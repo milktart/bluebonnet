@@ -461,8 +461,9 @@
                   const daysSpanned = renderEndCol - renderStartCol;
               %>
                     <% if (item.type === 'trip') { %>
-                      <div class="multi-day-bar bg-blue-100 text-blue-900" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>;">
-                        <span class="material-symbols-outlined text-blue-600" style="font-size: 14px; flex-shrink: 0;">luggage</span>
+                      <% const tripColor = getItemHexColor('trip'); %>
+                      <div class="multi-day-bar" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>; background-color: <%= tripColor %>33; color: <%= tripColor %>;">
+                        <span class="material-symbols-outlined" style="font-size: 14px; flex-shrink: 0; color: <%= tripColor %>;">luggage</span>
                         <span class="truncate"><%= item.data.name %></span>
                       </div>
                     <% } else if (item.type === 'flight') { %>
@@ -470,29 +471,34 @@
                         // Extract airport codes (first 3 letters)
                         const originCode = item.data.origin ? item.data.origin.substring(0, 3).toUpperCase() : '';
                         const destCode = item.data.destination ? item.data.destination.substring(0, 3).toUpperCase() : '';
+                        const flightColor = getItemHexColor('flight');
                       %>
-                      <div class="multi-day-bar bg-blue-100 text-blue-900" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>;">
-                        <span class="material-symbols-outlined text-blue-600" style="font-size: 14px; flex-shrink: 0;">flight</span>
+                      <div class="multi-day-bar" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>; background-color: <%= flightColor %>33; color: <%= flightColor %>;">
+                        <span class="material-symbols-outlined" style="font-size: 14px; flex-shrink: 0; color: <%= flightColor %>;">flight</span>
                         <span class="truncate"><%= originCode %>→<%= destCode %></span>
                       </div>
                     <% } else if (item.type === 'hotel') { %>
-                      <div class="multi-day-bar bg-green-100 text-green-900" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>;">
-                        <span class="material-symbols-outlined text-green-600" style="font-size: 14px; flex-shrink: 0;">hotel</span>
+                      <% const hotelColor = getItemHexColor('hotel'); %>
+                      <div class="multi-day-bar" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>; background-color: <%= hotelColor %>33; color: <%= hotelColor %>;">
+                        <span class="material-symbols-outlined" style="font-size: 14px; flex-shrink: 0; color: <%= hotelColor %>;">hotel</span>
                         <span class="truncate"><%= item.data.hotelName %></span>
                       </div>
                     <% } else if (item.type === 'event') { %>
-                      <div class="multi-day-bar bg-red-100 text-red-900" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>;">
-                        <span class="material-symbols-outlined text-red-600" style="font-size: 14px; flex-shrink: 0;">event</span>
+                      <% const eventColor = getItemHexColor('event'); %>
+                      <div class="multi-day-bar" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>; background-color: <%= eventColor %>33; color: <%= eventColor %>;">
+                        <span class="material-symbols-outlined" style="font-size: 14px; flex-shrink: 0; color: <%= eventColor %>;">event</span>
                         <span class="truncate"><%= item.data.name %></span>
                       </div>
                     <% } else if (item.type === 'transportation') { %>
-                      <div class="multi-day-bar bg-amber-100 text-amber-900" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>;">
-                        <span class="material-symbols-outlined text-amber-600" style="font-size: 14px; flex-shrink: 0;"><%= getTransportationIcon(item.data.method) %></span>
+                      <% const transColor = getItemHexColor('transportation'); %>
+                      <div class="multi-day-bar" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>; background-color: <%= transColor %>33; color: <%= transColor %>;">
+                        <span class="material-symbols-outlined" style="font-size: 14px; flex-shrink: 0; color: <%= transColor %>;"><%= getTransportationIcon(item.data.method) %></span>
                         <span class="truncate"><%= item.data.origin %> → <%= item.data.destination %></span>
                       </div>
                     <% } else if (item.type === 'carRental') { %>
-                      <div class="multi-day-bar bg-purple-100 text-purple-900" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>;">
-                        <span class="material-symbols-outlined text-purple-600" style="font-size: 14px; flex-shrink: 0;">directions_car</span>
+                      <% const carRentalColor = getItemHexColor('carRental'); %>
+                      <div class="multi-day-bar" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>; background-color: <%= carRentalColor %>33; color: <%= carRentalColor %>;">
+                        <span class="material-symbols-outlined" style="font-size: 14px; flex-shrink: 0; color: <%= carRentalColor %>;">directions_car</span>
                         <span class="truncate"><%= item.data.company %></span>
                       </div>
                     <% } %>
