@@ -400,7 +400,7 @@
                   <div class="flex gap-3 flex-1 items-start min-w-0">
                     <div class="flex flex-col items-center gap-1 flex-shrink-0">
                       <span class="text-xs font-medium text-gray-900 <%= completeClass %>"><%= hours %>:<%= minutes %></span>
-                      <span class="material-symbols-outlined text-blue-600 text-sm">flight</span>
+                      <span class="material-symbols-outlined text-sm" style="color: <%= getItemHexColor('flight') %>;">flight</span>
                     </div>
 
                     <!-- Center: Flight details (2 rows) -->
@@ -449,13 +449,13 @@
                     <div class="flex flex-col items-center gap-1 flex-shrink-0">
                       <span class="text-xs font-medium text-gray-900 <%= completeClass %>"><%= hours %>:<%= minutes %></span>
                       <% if (item.type === 'hotel') { %>
-                        <span class="material-symbols-outlined text-green-600 text-sm">hotel</span>
+                        <span class="material-symbols-outlined text-sm" style="color: <%= getItemHexColor('hotel') %>;">hotel</span>
                       <% } else if (item.type === 'transportation') { %>
-                        <span class="material-symbols-outlined text-amber-600 text-sm"><%= item.icon %></span>
+                        <span class="material-symbols-outlined text-sm" style="color: <%= getItemHexColor('transportation') %>;"><%= item.icon %></span>
                       <% } else if (item.type === 'carRental') { %>
-                        <span class="material-symbols-outlined text-gray-600 text-sm">directions_car</span>
+                        <span class="material-symbols-outlined text-sm" style="color: <%= getItemHexColor('carRental') %>;">directions_car</span>
                       <% } else if (item.type === 'event') { %>
-                        <span class="material-symbols-outlined text-red-600 text-sm">event</span>
+                        <span class="material-symbols-outlined text-sm" style="color: <%= getItemHexColor('event') %>;">event</span>
                       <% } %>
                     </div>
 
@@ -498,7 +498,7 @@
               %>
                 <div class="accommodation-suggestion bg-amber-50 rounded-lg" onclick="showAddFormWithLayoverDates('hotel', '<%= layoverInfo.arrivalDateTime %>', '<%= layoverInfo.departureDateTime %>', '<%= layoverInfo.destinationTimezone %>')">
                   <div class="flex items-center space-x-3 p-3 w-full">
-                    <span class="material-symbols-outlined text-amber-600 text-sm flex-shrink-0">hotel</span>
+                    <span class="material-symbols-outlined text-sm flex-shrink-0" style="color: <%= getItemHexColor('hotel') %>;">hotel</span>
                     <div class="flex-1 min-w-0">
                       <p class="text-sm text-amber-900 font-medium">Do you have accommodation in <%= layoverInfo.city %>?</p>
                       <p class="text-xs text-amber-700">Add a hotel for your layover</p>
