@@ -8,7 +8,10 @@
 
 const ITEM_COLORS = {
   trip: {
-    hex: '#0f4c6b',     // Main color - darker, high contrast
+    hex: '#0f4c6b',     // Main color - darker, high contrast (leisure trips)
+  },
+  business: {
+    hex: '#FEA572',     // Business trip color - warm orange
   },
   flight: {
     hex: '#a68900',     // Main color - much darker gold/brown for better contrast
@@ -17,7 +20,7 @@ const ITEM_COLORS = {
     hex: '#7c2d8f',     // Main color - darker purple with better contrast
   },
   carRental: {
-    hex: '#d35a2f',     // Main color - darker orange with better contrast
+    hex: '#B6ACA5',     // Main color - warm taupe/beige
   },
   transportation: {
     hex: '#0066cc',     // Main color - darker, more saturated blue
@@ -54,6 +57,7 @@ function getItemColor(itemType) {
     transportation: 'transportation',
     event: 'event',
     trip: 'trip',
+    business: 'business',
   };
 
   const key = typeMap[normalized] || normalized;
