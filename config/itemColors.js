@@ -11,7 +11,7 @@ const ITEM_COLORS = {
     hex: '#0f4c6b',     // Main color - darker, high contrast (leisure trips)
   },
   business: {
-    hex: '#FEA572',     // Business trip color - warm orange
+    hex: '#D97706',     // Business trip color - darker, more legible orange
   },
   flight: {
     hex: '#a68900',     // Main color - much darker gold/brown for better contrast
