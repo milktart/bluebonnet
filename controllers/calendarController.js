@@ -33,7 +33,7 @@ exports.getCalendarSidebar = async (req, res) => {
     // Get trips the user owns - simpler query without companion details
     const ownedTrips = await Trip.findAll({
       where: { userId: req.user.id },
-      attributes: ['id', 'name', 'departureDate', 'returnDate', 'userId'],
+      attributes: ['id', 'name', 'departureDate', 'returnDate', 'userId', 'purpose'],
       order: [['departureDate', 'ASC']],
       include: minimalTripIncludes,
     });
@@ -66,7 +66,7 @@ exports.getCalendarSidebar = async (req, res) => {
     if (newCompanionTripIds.length > 0) {
       companionTrips = await Trip.findAll({
         where: { id: { [Op.in]: newCompanionTripIds } },
-        attributes: ['id', 'name', 'departureDate', 'returnDate', 'userId'],
+        attributes: ['id', 'name', 'departureDate', 'returnDate', 'userId', 'purpose'],
         order: [['departureDate', 'ASC']],
         include: minimalTripIncludes,
       });
