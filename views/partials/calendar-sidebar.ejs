@@ -521,7 +521,7 @@
                   const isToday = dateKey === getDateKey(today);
                   const isPast = date < today;
                 %>
-                <div class="calendar-date-cell bg-white hover:shadow-sm transition-shadow <% if (isToday) { %>bg-blue-50<% } %><% if (isPast && !isToday) { %>opacity-50<% } %>" id="date-<%= dateKey %>" data-date="<%= dateKey %>">
+                <div class="calendar-date-cell bg-white opacity-85 hover:shadow-sm transition-shadow <% if (isToday) { %>bg-blue-50 opacity-100<% } %><% if (isPast && !isToday) { %>opacity-50<% } %>" id="date-<%= dateKey %>" data-date="<%= dateKey %>">
                   <div class="text-xs font-semibold <%= isToday ? 'text-blue-700' : 'text-gray-800' %> mb-1">
                     <%= date.getDate() %>
                   </div>
