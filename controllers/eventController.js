@@ -30,6 +30,7 @@ exports.createEvent = async (req, res) => {
       endTime,
       description,
       companions,
+      isConfirmed,
     } = req.body;
     let { startDateTime, endDateTime } = req.body;
 
@@ -98,6 +99,7 @@ exports.createEvent = async (req, res) => {
       contactPhone: sanitizedContactPhone,
       contactEmail: sanitizedContactEmail,
       description: sanitizedDescription,
+      isConfirmed: isConfirmed === 'true' || isConfirmed === true || !isConfirmed,
     });
 
     // Add companions to this event
@@ -171,6 +173,7 @@ exports.updateEvent = async (req, res) => {
       endDate,
       endTime,
       tripId: newTripId,
+      isConfirmed,
     } = req.body;
 
     // Convert separate date/time fields to datetime strings if provided
@@ -267,6 +270,7 @@ exports.updateEvent = async (req, res) => {
       contactEmail: sanitizedContactEmail,
       description: sanitizedDescription,
       tripId: newTripId || null,
+      isConfirmed: isConfirmed === 'true' || isConfirmed === true,
     });
 
     // Check if this is an async request
@@ -501,6 +505,7 @@ exports.getEditForm = async (req, res) => {
       endTime,
       contactPhone: event.contactPhone,
       contactEmail: event.contactEmail,
+      isConfirmed: event.isConfirmed,
     };
 
     // Fetch trip selector data

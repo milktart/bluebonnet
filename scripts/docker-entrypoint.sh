@@ -12,9 +12,13 @@ done
 
 echo "✅ PostgreSQL is ready!"
 
-# Check if database needs initialization
-echo "🔍 Checking database status..."
-DB_NEEDS_INIT=$(node -e "
+# Always sync database schema to ensure models are up to date
+echo "📊 Syncing database schema..."
+npm run db:sync
+
+# Check if database needs airport data seeding
+echo "🔍 Checking if airport data needs seeding..."
+DB_NEEDS_AIRPORTS=$(node -e "
 const { Airport } = require('./models');
 Airport.count()
   .then(count => {
@@ -31,21 +35,15 @@ Airport.count()
   });
 " 2>/dev/null || echo "true")
 
-if [ "$DB_NEEDS_INIT" = "true" ]; then
-  echo "🔧 Database needs initialization..."
-
-  # Sync database schema
-  echo "📊 Creating database tables..."
-  npm run db:sync
-
-  # Seed airport data
+if [ "$DB_NEEDS_AIRPORTS" = "true" ]; then
   echo "✈️  Seeding airport data..."
   npm run db:seed-airports
-
-  echo "✅ Database initialization complete!"
+  echo "✅ Airport data seeded!"
 else
-  echo "✅ Database already initialized, skipping setup"
+  echo "✅ Airport data already exists, skipping seed"
 fi
+
+echo "✅ Database setup complete!"
 
 # Build JavaScript bundles
 echo "📦 Building JavaScript bundles..."

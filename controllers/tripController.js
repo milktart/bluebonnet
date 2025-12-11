@@ -741,7 +741,7 @@ exports.getCreateForm = async (req, res) => {
 
 exports.createTrip = async (req, res) => {
   try {
-    const { name, departureDate, returnDate, companions, purpose, defaultCompanionEditPermission } =
+    const { name, departureDate, returnDate, companions, purpose, defaultCompanionEditPermission, isConfirmed } =
       req.body;
 
     // Create the trip
@@ -752,6 +752,7 @@ exports.createTrip = async (req, res) => {
       returnDate,
       purpose,
       defaultCompanionEditPermission: !!defaultCompanionEditPermission,
+      isConfirmed: isConfirmed === 'true' || isConfirmed === true || !isConfirmed, // Default to true if not specified
     });
 
     // Ensure trip owner is added as a trip companion
@@ -1113,6 +1114,7 @@ exports.updateTrip = async (req, res) => {
       companionPermissions,
       purpose,
       defaultCompanionEditPermission,
+      isConfirmed,
     } = req.body;
 
     const trip = await Trip.findOne({
@@ -1131,6 +1133,7 @@ exports.updateTrip = async (req, res) => {
       returnDate,
       purpose,
       defaultCompanionEditPermission: !!defaultCompanionEditPermission,
+      isConfirmed: isConfirmed === 'true' || isConfirmed === true,
     });
 
     // Get existing companions

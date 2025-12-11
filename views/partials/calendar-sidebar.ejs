@@ -462,7 +462,7 @@
               %>
                     <% if (item.type === 'trip') { %>
                       <% const tripColor = item.data.purpose === 'business' ? getItemHexColor('business') : getItemHexColor('trip'); %>
-                      <div class="multi-day-bar" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>; background-color: <%= tripColor %>33; color: <%= tripColor %>;">
+                      <div class="multi-day-bar <% if (!item.data.isConfirmed) { %>calendar-item-tentative<% } %>" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>; background-color: <%= tripColor %>33; color: <%= tripColor %>;">
                         <span class="material-symbols-outlined" style="font-size: 14px; flex-shrink: 0; color: <%= tripColor %>;">luggage</span>
                         <span class="truncate"><%= item.data.name %></span>
                       </div>
@@ -485,7 +485,7 @@
                       </div>
                     <% } else if (item.type === 'event') { %>
                       <% const eventColor = getItemHexColor('event'); %>
-                      <div class="multi-day-bar" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>; background-color: <%= eventColor %>33; color: <%= eventColor %>;">
+                      <div class="multi-day-bar <% if (!item.data.isConfirmed) { %>calendar-item-tentative<% } %>" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>; background-color: <%= eventColor %>33; color: <%= eventColor %>;">
                         <span class="material-symbols-outlined" style="font-size: 14px; flex-shrink: 0; color: <%= eventColor %>;">event</span>
                         <span class="truncate"><%= item.data.name %></span>
                       </div>
@@ -605,6 +605,29 @@
     top: calc(1.75rem + var(--row-in-day) * 1.75rem);
   }
 
+  /* Tentative item styling - diagonal stripes overlay */
+  .calendar-item-tentative {
+    position: relative;
+  }
+
+  .calendar-item-tentative::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.1) 2px,
+      rgba(0, 0, 0, 0.1) 4px
+    );
+    pointer-events: none;
+    border-radius: 0.25rem;
+  }
+
   /* Week grid container - fixed column widths */
   .calendar-week {
     display: grid;
@@ -714,5 +737,13 @@
       }
     }
   }
+
+  // Auto-scroll to current month/week on calendar load
+  // Use a small timeout to ensure the DOM is fully rendered
+  setTimeout(() => {
+    if (typeof scrollToCurrentMonth === 'function') {
+      scrollToCurrentMonth();
+    }
+  }, 50);
 
 </script>
