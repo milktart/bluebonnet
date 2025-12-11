@@ -122,9 +122,48 @@
       displayField.classList.add('text-gray-900');
     }
 
-    // Close dropdown
+    // Update checkmarks in dropdown - remove old, add new
     const dropdown = document.getElementById('tripSelectorDropdown');
     if (dropdown) {
+      // Remove checkmarks and gray background from all trip buttons
+      const allButtons = dropdown.querySelectorAll('button[onclick*="selectTrip"]');
+      allButtons.forEach(button => {
+        button.classList.remove('bg-gray-100', 'font-medium');
+        const existingCheckmark = button.querySelector('svg');
+        if (existingCheckmark) {
+          existingCheckmark.remove();
+        }
+        // Add empty space where checkmark was
+        const firstChild = button.querySelector('.flex');
+        if (firstChild && !firstChild.querySelector('.w-4.h-4.mr-2')) {
+          const emptySpace = document.createElement('div');
+          emptySpace.className = 'w-4 h-4 mr-2';
+          firstChild.insertBefore(emptySpace, firstChild.firstChild);
+        }
+      });
+
+      // Add checkmark to newly selected trip
+      const newSelectedButton = Array.from(allButtons).find(btn => btn.textContent.includes(tripName));
+      if (newSelectedButton) {
+        newSelectedButton.classList.add('bg-gray-100', 'font-medium');
+        const checkmarkSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        checkmarkSvg.setAttribute('class', 'w-4 h-4 text-blue-600 mr-2 flex-shrink-0');
+        checkmarkSvg.setAttribute('fill', 'currentColor');
+        checkmarkSvg.setAttribute('viewBox', '0 0 20 20');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('fill-rule', 'evenodd');
+        path.setAttribute('d', 'M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z');
+        path.setAttribute('clip-rule', 'evenodd');
+        checkmarkSvg.appendChild(path);
+        const flexDiv = newSelectedButton.querySelector('.flex');
+        if (flexDiv) {
+          const emptySpace = flexDiv.querySelector('.w-4.h-4.mr-2');
+          if (emptySpace) {
+            emptySpace.replaceWith(checkmarkSvg);
+          }
+        }
+      }
+
       dropdown.classList.add('hidden');
     }
 
@@ -155,9 +194,25 @@
       displayField.classList.add('text-gray-500');
     }
 
-    // Close dropdown
+    // Remove checkmarks and gray background from all trip buttons in dropdown
     const dropdown = document.getElementById('tripSelectorDropdown');
     if (dropdown) {
+      const allButtons = dropdown.querySelectorAll('button[onclick*="selectTrip"]');
+      allButtons.forEach(button => {
+        button.classList.remove('bg-gray-100', 'font-medium');
+        const existingCheckmark = button.querySelector('svg');
+        if (existingCheckmark) {
+          existingCheckmark.remove();
+        }
+        // Add empty space where checkmark was
+        const firstChild = button.querySelector('.flex');
+        if (firstChild && !firstChild.querySelector('.w-4.h-4.mr-2')) {
+          const emptySpace = document.createElement('div');
+          emptySpace.className = 'w-4 h-4 mr-2';
+          firstChild.insertBefore(emptySpace, firstChild.firstChild);
+        }
+      });
+
       dropdown.classList.add('hidden');
     }
 
