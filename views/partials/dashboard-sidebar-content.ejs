@@ -91,145 +91,75 @@
       </div>
     </div>
 
-    <!-- Settings Content - Always rendered (works without trips) -->
-    <div id="settings-content" class="<% if (activeTab !== 'settings') { %>hidden<% } %> space-y-4 p-6">
-      <div class="space-y-3">
-        <button data-action="loadSidebarContent" data-url="/account/sidebar" data-full-width="true" data-update-history="true" data-history-path="/manage/account" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
-          <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-            </svg>
-          </div>
-          <div class="flex-1 text-left">
-            <h3 class="text-sm font-medium text-gray-900">Account Settings</h3>
-            <p class="text-xs text-gray-500">Manage your profile and preferences</p>
-          </div>
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-          </svg>
-        </button>
-
-        <button data-action="loadSidebarContent" data-url="/account/vouchers/sidebar" data-update-history="true" data-history-path="/manage/certificates" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
-          <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-            <span class="material-symbols-outlined text-amber-600" style="font-size: 18px;">wallet</span>
-          </div>
-          <div class="flex-1 text-left">
-            <h3 class="text-sm font-medium text-gray-900">Manage Certificates & Vouchers</h3>
-            <p class="text-xs text-gray-500">View and manage your travel credits</p>
-          </div>
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-          </svg>
-        </button>
-
-        <button data-action="loadSidebarContent" data-url="/account/companions-sidebar" data-full-width="true" data-update-history="true" data-history-path="/manage/companions" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
-          <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-            <span class="material-symbols-outlined text-green-600" style="font-size: 18px;">group</span>
-          </div>
-          <div class="flex-1 text-left">
-            <h3 class="text-sm font-medium text-gray-900">Travel Companions</h3>
-            <p class="text-xs text-gray-500">Manage your travel companions</p>
-          </div>
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-          </svg>
-        </button>
-
-        <a href="/auth/logout" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-red-200 hover:border-red-300 hover:bg-red-100 transition-colors bg-red-50">
-          <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-            <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-            </svg>
-          </div>
-          <div class="flex-1 text-left">
-            <h3 class="text-sm font-medium text-red-600">Sign Out</h3>
-            <p class="text-xs text-red-500">Sign out of your account</p>
-          </div>
-        </a>
-
-        <!-- Version Information -->
-        <div class="mt-6 pt-4 border-t border-gray-200">
-          <p class="text-xs text-gray-400 text-center">
-            <svg class="w-3 h-3 inline-block align-baseline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
-            </svg>
-            Version <%= versionInfo.appVersion %> | Build <code class="text-gray-400"><%= versionInfo.gitCommit %></code>
-          </p>
-        </div>
-      </div>
-    </div>
-
   <% } %>
 
-  <!-- Settings menu - always visible regardless of trips -->
-  <% if (activeTab === 'settings') { %>
-    <div id="settings-content" class="space-y-4 p-6">
-      <div class="space-y-3">
-        <button data-action="loadSidebarContent" data-url="/account/sidebar" data-full-width="true" data-update-history="true" data-history-path="/manage/account" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
-          <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-            </svg>
-          </div>
-          <div class="flex-1 text-left">
-            <h3 class="text-sm font-medium text-gray-900">Account Settings</h3>
-            <p class="text-xs text-gray-500">Manage your profile and preferences</p>
-          </div>
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+  <!-- Settings Content - Always rendered and always visible -->
+  <div id="settings-content" class="<% if (activeTab !== 'settings') { %>hidden<% } %> space-y-4 p-6">
+    <div class="space-y-3">
+      <button data-action="loadSidebarContent" data-url="/account/sidebar" data-full-width="true" data-update-history="true" data-history-path="/manage/account" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
+        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+          <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
           </svg>
-        </button>
-
-        <button data-action="loadSidebarContent" data-url="/account/vouchers/sidebar" data-update-history="true" data-history-path="/manage/certificates" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
-          <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-            <span class="material-symbols-outlined text-amber-600" style="font-size: 18px;">wallet</span>
-          </div>
-          <div class="flex-1 text-left">
-            <h3 class="text-sm font-medium text-gray-900">Manage Certificates & Vouchers</h3>
-            <p class="text-xs text-gray-500">View and manage your travel credits</p>
-          </div>
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-          </svg>
-        </button>
-
-        <button data-action="loadSidebarContent" data-url="/account/companions-sidebar" data-full-width="true" data-update-history="true" data-history-path="/manage/companions" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
-          <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-            <span class="material-symbols-outlined text-green-600" style="font-size: 18px;">group</span>
-          </div>
-          <div class="flex-1 text-left">
-            <h3 class="text-sm font-medium text-gray-900">Travel Companions</h3>
-            <p class="text-xs text-gray-500">Manage your travel companions</p>
-          </div>
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-          </svg>
-        </button>
-
-        <a href="/auth/logout" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-red-200 hover:border-red-300 hover:bg-red-100 transition-colors bg-red-50">
-          <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-            <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-            </svg>
-          </div>
-          <div class="flex-1 text-left">
-            <h3 class="text-sm font-medium text-red-600">Sign Out</h3>
-            <p class="text-xs text-red-500">Sign out of your account</p>
-          </div>
-        </a>
-
-        <!-- Version Information -->
-        <div class="mt-6 pt-4 border-t border-gray-200">
-          <p class="text-xs text-gray-400 text-center">
-            <svg class="w-3 h-3 inline-block align-baseline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
-            </svg>
-            Version <%= versionInfo.appVersion %> | Build <code class="text-gray-400"><%= versionInfo.gitCommit %></code>
-          </p>
         </div>
+        <div class="flex-1 text-left">
+          <h3 class="text-sm font-medium text-gray-900">Account Settings</h3>
+          <p class="text-xs text-gray-500">Manage your profile and preferences</p>
+        </div>
+        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </button>
+
+      <button data-action="loadSidebarContent" data-url="/account/vouchers/sidebar" data-update-history="true" data-history-path="/manage/certificates" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
+        <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+          <span class="material-symbols-outlined text-amber-600" style="font-size: 18px;">wallet</span>
+        </div>
+        <div class="flex-1 text-left">
+          <h3 class="text-sm font-medium text-gray-900">Manage Certificates & Vouchers</h3>
+          <p class="text-xs text-gray-500">View and manage your travel credits</p>
+        </div>
+        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </button>
+
+      <button data-action="loadSidebarContent" data-url="/account/companions-sidebar" data-full-width="true" data-update-history="true" data-history-path="/manage/companions" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors bg-white">
+        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+          <span class="material-symbols-outlined text-green-600" style="font-size: 18px;">group</span>
+        </div>
+        <div class="flex-1 text-left">
+          <h3 class="text-sm font-medium text-gray-900">Travel Companions</h3>
+          <p class="text-xs text-gray-500">Manage your travel companions</p>
+        </div>
+        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </button>
+
+      <a href="/auth/logout" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-red-200 hover:border-red-300 hover:bg-red-100 transition-colors bg-red-50">
+        <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+          <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+        </div>
+        <div class="flex-1 text-left">
+          <h3 class="text-sm font-medium text-red-600">Sign Out</h3>
+          <p class="text-xs text-red-500">Sign out of your account</p>
+        </div>
+      </a>
+
+      <!-- Version Information -->
+      <div class="mt-6 pt-4 border-t border-gray-200">
+        <p class="text-xs text-gray-400 text-center">
+          <svg class="w-3 h-3 inline-block align-baseline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+          </svg>
+          Version <%= versionInfo.appVersion %> | Build <code class="text-gray-400"><%= versionInfo.gitCommit %></code>
+        </p>
       </div>
     </div>
-  <% } %>
+  </div>
 
   <% if (hasAnyItems) { %>
 
@@ -465,9 +395,32 @@
       // They delegate to the proper map module functions in maps.js
       // ============================================================================
 
+      // Track pending animation timeouts so we can cancel them
+      window.pendingAnimationTimeouts = [];
+
+      // Cancel all pending animation timeouts
+      function cancelPendingAnimationTimeouts() {
+        window.pendingAnimationTimeouts.forEach(timeoutId => {
+          clearTimeout(timeoutId);
+        });
+        window.pendingAnimationTimeouts = [];
+      }
+
       // Hover handler for individual items (flights, transportation)
       window.highlightItemOnMap = function(itemType, itemId) {
         if (!window.currentMap || !window.currentMap.segmentLayers) return;
+
+        // Cancel any pending animation timeouts
+        cancelPendingAnimationTimeouts();
+
+        // Clear any existing animations first
+        if (window.activeAnimations) {
+          Object.keys(window.activeAnimations).forEach(markerId => {
+            if (typeof window.unhighlightMapMarker === 'function') {
+              window.unhighlightMapMarker(markerId);
+            }
+          });
+        }
 
         // Find ALL segments matching this item type and ID, then animate them
         let foundSegments = [];
@@ -489,21 +442,164 @@
         });
       };
 
-      // Hover handler for trip cards
+      // Zoom handler for standalone items
+      window.zoomToStandaloneItem = function(itemType, itemId) {
+        if (typeof window.zoomToItem === 'function') {
+          window.zoomToItem(itemType, itemId);
+        }
+      };
+
+      // Restore original zoom when leaving standalone items
+      window.clearStandaloneItemHover = function() {
+        if (typeof window.restoreOriginalItemZoom === 'function') {
+          window.restoreOriginalItemZoom();
+        }
+
+        if (!window.activeAnimations) return;
+
+        // Stop all active animations
+        Object.keys(window.activeAnimations).forEach(markerId => {
+          if (typeof window.unhighlightMapMarker === 'function') {
+            window.unhighlightMapMarker(markerId);
+          }
+        });
+      };
+
+      // Helper function to animate a single segment once (non-looping)
+      window.animateSegmentOnce = function(segment) {
+        if (!window.currentMap || !segment.polyline) return 0;
+
+        const startPoint = segment.polyline.getLatLngs()[0];
+        const endPoint = segment.polyline.getLatLngs()[segment.polyline.getLatLngs().length - 1];
+
+        const distance = window.calculateDistance(
+          [startPoint.lat, startPoint.lng],
+          [endPoint.lat, endPoint.lng]
+        );
+
+        const currentZoom = window.currentMap.getZoom();
+        const zoomFactor = Math.max(0.75, 2 ** (4 - currentZoom));
+        const durationMs = (distance / 6000) * 3000 * zoomFactor;
+        const frameTime = 50;
+        const animationSpeed = frameTime / durationMs;
+
+        try {
+          const movingMarker = L.marker(startPoint, {
+            icon: L.divIcon({
+              className: 'moving-dot-marker',
+              html: `<div style="
+                width: 12px;
+                height: 12px;
+                background: ${segment.originalColor};
+                border-radius: 50%;
+                box-shadow: 0 0 10px ${segment.originalColor}, 0 0 20px ${segment.originalColor}, inset 0 0 5px rgba(255,255,255,0.5);
+                border: 2px solid white;
+              "></div>`,
+              iconSize: [16, 16],
+              iconAnchor: [8, 8],
+            }),
+          }).addTo(window.currentMap);
+
+          let progress = 0;
+          const animationInterval = setInterval(() => {
+            progress += animationSpeed;
+
+            if (progress >= 1) {
+              // Animation complete - clean up
+              clearInterval(animationInterval);
+              try {
+                window.currentMap.removeLayer(movingMarker);
+              } catch (e) {
+                // Silently handle removal errors
+              }
+              return;
+            }
+
+            const newPos = window.getPointAtDistance(
+              [startPoint.lat, startPoint.lng],
+              [endPoint.lat, endPoint.lng],
+              progress
+            );
+
+            movingMarker.setLatLng(L.latLng(newPos[0], newPos[1]));
+          }, frameTime);
+        } catch (e) {
+          // Silently handle animation errors
+        }
+
+        return durationMs;
+      };
+
+      // Hover handler for trip cards - highlight all segments in chronological order
       window.setupTripHover = function(tripId) {
         if (!window.currentMap || !window.currentMap.segmentLayers) return;
 
-        // Find all items belonging to this trip and highlight their segments
-        const tripItems = document.querySelectorAll(`.timeline-item.has-marker[data-trip-id="${tripId}"]`);
+        // Cancel any pending animation timeouts
+        cancelPendingAnimationTimeouts();
 
-        tripItems.forEach(card => {
-          const itemType = card.getAttribute('data-item-type');
-          const itemId = card.getAttribute('data-item-id');
+        // Find all items that belong to this trip
+        // Items in window.allTripsData have tripId set from dashboard.ejs
+        const tripItems = [];
 
-          if (itemType && itemId) {
-            window.highlightItemOnMap(itemType, itemId);
+        const allItems = [
+          ...(window.allTripsData?.flights || []),
+          ...(window.allTripsData?.transportation || [])
+        ];
+
+        // Filter to only items for this trip
+        allItems.forEach(item => {
+          if (item.tripId === tripId) {
+            tripItems.push({
+              itemType: item.flightNumber ? 'flight' : 'transportation',
+              itemId: item.id
+            });
           }
         });
+
+        // Find segments for each item in this trip
+        const tripSegments = [];
+        tripItems.forEach(item => {
+          const matchingSegments = window.currentMap.segmentLayers.filter(segment => {
+            return segment.itemType === item.itemType && segment.itemId === item.itemId;
+          });
+          tripSegments.push(...matchingSegments);
+        });
+
+        if (tripSegments.length === 0) return;
+
+        // Clear any existing animations first
+        if (window.activeAnimations) {
+          Object.keys(window.activeAnimations).forEach(markerId => {
+            if (typeof window.unhighlightMapMarker === 'function') {
+              window.unhighlightMapMarker(markerId);
+            }
+          });
+        }
+
+        // Animate segments sequentially - one dot at a time
+        let currentSegmentIndex = 0;
+
+        const animateNextSegment = () => {
+          if (currentSegmentIndex >= tripSegments.length) {
+            // All segments animated, we're done
+            return;
+          }
+
+          const segment = tripSegments[currentSegmentIndex];
+
+          // Animate this segment once and get its duration
+          const durationMs = window.animateSegmentOnce(segment);
+
+          // Move to next segment after this one completes
+          currentSegmentIndex++;
+
+          // Schedule next segment and track the timeout
+          const timeoutId = setTimeout(animateNextSegment, durationMs + 100); // 100ms buffer between animations
+          window.pendingAnimationTimeouts.push(timeoutId);
+        };
+
+        // Start animating the first segment
+        animateNextSegment();
       };
 
       // Clear all hover effects (remove animated dots)
@@ -590,8 +686,8 @@
                    data-item-type="<%= item.type %>"
                    data-item-id="<%= item.data.id %>"
                    <% if (item.type === 'event') { %>data-action="loadEventSidebar" data-event-id="<%= item.data.id %>"<% } else if (item.type === 'flight') { %>data-action="loadStandaloneSidebar" data-item-type="flight" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'hotel') { %>data-action="loadStandaloneSidebar" data-item-type="hotel" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'transportation') { %>data-action="loadStandaloneSidebar" data-item-type="transportation" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'carRental') { %>data-action="loadStandaloneSidebar" data-item-type="carRental" data-item-id="<%= item.data.id %>"<% } %>
-                   onmouseover="highlightItemOnMap('<%= item.type %>', '<%= item.data.id %>')"
-                   onmouseout="clearTripHover()">
+                   onmouseover="highlightItemOnMap('<%= item.type %>', '<%= item.data.id %>'); zoomToStandaloneItem('<%= item.type %>', '<%= item.data.id %>');"
+                   onmouseout="clearStandaloneItemHover();">
                 <div class="py-4 px-5 inline-flex items-center gap-x-3 w-full font-medium">
                   <%
                     const hours = String(item.time.getHours()).padStart(2, '0');
@@ -1090,8 +1186,8 @@
                  data-item-type="<%= item.type %>"
                  data-item-id="<%= item.data.id %>"
                  <% if (item.type === 'event') { %>data-action="loadEventSidebar" data-event-id="<%= item.data.id %>"<% } else if (item.type === 'flight') { %>data-action="loadStandaloneSidebar" data-item-type="flight" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'hotel') { %>data-action="loadStandaloneSidebar" data-item-type="hotel" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'transportation') { %>data-action="loadStandaloneSidebar" data-item-type="transportation" data-item-id="<%= item.data.id %>"<% } else if (item.type === 'carRental') { %>data-action="loadStandaloneSidebar" data-item-type="carRental" data-item-id="<%= item.data.id %>"<% } %>
-                 onmouseover="highlightItemOnMap('<%= item.type %>', '<%= item.data.id %>')"
-                 onmouseout="clearTripHover()">
+                 onmouseover="highlightItemOnMap('<%= item.type %>', '<%= item.data.id %>'); zoomToStandaloneItem('<%= item.type %>', '<%= item.data.id %>');"
+                 onmouseout="clearStandaloneItemHover();">
               <div class="py-4 px-5 inline-flex items-center gap-x-3 w-full font-medium">
                 <%
                   const colorHex = item.type === 'event' ? getItemHexColor('event') :

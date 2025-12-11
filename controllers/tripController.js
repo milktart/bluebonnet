@@ -330,9 +330,23 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
       return event.dataValues || event;
     });
 
+    // Separate trips into upcoming and past (same logic as listTrips)
+    const upcomingTrips = enrichedTrips.filter(trip => {
+      const returnDate = new Date(trip.returnDate);
+      returnDate.setHours(23, 59, 59, 999);
+      return returnDate >= today;
+    });
+
+    const pastTrips = enrichedTrips.filter(trip => {
+      const returnDate = new Date(trip.returnDate);
+      returnDate.setHours(23, 59, 59, 999);
+      return returnDate < today;
+    });
+
     // Render as partial with minimal HTML wrapper for AJAX injection
     res.render('partials/dashboard-sidebar-content', {
-      trips: enrichedTrips,
+      trips: upcomingTrips,
+      pastTrips,
       standaloneFlights: enrichedStandaloneFlights,
       standaloneHotels,
       standaloneTransportation: enrichedStandaloneTransportation,

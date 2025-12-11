@@ -493,25 +493,10 @@ document.addEventListener('DOMContentLoaded', function () {
           }
 
           if (tripIndex) {
-            container.addEventListener('mouseenter', async () => {
-              const accordionId = `${prefix}-${tripIndex}`;
-              const accordionContent = document.getElementById(accordionId);
-
-              // Load items if not already loaded
-              if (accordionContent && accordionContent.getAttribute('data-loaded') !== 'true') {
-                if (typeof loadTripItemsIfNeeded === 'function') {
-                  await loadTripItemsIfNeeded(accordionId);
-                }
-              }
-
-              // Now animate
-              zoomToTripBounds(tripIndex, prefix);
-              animateTripSegments(tripIndex, prefix);
-            });
-
-            container.addEventListener('mouseleave', () => {
-              stopTripAnimation();
-            });
+            // NOTE: Trip hover is now handled by onmouseover/onmouseout attributes in dashboard-sidebar-content.ejs
+            // Those call setupTripHover() and clearTripHover() from the EJS script section
+            // The old animateTripSegments approach is no longer used for trips
+            // This event listener is disabled to avoid conflicts with the new hover system
           }
         }
       });

@@ -183,12 +183,14 @@
         const nextFlightKey = `flight_${nextFlight.id}`;
         const userOnCurrentFlight = (typeof userItemCompanions !== 'undefined' && userItemCompanions && userItemCompanions[currentFlightKey]) === true;
         const userOnNextFlight = (typeof userItemCompanions !== 'undefined' && userItemCompanions && userItemCompanions[nextFlightKey]) === true;
-        const userTravelingBothFlights = userOnCurrentFlight && userOnNextFlight;
+        // For trip owners and invited companions, always show layovers
+        // (they can see all items, not just ones they're explicitly added to)
+        const userTravelingBothFlights = isOwner || (userOnCurrentFlight && userOnNextFlight);
 
         const layoverDuration = calculateLayoverDuration(currentFlight.data.arrivalDateTime, nextFlight.data.departureDateTime);
 
         if (layoverDuration) {
-          // Layover < 24 hours - only show if user is on both flights
+          // Layover < 24 hours - show for trip owners and companions traveling both flights
           if (userTravelingBothFlights) {
             const layoverInfo = {
               type: 'short',
@@ -221,7 +223,7 @@
             }
           }
         } else {
-          // Layover >= 24 hours - check if accommodation exists and user is traveling both flights
+          // Layover >= 24 hours - check if accommodation exists for trip owners and companions
           if (userTravelingBothFlights) {
             const layoverStart = new Date(currentFlight.data.arrivalDateTime);
             const layoverEnd = new Date(nextFlight.data.departureDateTime);

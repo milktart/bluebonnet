@@ -20,9 +20,10 @@ const DEFAULT_MAP_TILE_URL =
  * Initialize map with trip data
  * @param {Object} tripData - Trip data object containing flights, hotels, transportation, etc.
  * @param {boolean} isPast - Whether this is a past trip (applies darker colors)
+ * @param {string} currentTripId - Optional: the trip ID when rendering a single trip (not overview map)
  * @returns {Promise<Object>} Leaflet map instance
  */
-async function initializeMap(tripData, isPast = false) {
+async function initializeMap(tripData, isPast = false, currentTripId = null) {
   try {
     // Find map element
     const mapEl = document.getElementById('map');
@@ -122,6 +123,7 @@ async function initializeMap(tripData, isPast = false) {
             color: window.getItemHexColor ? window.getItemHexColor('flight') : '#a68900',
             itemType: 'flight',
             itemId: flight.id,
+            tripId: flight.tripId || currentTripId,
           });
         }
       }
@@ -222,6 +224,7 @@ async function initializeMap(tripData, isPast = false) {
             color: window.getItemHexColor ? window.getItemHexColor('transportation') : '#0066cc',
             itemType: 'transportation',
             itemId: transportation.id,
+            tripId: transportation.tripId || currentTripId,
           });
         }
       }
@@ -319,6 +322,8 @@ async function initializeMap(tripData, isPast = false) {
           // Store item type and ID for sidebar matching
           itemType: segment.itemType,
           itemId: segment.itemId,
+          // Store trip ID for trip hover filtering
+          tripId: segment.tripId,
         });
       });
     }
@@ -364,18 +369,29 @@ async function initializeMap(tripData, isPast = false) {
       const lngSpan = bounds.getEast() - bounds.getWest();
       const maxSpan = Math.max(latSpan, lngSpan);
 
-      // Determine maxZoom based on span - balanced view showing all items with good detail
+      // Determine maxZoom based on span - prioritize showing all items with good visibility
       let maxZoom;
-      if (maxSpan > 150) {
-        maxZoom = 1.75;
+      if (maxSpan > 300) {
+        // World-wide trips - keep zoomed out for full visibility
+        maxZoom = 2;
+      } else if (maxSpan > 150) {
+        // Spanning half the world (e.g., LA to Seoul)
+        maxZoom = 2.25;
+      } else if (maxSpan > 100) {
+        // Very spread out
+        maxZoom = 2.5;
       } else if (maxSpan > 50) {
-        maxZoom = 2.75;
+        // Continental level spread
+        maxZoom = 3;
       } else if (maxSpan > 20) {
-        maxZoom = 3.75;
+        // Regional spread
+        maxZoom = 3.5;
       } else if (maxSpan > 10) {
-        maxZoom = 4.75;
+        // Local spread
+        maxZoom = 4;
       } else {
-        maxZoom = 5.75;
+        // Very local (same city or nearby)
+        maxZoom = 5;
       }
 
       // Fit bounds accounting for primary sidebar on left
@@ -630,7 +646,7 @@ function highlightMapMarker(markerIdOrItemType, itemIdParam) {
 
   const currentZoom = window.currentMap.getZoom();
   const zoomFactor = Math.max(0.75, 2 ** (4 - currentZoom));
-  const durationMs = (distance / 6000) * 5000 * zoomFactor;
+  const durationMs = (distance / 6000) * 3000 * zoomFactor;
   const frameTime = 50;
   const animationSpeed = frameTime / durationMs;
 
@@ -707,6 +723,125 @@ function unhighlightMapMarker(markerId) {
   }
 }
 
+/**
+ * Zoom map to fit an item (flight, hotel, transportation, event)
+ * Can be called with either:
+ * - zoomToItem(itemType, itemId) - zoom to specific item bounds
+ * @param {string} itemType - Item type (flight, hotel, transportation, carRental, event)
+ * @param {string} itemId - Item ID
+ */
+function zoomToItem(itemType, itemId) {
+  if (!window.currentMap) return;
+
+  // Verify the map is still valid and in the DOM
+  if (!window.currentMap._container || !window.currentMap._container.offsetParent) {
+    return;
+  }
+
+  // Store original bounds and zoom if not already stored
+  if (!window.originalItemBounds && !window.originalItemZoom) {
+    try {
+      window.originalItemBounds = window.currentMap.getBounds();
+      window.originalItemZoom = window.currentMap.getZoom();
+    } catch (e) {
+      // Map not ready yet
+      return;
+    }
+  }
+
+  // Find segments matching this item
+  let segments = [];
+  if (window.currentMap.segmentLayers) {
+    segments = window.currentMap.segmentLayers.filter(
+      (s) => s.itemType === itemType && s.itemId === itemId
+    );
+  }
+
+  if (segments.length === 0) {
+    // No segments for this item (e.g., hotels, events are point markers only)
+    // Try to find the location marker in allLocations data if available
+    // For now, we'll just return and let the highlight work without zoom
+    return;
+  }
+
+  // Collect all coordinates from matching segments
+  const allCoords = [];
+  segments.forEach((segment) => {
+    if (segment.polyline) {
+      const coords = segment.polyline.getLatLngs();
+      coords.forEach((coord) => {
+        allCoords.push([coord.lat, coord.lng]);
+      });
+    }
+  });
+
+  if (allCoords.length === 0) return;
+
+  // Calculate bounds
+  const bounds = L.latLngBounds(allCoords);
+
+  // Calculate the span to determine appropriate maxZoom
+  const latSpan = bounds.getNorth() - bounds.getSouth();
+  const lngSpan = bounds.getEast() - bounds.getWest();
+  const maxSpan = Math.max(latSpan, lngSpan);
+
+  // Adjust maxZoom based on item span
+  let maxZoom;
+  if (maxSpan > 20) {
+    maxZoom = 5;
+  } else if (maxSpan > 10) {
+    maxZoom = 6;
+  } else if (maxSpan > 5) {
+    maxZoom = 7;
+  } else if (maxSpan > 1) {
+    maxZoom = 8;
+  } else {
+    maxZoom = 9;
+  }
+
+  // Fit bounds with padding
+  try {
+    window.currentMap.fitBounds(bounds, {
+      paddingTopLeft: [425, 50],
+      paddingBottomRight: [0, 0],
+      maxZoom,
+      duration: 0.5,
+      easeLinearity: 0.1,
+    });
+  } catch (e) {
+    // Failed to fit bounds
+  }
+}
+
+/**
+ * Restore original map zoom level
+ */
+function restoreOriginalItemZoom() {
+  if (!window.currentMap) return;
+
+  // Verify the map is still valid
+  if (!window.currentMap._container || !window.currentMap._container.offsetParent) {
+    return;
+  }
+
+  if (!window.originalItemBounds || window.originalItemZoom === null) {
+    return;
+  }
+
+  try {
+    window.currentMap.fitBounds(window.originalItemBounds, {
+      maxZoom: window.originalItemZoom,
+      duration: 0.5,
+      easeLinearity: 0.1,
+    });
+  } catch (e) {
+    // Failed to restore zoom
+  }
+
+  window.originalItemBounds = null;
+  window.originalItemZoom = null;
+}
+
 // ============================================================================
 // EXPORTS
 // ============================================================================
@@ -720,6 +855,8 @@ if (typeof window !== 'undefined') {
   window.unhighlightMapMarker = unhighlightMapMarker;
   window.calculateDistance = calculateDistance;
   window.getPointAtDistance = getPointAtDistance;
+  window.zoomToItem = zoomToItem;
+  window.restoreOriginalItemZoom = restoreOriginalItemZoom;
 }
 
 // Export for modules
@@ -741,6 +878,10 @@ if (typeof module !== 'undefined' && module.exports) {
     calculateDistance,
     /* eslint-enable no-undef */
     getPointAtDistance,
+    /* eslint-enable no-undef */
+    zoomToItem,
+    /* eslint-enable no-undef */
+    restoreOriginalItemZoom,
     /* eslint-enable no-undef */
   };
   /* eslint-enable no-undef */
