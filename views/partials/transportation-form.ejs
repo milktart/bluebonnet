@@ -4,9 +4,11 @@
   const isAddMode = !isEditing;
   const submitButtonText = isAddMode ? 'Add Transportation' : 'Update Transportation';
   const headerText = isAddMode ? 'Add Transportation' : 'Edit Transportation';
+  const itemType = 'transportation';
+  const itemColor = getItemHexColor(itemType);
 %>
 
-<div class="sidebar-form-container">
+<div class="sidebar-form-container" data-item-type="<%= itemType %>">
   <div class="flex items-start justify-between mb-6">
     <div class="flex items-center">
       <button onclick="<%= isAddMode ? (tripId ? 'showAddItemMenu()' : 'goBackInSidebar()') : 'closeSecondarySidebar()' %>" class="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mr-3">
@@ -16,8 +18,8 @@
       </button>
       <h2 class="text-lg font-bold text-gray-900"><%= headerText %></h2>
     </div>
-    <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
-      <span class="material-symbols-outlined text-amber-600" style="font-size: 16px;">train</span>
+    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" data-icon-badge style="background-color: <%= itemColor %>22;">
+      <span class="material-symbols-outlined" style="font-size: 16px; color: <%= itemColor %>;">train</span>
     </div>
   </div>
 
@@ -114,7 +116,7 @@
 
     <!-- Buttons -->
     <div class="flex space-x-3 pt-4">
-      <button type="submit" class="flex-1 <%= isAddMode ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500' : 'bg-green-600 hover:bg-green-700 focus:ring-green-500' %> text-white py-2 px-4 rounded-md focus:outline-none focus:ring-2 transition-colors">
+      <button type="submit" class="flex-1 text-white py-2 px-4 rounded-md focus:outline-none focus:ring-2 transition-colors" style="background-color: <%= itemColor %>;">
         <%= submitButtonText %>
       </button>
       <button type="button" data-action="closeSecondarySidebar" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors">
