@@ -16,12 +16,33 @@ async function getAvailableTrips(userId) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // Get trips where returnDate >= today (includes both upcoming and in-progress)
     const trips = await Trip.findAll({
       where: {
         userId,
-        returnDate: {
-          [Sequelize.Op.gte]: today,
-        },
+        [Sequelize.Op.or]: [
+          // Upcoming trips (haven't started yet)
+          {
+            departureDate: {
+              [Sequelize.Op.gte]: today,
+            },
+          },
+          // In-progress trips (started but not ended)
+          {
+            [Sequelize.Op.and]: [
+              {
+                departureDate: {
+                  [Sequelize.Op.lt]: today,
+                },
+              },
+              {
+                returnDate: {
+                  [Sequelize.Op.gte]: today,
+                },
+              },
+            ],
+          },
+        ],
       },
       attributes: ['id', 'name', 'departureDate', 'returnDate'],
       order: [['departureDate', 'ASC']],
