@@ -119,7 +119,7 @@ async function initializeMap(tripData, isPast = false) {
             from: [originLat, originLng],
             to: [destLat, destLng],
             time: new Date(flight.departureDateTime),
-            color: '#0d6efd',
+            color: window.getItemHexColor ? window.getItemHexColor('flight') : '#a68900',
             itemType: 'flight',
             itemId: flight.id,
           });
@@ -219,7 +219,7 @@ async function initializeMap(tripData, isPast = false) {
             from: [originLat, originLng],
             to: [destLat, destLng],
             time: new Date(transportation.departureDateTime),
-            color: '#fd7e14', // Transportation orange color
+            color: window.getItemHexColor ? window.getItemHexColor('transportation') : '#0066cc',
             itemType: 'transportation',
             itemId: transportation.id,
           });
@@ -253,33 +253,22 @@ async function initializeMap(tripData, isPast = false) {
     // Sort travel segments by time
     travelSegments.sort((a, b) => a.time - b.time);
 
-    // Apply darker colors to travel segments if isPast
+    // Apply darker opacity to travel segments if isPast (reuse the color but adjust rendering)
+    // The colors are now pulled from centralized configuration
     if (isPast) {
       travelSegments.forEach((segment) => {
-        if (segment.type === 'flight') {
-          segment.color = '#084298';
-        } else if (segment.type === 'transportation') {
-          segment.color = '#bb6200'; // Darker transportation orange
-        }
+        // Segments keep their color from above, but will be rendered with opacity adjustment in CSS
       });
     }
 
-    // Define marker colors (darker for past trips)
-    const colorMap = isPast
-      ? {
-          flight: '#084298',
-          event: '#dc3545',
-          hotel: '#0d6e66',
-          carRental: '#6c757d',
-          transportation: '#bb6200',
-        }
-      : {
-          flight: '#0d6efd',
-          event: '#dc3545',
-          hotel: '#20c997',
-          carRental: '#6c757d',
-          transportation: '#fd7e14',
-        };
+    // Define marker colors using centralized color system
+    const colorMap = {
+      flight: window.getItemHexColor ? window.getItemHexColor('flight') : '#a68900',
+      event: window.getItemHexColor ? window.getItemHexColor('event') : '#d6006a',
+      hotel: window.getItemHexColor ? window.getItemHexColor('hotel') : '#7c2d8f',
+      carRental: window.getItemHexColor ? window.getItemHexColor('carRental') : '#d35a2f',
+      transportation: window.getItemHexColor ? window.getItemHexColor('transportation') : '#0066cc',
+    };
 
     // Store markers to add after polylines for proper z-ordering
 
