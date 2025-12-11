@@ -8,22 +8,22 @@
 
 const ITEM_COLORS = {
   trip: {
-    hex: '#28536b',     // Main color - UPDATE THIS
+    hex: '#0f4c6b',     // Main color - darker, high contrast
   },
   flight: {
-    hex: '#f6d965',     // Main color - UPDATE THIS
+    hex: '#d4a500',     // Main color - darker gold with better contrast
   },
   hotel: {
-    hex: '#c2a5df',     // Main color - UPDATE THIS
+    hex: '#7c2d8f',     // Main color - darker purple with better contrast
   },
   carRental: {
-    hex: '#fea572',     // Main color - UPDATE THIS
+    hex: '#d35a2f',     // Main color - darker orange with better contrast
   },
   transportation: {
-    hex: '#67b3e0',     // Main color - UPDATE THIS
+    hex: '#0066cc',     // Main color - darker, more saturated blue
   },
   event: {
-    hex: '#ff99c9',     // Main color - UPDATE THIS
+    hex: '#d6006a',     // Main color - darker, more saturated pink
   },
 };
 
@@ -32,8 +32,8 @@ const ITEM_COLORS = {
  * Colors for approval/confirmation and decline/cancel/delete actions
  */
 const ACTION_COLORS = {
-  approve: '#54f5a7',     // Approval and confirmation buttons - UPDATE THIS
-  decline: '#f24073',     // Decline, cancel, and delete buttons - UPDATE THIS
+  approve: '#00a651',     // Approval and confirmation buttons - darker, more saturated green
+  decline: '#d6006a',     // Decline, cancel, and delete buttons - darker red/pink
 };
 
 /**
