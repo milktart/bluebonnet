@@ -715,9 +715,45 @@
     }
   }
 
-  // Auto-scroll to current month on initial load
-  // Use a small delay to ensure the layout is fully rendered
+  // Calculate and adjust week wrapper heights based on item content
+  function adjustWeekHeights() {
+    const weekWrappers = document.querySelectorAll('.calendar-week-wrapper');
+    weekWrappers.forEach(wrapper => {
+      const multiDayLayer = wrapper.querySelector('.calendar-multi-day-layer');
+      const calendarWeek = wrapper.querySelector('.calendar-week');
+
+      if (multiDayLayer && calendarWeek) {
+        // Get the max row number from the data attributes
+        const items = multiDayLayer.querySelectorAll('[data-row]');
+        let maxRow = -1;
+        items.forEach(item => {
+          const row = parseInt(item.getAttribute('data-row'));
+          if (row > maxRow) maxRow = row;
+        });
+
+        // Calculate required height
+        // Base: 120px for initial date cells, plus extra height for each row of items
+        const baseHeight = 120;
+        const itemRowHeight = 28; // 1.75rem = 28px at 16px base
+        const requiredHeight = baseHeight + (maxRow + 1) * itemRowHeight;
+
+        // Set min-height on the wrapper
+        wrapper.style.minHeight = requiredHeight + 'px';
+      }
+    });
+  }
+
+  // Call on initial load and after dynamic content loads
   setTimeout(() => {
+    adjustWeekHeights();
     scrollToCurrentMonth();
   }, 50);
+
+  // Adjust heights when new calendar content is loaded
+  const originalLoadCalendarRange = window.loadCalendarRange;
+  window.loadCalendarRange = async function(direction) {
+    const result = await originalLoadCalendarRange(direction);
+    setTimeout(adjustWeekHeights, 100);
+    return result;
+  };
 </script>
