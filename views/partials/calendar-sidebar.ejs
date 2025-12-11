@@ -461,7 +461,7 @@
                   const daysSpanned = renderEndCol - renderStartCol;
               %>
                     <% if (item.type === 'trip') { %>
-                      <% const tripColor = getItemHexColor('trip'); %>
+                      <% const tripColor = item.data.purpose === 'business' ? getItemHexColor('business') : getItemHexColor('trip'); %>
                       <div class="multi-day-bar" data-item-id="<%= itemData.itemId %>" data-row="<%= rowInDay %>" data-start-col="<%= renderStartCol %>" data-span="<%= daysSpanned %>" style="--start-col: <%= renderStartCol %>; --span: <%= daysSpanned %>; --row-in-day: <%= rowInDay %>; background-color: <%= tripColor %>33; color: <%= tripColor %>;">
                         <span class="material-symbols-outlined" style="font-size: 14px; flex-shrink: 0; color: <%= tripColor %>;">luggage</span>
                         <span class="truncate"><%= item.data.name %></span>
