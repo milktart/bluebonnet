@@ -212,6 +212,15 @@
       }
     });
 
+    // Color configuration - from config/itemColors.js
+    const itemColors = {
+      flight: '<%= getItemHexColor("flight") %>',
+      hotel: '<%= getItemHexColor("hotel") %>',
+      transportation: '<%= getItemHexColor("transportation") %>',
+      carRental: '<%= getItemHexColor("carRental") %>',
+      event: '<%= getItemHexColor("event") %>'
+    };
+
     // Show add item menu
     function showAddItemMenu() {
       const container = document.getElementById('secondary-sidebar-content');
@@ -227,28 +236,28 @@
           </div>
 
           <div class="flex items-center">
-            <div class="mx-1 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <span class="material-symbols-outlined text-blue-600" style="font-size: 16px;">flight</span>
+            <div class="mx-1 w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: ${itemColors.flight}22;">
+              <span class="material-symbols-outlined" style="font-size: 16px; color: ${itemColors.flight};">flight</span>
             </div>
-            <div class="mx-1 w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <span class="material-symbols-outlined text-green-600" style="font-size: 16px;">hotel</span>
+            <div class="mx-1 w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: ${itemColors.hotel}22;">
+              <span class="material-symbols-outlined" style="font-size: 16px; color: ${itemColors.hotel};">hotel</span>
             </div>
-            <div class="mx-1 w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-              <span class="material-symbols-outlined text-amber-600" style="font-size: 16px;">train</span>
+            <div class="mx-1 w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: ${itemColors.transportation}22;">
+              <span class="material-symbols-outlined" style="font-size: 16px; color: ${itemColors.transportation};">train</span>
             </div>
-            <div class="mx-1 w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-              <span class="material-symbols-outlined text-gray-600" style="font-size: 16px;">directions_car</span>
+            <div class="mx-1 w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: ${itemColors.carRental}22;">
+              <span class="material-symbols-outlined" style="font-size: 16px; color: ${itemColors.carRental};">directions_car</span>
             </div>
-            <div class="mx-1 w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-              <span class="material-symbols-outlined text-red-600" style="font-size: 16px;">event</span>
+            <div class="mx-1 w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: ${itemColors.event}22;">
+              <span class="material-symbols-outlined" style="font-size: 16px; color: ${itemColors.event};">event</span>
             </div>
           </div>
         </div>
 
         <div class="space-y-3">
           <button data-action="showAddForm" data-form-type="flight" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 hover:bg-gray-50 transition-colors">
-            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <span class="material-symbols-outlined text-blue-600" style="font-size: 16px;">flight</span>
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: ${itemColors.flight}22;">
+              <span class="material-symbols-outlined" style="color: ${itemColors.flight}; font-size: 16px;">flight</span>
             </div>
             <div class="flex-1 text-left">
               <h3 class="text-sm font-medium text-gray-900">Add Flight</h3>
@@ -260,8 +269,8 @@
           </button>
 
           <button data-action="showAddForm" data-form-type="hotel" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 hover:bg-gray-50 transition-colors">
-            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-              <span class="material-symbols-outlined text-green-600" style="font-size: 16px;">hotel</span>
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: ${itemColors.hotel}22;">
+              <span class="material-symbols-outlined" style="color: ${itemColors.hotel}; font-size: 16px;">hotel</span>
             </div>
             <div class="flex-1 text-left">
               <h3 class="text-sm font-medium text-gray-900">Add Hotel</h3>
@@ -273,8 +282,8 @@
           </button>
 
           <button data-action="showAddForm" data-form-type="transportation" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 hover:bg-gray-50 transition-colors">
-            <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-              <span class="material-symbols-outlined text-amber-600" style="font-size: 16px;">train</span>
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: ${itemColors.transportation}22;">
+              <span class="material-symbols-outlined" style="color: ${itemColors.transportation}; font-size: 16px;">train</span>
             </div>
             <div class="flex-1 text-left">
               <h3 class="text-sm font-medium text-gray-900">Add Transportation</h3>
@@ -286,8 +295,8 @@
           </button>
 
           <button data-action="showAddForm" data-form-type="carRental" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 hover:bg-gray-50 transition-colors">
-            <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-              <span class="material-symbols-outlined text-gray-600" style="font-size: 16px;">directions_car</span>
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: ${itemColors.carRental}22;">
+              <span class="material-symbols-outlined" style="color: ${itemColors.carRental}; font-size: 16px;">directions_car</span>
             </div>
             <div class="flex-1 text-left">
               <h3 class="text-sm font-medium text-gray-900">Add Car Rental</h3>
@@ -299,8 +308,8 @@
           </button>
 
           <button data-action="showAddForm" data-form-type="event" class="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 bg-white shadow-sm hover:border-gray-300 hover:bg-gray-50 transition-colors">
-            <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-              <span class="material-symbols-outlined text-red-600" style="font-size: 16px;">event</span>
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: ${itemColors.event}22;">
+              <span class="material-symbols-outlined" style="color: ${itemColors.event}; font-size: 16px;">event</span>
             </div>
             <div class="flex-1 text-left">
               <h3 class="text-sm font-medium text-gray-900">Add Event</h3>
