@@ -324,147 +324,136 @@
                 };
               }
             });
-
-            // Collect all items for this week organized by day and row
-            const weekItems = [];
-
-            // First, collect items starting in this week
-            week.forEach((date, dayIdx) => {
-              const dateKey = getDateKey(date);
-              const items = dateToItems[dateKey] || [];
-
-              items.forEach(item => {
-                const itemId = item.data.id;
-                const isFirstDay = dateKey === getDateKey(item.startDate);
-                if (isFirstDay && !renderedMultiDayItems.has(itemId)) {
-                  renderedMultiDayItems.add(itemId);
-                  weekItems.push({ item, dayIdx, itemId, isContinuation: false });
-                }
-              });
-            });
-
-            // Check for items from previous weeks that continue into this week
-            if (weekIdx > 0) {
-              const weekStartDate = week[0];
-              const continuationItemsThisWeek = new Set();
-
-              // Look at ALL items added to dates in previous weeks
-              const allPreviousItems = new Set();
-              for (let prevWeekIdx = 0; prevWeekIdx < weekIdx; prevWeekIdx++) {
-                weeks[prevWeekIdx].forEach((date) => {
-                  const dateKey = getDateKey(date);
-                  const items = dateToItems[dateKey] || [];
-                  items.forEach(item => {
-                    allPreviousItems.add(item.data.id);
-                  });
-                });
-              }
-
-              // Check each previous item to see if it continues into this week
-              allPreviousItems.forEach(itemId => {
-                // Find the item in dateToItems
-                let foundItem = null;
-                for (let prevWeekIdx = 0; prevWeekIdx < weekIdx; prevWeekIdx++) {
-                  weeks[prevWeekIdx].forEach((date) => {
-                    const dateKey = getDateKey(date);
-                    const items = dateToItems[dateKey] || [];
-                    items.forEach(item => {
-                      if (item.data.id === itemId && !foundItem) {
-                        foundItem = item;
-                      }
-                    });
-                  });
-                }
-
-                // If item ends on or after this week's start, it's a continuation
-                if (foundItem && foundItem.endDate >= weekStartDate && !continuationItemsThisWeek.has(itemId)) {
-                  continuationItemsThisWeek.add(itemId);
-                  weekItems.push({ item: foundItem, dayIdx: 0, itemId, isContinuation: true });
-                }
-              });
-            }
-
-            // Sort items by start date ascending (earliest first), with stable sort for items on same day
-            weekItems.sort((a, b) => {
-              const dateA = a.item.startDate;
-              const dateB = b.item.startDate;
-              if (dateA.getTime() === dateB.getTime()) {
-                // For items starting on the same day, maintain original order (stable sort)
-                // by comparing their dayIdx values for starting items, or use item ID as tiebreaker
-                return a.dayIdx - b.dayIdx;
-              }
-              return dateA - dateB;
-            });
-
-            // Assign row numbers - items can share a row if they don't overlap
-            // Track occupied column ranges for each row
-            const rowOccupancy = []; // Array of arrays: [{ startCol, endCol }, ...]
-
-            weekItems.forEach((item) => {
-              // Calculate the actual column range for this item
-              let startCol, endCol;
-              if (item.isContinuation) {
-                // For continuations, they always start from the beginning of the week (column 0)
-                startCol = 0;
-                const daysUntilWeekEnd = 7;
-                const daysUntilItemEnd = Math.ceil((item.item.endDate - week[0]) / (1000 * 60 * 60 * 24)) + 1;
-                endCol = Math.min(daysUntilItemEnd, daysUntilWeekEnd);
-              } else {
-                // For starting items, they begin at dayIdx
-                startCol = item.dayIdx;
-                endCol = item.dayIdx + Math.min(item.item.durationDays, 7 - item.dayIdx);
-              }
-
-              // Find the first row where this item doesn't overlap
-              let assignedRow = -1;
-              for (let rowIdx = 0; rowIdx < rowOccupancy.length; rowIdx++) {
-                const occupiedRanges = rowOccupancy[rowIdx];
-                let canFitInRow = true;
-
-                // Check if this item overlaps with any occupied range in this row
-                for (const range of occupiedRanges) {
-                  // Items overlap if: itemStart < rangeEnd AND itemEnd > rangeStart
-                  if (startCol < range.endCol && endCol > range.startCol) {
-                    canFitInRow = false;
-                    break;
-                  }
-                }
-
-                if (canFitInRow) {
-                  assignedRow = rowIdx;
-                  occupiedRanges.push({ startCol: startCol, endCol: endCol });
-                  break;
-                }
-              }
-
-              // If no suitable row found, create a new one
-              if (assignedRow === -1) {
-                assignedRow = rowOccupancy.length;
-                rowOccupancy.push([{ startCol: startCol, endCol: endCol }]);
-              }
-
-              // Store calculated column range for rendering
-              item.rowInDay = assignedRow;
-              item.renderStartCol = startCol;
-              item.renderEndCol = endCol;
-            });
-
-            // Calculate the max row number to determine required height
-            let maxRow = -1;
-            weekItems.forEach(item => {
-              if (item.rowInDay > maxRow) {
-                maxRow = item.rowInDay;
-              }
-            });
-
-            // Calculate required height for the floating layer
-            // Base height for grid + (number of item rows * row height)
-            const requiredHeight = maxRow >= 0 ? 120 + (maxRow + 1) * 28 : 120;
           %>
           <!-- Week row wrapper -->
-          <div class="calendar-week-wrapper" data-week="<%= weekIdx %>" style="min-height: <%= requiredHeight %>px;">
+          <div class="calendar-week-wrapper" data-week="<%= weekIdx %>">
             <!-- Floating items layer (positioned absolutely) -->
             <div class="calendar-multi-day-layer">
+              <%
+                // Collect all items for this week organized by day and row
+                const weekItems = [];
+
+                // First, collect items starting in this week
+                week.forEach((date, dayIdx) => {
+                  const dateKey = getDateKey(date);
+                  const items = dateToItems[dateKey] || [];
+
+                  items.forEach(item => {
+                    const itemId = item.data.id;
+                    const isFirstDay = dateKey === getDateKey(item.startDate);
+                    if (isFirstDay && !renderedMultiDayItems.has(itemId)) {
+                      renderedMultiDayItems.add(itemId);
+                      weekItems.push({ item, dayIdx, itemId, isContinuation: false });
+                    }
+                  });
+                });
+
+                // Check for items from previous weeks that continue into this week
+                if (weekIdx > 0) {
+                  const weekStartDate = week[0];
+                  const continuationItemsThisWeek = new Set();
+
+                  // Look at ALL items added to dates in previous weeks
+                  const allPreviousItems = new Set();
+                  for (let prevWeekIdx = 0; prevWeekIdx < weekIdx; prevWeekIdx++) {
+                    weeks[prevWeekIdx].forEach((date) => {
+                      const dateKey = getDateKey(date);
+                      const items = dateToItems[dateKey] || [];
+                      items.forEach(item => {
+                        allPreviousItems.add(item.data.id);
+                      });
+                    });
+                  }
+
+                  // Check each previous item to see if it continues into this week
+                  allPreviousItems.forEach(itemId => {
+                    // Find the item in dateToItems
+                    let foundItem = null;
+                    for (let prevWeekIdx = 0; prevWeekIdx < weekIdx; prevWeekIdx++) {
+                      weeks[prevWeekIdx].forEach((date) => {
+                        const dateKey = getDateKey(date);
+                        const items = dateToItems[dateKey] || [];
+                        items.forEach(item => {
+                          if (item.data.id === itemId && !foundItem) {
+                            foundItem = item;
+                          }
+                        });
+                      });
+                    }
+
+                    // If item ends on or after this week's start, it's a continuation
+                    if (foundItem && foundItem.endDate >= weekStartDate && !continuationItemsThisWeek.has(itemId)) {
+                      continuationItemsThisWeek.add(itemId);
+                      weekItems.push({ item: foundItem, dayIdx: 0, itemId, isContinuation: true });
+                    }
+                  });
+                }
+
+                // Sort items by start date ascending (earliest first), with stable sort for items on same day
+                weekItems.sort((a, b) => {
+                  const dateA = a.item.startDate;
+                  const dateB = b.item.startDate;
+                  if (dateA.getTime() === dateB.getTime()) {
+                    // For items starting on the same day, maintain original order (stable sort)
+                    // by comparing their dayIdx values for starting items, or use item ID as tiebreaker
+                    return a.dayIdx - b.dayIdx;
+                  }
+                  return dateA - dateB;
+                });
+
+                // Assign row numbers - items can share a row if they don't overlap
+                // Track occupied column ranges for each row
+                const rowOccupancy = []; // Array of arrays: [{ startCol, endCol }, ...]
+
+                weekItems.forEach((item) => {
+                  // Calculate the actual column range for this item
+                  let startCol, endCol;
+                  if (item.isContinuation) {
+                    // For continuations, they always start from the beginning of the week (column 0)
+                    startCol = 0;
+                    const daysUntilWeekEnd = 7;
+                    const daysUntilItemEnd = Math.ceil((item.item.endDate - week[0]) / (1000 * 60 * 60 * 24)) + 1;
+                    endCol = Math.min(daysUntilItemEnd, daysUntilWeekEnd);
+                  } else {
+                    // For starting items, they begin at dayIdx
+                    startCol = item.dayIdx;
+                    endCol = item.dayIdx + Math.min(item.item.durationDays, 7 - item.dayIdx);
+                  }
+
+                  // Find the first row where this item doesn't overlap
+                  let assignedRow = -1;
+                  for (let rowIdx = 0; rowIdx < rowOccupancy.length; rowIdx++) {
+                    const occupiedRanges = rowOccupancy[rowIdx];
+                    let canFitInRow = true;
+
+                    // Check if this item overlaps with any occupied range in this row
+                    for (const range of occupiedRanges) {
+                      // Items overlap if: itemStart < rangeEnd AND itemEnd > rangeStart
+                      if (startCol < range.endCol && endCol > range.startCol) {
+                        canFitInRow = false;
+                        break;
+                      }
+                    }
+
+                    if (canFitInRow) {
+                      assignedRow = rowIdx;
+                      occupiedRanges.push({ startCol: startCol, endCol: endCol });
+                      break;
+                    }
+                  }
+
+                  // If no suitable row found, create a new one
+                  if (assignedRow === -1) {
+                    assignedRow = rowOccupancy.length;
+                    rowOccupancy.push([{ startCol: startCol, endCol: endCol }]);
+                  }
+
+                  // Store calculated column range for rendering
+                  item.rowInDay = assignedRow;
+                  item.renderStartCol = startCol;
+                  item.renderEndCol = endCol;
+                });
+              %>
               <% weekItems.forEach((itemData) => { %>
                 <%
                   const { item, dayIdx, rowInDay, isContinuation, renderStartCol, renderEndCol } = itemData;
