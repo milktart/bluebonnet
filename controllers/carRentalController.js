@@ -11,6 +11,7 @@ const {
 } = require('./helpers/resourceController');
 const { utcToLocal } = require('../utils/timezoneHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
+const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
 
 exports.createCarRental = async (req, res) => {
   try {
@@ -132,6 +133,7 @@ exports.updateCarRental = async (req, res) => {
       pickupDateTime,
       dropoffDateTime,
       confirmationNumber,
+      tripId: newTripId,
     } = req.body;
 
     // Find car rental with trip
@@ -168,6 +170,19 @@ exports.updateCarRental = async (req, res) => {
       }
     }
 
+    // Verify trip edit access if changing trip association
+    if (newTripId && newTripId !== carRental.tripId) {
+      const hasAccess = await verifyTripEditAccess(newTripId, req.user.id);
+      if (!hasAccess) {
+        const isAsync = req.headers['x-async-request'] === 'true';
+        if (isAsync) {
+          return res.status(403).json({ success: false, error: 'Cannot attach to this trip' });
+        }
+        req.flash('error_msg', 'Cannot attach to this trip');
+        return res.redirect('back');
+      }
+    }
+
     // Geocode locations if they changed
     const { originCoords: pickupCoords, destCoords: dropoffCoords } =
       await geocodeOriginDestination({
@@ -192,6 +207,7 @@ exports.updateCarRental = async (req, res) => {
       pickupDateTime: convertToUTC(pickupDateTime, pickupTimezone),
       dropoffDateTime: convertToUTC(dropoffDateTime, dropoffTimezone),
       confirmationNumber,
+      tripId: newTripId || null,
     });
 
     // Check if this is an async request
@@ -326,10 +342,16 @@ exports.getAddForm = async (req, res) => {
       }
     }
 
+    // Fetch trip selector data
+    const tripSelectorData = await getTripSelectorData(null, req.user.id);
+
     res.render('partials/car-rental-form', {
       tripId: tripId || null,
       isEditing: false,
       data: null,
+      currentTripId: tripSelectorData.currentTripId,
+      currentTripName: tripSelectorData.currentTripName,
+      availableTrips: tripSelectorData.availableTrips,
     });
   } catch (error) {
     logger.error(error);
@@ -403,10 +425,16 @@ exports.getEditForm = async (req, res) => {
       confirmationNumber: carRental.confirmationNumber,
     };
 
+    // Fetch trip selector data
+    const tripSelectorData = await getTripSelectorData(carRental, req.user.id);
+
     res.render('partials/car-rental-form', {
       tripId: carRental.tripId,
       isEditing: true,
       data: formattedData,
+      currentTripId: tripSelectorData.currentTripId,
+      currentTripName: tripSelectorData.currentTripName,
+      availableTrips: tripSelectorData.availableTrips,
     });
   } catch (error) {
     logger.error(error);
