@@ -27,13 +27,13 @@ exports.getCalendarSidebar = async (req, res) => {
       { model: Hotel, as: 'hotels', attributes: ['id', 'tripId', 'checkInDateTime', 'checkOutDateTime', 'hotelName'] },
       { model: Transportation, as: 'transportation', attributes: ['id', 'tripId', 'departureDateTime', 'arrivalDateTime', 'origin', 'destination', 'method'] },
       { model: CarRental, as: 'carRentals', attributes: ['id', 'tripId', 'pickupDateTime', 'dropoffDateTime', 'company'] },
-      { model: Event, as: 'events', attributes: ['id', 'tripId', 'startDateTime', 'endDateTime', 'name'] },
+      { model: Event, as: 'events', attributes: ['id', 'tripId', 'startDateTime', 'endDateTime', 'name', 'isConfirmed'] },
     ];
 
     // Get trips the user owns - simpler query without companion details
     const ownedTrips = await Trip.findAll({
       where: { userId: req.user.id },
-      attributes: ['id', 'name', 'departureDate', 'returnDate', 'userId', 'purpose'],
+      attributes: ['id', 'name', 'departureDate', 'returnDate', 'userId', 'purpose', 'isConfirmed'],
       order: [['departureDate', 'ASC']],
       include: minimalTripIncludes,
     });
@@ -66,7 +66,7 @@ exports.getCalendarSidebar = async (req, res) => {
     if (newCompanionTripIds.length > 0) {
       companionTrips = await Trip.findAll({
         where: { id: { [Op.in]: newCompanionTripIds } },
-        attributes: ['id', 'name', 'departureDate', 'returnDate', 'userId', 'purpose'],
+        attributes: ['id', 'name', 'departureDate', 'returnDate', 'userId', 'purpose', 'isConfirmed'],
         order: [['departureDate', 'ASC']],
         include: minimalTripIncludes,
       });
@@ -99,7 +99,7 @@ exports.getCalendarSidebar = async (req, res) => {
       }).catch(() => []),
       Event.findAll({
         where: { userId: req.user.id, tripId: null },
-        attributes: ['id', 'startDateTime', 'endDateTime', 'name'],
+        attributes: ['id', 'startDateTime', 'endDateTime', 'name', 'isConfirmed'],
         order: [['startDateTime', 'ASC']],
       }).catch(() => []),
     ]);

@@ -122,6 +122,42 @@
         When someone adds you as a travel companion, you can see trips they've included you in. Click the X to remove a companion.
       </p>
     </div>
+
+    <!-- Data Export/Import Card -->
+    <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+      <div class="flex items-center mb-6">
+        <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+          <span class="material-symbols-outlined text-purple-600" style="font-size: 16px;">cloud_upload</span>
+        </div>
+        <h3 class="text-base font-semibold text-gray-900">Data Backup & Restore</h3>
+      </div>
+
+      <div class="space-y-4">
+        <!-- Export Data -->
+        <div>
+          <h4 class="text-sm font-medium text-gray-900 mb-2">Export Account Data</h4>
+          <p class="text-xs text-gray-600 mb-3">Download a backup of all your trips, items, vouchers, and travel companions as a JSON file.</p>
+          <a href="/account/export" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors">
+            <span class="material-symbols-outlined mr-2" style="font-size: 18px;">download</span>
+            Export Data
+          </a>
+        </div>
+
+        <!-- Import Data -->
+        <div class="pt-4 border-t border-gray-200">
+          <h4 class="text-sm font-medium text-gray-900 mb-2">Import Account Data</h4>
+          <p class="text-xs text-gray-600 mb-3">Restore data from a previously exported JSON file. This will add all trips, items, and vouchers to your account.</p>
+          <form id="importForm" action="/account/import" method="POST" enctype="multipart/form-data" class="flex gap-2">
+            <input type="file" id="importFile" name="file" accept=".json" class="block text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" required>
+            <button type="submit" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors whitespace-nowrap">
+              <span class="material-symbols-outlined mr-2" style="font-size: 18px;">upload</span>
+              Import
+            </button>
+          </form>
+          <p class="text-xs text-gray-500 mt-2">Maximum file size: 10MB</p>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 

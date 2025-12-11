@@ -99,7 +99,7 @@ exports.createEvent = async (req, res) => {
       contactPhone: sanitizedContactPhone,
       contactEmail: sanitizedContactEmail,
       description: sanitizedDescription,
-      isConfirmed: isConfirmed === 'true' || isConfirmed === true || !isConfirmed,
+      isConfirmed: isConfirmed === 'true' || isConfirmed === true || isConfirmed === 'on', // Save false if unchecked (undefined)
     });
 
     // Add companions to this event
@@ -270,7 +270,7 @@ exports.updateEvent = async (req, res) => {
       contactEmail: sanitizedContactEmail,
       description: sanitizedDescription,
       tripId: newTripId || null,
-      isConfirmed: isConfirmed === 'true' || isConfirmed === true,
+      isConfirmed: isConfirmed === 'true' || isConfirmed === true || isConfirmed === 'on',
     });
 
     // Check if this is an async request

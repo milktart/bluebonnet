@@ -752,7 +752,7 @@ exports.createTrip = async (req, res) => {
       returnDate,
       purpose,
       defaultCompanionEditPermission: !!defaultCompanionEditPermission,
-      isConfirmed: isConfirmed === 'true' || isConfirmed === true || !isConfirmed, // Default to true if not specified
+      isConfirmed: isConfirmed === 'true' || isConfirmed === true || isConfirmed === 'on', // Save false if unchecked (undefined)
     });
 
     // Ensure trip owner is added as a trip companion
@@ -1133,7 +1133,7 @@ exports.updateTrip = async (req, res) => {
       returnDate,
       purpose,
       defaultCompanionEditPermission: !!defaultCompanionEditPermission,
-      isConfirmed: isConfirmed === 'true' || isConfirmed === true,
+      isConfirmed: isConfirmed === 'true' || isConfirmed === true || isConfirmed === 'on',
     });
 
     // Get existing companions

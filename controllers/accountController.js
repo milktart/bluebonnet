@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const { Sequelize, Op } = require('sequelize');
 const logger = require('../utils/logger');
-const { User, TravelCompanion, Voucher } = require('../models');
+const { User, TravelCompanion, Voucher, Trip, Flight, Hotel, Transportation, CarRental, Event } = require('../models');
 const versionInfo = require('../utils/version');
 
 exports.getAccountSettings = async (req, res) => {
@@ -377,5 +377,270 @@ exports.getVoucherDetails = async (req, res) => {
       .send(
         '<div class="p-4"><p class="text-red-600">Error loading voucher details. Please try again.</p></div>'
       );
+  }
+};
+
+exports.exportAccountData = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Fetch all user data
+    const trips = await Trip.findAll({
+      where: { userId },
+      include: [
+        { model: Flight, as: 'flights' },
+        { model: Hotel, as: 'hotels' },
+        { model: Transportation, as: 'transportation' },
+        { model: CarRental, as: 'carRentals' },
+        { model: Event, as: 'events' },
+      ],
+    });
+
+    const standaloneFlights = await Flight.findAll({
+      where: { tripId: null, userId },
+    });
+
+    const standaloneHotels = await Hotel.findAll({
+      where: { tripId: null, userId },
+    });
+
+    const standaloneTransportation = await Transportation.findAll({
+      where: { tripId: null, userId },
+    });
+
+    const standaloneCarRentals = await CarRental.findAll({
+      where: { tripId: null, userId },
+    });
+
+    const standaloneEvents = await Event.findAll({
+      where: { tripId: null, userId },
+    });
+
+    const vouchers = await Voucher.findAll({
+      where: { userId },
+    });
+
+    const companions = await TravelCompanion.findAll({
+      where: { createdBy: userId },
+    });
+
+    // Compile all data
+    const exportData = {
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      user: {
+        email: req.user.email,
+        firstName: req.user.firstName,
+        lastName: req.user.lastName,
+      },
+      trips,
+      standaloneFlights,
+      standaloneHotels,
+      standaloneTransportation,
+      standaloneCarRentals,
+      standaloneEvents,
+      vouchers,
+      companions,
+    };
+
+    // Send as JSON file download
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="travel-planner-export-${new Date().toISOString().split('T')[0]}.json"`
+    );
+    res.json(exportData);
+  } catch (error) {
+    logger.error('Error exporting account data:', error);
+    res.status(500).json({ success: false, error: 'Error exporting account data' });
+  }
+};
+
+exports.importAccountData = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    if (!req.file) {
+      req.flash('error_msg', 'No file uploaded');
+      return res.redirect('/account');
+    }
+
+    // Parse the JSON file
+    let importData;
+    try {
+      importData = JSON.parse(req.file.buffer.toString('utf8'));
+    } catch (parseError) {
+      req.flash('error_msg', 'Invalid JSON file format');
+      return res.redirect('/account');
+    }
+
+    // Validate version
+    if (importData.version !== '1.0') {
+      req.flash('error_msg', 'Incompatible export file version');
+      return res.redirect('/account');
+    }
+
+    // Track created IDs for mapping relationships
+    const idMappings = {};
+
+    // Import trips and related items
+    if (importData.trips && Array.isArray(importData.trips)) {
+      for (const tripData of importData.trips) {
+        const { flights, hotels, transportation, carRentals, events, ...tripFields } = tripData;
+
+        // Create trip with new ID
+        const newTrip = await Trip.create({
+          ...tripFields,
+          userId,
+          id: undefined, // Sequelize will generate new UUID
+        });
+
+        idMappings[tripData.id] = newTrip.id;
+
+        // Import trip items
+        if (flights && Array.isArray(flights)) {
+          for (const flight of flights) {
+            await Flight.create({
+              ...flight,
+              tripId: newTrip.id,
+              userId,
+              id: undefined,
+            });
+          }
+        }
+
+        if (hotels && Array.isArray(hotels)) {
+          for (const hotel of hotels) {
+            await Hotel.create({
+              ...hotel,
+              tripId: newTrip.id,
+              userId,
+              id: undefined,
+            });
+          }
+        }
+
+        if (transportation && Array.isArray(transportation)) {
+          for (const trans of transportation) {
+            await Transportation.create({
+              ...trans,
+              tripId: newTrip.id,
+              userId,
+              id: undefined,
+            });
+          }
+        }
+
+        if (carRentals && Array.isArray(carRentals)) {
+          for (const carRental of carRentals) {
+            await CarRental.create({
+              ...carRental,
+              tripId: newTrip.id,
+              userId,
+              id: undefined,
+            });
+          }
+        }
+
+        if (events && Array.isArray(events)) {
+          for (const event of events) {
+            await Event.create({
+              ...event,
+              tripId: newTrip.id,
+              userId,
+              id: undefined,
+            });
+          }
+        }
+      }
+    }
+
+    // Import standalone items
+    if (importData.standaloneFlights && Array.isArray(importData.standaloneFlights)) {
+      for (const flight of importData.standaloneFlights) {
+        await Flight.create({
+          ...flight,
+          userId,
+          tripId: null,
+          id: undefined,
+        });
+      }
+    }
+
+    if (importData.standaloneHotels && Array.isArray(importData.standaloneHotels)) {
+      for (const hotel of importData.standaloneHotels) {
+        await Hotel.create({
+          ...hotel,
+          userId,
+          tripId: null,
+          id: undefined,
+        });
+      }
+    }
+
+    if (importData.standaloneTransportation && Array.isArray(importData.standaloneTransportation)) {
+      for (const trans of importData.standaloneTransportation) {
+        await Transportation.create({
+          ...trans,
+          userId,
+          tripId: null,
+          id: undefined,
+        });
+      }
+    }
+
+    if (importData.standaloneCarRentals && Array.isArray(importData.standaloneCarRentals)) {
+      for (const carRental of importData.standaloneCarRentals) {
+        await CarRental.create({
+          ...carRental,
+          userId,
+          tripId: null,
+          id: undefined,
+        });
+      }
+    }
+
+    if (importData.standaloneEvents && Array.isArray(importData.standaloneEvents)) {
+      for (const event of importData.standaloneEvents) {
+        await Event.create({
+          ...event,
+          userId,
+          tripId: null,
+          id: undefined,
+        });
+      }
+    }
+
+    // Import vouchers
+    if (importData.vouchers && Array.isArray(importData.vouchers)) {
+      for (const voucher of importData.vouchers) {
+        await Voucher.create({
+          ...voucher,
+          userId,
+          id: undefined,
+        });
+      }
+    }
+
+    // Import companions
+    if (importData.companions && Array.isArray(importData.companions)) {
+      for (const companion of importData.companions) {
+        await TravelCompanion.create({
+          ...companion,
+          createdBy: userId,
+          id: undefined,
+        });
+      }
+    }
+
+    req.flash(
+      'success_msg',
+      'Account data imported successfully! All trips, items, vouchers, and companions have been restored.'
+    );
+    res.redirect('/account');
+  } catch (error) {
+    logger.error('Error importing account data:', error);
+    req.flash('error_msg', 'An error occurred while importing data');
+    res.redirect('/account');
   }
 };
