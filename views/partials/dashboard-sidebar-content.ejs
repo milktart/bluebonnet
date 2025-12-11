@@ -700,8 +700,10 @@
                       });
                       const citiesList = Array.from(tripCities).sort().join(', ');
 
-                      // Use centralized color system for trip cards
-                      const tripColorHex = getItemHexColor('trip');
+                      // Use centralized color system for trip cards - business trips get special color
+                      const tripColorHex = tripData.trip.purpose === 'business' ?
+                        getItemHexColor('business') :
+                        getItemHexColor('trip');
                     %>
                     <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: <%= tripColorHex %>22;">
                       <span class="material-symbols-outlined" style="font-size: 16px; color: <%= tripColorHex %>;"><%= tripIcon %></span>
