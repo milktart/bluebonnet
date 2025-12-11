@@ -203,7 +203,6 @@ async function searchFlight() {
       showAlert(data.message || 'Flight not found', 'warning');
     }
   } catch (error) {
-    console.error('Error:', error);
     showAlert('Error searching for flight', 'danger');
   } finally {
     showLoading(false);
@@ -275,23 +274,18 @@ function showLoading(show) {
 // Edit functions for different item types
 function editFlight(id) {
   // Implement edit modal or redirect to edit page
-  console.log('Edit flight:', id);
 }
 
 function editHotel(id) {
-  console.log('Edit hotel:', id);
 }
 
 function editTransportation(id) {
-  console.log('Edit transportation:', id);
 }
 
 function editCarRental(id) {
-  console.log('Edit car rental:', id);
 }
 
 function editEvent(id) {
-  console.log('Edit event:', id);
 }
 
 // Note: formatDate() and formatDateTime() are now provided by datetime-formatter.js
@@ -358,11 +352,9 @@ function showDeleteNotification(itemName, itemType, itemId, restoreUrl, onUndoCa
         setTimeout(() => {
           successMsg.remove();
         }, UI_NOTIFICATION_DISMISS || 3000);
-      } else {
-        console.error(`Failed to restore ${itemName}`);
       }
     } catch (error) {
-      console.error('Error restoring:', error);
+      // Silently handle restore errors
     }
   });
 

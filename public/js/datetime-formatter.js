@@ -81,16 +81,7 @@ function formatDateForInput(date, timezone) {
       year = parts.find((p) => p.type === 'year').value;
       month = parts.find((p) => p.type === 'month').value;
       day = parts.find((p) => p.type === 'day').value;
-      console.log(
-        '[formatDateForInput] UTC:',
-        date,
-        'timezone:',
-        validTimezone,
-        'local:',
-        `${year}-${month}-${day}`
-      );
     } catch (e) {
-      console.warn(`[formatDateForInput] Invalid timezone "${validTimezone}", using UTC:`, e);
       const utcParts = getUTCDateParts(d);
       ({ year, month, day } = utcParts);
     }
@@ -98,7 +89,6 @@ function formatDateForInput(date, timezone) {
     // No timezone, show UTC
     const utcParts = getUTCDateParts(d);
     ({ year, month, day } = utcParts);
-    console.log('[formatDateForInput] UTC date (no timezone):', `${year}-${month}-${day}`);
   }
 
   return `${year}-${month}-${day}`;
@@ -127,11 +117,7 @@ function formatTimeForInput(date, timezone) {
       const parts = formatter.formatToParts(d);
       hours = parts.find((p) => p.type === 'hour').value;
       minutes = parts.find((p) => p.type === 'minute').value;
-      console.log(
-        `[formatTimeForInput] UTC: ${date}, timezone: ${validTimezone}, local: ${hours}:${minutes}`
-      );
     } catch (e) {
-      console.warn(`[formatTimeForInput] Invalid timezone "${validTimezone}", using UTC:`, e);
       const utcParts = getUTCDateParts(d);
       ({ hours, minutes } = utcParts);
     }
@@ -139,7 +125,6 @@ function formatTimeForInput(date, timezone) {
     // No timezone, show UTC
     const utcParts = getUTCDateParts(d);
     ({ hours, minutes } = utcParts);
-    console.log(`[formatTimeForInput] UTC time (no timezone provided): ${hours}:${minutes}`);
   }
 
   return `${hours}:${minutes}`;
@@ -164,7 +149,7 @@ function applyDateTimeFormatting() {
       try {
         el.textContent = formatter(datetime);
       } catch (e) {
-        console.error('Error formatting datetime:', datetime, e);
+        // Error formatting datetime
       }
     }
   });

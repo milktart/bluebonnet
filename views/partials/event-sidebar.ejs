@@ -106,7 +106,6 @@ function deleteEventWithNotification(eventId, eventName) {
             window.location.reload();
           }, 5500);
         } else {
-          console.warn('showDeleteNotification not found, using fallback');
           // Fallback: create notification inline if function not available
           createDeleteNotificationFallback(eventName, eventId);
           setTimeout(() => {
@@ -118,7 +117,6 @@ function deleteEventWithNotification(eventId, eventName) {
       }
     })
     .catch(error => {
-      console.error('Error:', error);
       alert('Error deleting event: ' + error.message);
     });
 }
@@ -171,7 +169,6 @@ function createDeleteNotificationFallback(itemName, itemId) {
         alert('Failed to restore ' + itemName);
       }
     } catch (error) {
-      console.error('Error restoring:', error);
       alert('Error restoring ' + itemName);
     }
   });

@@ -25,20 +25,16 @@ export async function loadPreline() {
   // Start loading
   prelineLoadingPromise = (async () => {
     try {
-      console.log('🔄 Loading Preline UI...');
-
       // Dynamically import Preline
       await import('../preline.js');
 
       prelineLoaded = true;
-      console.log('✅ Preline UI loaded');
 
       // Initialize Preline components on the page
       if (window.HSStaticMethods && window.HSStaticMethods.autoInit) {
         window.HSStaticMethods.autoInit();
       }
     } catch (error) {
-      console.error('❌ Failed to load Preline:', error);
       prelineLoadingPromise = null; // Allow retry
       throw error;
     }

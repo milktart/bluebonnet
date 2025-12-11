@@ -408,7 +408,6 @@
           }
         })
         .catch(error => {
-          console.error('Error:', error);
           alert('Error reissuing voucher');
         });
       }
@@ -464,7 +463,6 @@
           alert('Error: ' + result.message);
         }
       } catch (error) {
-        console.error('Error:', error);
         alert('Error creating voucher');
       }
     });

@@ -24,9 +24,6 @@ const eventHandlers = new Map();
  * @param {function} handler - Handler function (receives element and event)
  */
 export function registerHandler(action, handler) {
-  if (eventHandlers.has(action)) {
-    console.warn(`Handler for action "${action}" is being overwritten`);
-  }
   eventHandlers.set(action, handler);
 }
 
@@ -64,8 +61,6 @@ function handleClick(event) {
 
     // Call the handler with the element and event
     handler(target, event);
-  } else {
-    console.warn(`No handler registered for action: ${action}`);
   }
 }
 
@@ -82,8 +77,6 @@ function handleChange(event) {
 
   if (handler) {
     handler(target, event);
-  } else {
-    console.warn(`No handler registered for change action: ${action}`);
   }
 }
 
@@ -101,8 +94,6 @@ function handleSubmit(event) {
   if (handler) {
     event.preventDefault(); // Always prevent default for form submissions
     handler(target, event);
-  } else {
-    console.warn(`No handler registered for submit action: ${action}`);
   }
 }
 
@@ -155,8 +146,6 @@ export function initializeEventDelegation() {
   // Hover delegation
   document.addEventListener('mouseover', handleMouseOver);
   document.addEventListener('mouseout', handleMouseOut);
-
-  console.log('✅ Event delegation initialized');
 }
 
 /**

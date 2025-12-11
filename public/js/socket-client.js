@@ -60,7 +60,6 @@ export async function initializeSocket() {
   try {
     await waitForSocketIO();
   } catch (error) {
-    console.error('Socket.IO library not loaded:', error);
     throw error;
   }
 
@@ -76,7 +75,6 @@ export async function initializeSocket() {
 
   // Connection event handlers
   socket.on('connect', () => {
-    console.log('✅ WebSocket connected:', socket.id);
     reconnectAttempts = 0;
 
     // Emit event bus notification
@@ -92,35 +90,27 @@ export async function initializeSocket() {
   });
 
   socket.on('disconnect', (reason) => {
-    console.log('🔌 WebSocket disconnected:', reason);
-
     // Emit event bus notification
     eventBus.emit(EventTypes.SOCKET_DISCONNECTED, { reason });
   });
 
   socket.on('connect_error', (error) => {
     reconnectAttempts += 1;
-    console.error('❌ WebSocket connection error:', error.message);
 
     // Emit event bus notification
     eventBus.emit(EventTypes.SOCKET_ERROR, { error: error.message, attempts: reconnectAttempts });
 
     if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-      console.error('Max reconnection attempts reached. Falling back to polling.');
       // Could implement fallback to polling here if needed
     }
   });
 
   socket.on('reconnect', (attemptNumber) => {
-    console.log(`🔄 WebSocket reconnected after ${attemptNumber} attempts`);
-
     // Emit event bus notification
     eventBus.emit(EventTypes.SOCKET_RECONNECTED, { attemptNumber });
   });
 
   socket.on('reconnect_failed', () => {
-    console.error('❌ WebSocket reconnection failed');
-
     // Emit event bus notification
     eventBus.emit(EventTypes.SOCKET_ERROR, { error: 'Reconnection failed' });
   });
@@ -155,7 +145,6 @@ export function emitEvent(eventName, data) {
   if (socket && socket.connected) {
     socket.emit(eventName, data);
   } else {
-    console.warn('Socket not connected, queuing event:', eventName);
     // Queue event for when connection is restored
     if (!window.socketEventQueue) {
       window.socketEventQueue = [];

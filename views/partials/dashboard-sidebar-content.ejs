@@ -53,12 +53,6 @@
                         (pastStandaloneTransportation && pastStandaloneTransportation.length > 0) ||
                         (pastStandaloneCarRentals && pastStandaloneCarRentals.length > 0) ||
                         (pastStandaloneEvents && pastStandaloneEvents.length > 0);
-
-    console.log('[dashboard-sidebar-content] activeTab:', activeTab);
-    console.log('[dashboard-sidebar-content] trips:', trips.length);
-    console.log('[dashboard-sidebar-content] standaloneFlights:', standaloneFlights ? standaloneFlights.length : 'undefined');
-    console.log('[dashboard-sidebar-content] pastStandaloneFlights:', pastStandaloneFlights ? pastStandaloneFlights.length : 'undefined');
-    console.log('[dashboard-sidebar-content] hasAnyItems:', hasAnyItems);
   %>
 
   <% if (!hasAnyItems) { %>
@@ -539,25 +533,37 @@
                       // Format event times in the event's timezone
                       const eventTimezone = item.data.timezone || 'UTC';
                       const eventStartFormatted = formatInTimezone(item.data.startDateTime, eventTimezone, 'DD MMM YYYY HH:mm');
+                      const eventEndFormatted = item.data.endDateTime ? formatInTimezone(item.data.endDateTime, eventTimezone, 'DD MMM YYYY HH:mm') : eventStartFormatted;
 
                       // Extract date and time parts for start
                       const eventStartDateStr = eventStartFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
                       const eventStartTimeStr = eventStartFormatted.substring(12); // "HH:mm"
 
-                      startDateTime = `${eventStartDateStr} ${eventStartTimeStr}`;
+                      // Extract date and time parts for end
+                      const eventEndDateStr = eventEndFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
+                      const eventEndTimeStr = eventEndFormatted.substring(12); // "HH:mm"
 
-                      if (item.data.endDateTime && item.data.endDateTime !== item.data.startDateTime) {
-                        const eventEndFormatted = formatInTimezone(item.data.endDateTime, eventTimezone, 'DD MMM YYYY HH:mm');
+                      // Check if this is an all-day event (times are 00:00 and 23:59)
+                      const isAllDay = eventStartTimeStr === '00:00' && eventEndTimeStr === '23:59';
 
-                        // Extract date and time parts for end
-                        const eventEndDateStr = eventEndFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
-                        const eventEndTimeStr = eventEndFormatted.substring(12); // "HH:mm"
-
-                        // If same date, only show time range. If different dates, show both
-                        if (eventStartDateStr === eventEndDateStr) {
-                          startDateTime = `${eventStartDateStr} ${eventStartTimeStr} - ${eventEndTimeStr}`;
+                      if (isAllDay) {
+                        // For all-day events, only show dates
+                        if (eventStartDateStr !== eventEndDateStr) {
+                          startDateTime = `${eventStartDateStr} - ${eventEndDateStr}`;
                         } else {
-                          startDateTime += ` - ${eventEndDateStr} ${eventEndTimeStr}`;
+                          startDateTime = eventStartDateStr;
+                        }
+                      } else {
+                        // For regular events, show dates and times
+                        startDateTime = `${eventStartDateStr} ${eventStartTimeStr}`;
+
+                        if (item.data.endDateTime && item.data.endDateTime !== item.data.startDateTime) {
+                          // If same date, only show time range. If different dates, show both
+                          if (eventStartDateStr === eventEndDateStr) {
+                            startDateTime = `${eventStartDateStr} ${eventStartTimeStr} - ${eventEndTimeStr}`;
+                          } else {
+                            startDateTime += ` - ${eventEndDateStr} ${eventEndTimeStr}`;
+                          }
                         }
                       }
                       location = item.data.location || '';
@@ -586,14 +592,13 @@
 
                       // Extract date and time parts
                       const checkInDateStr = checkInFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
-                      const checkInTimeStr = checkInFormatted.substring(12); // "HH:mm"
                       const checkOutDateStr = checkOutFormatted.substring(0, 11).trim(); // "DD MMM YYYY"
-                      const checkOutTimeStr = checkOutFormatted.substring(12); // "HH:mm"
 
+                      // For hotels in the primary sidebar, only show dates (not check-in/out times)
                       if (checkInDateStr === checkOutDateStr) {
-                        startDateTime = `${checkInDateStr} ${checkInTimeStr} - ${checkOutTimeStr}`;
+                        startDateTime = checkInDateStr;
                       } else {
-                        startDateTime = `${checkInDateStr} ${checkInTimeStr} - ${checkOutDateStr} ${checkOutTimeStr}`;
+                        startDateTime = `${checkInDateStr} - ${checkOutDateStr}`;
                       }
                       location = hotelCity;
                     } else if (item.type === 'transportation') {
@@ -651,7 +656,7 @@
                    data-action="navigateToTrip" data-trip-id="<%= tripData.trip.id %>"
                    onmouseover="setupTripHover('<%= tripData.trip.id %>')"
                    onmouseout="clearTripHover()">
-                <div class="w-full py-4 px-5 inline-flex items-center justify-between gap-x-3 font-medium text-start text-gray-800 hover:bg-gray-50 rounded-lg transition-colors">
+                <div class="w-full py-4 px-5 inline-flex items-center gap-x-3 font-medium text-start text-gray-800 hover:bg-gray-50 rounded-lg transition-colors">
                   <div class="flex items-center space-x-3">
                     <%
                       // Determine icon based on trip purpose
@@ -705,12 +710,12 @@
                       <% } %>
                     </div>
                   </div>
-                  <button class="accordion-button w-4 h-4 flex-shrink-0 transition-transform duration-200 p-1 hover:bg-gray-200 rounded"
+                  <button class="accordion-button w-8 h-8 flex-shrink-0 transition-transform duration-200 p-1 hover:bg-gray-200 rounded flex items-center justify-center ml-auto mr-0"
                           data-action="toggleAccordion"
                           data-accordion-id="upcoming-<%= tripIndex %>"
                           data-stop-propagation="true"
-                          style="min-width: 16px;">
-                    <svg class="accordion-arrow w-4 h-4 flex-shrink-0 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="min-width: 16px;">
+                          style="min-width: 32px; min-height: 32px;">
+                    <svg class="accordion-arrow w-4 h-4 flex-shrink-0 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6"/>
                     </svg>
                   </button>
@@ -740,11 +745,7 @@
         // NOTE: This MUST be calculated before the condition check below
         let pastStandaloneItems = [];
 
-        console.log('[past-tab] typeof pastStandaloneFlights:', typeof pastStandaloneFlights);
-        console.log('[past-tab] pastStandaloneFlights value:', pastStandaloneFlights);
-
         if (typeof pastStandaloneFlights !== 'undefined' && pastStandaloneFlights) {
-          console.log('[past-tab] Processing pastStandaloneFlights, count:', pastStandaloneFlights.length);
           pastStandaloneFlights.forEach(f => {
             pastStandaloneItems.push({
               type: 'flight',
@@ -922,9 +923,32 @@
                 displayName = item.data.name;
                 const eventTimezone = item.data.timezone || 'UTC';
                 const eventStartFormatted = formatInTimezone(item.data.startDateTime, eventTimezone, 'DD MMM YYYY HH:mm');
+                const eventEndFormatted = item.data.endDateTime ? formatInTimezone(item.data.endDateTime, eventTimezone, 'DD MMM YYYY HH:mm') : eventStartFormatted;
                 const eventStartDateStr = eventStartFormatted.substring(0, 11).trim();
                 const eventStartTimeStr = eventStartFormatted.substring(12);
-                startDateTime = `${eventStartDateStr} ${eventStartTimeStr}`;
+                const eventEndDateStr = eventEndFormatted.substring(0, 11).trim();
+                const eventEndTimeStr = eventEndFormatted.substring(12);
+
+                // Check if this is an all-day event (times are 00:00 and 23:59)
+                const isAllDay = eventStartTimeStr === '00:00' && eventEndTimeStr === '23:59';
+
+                if (isAllDay) {
+                  // For all-day events, only show dates
+                  if (eventStartDateStr !== eventEndDateStr) {
+                    startDateTime = `${eventStartDateStr} - ${eventEndDateStr}`;
+                  } else {
+                    startDateTime = eventStartDateStr;
+                  }
+                } else {
+                  startDateTime = `${eventStartDateStr} ${eventStartTimeStr}`;
+                  if (item.data.endDateTime && item.data.endDateTime !== item.data.startDateTime) {
+                    if (eventStartDateStr === eventEndDateStr) {
+                      startDateTime = `${eventStartDateStr} ${eventStartTimeStr} - ${eventEndTimeStr}`;
+                    } else {
+                      startDateTime += ` - ${eventEndDateStr} ${eventEndTimeStr}`;
+                    }
+                  }
+                }
                 location = item.data.location || '';
               } else if (item.type === 'flight') {
                 standaloneIcon = 'flight';
@@ -947,12 +971,11 @@
                 const checkInFormatted = formatInTimezone(item.data.checkInDateTime, timezone, 'DD MMM YYYY HH:mm');
                 const checkOutFormatted = formatInTimezone(item.data.checkOutDateTime, timezone, 'DD MMM YYYY HH:mm');
                 const checkInDateStr = checkInFormatted.substring(0, 11).trim();
-                const checkInTimeStr = checkInFormatted.substring(12);
                 const checkOutDateStr = checkOutFormatted.substring(0, 11).trim();
-                const checkOutTimeStr = checkOutFormatted.substring(12);
+                // For hotels in the primary sidebar, only show dates (not check-in/out times)
                 startDateTime = checkInDateStr === checkOutDateStr ?
-                  `${checkInDateStr} ${checkInTimeStr} - ${checkOutTimeStr}` :
-                  `${checkInDateStr} ${checkInTimeStr} - ${checkOutDateStr} ${checkOutTimeStr}`;
+                  checkInDateStr :
+                  `${checkInDateStr} - ${checkOutDateStr}`;
                 location = hotelCity;
               } else if (item.type === 'transportation') {
                 const transportIconData = getTransportationIconAndColor(item.data.method);
@@ -1013,7 +1036,7 @@
                  onmouseover="setupTripHover('<%= tripData.trip.id %>')"
                  onmouseout="clearTripHover()">
               <!-- Accordion Header -->
-              <div class="w-full py-4 px-5 inline-flex items-center justify-between gap-x-3 font-medium text-start text-gray-800 hover:bg-gray-50 rounded-lg transition-colors">
+              <div class="w-full py-4 px-5 inline-flex items-center gap-x-3 font-medium text-start text-gray-800 hover:bg-gray-50 rounded-lg transition-colors">
                 <div class="flex items-center space-x-3">
                   <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
                     <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1025,12 +1048,12 @@
                     <p class="text-xs text-gray-500"><%= formatDate(tripData.trip.departureDate) %> - <%= formatDate(tripData.trip.returnDate) %></p>
                   </div>
                 </div>
-                <button class="accordion-button w-4 h-4 flex-shrink-0 transition-transform duration-200 p-1 hover:bg-gray-200 rounded"
+                <button class="accordion-button w-8 h-8 flex-shrink-0 transition-transform duration-200 p-1 hover:bg-gray-200 rounded flex items-center justify-center ml-auto mr-0"
                         data-action="toggleAccordion"
                         data-accordion-id="past-<%= tripIndex %>"
                         data-stop-propagation="true"
-                        style="min-width: 16px;">
-                  <svg class="accordion-arrow w-4 h-4 flex-shrink-0 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="min-width: 16px;">
+                        style="min-width: 32px; min-height: 32px;">
+                  <svg class="accordion-arrow w-4 h-4 flex-shrink-0 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6"/>
                   </svg>
                 </button>
@@ -1171,7 +1194,6 @@
       // Note: No need to re-attach hover handlers - they were already attached
       // to the accordion button and will work with the newly loaded items
     } catch (error) {
-      console.error('Error loading trip items:', error);
       accordionContent.innerHTML = '<div class="p-4 text-red-600 text-sm">Error loading trip details. Please try again.</div>';
       accordionContent.setAttribute('data-loaded', 'true');
     }

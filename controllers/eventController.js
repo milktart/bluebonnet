@@ -33,11 +33,15 @@ exports.createEvent = async (req, res) => {
     let { startDateTime, endDateTime } = req.body;
 
     // Convert separate date/time fields to datetime strings if provided
-    if (startDate && startTime && !startDateTime) {
-      startDateTime = `${startDate}T${startTime}`;
+    if (startDate && !startDateTime) {
+      // For all-day events without times, use midnight start
+      const time = startTime || '00:00';
+      startDateTime = `${startDate}T${time}`;
     }
-    if (endDate && endTime && !endDateTime) {
-      endDateTime = `${endDate}T${endTime}`;
+    if (endDate && !endDateTime) {
+      // For all-day events without times, use 23:59 end
+      const time = endTime || '23:59';
+      endDateTime = `${endDate}T${time}`;
     }
 
     // Verify trip ownership if tripId provided
@@ -168,11 +172,15 @@ exports.updateEvent = async (req, res) => {
     } = req.body;
 
     // Convert separate date/time fields to datetime strings if provided
-    if (startDate && startTime && !startDateTime) {
-      startDateTime = `${startDate}T${startTime}`;
+    if (startDate && !startDateTime) {
+      // For all-day events without times, use midnight start
+      const time = startTime || '00:00';
+      startDateTime = `${startDate}T${time}`;
     }
-    if (endDate && endTime && !endDateTime) {
-      endDateTime = `${endDate}T${endTime}`;
+    if (endDate && !endDateTime) {
+      // For all-day events without times, use 23:59 end
+      const time = endTime || '23:59';
+      endDateTime = `${endDate}T${time}`;
     }
 
     // Find event with trip
@@ -321,18 +329,35 @@ exports.getEventSidebar = async (req, res) => {
       return res.status(404).send('<p class="text-red-600">Event not found</p>');
     }
 
-    // formatDate and formatTime now imported from utils/dateFormatter.js
+    // Use the event's timezone for formatting (or UTC if not set)
+    const eventTimezone = event.timezone || 'UTC';
 
-    const startDate = formatDate(event.startDateTime);
-    const startTime = formatTime(event.startDateTime);
-    const endDate = formatDate(event.endDateTime);
-    const endTime = formatTime(event.endDateTime);
+    // Format times in the event's timezone to correctly detect all-day events
+    const { formatInTimezone } = require('../utils/dateFormatter');
+    const startTime = formatInTimezone(event.startDateTime, eventTimezone, 'HH:mm');
+    const endTime = formatInTimezone(event.endDateTime, eventTimezone, 'HH:mm');
+    const startDate = formatInTimezone(event.startDateTime, eventTimezone, 'DD MMM YYYY');
+    const endDate = formatInTimezone(event.endDateTime, eventTimezone, 'DD MMM YYYY');
 
-    let dateTimeString = `${startDate} ${startTime}`;
-    if (endDate && endTime && endDate !== startDate) {
-      dateTimeString += ` - ${endDate} ${endTime}`;
-    } else if (endDate && endTime && startTime !== endTime) {
-      dateTimeString += ` - ${endTime}`;
+    // Check if this is an all-day event (times are 00:00 and 23:59)
+    const isAllDay = startTime === '00:00' && endTime === '23:59';
+
+    let dateTimeString;
+    if (isAllDay) {
+      // For all-day events, only show dates
+      if (endDate && endDate !== startDate) {
+        dateTimeString = `${startDate} - ${endDate}`;
+      } else {
+        dateTimeString = startDate;
+      }
+    } else {
+      // For regular events, show dates and times
+      dateTimeString = `${startDate} ${startTime}`;
+      if (endDate && endTime && endDate !== startDate) {
+        dateTimeString += ` - ${endDate} ${endTime}`;
+      } else if (endDate && endTime && startTime !== endTime) {
+        dateTimeString += ` - ${endTime}`;
+      }
     }
 
     res.render('partials/event-sidebar', {

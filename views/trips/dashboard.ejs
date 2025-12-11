@@ -150,7 +150,6 @@
         accordionContent.innerHTML = html;
         accordionContent.setAttribute('data-loaded', 'true');
       } catch (error) {
-        console.error('Error loading trip items:', error);
         accordionContent.innerHTML = '<div class="p-4 text-red-600 text-sm">Error loading trip details</div>';
       }
     };
@@ -199,8 +198,6 @@
     // Add past standalone flights to data
     <% if (pastStandaloneFlights && pastStandaloneFlights.length > 0) { %>
       const pastStandaloneFlightsData = <%- JSON.stringify(pastStandaloneFlights) %>;
-      console.log('pastStandaloneFlights count:', <%- JSON.stringify(pastStandaloneFlights.length) %>);
-      console.log('pastStandaloneFlights data:', pastStandaloneFlightsData);
       window.allTripsData.flights.push(...pastStandaloneFlightsData);
       window.pastTripsData.flights.push(...pastStandaloneFlightsData);
     <% } %>
@@ -293,29 +290,6 @@
       <% } %>
     <% }) %>
 
-    // DEBUG LOGGING - Remove this after debugging
-    console.log('=== DASHBOARD DATA INITIALIZATION ===');
-    console.log('trips (from controller - should be upcoming only):', <%- JSON.stringify(trips.length) %>);
-    console.log('pastTrips (from controller - should be past only):', <%- JSON.stringify(pastTrips.length) %>);
-    console.log('upcomingTripsData:', window.upcomingTripsData);
-    console.log('pastTripsData:', window.pastTripsData);
-
-    // Log individual trip data
-    console.log('=== UPCOMING TRIPS FROM CONTROLLER ===');
-    <% trips.forEach((trip, idx) => { %>
-      console.log(`Trip <%= idx %>: <%= trip.name %> (ID: <%= trip.id %>) - flights: <%= trip.flights ? trip.flights.length : 0 %>, returnDate: <%= trip.returnDate %>`);
-    <% }); %>
-
-    console.log('=== PAST TRIPS FROM CONTROLLER ===');
-    <% pastTrips.forEach((trip, idx) => { %>
-      console.log(`PastTrip <%= idx %>: <%= trip.name %> (ID: <%= trip.id %>) - flights: <%= trip.flights ? trip.flights.length : 0 %>, returnDate: <%= trip.returnDate %>`);
-    <% }); %>
-
-    console.log('=== FINAL DATA SUMMARY ===');
-    console.log('upcomingTripsData.flights count:', window.upcomingTripsData.flights.length);
-    console.log('pastTripsData.flights count:', window.pastTripsData.flights.length);
-    console.log('allTripsData.flights count:', window.allTripsData.flights.length);
-
   </script>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -332,21 +306,16 @@
     document.addEventListener('DOMContentLoaded', () => {
       // Use a small delay to ensure the dashboard module has had time to run
       setTimeout(() => {
-        console.log('[dashboard.ejs] Initializing with activeTab:', window.activeTabOnLoad);
-
         // Call the appropriate function based on the active tab
         if (window.activeTabOnLoad === 'past') {
-          console.log('[dashboard.ejs] Showing past trips');
           if (typeof window.showPastTrips === 'function') {
             window.showPastTrips();
           }
         } else if (window.activeTabOnLoad === 'settings') {
-          console.log('[dashboard.ejs] Showing settings');
           if (typeof window.showSettings === 'function') {
             window.showSettings();
           }
         } else {
-          console.log('[dashboard.ejs] Showing upcoming trips (default)');
           if (typeof window.showUpcomingTrips === 'function') {
             window.showUpcomingTrips();
           }

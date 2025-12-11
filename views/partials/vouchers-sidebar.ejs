@@ -258,8 +258,6 @@
   // Open voucher details in tertiary sidebar
   async function openVoucherDetails(voucherId, tabType) {
     try {
-      console.log('Opening voucher details for:', voucherId);
-
       // Update URL to include certificate ID
       window.history.pushState({}, '', `/certificates/${voucherId}`);
 
@@ -267,18 +265,15 @@
       const response = await fetch(`/account/vouchers/${voucherId}/details`);
 
       if (!response.ok) {
-        console.error('Failed to fetch voucher details:', response.status);
         alert('Error loading voucher details');
         return;
       }
 
       const html = await response.text();
-      console.log('Received voucher details HTML');
 
       // Load content into tertiary sidebar
       const tertiaryContent = document.getElementById('tertiary-sidebar-content');
       if (!tertiaryContent) {
-        console.error('tertiary-sidebar-content not found');
         alert('Error: sidebar not found');
         return;
       }
@@ -298,15 +293,10 @@
       });
 
       // Open the tertiary sidebar
-      console.log('Calling openTertiarySidebar');
       if (typeof openTertiarySidebar === 'function') {
         openTertiarySidebar();
-        console.log('Tertiary sidebar opened');
-      } else {
-        console.error('openTertiarySidebar function not found');
       }
     } catch (error) {
-      console.error('Error opening voucher details:', error);
       alert('Error loading voucher details: ' + error.message);
     }
   }
@@ -316,7 +306,6 @@
     try {
       const tertiaryContent = document.getElementById('tertiary-sidebar-content');
       if (!tertiaryContent) {
-        console.error('tertiary-sidebar-content not found');
         alert('Error: sidebar not found');
         return;
       }
@@ -420,11 +409,8 @@
 
       if (typeof openTertiarySidebar === 'function') {
         openTertiarySidebar();
-      } else {
-        console.warn('openTertiarySidebar is not available');
       }
     } catch (error) {
-      console.error('Error showing create voucher form:', error);
       alert('Error displaying form: ' + error.message);
     }
   }
@@ -534,7 +520,6 @@
         loadSidebarContent('/account/vouchers/sidebar');
       }
     } catch (error) {
-      console.error('Error submitting voucher form:', error);
       alert('Error creating voucher: ' + error.message);
     }
   }

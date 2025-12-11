@@ -28,7 +28,6 @@
         </div>
       <% } else { %>
         <% activeNotifications.forEach((notif) => { %>
-          <% if (typeof console !== 'undefined') { console.log('Rendering notification:', { id: notif.id, type: notif.type, relatedId: notif.relatedId }); } %>
           <div class="notification-card border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md hover:border-gray-300 transition-all cursor-pointer" data-notification-id="<%= notif.id %>">
             <!-- Notification Content -->
             <div class="py-4 px-5">
@@ -179,7 +178,6 @@ async function dismissNotification(notificationId, event) {
       }
     }
   } catch (error) {
-    console.error('Error dismissing notification:', error);
     alert('Failed to dismiss notification');
   }
 }
@@ -223,7 +221,6 @@ async function acceptCompanion(notificationId, relationshipId, event) {
       alert('Failed to accept companion request');
     }
   } catch (error) {
-    console.error('Error accepting companion:', error);
     alert('Error accepting companion request');
   }
 }
@@ -266,7 +263,6 @@ async function declineCompanion(notificationId, relationshipId, event) {
       alert('Failed to decline companion request');
     }
   } catch (error) {
-    console.error('Error declining companion:', error);
     alert('Error declining companion request');
   }
 }
@@ -278,11 +274,8 @@ async function joinTrip(notificationId, invitationId, event) {
   event.preventDefault();
   event.stopPropagation();
 
-  console.log('joinTrip called with:', { notificationId, invitationId });
-
   // Check if invitationId is valid
   if (!invitationId || invitationId === 'null' || invitationId === 'undefined') {
-    console.error('Invalid invitationId:', invitationId);
     alert('Error: Invalid invitation ID. Please refresh the page and try again.');
     return;
   }
@@ -317,11 +310,9 @@ async function joinTrip(notificationId, invitationId, event) {
         }, 300);
       }
     } else {
-      console.error('Server error:', data);
       alert(`Failed to join trip (${response.status}): ${data.message || 'Unknown error'}\n\nDebug info:\nResponse: ${JSON.stringify(data)}`);
     }
   } catch (error) {
-    console.error('Error joining trip:', error);
     alert(`Error joining trip: ${error.message}\n\nPlease check that the URL is correct: ${url}`);
   }
 }
@@ -333,11 +324,8 @@ async function declineTrip(notificationId, invitationId, event) {
   event.preventDefault();
   event.stopPropagation();
 
-  console.log('declineTrip called with:', { notificationId, invitationId });
-
   // Check if invitationId is valid
   if (!invitationId || invitationId === 'null' || invitationId === 'undefined') {
-    console.error('Invalid invitationId:', invitationId);
     alert('Error: Invalid invitation ID. Please refresh the page and try again.');
     return;
   }
@@ -375,11 +363,9 @@ async function declineTrip(notificationId, invitationId, event) {
         }, 300);
       }
     } else {
-      console.error('Server error:', data);
       alert(`Failed to decline trip (${response.status}): ${data.message || 'Unknown error'}\n\nDebug info:\nResponse: ${JSON.stringify(data)}`);
     }
   } catch (error) {
-    console.error('Error declining trip:', error);
     alert(`Error declining trip: ${error.message}\n\nPlease check that the URL is correct: ${url}`);
   }
 }

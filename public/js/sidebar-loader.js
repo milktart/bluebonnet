@@ -4,7 +4,7 @@
  * Phase 4 - Frontend Modernization: Event Bus Integration
  */
 
-/* eslint-disable no-use-before-define, no-alert, no-console, no-undef */
+/* eslint-disable no-use-before-define, no-alert, no-undef */
 
 import { eventBus, EventTypes } from './eventBus.js';
 
@@ -20,7 +20,6 @@ async function loadNotificationsSidebar() {
   try {
     const container = document.getElementById('notifications-content');
     if (!container) {
-      console.error('Notifications content container not found');
       return;
     }
 
@@ -59,7 +58,6 @@ async function loadNotificationsSidebar() {
       await updateNotificationBadge();
     }
   } catch (error) {
-    console.error('Error loading notifications sidebar:', error);
     const container = document.getElementById('notifications-content');
     if (container) {
       container.innerHTML = '<div class="p-4"><p class="text-red-600">Error loading notifications. Please try again.</p></div>';
@@ -95,13 +93,10 @@ async function loadSidebarContent(url, options = {}) {
       },
     });
 
-    console.log(`[loadSidebarContent] Fetched ${url}: status ${response.status}`);
-
     // Get the HTML content first
     const html = await response.text();
 
     if (!response.ok) {
-      console.error(`[loadSidebarContent] Response not OK. Status: ${response.status}, Body:`, html);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
@@ -110,9 +105,7 @@ async function loadSidebarContent(url, options = {}) {
 
     // Execute any scripts in the loaded content
     const scripts = container.querySelectorAll('script');
-    console.log(`Found ${scripts.length} scripts in sidebar content`);
     scripts.forEach((script, index) => {
-      console.log(`Executing script ${index}`);
       const newScript = document.createElement('script');
       if (script.src) {
         newScript.src = script.src;
@@ -172,7 +165,6 @@ async function loadSidebarContent(url, options = {}) {
 
     // Scripts in the loaded partials handle their own interactions via global listeners or inline handlers
   } catch (error) {
-    console.error('[loadSidebarContent] Error:', error);
     const container = document.getElementById('secondary-sidebar-content');
     if (container) {
       container.innerHTML =
@@ -246,30 +238,19 @@ function initializeSidebarContent() {
     'editEventForm',
   ];
 
-  console.log('[initializeSidebarContent] Checking for forms to setup...');
-  console.log('[initializeSidebarContent] setupAsyncFormSubmission is:', typeof window.setupAsyncFormSubmission);
-
   formIds.forEach((formId) => {
     const form = document.getElementById(formId);
-    console.log(`[initializeSidebarContent] Looking for form: ${formId}, found:`, !!form);
     if (form) {
       if (typeof setupAsyncFormSubmission === 'function') {
-        console.log(`[initializeSidebarContent] Setting up async submission for form: ${formId}`);
         setupAsyncFormSubmission(formId);
-      } else {
-        console.warn(`[initializeSidebarContent] setupAsyncFormSubmission function not available!`, {
-          typeOfFunction: typeof setupAsyncFormSubmission,
-          windowSetupAsyncFormSubmission: typeof window.setupAsyncFormSubmission
-        });
       }
     }
   });
 
   // Initialize item companions (for flight, hotel, transportation, car rental, and event forms)
   if (typeof initializeItemCompanions === 'function') {
-    console.log('[initializeSidebarContent] Initializing item companions...');
     initializeItemCompanions().catch((error) => {
-      console.error('[initializeSidebarContent] Error initializing item companions:', error);
+      // Error initializing item companions
     });
   }
 
@@ -279,13 +260,9 @@ function initializeSidebarContent() {
  * Navigate back in sidebar history
  */
 async function goBackInSidebar() {
-  console.log('[goBackInSidebar] Current index:', sidebarHistoryIndex, 'History length:', sidebarHistory.length);
-
   if (sidebarHistoryIndex > 0) {
     sidebarHistoryIndex -= 1;
     const historyEntry = sidebarHistory[sidebarHistoryIndex];
-
-    console.log('[goBackInSidebar] Going back to:', historyEntry);
 
     // Reload the content from the URL to ensure scripts execute properly
     const container = document.getElementById('secondary-sidebar-content');
@@ -295,7 +272,6 @@ async function goBackInSidebar() {
       container.innerHTML = '<div class="text-center py-8"><p class="text-gray-500">Loading...</p></div>';
 
       try {
-        console.log('[goBackInSidebar] Fetching:', historyEntry.url);
         const response = await fetch(historyEntry.url, {
           method: 'GET',
           headers: {
@@ -308,14 +284,11 @@ async function goBackInSidebar() {
         }
 
         const html = await response.text();
-        console.log('[goBackInSidebar] Received HTML, length:', html.length);
         container.innerHTML = html;
 
         // Execute any scripts in the loaded content
         const scripts = container.querySelectorAll('script');
-        console.log('[goBackInSidebar] Found', scripts.length, 'scripts to execute');
         scripts.forEach((script, index) => {
-          console.log('[goBackInSidebar] Executing script', index);
           const newScript = document.createElement('script');
           if (script.src) {
             newScript.src = script.src;
@@ -333,9 +306,7 @@ async function goBackInSidebar() {
         }
 
         initializeSidebarContent();
-        console.log('[goBackInSidebar] Content loaded successfully');
       } catch (error) {
-        console.error('[goBackInSidebar] Error loading previous content:', error);
         container.innerHTML = '<div class="p-4"><p class="text-red-600">Error loading content. Please try again.</p></div>';
       }
     }
@@ -346,7 +317,6 @@ async function goBackInSidebar() {
       total: sidebarHistory.length,
     });
   } else {
-    console.log('[goBackInSidebar] No history, closing sidebar');
     // No history, close the sidebar
     if (typeof closeSecondarySidebar === 'function') {
       closeSecondarySidebar();
@@ -415,7 +385,6 @@ async function handleEventEditFormSubmit(e) {
     };
 
     if (!eventId) {
-      console.error('Error: Could not determine event ID');
       return;
     }
 
@@ -432,11 +401,9 @@ async function handleEventEditFormSubmit(e) {
     if (response.ok) {
       // Reload the page to refresh the primary sidebar with updated event
       window.location.reload();
-    } else {
-      console.error(`Error updating event: ${result.error || 'Unknown error'}`);
     }
   } catch (error) {
-    console.error(`Error updating event: ${error.message}`);
+    // Error updating event
   }
 }
 

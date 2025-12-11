@@ -23,7 +23,6 @@ async function fixTripIdNullable() {
     process.exit(0);
   } catch (error) {
     logger.error('Failed to fix tripId constraints', { error: error.message });
-    console.error(error);
     process.exit(1);
   }
 }

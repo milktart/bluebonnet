@@ -26,16 +26,15 @@
     return date;
   };
 
-  // Calculate date range: 1 year past to 2 years future
+  // Calculate date range: show 13 months total
+  // Last month + current month + next 11 months
   const startDate = new Date(today);
-  startDate.setFullYear(today.getFullYear() - 1);
-  startDate.setMonth(0); // January
+  startDate.setMonth(today.getMonth() - 1); // 1 month back
   startDate.setDate(1);
 
   const endDate = new Date(today);
-  endDate.setFullYear(today.getFullYear() + 2);
-  endDate.setMonth(11); // December
-  endDate.setDate(31);
+  endDate.setMonth(today.getMonth() + 11); // 11 months forward
+  endDate.setDate(0); // Last day of month
 
   // Build a flat list of all dates in range with their items
   const dateToItems = {}; // { dateKey: [{ type, data }] }
@@ -526,8 +525,20 @@
           </div>
         <% }) %>
       </div>
+
+      <!-- Navigation controls at bottom -->
+      <div class="sticky bottom-0 border-t border-gray-200 bg-white p-3 flex gap-2 justify-center">
+        <button onclick="loadCalendarRange('prev')" class="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200">
+          ← Previous months
+        </button>
+        <button onclick="scrollToToday()" class="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100">
+          Today
+        </button>
+        <button onclick="loadCalendarRange('next')" class="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200">
+          Next months →
+        </button>
+      </div>
     </div>
-  </div>
   </div>
 </div>
 
@@ -637,45 +648,70 @@
 </style>
 
 <script>
-  // Scroll to center today's date
-  function scrollToToday() {
+  // Scroll to the first day of current month
+  function scrollToCurrentMonth() {
     const scrollContainer = document.getElementById('calendar-scroll');
-    const todayElement = document.getElementById('date-<%= getDateKey(today) %>');
+    if (!scrollContainer) return;
 
-    if (todayElement && scrollContainer) {
-      setTimeout(function() {
-        // Find the actual scrollable parent
-        let scrollableParent = scrollContainer.parentElement;
-        while (scrollableParent) {
-          if (scrollableParent.scrollHeight > scrollableParent.clientHeight) {
-            break;
-          }
-          scrollableParent = scrollableParent.parentElement;
-        }
+    // Create a date for the first day of current month
+    const currentMonthStart = new Date();
+    currentMonthStart.setDate(1);
+    currentMonthStart.setHours(0, 0, 0, 0);
 
-        if (!scrollableParent) {
-          scrollableParent = scrollContainer;
-        }
+    const year = currentMonthStart.getFullYear();
+    const month = String(currentMonthStart.getMonth() + 1).padStart(2, '0');
+    const day = String(currentMonthStart.getDate()).padStart(2, '0');
+    const dateKey = `${year}-${month}-${day}`;
 
-        const scrollContainerHeight = scrollableParent.clientHeight;
-        const elementHeight = todayElement.clientHeight;
+    const firstDayElement = document.getElementById('date-' + dateKey);
 
-        // Get the offset top relative to the scrollable parent
-        let offsetTop = 0;
-        let element = todayElement;
-        while (element && element !== scrollableParent) {
-          offsetTop += element.offsetTop;
-          element = element.offsetParent;
-        }
+    if (firstDayElement) {
+      // Use scrollIntoView for more reliable scrolling
+      firstDayElement.scrollIntoView({ behavior: 'auto', block: 'start' });
 
-        // Scroll to show today roughly 1/3 down from the top of the viewport
-        const targetScroll = offsetTop - (scrollContainerHeight / 3);
-        const finalScroll = Math.max(0, targetScroll);
-        scrollableParent.scrollTop = finalScroll;
-      }, 500);
+      // Fine-tune the scroll position to move up slightly so we see some context
+      setTimeout(() => {
+        const offsetTop = firstDayElement.offsetTop;
+        scrollContainer.scrollTop = Math.max(0, offsetTop - 100);
+      }, 10);
     }
   }
 
-  // Call with delay
-  setTimeout(scrollToToday, 100);
+  // Function to load additional calendar months
+  async function loadCalendarRange(direction) {
+    try {
+      const button = event.target;
+      button.disabled = true;
+      const originalText = button.textContent;
+      button.textContent = 'Loading...';
+
+      const response = await fetch('/calendar/range', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ direction }),
+      });
+
+      if (response.ok) {
+        const html = await response.text();
+        // Insert the new months HTML before the navigation buttons
+        const navButtons = document.querySelector('.sticky.bottom-0');
+        const newDiv = document.createElement('div');
+        newDiv.innerHTML = html;
+        navButtons.parentElement.insertBefore(newDiv, navButtons);
+      }
+    } catch (error) {
+      // Silently fail for now
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    }
+  }
+
+  // Auto-scroll to current month on initial load
+  // Use a small delay to ensure the layout is fully rendered
+  setTimeout(() => {
+    scrollToCurrentMonth();
+  }, 50);
 </script>

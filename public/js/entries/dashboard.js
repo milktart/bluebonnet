@@ -29,7 +29,3 @@ if (document.readyState === 'loading') {
     initializeEventDelegation();
   });
 }
-
-// Log bundle load
-// eslint-disable-next-line no-console
-console.log('✅ Dashboard bundle loaded');

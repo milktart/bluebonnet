@@ -27,7 +27,6 @@ function captureGitInfo() {
 
     return gitCommit;
   } catch (error) {
-    console.warn('Warning: Could not capture git commit hash');
     return 'unknown';
   }
 }
@@ -52,9 +51,9 @@ const gitRef = captureRefInfo();
 const buildTimestamp = new Date().toISOString();
 
 // Output for Docker build
-console.log(`GIT_COMMIT=${gitCommit}`);
-console.log(`GIT_REF=${gitRef}`);
-console.log(`BUILD_TIMESTAMP=${buildTimestamp}`);
+process.stdout.write(`GIT_COMMIT=${gitCommit}\n`);
+process.stdout.write(`GIT_REF=${gitRef}\n`);
+process.stdout.write(`BUILD_TIMESTAMP=${buildTimestamp}\n`);
 
 // Optionally write to a file for reference
 const buildInfoPath = path.join(__dirname, '..', '.build-info');
@@ -64,7 +63,7 @@ try {
     `GIT_COMMIT=${gitCommit}\nGIT_REF=${gitRef}\nBUILD_TIMESTAMP=${buildTimestamp}\n`
   );
 } catch (error) {
-  console.warn('Warning: Could not write build info file');
+  // Silent error handling
 }
 
 process.exit(0);

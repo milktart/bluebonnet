@@ -18,7 +18,6 @@ let currentCompanions = [];
 async function openVoucherAttachmentPanel(flightId, tripId, flightDetails) {
   // Validate that we have required IDs
   if (!flightId || !tripId) {
-    console.error('openVoucherAttachmentPanel - Missing required IDs:', { flightId, tripId });
     return;
   }
 
@@ -48,7 +47,7 @@ async function openVoucherAttachmentPanel(flightId, tripId, flightDetails) {
     // Render the panel
     renderVoucherPanel(companionsResult.success ? companionsResult.data : []);
   } catch (error) {
-    console.error('Error loading voucher panel:', error);
+    // Silently handle panel loading errors
   }
 
   // Open tertiary sidebar
@@ -534,7 +533,6 @@ async function submitVoucherAttachment(event) {
 
     // Validate voucherId
     if (!voucherId || voucherId === 'undefined') {
-      console.error('Invalid voucherId:', voucherId);
       alert('Error: Voucher ID is missing or invalid');
       return;
     }
@@ -585,9 +583,6 @@ async function submitVoucherAttachment(event) {
     });
   }
 
-  // Log the payload for debugging
-  console.log('Submitting voucher attachments:', { attachments, notes });
-
   // Send all attachments in a single request
   const payload = {
     attachments,
@@ -631,7 +626,7 @@ async function submitVoucherAttachment(event) {
                   body: JSON.stringify({ newVoucherNumber: newNumber.trim() }),
                 });
               } catch (error) {
-                console.error('Error updating partial voucher number:', error);
+                // Silently handle partial voucher number update errors
               }
             }
           }
@@ -659,17 +654,15 @@ async function submitVoucherAttachment(event) {
           switchVoucherTab('attach');
         }
       } catch (error) {
-        console.error('Error refreshing voucher panel:', error);
+        // Silently handle voucher panel refresh errors
       }
 
       // Refresh the secondary sidebar with updated flight form
       refreshFlightAttachments(currentFlightId);
     } else {
-      console.error('Error attaching vouchers:', result.message);
       alert(`Error attaching vouchers: ${result.message}`);
     }
   } catch (error) {
-    console.error('Error attaching vouchers:', error);
     alert('Error attaching vouchers');
   }
 }
@@ -747,21 +740,17 @@ async function submitNewVoucher(event) {
             renderVoucherPanel(companionsResult.success ? companionsResult.data : []);
             // Switch back to attach tab so user can attach the new voucher
             switchVoucherTab('attach');
-          } else {
-            console.error('Failed to fetch available vouchers:', vouchersResult);
           }
         } catch (error) {
-          console.error('Error refreshing vouchers:', error);
+          // Silently handle voucher refresh errors
         }
       } else {
         // No active flight context - just close the panel and let user reopen to see new voucher
         closeTertiarySidebar();
       }
-    } else {
-      console.error('Error creating voucher:', result.message);
     }
   } catch (error) {
-    console.error('Error creating voucher:', error);
+    // Silently handle voucher creation errors
   }
 }
 
@@ -772,7 +761,6 @@ async function submitNewVoucher(event) {
 async function refreshFlightAttachments(flightId) {
   // Validate flightId before attempting to fetch
   if (!flightId || flightId === 'null' || flightId === 'undefined') {
-    console.error('Invalid flightId for refresh:', flightId);
     return;
   }
 
@@ -818,11 +806,9 @@ async function refreshFlightAttachments(flightId) {
       if (typeof initializeAirportAutocomplete === 'function') {
         initializeAirportAutocomplete();
       }
-    } else {
-      console.error('Could not find secondary-sidebar-content container');
     }
   } catch (error) {
-    console.error('Error refreshing flight attachments:', error);
+    // Silently handle flight attachment refresh errors
   }
 }
 
@@ -830,13 +816,9 @@ async function refreshFlightAttachments(flightId) {
  * Open tertiary sidebar
  */
 function openTertiarySidebar() {
-  console.log('[openTertiarySidebar] Called');
   const sidebar = document.getElementById('tertiary-sidebar');
-  console.log('[openTertiarySidebar] sidebar element:', sidebar);
   if (sidebar) {
-    console.log('[openTertiarySidebar] Adding open class');
     sidebar.classList.add('open');
-    console.log('[openTertiarySidebar] classList now:', Array.from(sidebar.classList));
   }
 }
 
@@ -874,7 +856,6 @@ window.closeTertiarySidebar = closeTertiarySidebar;
 async function removeVoucherAttachment(flightId, attachmentId) {
   // Validate IDs before proceeding
   if (!flightId || !attachmentId || flightId === 'null' || attachmentId === 'null') {
-    console.error('Invalid IDs for removal:', { flightId, attachmentId });
     return;
   }
 
@@ -910,17 +891,15 @@ async function removeVoucherAttachment(flightId, attachmentId) {
             renderVoucherPanel(companionsResult.success ? companionsResult.data : []);
           }
         } catch (error) {
-          console.error('Error refreshing voucher panel:', error);
+          // Silently handle voucher panel refresh errors
         }
       }
 
       // Refresh the secondary sidebar with updated flight form
       refreshFlightAttachments(flightId);
-    } else {
-      console.error('Error removing voucher attachment:', result.message);
     }
   } catch (error) {
-    console.error('Error removing attachment:', error);
+    // Silently handle attachment removal errors
   }
 }
 

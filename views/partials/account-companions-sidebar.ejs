@@ -48,7 +48,6 @@ async function loadCompanionData() {
       renderMutualCompanions(companionsData.companions || []);
     }
   } catch (error) {
-    console.error('Error loading companion data:', error);
   }
 }
 
@@ -94,11 +93,9 @@ async function editCompanion(companionId) {
     if (typeof window.loadSidebarContent === 'function') {
       await window.loadSidebarContent(`/companions/${companionId}/sidebar/edit`);
     } else {
-      console.error('loadSidebarContent function not found');
       alert('Error loading edit form');
     }
   } catch (error) {
-    console.error('Error loading edit form:', error);
     alert('Error loading edit form');
   }
 }
@@ -123,7 +120,6 @@ async function deleteCompanionClick(companionId) {
       alert(data.error || 'Error deleting companion');
     }
   } catch (error) {
-    console.error('Error:', error);
     alert('Error deleting companion');
   }
 }

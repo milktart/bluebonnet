@@ -37,6 +37,3 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Lazy load companions when companion UI is detected
   autoLoadCompanions();
 });
-
-// Log bundle load
-console.log('✅ Trip view bundle loaded (optimized)');

@@ -21,131 +21,96 @@ const { formatInTimezone } = require('../utils/timezoneHelper');
  */
 exports.getCalendarSidebar = async (req, res) => {
   try {
-    // Get all trips the user owns or is a companion on
-    const tripIncludes = [
-      { model: Flight, as: 'flights' },
-      { model: Hotel, as: 'hotels' },
-      { model: Transportation, as: 'transportation' },
-      { model: CarRental, as: 'carRentals' },
-      { model: Event, as: 'events' },
-      {
-        model: TripCompanion,
-        as: 'tripCompanions',
-        include: [
-          {
-            model: TravelCompanion,
-            as: 'companion',
-            include: [
-              {
-                model: User,
-                as: 'linkedAccount',
-                attributes: ['id', 'firstName', 'lastName'],
-              },
-            ],
-          },
-        ],
-      },
+    // Simplified includes - only fetch what we need for calendar display
+    const minimalTripIncludes = [
+      { model: Flight, as: 'flights', attributes: ['id', 'tripId', 'departureDateTime', 'arrivalDateTime', 'origin', 'destination'] },
+      { model: Hotel, as: 'hotels', attributes: ['id', 'tripId', 'checkInDateTime', 'checkOutDateTime', 'hotelName'] },
+      { model: Transportation, as: 'transportation', attributes: ['id', 'tripId', 'departureDateTime', 'arrivalDateTime', 'origin', 'destination', 'method'] },
+      { model: CarRental, as: 'carRentals', attributes: ['id', 'tripId', 'pickupDateTime', 'dropoffDateTime', 'company'] },
+      { model: Event, as: 'events', attributes: ['id', 'tripId', 'startDateTime', 'endDateTime', 'name'] },
     ];
 
-    // Get trips the user owns
+    // Get trips the user owns - simpler query without companion details
     const ownedTrips = await Trip.findAll({
       where: { userId: req.user.id },
+      attributes: ['id', 'name', 'departureDate', 'returnDate', 'userId'],
       order: [['departureDate', 'ASC']],
-      include: tripIncludes,
+      include: minimalTripIncludes,
     });
 
-    // Get trips where the user is a companion (exclude trips with pending invitations)
-    const pendingTripIds = await TripInvitation.findAll({
-      where: {
-        invitedUserId: req.user.id,
-        status: 'pending',
-      },
+    // Get trip IDs the user owns for quick filtering
+    const ownedTripIds = new Set(ownedTrips.map(t => t.id));
+
+    // Get trips where the user is a companion (simpler query)
+    const companionTripIds = await TripCompanion.findAll({
+      include: [{
+        model: TravelCompanion,
+        as: 'companion',
+        where: { userId: req.user.id },
+        attributes: ['id'],
+      }],
       attributes: ['tripId'],
       raw: true,
-    }).then(invitations => invitations.map(inv => inv.tripId));
+    }).then(records => [...new Set(records.map(r => r.tripId))]);
 
-    const companionTrips = await Trip.findAll({
-      where: {
-        ...(pendingTripIds.length > 0 && {
-          id: {
-            [Op.notIn]: pendingTripIds
-          }
-        })
-      },
-      include: [
-        ...tripIncludes,
-        {
-          model: TripCompanion,
-          as: 'tripCompanions',
-          required: true,
-          include: [
-            {
-              model: TravelCompanion,
-              as: 'companion',
-              where: { userId: req.user.id },
-              include: [
-                {
-                  model: User,
-                  as: 'linkedAccount',
-                  attributes: ['id', 'firstName', 'lastName'],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-      order: [['departureDate', 'ASC']],
-    });
+    // Filter out trips we already have and exclude pending invitations
+    const pendingTripIds = await TripInvitation.findAll({
+      where: { invitedUserId: req.user.id, status: 'pending' },
+      attributes: ['tripId'],
+      raw: true,
+    }).then(invitations => new Set(invitations.map(inv => inv.tripId)));
+
+    const newCompanionTripIds = companionTripIds.filter(id => !ownedTripIds.has(id) && !pendingTripIds.has(id));
+
+    let companionTrips = [];
+    if (newCompanionTripIds.length > 0) {
+      companionTrips = await Trip.findAll({
+        where: { id: { [Op.in]: newCompanionTripIds } },
+        attributes: ['id', 'name', 'departureDate', 'returnDate', 'userId'],
+        order: [['departureDate', 'ASC']],
+        include: minimalTripIncludes,
+      });
+    }
 
     // Combine and deduplicate trips
-    const allTrips = [...ownedTrips, ...companionTrips];
-    const uniqueTrips = allTrips.filter(
-      (trip, index, self) => index === self.findIndex((t) => t.id === trip.id)
-    );
+    const uniqueTrips = [...ownedTrips, ...companionTrips];
 
-    // Get all standalone items (not attached to any trip)
+    // Get all standalone items in parallel (minimal attributes)
     const [standaloneFlights, standaloneHotels, standaloneTransportation, standaloneCarRentals, standaloneEvents] = await Promise.all([
       Flight.findAll({
         where: { userId: req.user.id, tripId: null },
+        attributes: ['id', 'departureDateTime', 'arrivalDateTime', 'origin', 'destination'],
         order: [['departureDateTime', 'ASC']],
       }).catch(() => []),
       Hotel.findAll({
         where: { userId: req.user.id, tripId: null },
+        attributes: ['id', 'checkInDateTime', 'checkOutDateTime', 'hotelName'],
         order: [['checkInDateTime', 'ASC']],
       }).catch(() => []),
       Transportation.findAll({
         where: { userId: req.user.id, tripId: null },
+        attributes: ['id', 'departureDateTime', 'arrivalDateTime', 'origin', 'destination', 'method'],
         order: [['departureDateTime', 'ASC']],
       }).catch(() => []),
       CarRental.findAll({
         where: { userId: req.user.id, tripId: null },
+        attributes: ['id', 'pickupDateTime', 'dropoffDateTime', 'company'],
         order: [['pickupDateTime', 'ASC']],
       }).catch(() => []),
       Event.findAll({
         where: { userId: req.user.id, tripId: null },
+        attributes: ['id', 'startDateTime', 'endDateTime', 'name'],
         order: [['startDateTime', 'ASC']],
       }).catch(() => []),
     ]);
 
-    // Enrich flights and transportation with airport timezones
-    const enrichedTrips = uniqueTrips.map(trip => {
-      const tripData = trip.dataValues ? { ...trip.dataValues } : { ...trip.toJSON ? trip.toJSON() : trip };
-      if (tripData.flights) {
-        tripData.flights = tripData.flights.map(flight => {
-          const flightWithTimezone = { ...flight.dataValues || flight };
-          const originMatch = flightWithTimezone.origin.match(/^([A-Z]{3})/);
-          if (originMatch) {
-            const airportData = airportService.getAirportByCode(originMatch[1]);
-            if (airportData) {
-              flightWithTimezone.originTimezone = airportData.timezone || flightWithTimezone.originTimezone;
-            }
-          }
-          return flightWithTimezone;
-        });
-      }
-      if (tripData.transportation) {
-        tripData.transportation = tripData.transportation.map(item => {
-          const itemWithTimezone = { ...item.dataValues || item };
+    // Helper function to enrich items with timezone info (bulk operation)
+    const enrichItemsWithTimezone = (items) => {
+      if (!items || items.length === 0) return items;
+      return items.map(item => {
+        const itemData = item.dataValues || item;
+        const itemWithTimezone = { ...itemData };
+        if (itemWithTimezone.origin) {
           const originMatch = itemWithTimezone.origin.match(/^([A-Z]{3})/);
           if (originMatch) {
             const airportData = airportService.getAirportByCode(originMatch[1]);
@@ -153,42 +118,26 @@ exports.getCalendarSidebar = async (req, res) => {
               itemWithTimezone.originTimezone = airportData.timezone || itemWithTimezone.originTimezone;
             }
           }
-          return itemWithTimezone;
-        });
+        }
+        return itemWithTimezone;
+      });
+    };
+
+    // Enrich trips with timezone info
+    const enrichedTrips = uniqueTrips.map(trip => {
+      const tripData = trip.dataValues ? { ...trip.dataValues } : (trip.toJSON ? trip.toJSON() : trip);
+      if (tripData.flights) {
+        tripData.flights = enrichItemsWithTimezone(tripData.flights);
+      }
+      if (tripData.transportation) {
+        tripData.transportation = enrichItemsWithTimezone(tripData.transportation);
       }
       return tripData;
     });
 
     // Enrich standalone items with timezones
-    const enrichedStandaloneFlights = (standaloneFlights || []).map(flight => {
-      const flightData = flight.dataValues || flight;
-      const flightWithTimezone = { ...flightData };
-      if (flightWithTimezone.origin) {
-        const originMatch = flightWithTimezone.origin.match(/^([A-Z]{3})/);
-        if (originMatch) {
-          const airportData = airportService.getAirportByCode(originMatch[1]);
-          if (airportData) {
-            flightWithTimezone.originTimezone = airportData.timezone || flightWithTimezone.originTimezone;
-          }
-        }
-      }
-      return flightWithTimezone;
-    });
-
-    const enrichedStandaloneTransportation = (standaloneTransportation || []).map(item => {
-      const itemData = item.dataValues || item;
-      const itemWithTimezone = { ...itemData };
-      if (itemWithTimezone.origin) {
-        const originMatch = itemWithTimezone.origin.match(/^([A-Z]{3})/);
-        if (originMatch) {
-          const airportData = airportService.getAirportByCode(originMatch[1]);
-          if (airportData) {
-            itemWithTimezone.originTimezone = airportData.timezone || itemWithTimezone.originTimezone;
-          }
-        }
-      }
-      return itemWithTimezone;
-    });
+    const enrichedStandaloneFlights = enrichItemsWithTimezone(standaloneFlights);
+    const enrichedStandaloneTransportation = enrichItemsWithTimezone(standaloneTransportation);
 
     // Aggregate all data for calendar (no longer need current month/year since we show all months)
     const calendarData = {

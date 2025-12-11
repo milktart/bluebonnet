@@ -36,10 +36,6 @@ class EventBus {
 
     this.events.get(eventName).push(handler);
 
-    if (this.debugMode) {
-      console.log(`📡 EventBus: Subscribed to "${eventName}"`);
-    }
-
     // Return unsubscribe function for convenience
     return () => this.off(eventName, handler);
   }
@@ -57,9 +53,6 @@ class EventBus {
 
     if (index > -1) {
       handlers.splice(index, 1);
-      if (this.debugMode) {
-        console.log(`📡 EventBus: Unsubscribed from "${eventName}"`);
-      }
     }
   }
 
@@ -69,14 +62,7 @@ class EventBus {
    * @param {*} data - Event data (can be any type)
    */
   emit(eventName, data) {
-    if (this.debugMode) {
-      console.log(`📡 EventBus: Emitting "${eventName}"`, data);
-    }
-
     if (!this.events.has(eventName)) {
-      if (this.debugMode) {
-        console.log(`📡 EventBus: No subscribers for "${eventName}"`);
-      }
       return;
     }
 
@@ -85,7 +71,7 @@ class EventBus {
       try {
         handler(data);
       } catch (error) {
-        console.error(`Error in event handler for "${eventName}":`, error);
+        // Error in event handler - silently ignore
       }
     });
   }
@@ -112,14 +98,8 @@ class EventBus {
   clear(eventName) {
     if (eventName) {
       this.events.delete(eventName);
-      if (this.debugMode) {
-        console.log(`📡 EventBus: Cleared all handlers for "${eventName}"`);
-      }
     } else {
       this.events.clear();
-      if (this.debugMode) {
-        console.log('📡 EventBus: Cleared all handlers');
-      }
     }
   }
 
@@ -129,7 +109,6 @@ class EventBus {
    */
   setDebugMode(enabled) {
     this.debugMode = enabled;
-    console.log(`📡 EventBus: Debug mode ${enabled ? 'enabled' : 'disabled'}`);
   }
 
   /**

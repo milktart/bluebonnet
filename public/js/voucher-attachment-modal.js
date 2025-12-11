@@ -28,11 +28,9 @@ async function openVoucherAttachmentModal(flightId, tripId, flightDetails) {
     if (result.success) {
       availableVouchers = result.data;
       populateVoucherSelect();
-    } else {
-      console.error('Error fetching vouchers:', result.message);
     }
   } catch (error) {
-    console.error('Error fetching vouchers:', error);
+    // Error fetching vouchers
   }
 
   // Fetch current trip's companions
@@ -44,7 +42,6 @@ async function openVoucherAttachmentModal(flightId, tripId, flightDetails) {
       populateTravelerSelect(result.data);
     }
   } catch (error) {
-    console.error('Error fetching companions:', error);
     // Still show modal even if companions fail to load
   }
 
@@ -197,7 +194,6 @@ async function submitVoucherAttachment(event) {
       alert(`Error: ${result.message}`);
     }
   } catch (error) {
-    console.error('Error attaching voucher:', error);
     alert('Error attaching voucher');
   }
 }

@@ -7,21 +7,15 @@ function setupAsyncFormSubmission(formId) {
   const form = document.getElementById(formId);
 
   if (!form) {
-    console.warn('[setupAsyncFormSubmission] Form not found:', formId);
     return;
   }
 
-  console.log('[setupAsyncFormSubmission] Setting up form:', formId);
-
   form.addEventListener('submit', async function (e) {
     e.preventDefault();
-    console.log('[Form Submit] Form submitted:', formId);
 
     // Convert FormData to object
     const formData = new FormData(form);
     const data = Object.fromEntries(formData);
-
-    console.log('[Form Submit] Raw form data collected, method:', data.method);
 
 
     // Combine date and time fields for flight, hotel, transportation, and car rental forms
@@ -68,10 +62,8 @@ function setupAsyncFormSubmission(formId) {
 
     const { action } = form;
     const isUpdate = formData.get('_method') === 'PUT' || form.getAttribute('method').toUpperCase() === 'PUT';
-    console.log('[Form Submit] Is update:', isUpdate, 'Action:', action);
 
     try {
-      console.log('[Form Submit] Fetching to:', action);
       const response = await fetch(action, {
         method: isUpdate ? 'PUT' : 'POST',
         headers: {
@@ -81,20 +73,16 @@ function setupAsyncFormSubmission(formId) {
         body: JSON.stringify(data),
       });
 
-      console.log('[Form Submit] Response received. Status:', response.status);
       let result;
       const responseText = await response.text();
 
       try {
         result = JSON.parse(responseText);
       } catch (e) {
-        console.error('Server error:', responseText.substring(0, 200));
         return;
       }
 
-      console.log('[Form Submit] Response parsed. Success:', result.success);
       if (response.ok && result.success) {
-        console.log('[Form Submit] Form submission successful! Closing sidebar...');
         // Close the sidebar
         if (typeof closeSecondarySidebar === 'function') {
           closeSecondarySidebar();
@@ -103,41 +91,30 @@ function setupAsyncFormSubmission(formId) {
         // Determine if this is a trip item or standalone item
         // Check: 1) window.tripId from form, 2) hidden tripId field in form, 3) window.tripData?.id, 4) URL path
         let tripId = window.tripId;
-        console.log('[Form Submit] Checking tripId sources: window.tripId=', window.tripId || 'NONE');
 
         // If window.tripId is empty, check the hidden tripId field in the form
         if (!tripId || tripId.trim() === '') {
           const tripIdField = form.querySelector('input[name="tripId"]');
-          console.log('[Form Submit] Hidden tripId field value:', tripIdField ? (tripIdField.value || 'EMPTY') : 'NOT FOUND');
           if (tripIdField && tripIdField.value) {
             tripId = tripIdField.value;
-            console.log('[Form Submit] Found tripId in form field:', tripId);
           }
         }
 
         // If still no tripId, try window.tripData and URL
         if (!tripId || tripId.trim() === '') {
           tripId = window.tripData?.id || extractTripIdFromUrl();
-          console.log('[Form Submit] Using fallback tripId from tripData or URL:', tripId || 'NONE');
         }
-
-        console.log('[Form Submit] Final TripId:', tripId || 'NONE');
 
         if (!tripId) {
           // Standalone item on dashboard - refresh primary sidebar without page reload
-          console.log('[Form Submit] Refreshing dashboard sidebar (standalone item)');
           await refreshDashboardSidebar();
         } else {
           // Trip item - refresh trip view async without page reload
-          console.log('[Form Submit] Refreshing trip view (trip item)');
           await refreshTripView();
         }
-      } else {
-        const errorMsg = result.error || result.message || 'Unknown error';
-        console.error('Error saving:', errorMsg);
       }
     } catch (error) {
-      console.error('Error submitting form:', error.message);
+      // Error submitting form - silently fail
     }
   });
 }
@@ -146,20 +123,16 @@ function setupAsyncFormSubmission(formId) {
  * Refresh trip view data and UI without page reload
  */
 async function refreshTripView() {
-  console.log('[refreshTripView] Function called');
   try {
     // Get the trip ID from the global tripData if available, or extract from URL
     const tripId = window.tripId || window.tripData?.id || extractTripIdFromUrl();
-    console.log('[refreshTripView] Trip ID detected:', tripId || 'NONE');
 
     if (!tripId) {
-      console.error('[refreshTripView] ERROR: Could not determine trip ID');
       window.location.reload();
       return;
     }
 
     // Fetch updated trip data as JSON
-    console.log('[refreshTripView] Fetching updated trip data from API...');
     const dataResponse = await fetch(`/trips/${tripId}/api`, {
       method: 'GET',
       headers: {
@@ -168,23 +141,19 @@ async function refreshTripView() {
     });
 
     if (!dataResponse.ok) {
-      console.error('[refreshTripView] ERROR: Failed to fetch trip data. Status:', dataResponse.status);
       window.location.reload();
       return;
     }
 
     const tripData = await dataResponse.json();
-    console.log('[refreshTripView] Fetched trip data. Transportation items:', tripData.transportation ? tripData.transportation.length : 0);
 
     // Update the global tripData
     if (window.tripData) {
       Object.assign(window.tripData, tripData);
-      console.log('[refreshTripView] Updated global tripData');
     }
 
     // Refresh the primary sidebar FIRST by fetching rendered HTML
     // This ensures the timeline is populated before we set up hover effects
-    console.log('[refreshTripView] Refreshing primary sidebar...');
     const sidebarResponse = await fetch(`/trips/${tripId}/sidebar`, {
       method: 'GET',
       headers: {
@@ -197,11 +166,9 @@ async function refreshTripView() {
       const sidebarContainer = document.querySelector('.sidebar-content');
       if (sidebarContainer) {
         sidebarContainer.innerHTML = sidebarHtml;
-        console.log('[refreshTripView] Sidebar HTML updated');
 
         // Execute any scripts in the loaded content
         const scripts = sidebarContainer.querySelectorAll('script');
-        console.log('[refreshTripView] Found', scripts.length, 'scripts in sidebar');
         scripts.forEach((script) => {
           const newScript = document.createElement('script');
           if (script.src) {
@@ -212,15 +179,11 @@ async function refreshTripView() {
           document.head.appendChild(newScript);
         });
       }
-    } else {
-      console.error('[refreshTripView] ERROR: Failed to fetch sidebar. Status:', sidebarResponse.status);
     }
 
     // NOW refresh the map with the updated data
-    console.log('[refreshTripView] About to refresh map...');
     await refreshMapIfPresent();
   } catch (error) {
-    console.error('[refreshTripView] ERROR CAUGHT:', error.message);
     // Fallback to page reload on error
     window.location.reload();
   }
@@ -232,11 +195,8 @@ async function refreshTripView() {
  */
 async function refreshDashboardSidebar() {
   try {
-    console.log('[refreshDashboardSidebar] Starting refresh...');
-
     // Detect the currently active tab
     const activeTab = getActiveDashboardTab();
-    console.log('[refreshDashboardSidebar] Active tab:', activeTab);
 
     // Fetch updated primary sidebar HTML
     const sidebarResponse = await fetch(`/dashboard/primary-sidebar?activeTab=${activeTab}`, {
@@ -248,27 +208,22 @@ async function refreshDashboardSidebar() {
     });
 
     if (!sidebarResponse.ok) {
-      console.error('[refreshDashboardSidebar] ERROR: Failed to fetch sidebar');
       throw new Error(`HTTP error! status: ${sidebarResponse.status}`);
     }
 
     const sidebarHtml = await sidebarResponse.text();
-    console.log('[refreshDashboardSidebar] Sidebar HTML received');
 
     // Update the primary sidebar content
     const sidebarContainer = document.querySelector('.sidebar-content');
     if (!sidebarContainer) {
-      console.error('[refreshDashboardSidebar] ERROR: Sidebar container not found');
       throw new Error('Sidebar container not found');
     }
 
     // Update the DOM with new content
     sidebarContainer.innerHTML = sidebarHtml;
-    console.log('[refreshDashboardSidebar] DOM updated');
 
     // Execute any scripts in the loaded content
     const scripts = sidebarContainer.querySelectorAll('script');
-    console.log('[refreshDashboardSidebar] Found', scripts.length, 'scripts');
     scripts.forEach((script) => {
       const newScript = document.createElement('script');
       if (script.src) {
@@ -282,10 +237,7 @@ async function refreshDashboardSidebar() {
     // Restore the active tab styling after refresh
     restoreActiveDashboardTab(activeTab);
 
-    console.log('[refreshDashboardSidebar] Sidebar refreshed successfully');
-
     // Now refresh the map with fresh data from the API
-    console.log('[refreshDashboardSidebar] Fetching fresh trip data for map refresh...');
     try {
       // Fetch dashboard items from the API, filtered by active tab
       const dashboardDataResponse = await fetch(`/dashboard/api?activeTab=${activeTab}`, {
@@ -297,18 +249,13 @@ async function refreshDashboardSidebar() {
 
       if (dashboardDataResponse.ok) {
         const dashboardData = await dashboardDataResponse.json();
-        console.log('[refreshDashboardSidebar] Fetched dashboard data. Items:',
-          (dashboardData.flights ? dashboardData.flights.length : 0), 'flights,',
-          (dashboardData.transportation ? dashboardData.transportation.length : 0), 'transportation');
 
         // Update window.tripData with fresh dashboard data for map refresh
         window.tripData = dashboardData;
         await refreshMapIfPresent();
-      } else {
-        console.error('[refreshDashboardSidebar] ERROR: Failed to fetch dashboard data');
       }
     } catch (error) {
-      console.error('[refreshDashboardSidebar] ERROR fetching dashboard data:', error.message);
+      // Error fetching dashboard data - silently ignore
     }
 
     // Emit event bus notification for other components
@@ -319,7 +266,6 @@ async function refreshDashboardSidebar() {
       });
     }
   } catch (error) {
-    console.error('[refreshDashboardSidebar] ERROR:', error.message);
     // Fallback to page reload on error
     setTimeout(() => {
       window.location.reload();
@@ -333,79 +279,62 @@ async function refreshDashboardSidebar() {
  */
 async function refreshMapIfPresent() {
   try {
-    console.log('[refreshMapIfPresent] Checking for map...');
-
     // Check if map exists and functions are available
     if (!window.currentMap) {
-      console.log('[refreshMapIfPresent] No current map found');
       return;
     }
 
     if (typeof initOverviewMap !== 'function') {
-      console.log('[refreshMapIfPresent] initOverviewMap function not available');
       return;
     }
-
-    console.log('[refreshMapIfPresent] Map found, attempting refresh...');
 
     // Determine which data to use based on context
     let tripData = null;
 
     // Check if we're on a trip page (window.tripData is set in trip.ejs)
     if (window.tripData && window.tripData.id) {
-      console.log('[refreshMapIfPresent] Using trip data from window.tripData');
       tripData = window.tripData;
     }
     // Check if we're on a dashboard page - use the data that was set by refreshDashboardSidebar
     else if (window.tripData && (window.tripData.flights || window.tripData.hotels || window.tripData.transportation)) {
-      console.log('[refreshMapIfPresent] Using dashboard trip data from window.tripData');
       tripData = window.tripData;
     }
     // Fallback: check for dashboard-specific data structures
     else if (window.upcomingTripsData) {
-      console.log('[refreshMapIfPresent] Using upcomingTripsData from dashboard');
       tripData = window.upcomingTripsData;
     }
     else if (window.allTripsData) {
-      console.log('[refreshMapIfPresent] Using allTripsData from dashboard');
       tripData = window.allTripsData;
     }
     // No data found
     else {
-      console.log('[refreshMapIfPresent] No trip data found, skipping map refresh');
       return;
     }
 
-    console.log('[refreshMapIfPresent] Trip data loaded with flights:', tripData.flights ? tripData.flights.length : 0);
-
     // Remove old map
     if (window.currentMap && typeof window.currentMap.remove === 'function') {
-      console.log('[refreshMapIfPresent] Removing existing map');
       try {
         window.currentMap.remove();
         window.currentMap = null;
       } catch (e) {
-        console.warn('[refreshMapIfPresent] Warning removing map:', e.message);
+        // Ignore error removing map
       }
     }
 
     // Reinitialize map with updated data
-    console.log('[refreshMapIfPresent] Calling initOverviewMap...');
     try {
       const map = await initOverviewMap(tripData, 'tripMap');
-      console.log('[refreshMapIfPresent] Map reinitialized successfully');
       window.currentMap = map;
 
       // Setup hover effects if function exists
       if (typeof setupTimelineHoverEffects === 'function') {
-        console.log('[refreshMapIfPresent] Setting up timeline hover effects');
         setupTimelineHoverEffects(map);
       }
     } catch (error) {
-      console.error('[refreshMapIfPresent] ERROR reinitializing map:', error.message);
+      // Error reinitializing map - silently ignore
     }
   } catch (error) {
-    console.error('[refreshMapIfPresent] ERROR:', error.message);
+    // Error in map refresh - silently ignore
   }
 }
 
@@ -470,8 +399,6 @@ function restoreActiveDashboardTab(activeTab) {
     upcomingTab.classList.add('border-blue-500', 'text-blue-600', 'bg-blue-50');
     upcomingContent.classList.remove('hidden');
   }
-
-  console.log('[restoreActiveDashboardTab] Restored active tab:', activeTab);
 }
 
 /**
@@ -479,10 +406,8 @@ function restoreActiveDashboardTab(activeTab) {
  */
 function extractTripIdFromUrl() {
   const pathname = window.location.pathname;
-  console.log('[extractTripIdFromUrl] Current pathname:', pathname);
   const match = pathname.match(/\/trips\/([a-f0-9-]+)/);
   const result = match ? match[1] : null;
-  console.log('[extractTripIdFromUrl] Extracted trip ID:', result || 'NONE');
   return result;
 }
 

@@ -170,11 +170,9 @@ async function handleRespondToTripInvitation(element, _event) {
     if (respondRes.ok) {
       // Silently reload after responding to invitation
       setTimeout(() => location.reload(), 300);
-    } else {
-      console.error('Error responding to invitation');
     }
   } catch (error) {
-    console.error('Error responding to invitation:', error);
+    // Error responding to invitation
   }
 }
 
@@ -235,10 +233,7 @@ function handleLoadEventSidebar(element, event) {
 function handleLoadStandaloneSidebar(element, event) {
   const { itemType, itemId } = getElementData(element);
 
-  console.log('handleLoadStandaloneSidebar called', { itemType, itemId, element });
-
   if (!itemType || !itemId) {
-    console.warn('Missing itemType or itemId', { itemType, itemId });
     return;
   }
 
@@ -251,14 +246,11 @@ function handleLoadStandaloneSidebar(element, event) {
   };
 
   const url = endpointMap[itemType];
-  console.log('Resolved URL:', url);
 
   if (url && typeof window.loadSidebarContent === 'function') {
     // Stop propagation to prevent other handlers from interfering
     event.stopPropagation();
     window.loadSidebarContent(url);
-  } else {
-    console.warn('loadSidebarContent is not available or URL is invalid', { url, hasLoadSidebarContent: typeof window.loadSidebarContent });
   }
 }
 
@@ -300,8 +292,6 @@ function registerDashboardHandlers() {
 
   // Expose showNewItemMenu globally for onclick handlers
   window.showNewItemMenu = handleShowNewItemMenu;
-
-  console.log('✅ Dashboard event handlers registered');
 }
 
 // Initialize on module load

@@ -18,7 +18,6 @@ async function loadNotificationsSidebar() {
   try {
     const container = document.getElementById('secondary-sidebar-content');
     if (!container) {
-      console.error('Secondary sidebar content container not found');
       return;
     }
 
@@ -59,7 +58,6 @@ async function loadNotificationsSidebar() {
 
     eventBus.emit(EventTypes.SIDEBAR_OPENED, { url: '/notifications/sidebar' });
   } catch (error) {
-    console.error('Error loading notifications sidebar:', error);
     const container = document.getElementById('secondary-sidebar-content');
     if (container) {
       container.innerHTML = '<div class="p-4"><p class="text-red-600">Error loading notifications. Please try again.</p></div>';
@@ -89,7 +87,7 @@ async function updateNotificationBadge() {
     // Emit event bus notification
     eventBus.emit(EventTypes.NOTIFICATION_COUNT_CHANGED, { count });
   } catch (error) {
-    console.error('Error updating notification icon:', error);
+    // Error updating notification icon
   }
 }
 
@@ -123,8 +121,6 @@ async function initializeWebSocket() {
 
     // Listen for new notifications
     onEvent('notification:new', (notification) => {
-      console.log('📬 New notification received:', notification);
-
       // Emit event bus notification
       eventBus.emit(EventTypes.NOTIFICATION_RECEIVED, notification);
 
@@ -148,8 +144,6 @@ async function initializeWebSocket() {
 
     // Listen for notification updates (e.g., marked as read)
     onEvent('notification:updated', (data) => {
-      console.log('🔄 Notification updated:', data);
-
       // Update badge counts
       updateNotificationBadge();
 
@@ -162,8 +156,6 @@ async function initializeWebSocket() {
 
     // Listen for notification deletions
     onEvent('notification:deleted', (data) => {
-      console.log('🗑️ Notification deleted:', data);
-
       // Update badge counts
       updateNotificationBadge();
 
@@ -173,10 +165,8 @@ async function initializeWebSocket() {
         loadNotificationsSidebar();
       }
     });
-
-    console.log('✅ Notification WebSocket initialized');
   } catch (error) {
-    console.error('❌ Failed to initialize WebSocket:', error);
+    // Failed to initialize WebSocket
   }
 }
 

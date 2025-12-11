@@ -183,7 +183,6 @@
           alert('Failed to update companion permissions');
         }
       } catch (error) {
-        console.error('Error updating companion permissions:', error);
         // Revert checkbox
         const checkbox = document.getElementById(`canBeAddedByOthers${companionId}`);
         checkbox.checked = !canBeAddedByOthers;
@@ -205,7 +204,6 @@
             alert('Failed to delete companion');
           }
         } catch (error) {
-          console.error('Error deleting companion:', error);
           alert('Failed to delete companion');
         }
       }
@@ -225,7 +223,6 @@
             alert('Failed to unlink companion');
           }
         } catch (error) {
-          console.error('Error unlinking companion:', error);
           alert('Failed to unlink companion');
         }
       }

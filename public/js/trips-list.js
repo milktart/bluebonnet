@@ -23,12 +23,7 @@ const TAB_CONFIG = {
 
 // Update map with new trip data
 function updateMapData(newData, isPast = false) {
-  console.log('[updateMapData] Called with isPast:', isPast);
-  console.log('[updateMapData] newData flights count:', newData.flights.length);
-  console.log('[updateMapData] currentMap initialized:', !!currentMap, 'mapInitialized:', mapInitialized);
-
   if (typeof initOverviewMap === 'undefined') {
-    console.warn('[updateMapData] initOverviewMap not defined yet');
     return;
   }
 
@@ -36,93 +31,66 @@ function updateMapData(newData, isPast = false) {
   stopTripAnimation();
 
   // Initialize or reinitialize the map with new data
-  console.log('[updateMapData] Calling initOverviewMap with', newData.flights.length, 'flights');
   initOverviewMap(newData, 'tripMap', isPast)
     .then((map) => {
-      console.log('[updateMapData] Map initialized/updated successfully');
       mapInitialized = true;
       currentMap = map;
     })
     .catch((error) => {
-      console.error('[updateMapData] Map update failed:', error);
+      // Map update failed
     });
 }
 
 function switchTab(activeTab) {
-  console.log('[switchTab] Switching to tab:', activeTab);
   Object.keys(TAB_CONFIG).forEach((tab) => {
     const { tab: tabId, content: contentId } = TAB_CONFIG[tab];
     const tabElement = document.getElementById(tabId);
     const contentElement = document.getElementById(contentId);
 
-    console.log(
-      `[switchTab] Processing ${tab}: tabElement=${!!tabElement}, contentElement=${!!contentElement}`
-    );
-
     // Skip if elements don't exist (e.g., when there are no trips)
     if (!tabElement || !contentElement) {
-      console.log(`[switchTab] Skipping ${tab} - elements don't exist`);
       return;
     }
 
     if (tab === activeTab) {
-      console.log(`[switchTab] Showing ${tab}`);
       tabElement.className =
         'py-3 px-4 border-b-2 border-blue-500 font-medium text-sm text-blue-600 bg-blue-50 rounded-t-lg transition-all duration-200';
       contentElement.classList.remove('hidden');
     } else {
-      console.log(`[switchTab] Hiding ${tab}`);
       tabElement.className =
         'py-3 px-4 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-t-lg transition-all duration-200';
       contentElement.classList.add('hidden');
     }
   });
-  console.log('[switchTab] Tab switch complete');
 }
 
 export function showUpcomingTrips() {
-  console.log('[showUpcomingTrips] Called');
   switchTab('upcoming');
   // Close secondary sidebar if open
   const secondarySidebar = document.getElementById('secondary-sidebar');
   if (secondarySidebar && secondarySidebar.classList.contains('open')) {
-    console.log('[showUpcomingTrips] Closing secondary sidebar');
     if (typeof window.closeSecondarySidebar === 'function') {
       window.closeSecondarySidebar();
-    } else {
-      console.warn('[showUpcomingTrips] closeSecondarySidebar function not found');
     }
   }
   // Update map to show upcoming trips data (flights and events)
   if (typeof upcomingTripsData !== 'undefined') {
-    console.log('[showUpcomingTrips] Updating map with upcomingTripsData:', upcomingTripsData);
-    console.log('[showUpcomingTrips] upcomingTripsData.flights:', upcomingTripsData.flights.length, 'flights');
     updateMapData(upcomingTripsData);
-  } else {
-    console.warn('[showUpcomingTrips] upcomingTripsData not defined!');
   }
 }
 
 export function showPastTrips() {
-  console.log('[showPastTrips] Called');
   switchTab('past');
   // Close secondary sidebar if open
   const secondarySidebar = document.getElementById('secondary-sidebar');
   if (secondarySidebar && secondarySidebar.classList.contains('open')) {
-    console.log('[showPastTrips] Closing secondary sidebar');
     if (typeof window.closeSecondarySidebar === 'function') {
       window.closeSecondarySidebar();
-    } else {
-      console.warn('[showPastTrips] closeSecondarySidebar function not found');
     }
   }
   // Update map to show past trips data (flights only) with darker colors
   if (typeof pastTripsData !== 'undefined') {
-    console.log('[showPastTrips] Updating map with pastTripsData:', pastTripsData);
-    console.log('[showPastTrips] pastTripsData.flights:', pastTripsData.flights.length, 'flights');
     updateMapData(pastTripsData, true);
-  } else {
-    console.warn('[showPastTrips] pastTripsData not defined!');
   }
 }
 
@@ -286,7 +254,7 @@ function zoomToTripBounds(tripIndex, prefix = 'upcoming') {
   try {
     currentMap.fitBounds(bounds, paddingOptions);
   } catch (e) {
-    console.warn('Failed to fit bounds:', e);
+    // Failed to fit bounds
   }
 }
 
@@ -309,7 +277,7 @@ function restoreOriginalZoom() {
       easeLinearity: 0.1,
     });
   } catch (e) {
-    console.warn('Failed to restore original zoom:', e);
+    // Failed to restore original zoom
   }
 
   originalMapBounds = null;
@@ -365,7 +333,7 @@ function animateTripSegments(tripIndex, prefix = 'upcoming') {
   try {
     currentZoom = currentMap.getZoom();
   } catch (e) {
-    console.warn('Failed to get zoom level:', e);
+    // Failed to get zoom level
   }
   const zoomFactor = Math.max(0.75, 2 ** (4 - currentZoom));
   const totalDurationMs = (totalDistance / 6000) * 5000 * zoomFactor;

@@ -25,17 +25,13 @@ export async function loadCompanions() {
   // Start loading
   companionsLoadingPromise = (async () => {
     try {
-      console.log('👥 Loading companions module...');
-
       // Dynamically import companions module
       const companionsModule = await import('../companions.js');
 
       companionsLoaded = true;
-      console.log('✅ Companions module loaded');
 
       return companionsModule;
     } catch (error) {
-      console.error('❌ Failed to load companions:', error);
       companionsLoadingPromise = null; // Allow retry
       throw error;
     }

@@ -364,16 +364,13 @@ try {
     updated++;
 
     if (updated % 1000 === 0) {
-      console.log(`Processed ${updated} airports...`);
+      // Progress update removed
     }
   }
 
   // Write back to file
   fs.writeFileSync(filePath, JSON.stringify(newData, null, 2));
 
-  console.log(`✓ Successfully added timezones to ${updated} airports`);
-  console.log(`✓ Updated file: ${filePath}`);
 } catch (error) {
-  console.error('Error processing airports file:', error);
   process.exit(1);
 }

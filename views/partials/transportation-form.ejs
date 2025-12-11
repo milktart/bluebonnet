@@ -107,7 +107,6 @@
       window.itemType = 'transportation';
       window.itemId = '<%= data?.id || "" %>';
       window.tripId = '<%= tripId %>';
-      console.log('[transportation-form] window.tripId set to:', window.tripId);
       // Companions are initialized by parent script (trip-view-sidebar.js) via ensureCompanionsInitialized()
     </script>
 
@@ -171,11 +170,9 @@ function initializeTransportationTimezoneUpdate() {
           const data = await response.json();
           if (data.timezone) {
             originTimezoneField.value = data.timezone;
-            console.log('[Transportation] Updated origin timezone to:', data.timezone);
           }
         }
       } catch (error) {
-        console.error('[Transportation] Error inferring origin timezone:', error);
       }
     }
 
@@ -198,11 +195,9 @@ function initializeTransportationTimezoneUpdate() {
           const data = await response.json();
           if (data.timezone) {
             destTimezoneField.value = data.timezone;
-            console.log('[Transportation] Updated destination timezone to:', data.timezone);
           }
         }
       } catch (error) {
-        console.error('[Transportation] Error inferring destination timezone:', error);
       }
     }
 

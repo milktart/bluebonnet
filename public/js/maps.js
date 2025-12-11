@@ -31,7 +31,6 @@ async function initializeMap(tripData, isPast = false) {
       if (tripMap) {
         tripMap.id = 'map';
       } else {
-        console.error('No map element found');
         return;
       }
     }
@@ -176,19 +175,10 @@ async function initializeMap(tripData, isPast = false) {
 
     // Process TRANSPORTATION - these create travel segments (like flights)
     if (tripData.transportation && Array.isArray(tripData.transportation)) {
-      console.log('[initializeMap] Processing', tripData.transportation.length, 'transportation items');
       for (let i = 0; i < tripData.transportation.length; i++) {
         const transportation = tripData.transportation[i];
-        console.log('[initializeMap] Transportation', i + ':', transportation.origin, '->', transportation.destination);
-        console.log('[initializeMap] Coords:', {
-          originLat: transportation.originLat,
-          originLng: transportation.originLng,
-          destLat: transportation.destinationLat,
-          destLng: transportation.destinationLng,
-        });
 
         if (!transportation.origin || !transportation.destination) {
-          console.log('[initializeMap] SKIPPING - missing origin or destination');
           continue;
         }
 
@@ -198,15 +188,7 @@ async function initializeMap(tripData, isPast = false) {
         const destLat = parseFloat(transportation.destinationLat);
         const destLng = parseFloat(transportation.destinationLng);
 
-        console.log('[initializeMap] Parsed:', {
-          originLat: isNaN(originLat) ? 'NaN' : originLat,
-          originLng: isNaN(originLng) ? 'NaN' : originLng,
-          destLat: isNaN(destLat) ? 'NaN' : destLat,
-          destLng: isNaN(destLng) ? 'NaN' : destLng,
-        });
-
         if (!isNaN(originLat) && !isNaN(originLng)) {
-          console.log('[initializeMap] Adding origin location');
           allLocations.push({
             name: transportation.method,
             type: 'transportation',
@@ -219,7 +201,6 @@ async function initializeMap(tripData, isPast = false) {
         }
 
         if (!isNaN(destLat) && !isNaN(destLng)) {
-          console.log('[initializeMap] Adding destination location');
           allLocations.push({
             name: transportation.method,
             type: 'transportation',
@@ -233,7 +214,6 @@ async function initializeMap(tripData, isPast = false) {
 
         // Add travel segment if both coords are valid
         if (!isNaN(originLat) && !isNaN(originLng) && !isNaN(destLat) && !isNaN(destLng)) {
-          console.log('[initializeMap] Adding transportation travel segment');
           travelSegments.push({
             type: 'transportation',
             from: [originLat, originLng],
@@ -243,8 +223,6 @@ async function initializeMap(tripData, isPast = false) {
             itemType: 'transportation',
             itemId: transportation.id,
           });
-        } else {
-          console.log('[initializeMap] SKIPPING segment - invalid coordinates');
         }
       }
     }
@@ -397,10 +375,6 @@ async function initializeMap(tripData, isPast = false) {
       const lngSpan = bounds.getEast() - bounds.getWest();
       const maxSpan = Math.max(latSpan, lngSpan);
 
-      console.log('Bounds:', bounds);
-      console.log('Total coordinates:', allCoords.length);
-      console.log('Max span:', maxSpan);
-
       // Determine maxZoom based on span
       let maxZoom;
       if (maxSpan > 150) {
@@ -414,8 +388,6 @@ async function initializeMap(tripData, isPast = false) {
       } else {
         maxZoom = 6;
       }
-
-      console.log('Using maxZoom:', maxZoom);
 
       // Fit bounds accounting for primary sidebar on left
       map.fitBounds(bounds, {
@@ -431,8 +403,6 @@ async function initializeMap(tripData, isPast = false) {
     // Return the map instance for external management
     return map;
   } catch (error) {
-    console.error('Map error:', error);
-
     // Remove loading if present
     const loading = document.querySelector('.alert.alert-info');
     if (loading) loading.remove();
@@ -467,15 +437,11 @@ function initOverviewMap(tripData, mapElementId = 'tripMap', isPast = false) {
   return new Promise((resolve, reject) => {
     const mapEl = document.getElementById(mapElementId);
     if (!mapEl) {
-      console.log(`Map element #${mapElementId} not found`);
       reject(new Error('Map element not found'));
       return;
     }
 
-    console.log('Initializing overview map...');
-
     if (typeof initializeMap === 'undefined') {
-      console.error('initializeMap function not found. maps.js may not be loaded.');
       mapEl.innerHTML =
         '<div class="alert alert-danger">Map library not loaded. Please refresh the page.</div>';
       reject(new Error('Map library not loaded'));
@@ -484,7 +450,6 @@ function initOverviewMap(tripData, mapElementId = 'tripMap', isPast = false) {
 
     // Destroy existing map if it exists and is stored globally
     if (window.currentMap) {
-      console.log('Destroying existing map instance...');
       try {
         // Remove all layers and controls
         if (typeof window.currentMap.remove === 'function') {
@@ -493,7 +458,6 @@ function initOverviewMap(tripData, mapElementId = 'tripMap', isPast = false) {
         // Force clear any remaining references
         window.currentMap = null;
       } catch (e) {
-        console.warn('Error destroying map:', e);
         window.currentMap = null;
       }
     }
@@ -518,18 +482,14 @@ function initOverviewMap(tripData, mapElementId = 'tripMap', isPast = false) {
     try {
       initializeMap(tripData, isPast)
         .then((map) => {
-          console.log('Map initialized successfully');
-
           // Wait for map to be fully ready before setting as currentMap
           map.whenReady(() => {
-            console.log('[initOverviewMap] Map is ready, setting as currentMap');
             window.currentMap = map;
 
             // Force map to recalculate size after a delay to ensure proper rendering
             setTimeout(() => {
               try {
                 if (map._container) {
-                  console.log('[initOverviewMap] Invalidating map size');
                   map.invalidateSize(false);
                 }
               } catch (e) {
@@ -538,12 +498,10 @@ function initOverviewMap(tripData, mapElementId = 'tripMap', isPast = false) {
             }, 500);
 
             // Resolve after map is fully ready and configured
-            console.log('[initOverviewMap] Resolving promise with fully initialized map');
             resolve(map);
           });
         })
         .catch((error) => {
-          console.error('Map initialization failed:', error);
           mapEl.innerHTML = `<div class="alert alert-danger">Map failed to load: ${error.message}</div>`;
           reject(error);
         })
@@ -554,7 +512,6 @@ function initOverviewMap(tripData, mapElementId = 'tripMap', isPast = false) {
           }
         });
     } catch (e) {
-      console.error('Map initialization error:', e);
       mapEl.innerHTML = `<div class="alert alert-danger">Map error: ${e.message}</div>`;
       mapEl.id = originalId;
       reject(e);
@@ -574,7 +531,6 @@ function initOverviewMap(tripData, mapElementId = 'tripMap', isPast = false) {
  */
 function setupTimelineHoverEffects(map) {
   // No-op: hover effects are now handled by dashboard-sidebar-content.ejs
-  console.log('[setupTimelineHoverEffects] This function is deprecated. Hover effects are handled elsewhere.');
 }
 
 // ============================================================================
@@ -627,7 +583,6 @@ function highlightMapMarker(markerIdOrItemType, itemIdParam) {
 
   // Verify the map is still valid and in the DOM
   if (!window.currentMap._container || !window.currentMap._container.offsetParent) {
-    console.warn('Map is not available or not in DOM');
     return;
   }
 
@@ -662,7 +617,6 @@ function highlightMapMarker(markerIdOrItemType, itemIdParam) {
   }
 
   if (!segment) {
-    console.warn(`[highlightMapMarker] No segment found for ${markerIdOrItemType} ${itemIdParam || ''}`);
     return;
   }
 
@@ -672,7 +626,7 @@ function highlightMapMarker(markerIdOrItemType, itemIdParam) {
       try {
         window.currentMap.removeLayer(window.activeAnimations[markerId].marker);
       } catch (e) {
-        console.warn('Error removing marker:', e);
+        // Silently handle marker removal errors
       }
     }
   }
@@ -731,7 +685,7 @@ function highlightMapMarker(markerIdOrItemType, itemIdParam) {
       interval: animationInterval,
     };
   } catch (e) {
-    console.warn('Error creating marker animation:', e);
+    // Silently handle animation errors
   }
 }
 
@@ -757,7 +711,7 @@ function unhighlightMapMarker(markerId) {
       try {
         window.currentMap.removeLayer(window.activeAnimations[markerId].marker);
       } catch (e) {
-        console.warn('Error removing marker:', e);
+        // Silently handle marker removal errors
       }
     }
     delete window.activeAnimations[markerId];

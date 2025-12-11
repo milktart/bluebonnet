@@ -5,6 +5,3 @@
 
 // Import map-view specific modules
 import '../maps.js';
-
-// Log bundle load
-console.log('✅ Map view bundle loaded');

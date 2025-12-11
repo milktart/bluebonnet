@@ -20,7 +20,7 @@ async function ensureCompanionsInitialized() {
       await window.initializeItemCompanions();
     }
   } catch (error) {
-    console.error('Error initializing companions:', error);
+    // Error initializing companions
   }
 }
 
@@ -129,7 +129,6 @@ function editItem(type, id) {
           }
         })
         .catch((error) => {
-          console.error('Error loading flight form:', error);
           formContainer.innerHTML = `<p class="text-red-600">Error loading form: ${error.message}</p>`;
         });
       break;
@@ -148,7 +147,9 @@ function editItem(type, id) {
           await ensureCompanionsInitialized();
           initFlightDateTimePickers();
         })
-        .catch((error) => console.error('Error loading hotel form:', error));
+        .catch((error) => {
+          // Error loading hotel form
+        });
       break;
     case 'transportation':
       // Fetch form via AJAX
@@ -165,7 +166,9 @@ function editItem(type, id) {
           await ensureCompanionsInitialized();
           initFlightDateTimePickers();
         })
-        .catch((error) => console.error('Error loading transportation form:', error));
+        .catch((error) => {
+          // Error loading transportation form
+        });
       break;
     case 'carRental':
     case 'car-rental':
@@ -179,7 +182,6 @@ function editItem(type, id) {
         })
         .then(async (html) => {
           if (!html || html.trim().length === 0) {
-            console.error('Car rental form response is empty');
             formContainer.innerHTML =
               '<p class="text-red-600">Error loading form: empty response</p>';
           } else {
@@ -195,7 +197,6 @@ function editItem(type, id) {
           }
         })
         .catch((error) => {
-          console.error('Error loading car rental form:', error);
           formContainer.innerHTML = `<p class="text-red-600">Error loading form: ${error.message}</p>`;
         });
       break;
@@ -220,7 +221,9 @@ function editItem(type, id) {
           await ensureCompanionsInitialized();
           initFlightDateTimePickers();
         })
-        .catch((error) => console.error('Error loading event form:', error));
+        .catch((error) => {
+          // Error loading event form
+        });
       break;
   }
 }
@@ -264,7 +267,9 @@ function showAddFormWithLayoverDates(
         await ensureCompanionsInitialized();
         initFlightDateTimePickers();
       })
-      .catch((error) => console.error('Error loading hotel form:', error));
+      .catch((error) => {
+        // Error loading hotel form
+      });
   }
 }
 
@@ -302,10 +307,7 @@ function showAddForm(type, isStandalone = false) {
         if (formId) {
           const form = document.getElementById(formId);
           if (form) {
-            console.log(`[showAddForm] Manually setting up ${type} form after delay (formId: ${formId})`);
             setupAsyncFormSubmission(formId);
-          } else {
-            console.warn(`[showAddForm] Form not found with id: ${formId}`);
           }
         }
       }
@@ -344,7 +346,9 @@ function showAddForm(type, isStandalone = false) {
             initializeAirportAutocomplete();
           }
         })
-        .catch((error) => console.error('Error loading flight form:', error));
+        .catch((error) => {
+          // Error loading flight form
+        });
       break;
     case 'hotel':
       // Fetch form via AJAX
@@ -362,7 +366,9 @@ function showAddForm(type, isStandalone = false) {
           await ensureCompanionsInitialized();
           initFlightDateTimePickers();
         })
-        .catch((error) => console.error('Error loading hotel form:', error));
+        .catch((error) => {
+          // Error loading hotel form
+        });
       break;
     case 'transportation':
       // Fetch form via AJAX
@@ -380,7 +386,9 @@ function showAddForm(type, isStandalone = false) {
           await ensureCompanionsInitialized();
           initFlightDateTimePickers();
         })
-        .catch((error) => console.error('Error loading transportation form:', error));
+        .catch((error) => {
+          // Error loading transportation form
+        });
       break;
     case 'carRental':
     case 'car-rental':
@@ -399,7 +407,9 @@ function showAddForm(type, isStandalone = false) {
           await ensureCompanionsInitialized();
           initFlightDateTimePickers();
         })
-        .catch((error) => console.error('Error loading car rental form:', error));
+        .catch((error) => {
+          // Error loading car rental form
+        });
       break;
     case 'event':
       // Fetch form via AJAX
@@ -423,7 +433,9 @@ function showAddForm(type, isStandalone = false) {
           await ensureCompanionsInitialized();
           initFlightDateTimePickers();
         })
-        .catch((error) => console.error('Error loading event form:', error));
+        .catch((error) => {
+          // Error loading event form
+        });
       break;
   }
 }

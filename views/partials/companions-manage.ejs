@@ -170,7 +170,6 @@ async function loadCompanionData() {
     const unlinkedData = await unlinkedRes.json();
     renderUnlinkedCompanions(unlinkedData.companions || []);
   } catch (error) {
-    console.error('Error loading companion data:', error);
   }
 }
 
@@ -346,7 +345,6 @@ document.getElementById('confirmPermissionChange').addEventListener('click', asy
       alert('Error changing permission level');
     }
   } catch (error) {
-    console.error('Error:', error);
     alert('Error changing permission level');
   }
 });
@@ -368,7 +366,6 @@ document.getElementById('confirmAcceptRequest').addEventListener('click', async 
       alert('Error accepting companion request');
     }
   } catch (error) {
-    console.error('Error:', error);
     alert('Error accepting companion request');
   }
 });
@@ -384,7 +381,6 @@ async function declineRequest(relationshipId) {
       alert('Error declining request');
     }
   } catch (error) {
-    console.error('Error:', error);
     alert('Error declining request');
   }
 }
@@ -400,7 +396,6 @@ async function cancelRequest(relationshipId) {
       alert('Error cancelling request');
     }
   } catch (error) {
-    console.error('Error:', error);
     alert('Error cancelling request');
   }
 }
@@ -419,7 +414,6 @@ async function resendRequest(relationshipId) {
       alert('Error resending request');
     }
   } catch (error) {
-    console.error('Error:', error);
     alert('Error resending request');
   }
 }
@@ -435,7 +429,6 @@ async function revokeCompanion(relationshipId) {
       alert('Error revoking companion');
     }
   } catch (error) {
-    console.error('Error:', error);
     alert('Error revoking companion');
   }
 }
@@ -451,7 +444,6 @@ async function deleteUnlinkedCompanion(companionId) {
       alert('Error deleting companion');
     }
   } catch (error) {
-    console.error('Error:', error);
     alert('Error deleting companion');
   }
 }

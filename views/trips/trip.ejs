@@ -168,10 +168,7 @@
 
     // Initialize when DOM is ready
     document.addEventListener('DOMContentLoaded', async function() {
-      console.log('Trip data:', tripData);
-
       if (typeof L === 'undefined') {
-        console.error('Leaflet not loaded');
         const mapEl = document.getElementById('tripMap');
         if (mapEl) {
           mapEl.innerHTML = '<div class="bg-red-50 border border-red-200 rounded-md p-4 text-red-700">Map library not loaded. Please refresh the page.</div>';
@@ -189,7 +186,6 @@
       }
 
       if (typeof initOverviewMap === 'undefined') {
-        console.error('Maps module not loaded');
         const mapEl = document.getElementById('tripMap');
         if (mapEl) {
           mapEl.innerHTML = '<div class="bg-red-50 border border-red-200 rounded-md p-4 text-red-700">Maps module not loaded. Please refresh the page.</div>';
@@ -204,12 +200,10 @@
             mapInitialized = true;
             currentMap = map;
             setupTimelineHoverEffects(map);
-            console.log('Map initialized successfully');
 
             // Map sizing is now handled by maps.js
           })
           .catch(error => {
-            console.error('Map initialization error:', error);
             const mapEl = document.getElementById('tripMap');
             if (mapEl) {
               mapEl.innerHTML = '<div class="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-yellow-700">Map failed to load: ' + error.message + '</div>';
@@ -500,7 +494,6 @@
 
         const invitation = pendingData.invitations && pendingData.invitations.find(inv => inv.tripId === tripId);
         if (!invitation) {
-          console.error('Invitation not found');
           return;
         }
 
@@ -514,11 +507,9 @@
         if (respondRes.ok) {
           // Silently reload the page
           setTimeout(() => location.reload(), 300);
-        } else {
-          console.error('Error responding to invitation');
         }
       } catch (error) {
-        console.error('Error:', error);
+        // Silently handle invitation response errors
       }
     }
 

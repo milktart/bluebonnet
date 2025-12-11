@@ -21,7 +21,6 @@ async function syncDatabase() {
     process.exit(0);
   } catch (error) {
     logger.error('Database sync failed', { error: error.message });
-    console.error(error);
     process.exit(1);
   }
 }

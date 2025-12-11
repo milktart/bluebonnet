@@ -184,8 +184,6 @@ function registerSharedHandlers() {
     deleteVoucher: handleDeleteVoucher,
     reissueRemainder: handleReissueRemainder,
   });
-
-  console.log('✅ Shared event handlers registered');
 }
 
 // Initialize on module load

@@ -169,7 +169,7 @@ export class CompanionSelector {
 
         this.displayResults(this.currentResults, query);
       } catch (error) {
-        console.error('Search failed:', error);
+        // Silently handle search errors
       }
     }, 300);
   }
@@ -355,11 +355,10 @@ export class CompanionSelector {
         this.searchInput.value = '';
         this.hideDropdown();
       } else {
-        const errorData = await response.text();
-        console.error('Failed to add companion:', errorData);
+        // Silently handle response errors
       }
     } catch (error) {
-      console.error('Error adding companion:', error);
+      // Silently handle errors
     }
   }
 
@@ -522,14 +521,12 @@ export class CompanionManager {
           await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
         }
       } else {
-        console.error('Failed to update companion:', result.error);
         // Reload the companions sidebar on error to ensure consistent state
         if (typeof loadSidebarContent === 'function') {
           await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
         }
       }
     } catch (error) {
-      console.error('Error updating companion:', error);
       // Reload the companions sidebar on error to ensure consistent state
       if (typeof loadSidebarContent === 'function') {
         await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
@@ -564,14 +561,12 @@ export class CompanionManager {
           await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
         }
       } else {
-        console.error('Failed to add companion:', result.error);
         // Reload the companions sidebar on error to ensure consistent state
         if (typeof loadSidebarContent === 'function') {
           await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
         }
       }
     } catch (error) {
-      console.error('Error adding companion:', error);
       // Reload the companions sidebar on error to ensure consistent state
       if (typeof loadSidebarContent === 'function') {
         await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
@@ -608,14 +603,12 @@ export class CompanionManager {
           await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
         }
       } else {
-        console.error('Failed to delete companion:', data.error);
         // Reload the companions sidebar on error to ensure consistent state
         if (typeof loadSidebarContent === 'function') {
           await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
         }
       }
     } catch (error) {
-      console.error('Error deleting companion:', error);
       // Reload the companions sidebar on error to ensure consistent state
       if (typeof loadSidebarContent === 'function') {
         await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
@@ -653,14 +646,12 @@ export class CompanionManager {
           await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
         }
       } else {
-        console.error('Failed to unlink companion:', data.error);
         // Reload the companions sidebar on error to ensure consistent state
         if (typeof loadSidebarContent === 'function') {
           await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
         }
       }
     } catch (error) {
-      console.error('Error unlinking companion:', error);
       // Reload the companions sidebar on error to ensure consistent state
       if (typeof loadSidebarContent === 'function') {
         await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
@@ -686,14 +677,12 @@ export class CompanionManager {
       const data = await response.json();
 
       if (!data.success) {
-        console.error('Failed to update companion permissions:', data.error);
         // Reload the companions sidebar on error to ensure consistent state
         if (typeof loadSidebarContent === 'function') {
           await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
         }
       }
     } catch (error) {
-      console.error('Error updating companion permissions:', error);
       // Reload the companions sidebar on error to ensure consistent state
       if (typeof loadSidebarContent === 'function') {
         await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
@@ -721,12 +710,6 @@ export class ItemCompanionLoader {
    * Initialize item companions
    */
   async initialize() {
-    console.log('ItemCompanionLoader initialized with:', {
-      itemType: this.itemType,
-      itemId: this.itemId,
-      tripId: this.tripId,
-    });
-
     // Load companions for both trip-associated items and standalone items (if editing existing item)
     if (this.itemId) {
       // Editing existing item - load its current companions
@@ -768,7 +751,6 @@ export class ItemCompanionLoader {
 
       this.displayCompanions(companions);
     } catch (error) {
-      console.error('Error loading companions:', error);
       container.innerHTML = '<div class="text-red-500 text-sm">Error loading companions</div>';
     }
   }
@@ -824,8 +806,6 @@ export class ItemCompanionLoader {
         });
 
         if (!response.ok) {
-          const error = await response.json();
-          console.error('Error removing companion:', error);
           return;
         }
       }
@@ -842,7 +822,7 @@ export class ItemCompanionLoader {
 
       this.updateHiddenField(companionIds);
     } catch (error) {
-      console.error('Error removing companion:', error);
+      // Silently handle removal errors
     }
   }
 
@@ -869,8 +849,6 @@ export class ItemCompanionLoader {
         });
 
         if (!response.ok) {
-          const error = await response.json();
-          console.error('Error adding companion:', error);
           return;
         }
       }
@@ -905,7 +883,7 @@ export class ItemCompanionLoader {
         searchResults.classList.add('hidden');
       }
     } catch (error) {
-      console.error('Error adding companion:', error);
+      // Silently handle addition errors
     }
   }
 
@@ -924,7 +902,6 @@ export class ItemCompanionLoader {
     const input = document.getElementById('itemCompanionsJson');
     if (input) {
       input.value = JSON.stringify(ids);
-      console.log('Updated companion IDs for submission:', ids);
     }
   }
 
@@ -987,7 +964,6 @@ export class ItemCompanionLoader {
 
           searchResults.classList.remove('hidden');
         } catch (error) {
-          console.error('Error searching companions:', error);
           searchResults.innerHTML =
             '<div class="px-3 py-2 text-red-500 text-sm">Error searching companions</div>';
           searchResults.classList.remove('hidden');
@@ -1007,15 +983,7 @@ export class ItemCompanionLoader {
    * Attach form submission debugger
    */
   attachFormDebugger() {
-    const form = document.querySelector('form');
-    if (form) {
-      form.addEventListener('submit', () => {
-        const companionsInput = document.getElementById('itemCompanionsJson');
-        if (companionsInput) {
-          console.log('Form submitting with companions field:', companionsInput.value);
-        }
-      });
-    }
+    // Form submission tracking - no longer needed with modern debugging
   }
 }
 

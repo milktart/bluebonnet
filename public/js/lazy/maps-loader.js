@@ -25,17 +25,13 @@ export async function loadMaps() {
   // Start loading
   mapsLoadingPromise = (async () => {
     try {
-      console.log('🗺️  Loading maps module...');
-
       // Dynamically import maps module
       const mapsModule = await import('../maps.js');
 
       mapsLoaded = true;
-      console.log('✅ Maps module loaded');
 
       return mapsModule;
     } catch (error) {
-      console.error('❌ Failed to load maps:', error);
       mapsLoadingPromise = null; // Allow retry
       throw error;
     }

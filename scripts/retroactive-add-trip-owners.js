@@ -17,8 +17,6 @@ const db = require('../models');
 
 async function runMigration() {
   try {
-    console.log('Starting retroactive trip owner companion migration...\n');
-
     // Get all trips with their user information
     const trips = await db.Trip.findAll({
       include: [
@@ -30,23 +28,16 @@ async function runMigration() {
       ],
     });
 
-    console.log(`Found ${trips.length} trips to process\n`);
-
     let totalItemsProcessed = 0;
     let totalCompanionsAdded = 0;
 
     for (const trip of trips) {
-      console.log(`Processing trip "${trip.name}" (ID: ${trip.id})`);
-
       // Check if trip owner already has a TravelCompanion record
       let ownerCompanion = await db.TravelCompanion.findOne({
         where: { userId: trip.user.id },
       });
 
       if (!ownerCompanion) {
-        console.log(
-          `  - Creating TravelCompanion for trip owner ${trip.user.firstName} ${trip.user.lastName}`
-        );
         ownerCompanion = await db.TravelCompanion.create({
           name: `${trip.user.firstName} ${trip.user.lastName}`,
           email: trip.user.email,
@@ -54,8 +45,6 @@ async function runMigration() {
           createdBy: trip.user.id,
           canBeAddedByOthers: true,
         });
-      } else {
-        console.log(`  - TravelCompanion already exists for trip owner`);
       }
 
       // Check if trip owner is already linked via TripCompanion
@@ -67,7 +56,6 @@ async function runMigration() {
       });
 
       if (!tripCompanionLink) {
-        console.log(`  - Creating TripCompanion link for trip owner`);
         await db.TripCompanion.create({
           tripId: trip.id,
           companionId: ownerCompanion.id,
@@ -76,8 +64,6 @@ async function runMigration() {
           permissionSource: 'owner',
           addedBy: trip.user.id,
         });
-      } else {
-        console.log(`  - TripCompanion link already exists`);
       }
 
       // Get all items for this trip
@@ -94,8 +80,6 @@ async function runMigration() {
         ...carRentals.map((cr) => ({ type: 'car_rental', id: cr.id })),
         ...events.map((e) => ({ type: 'event', id: e.id })),
       ];
-
-      console.log(`  - Found ${items.length} items in this trip`);
 
       // For each item, check if trip owner is already a companion
       for (const item of items) {
@@ -121,21 +105,10 @@ async function runMigration() {
 
         totalItemsProcessed++;
       }
-
-      console.log(
-        `  ✓ Processed ${items.length} items, added ${items.length > 0 ? items.filter(() => totalCompanionsAdded > 0).length : 0} new companion links\n`
-      );
     }
-
-    console.log('\n=== Migration Summary ===');
-    console.log(`Total trips processed: ${trips.length}`);
-    console.log(`Total items processed: ${totalItemsProcessed}`);
-    console.log(`Total companion links added: ${totalCompanionsAdded}`);
-    console.log('\n✓ Migration completed successfully!');
 
     process.exit(0);
   } catch (error) {
-    console.error('Error during migration:', error);
     process.exit(1);
   }
 }

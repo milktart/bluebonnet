@@ -96,10 +96,8 @@ async function cleanupDuplicates() {
 
 cleanupDuplicates()
   .then(() => {
-    console.log('✓ Duplicate companions cleanup completed');
     process.exit(0);
   })
   .catch(error => {
-    console.error('✗ Cleanup failed:', error.message);
     process.exit(1);
   });

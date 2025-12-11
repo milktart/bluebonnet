@@ -105,7 +105,7 @@ async function copyToClipboard(element) {
         element.textContent = originalText;
       }, 2000);
     } catch (err) {
-      console.error('Failed to copy text:', err);
+      // Failed to copy text
     }
   }
 }
@@ -130,8 +130,6 @@ export function registerCommonHandlers() {
     copyToClipboard,
     stopPropagation,
   });
-
-  console.log('✅ Common event handlers registered');
 }
 
 // Initialize on module load

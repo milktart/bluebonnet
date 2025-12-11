@@ -29,7 +29,6 @@ class AirportAutocomplete {
 
   init() {
     if (!this.input || !this.dropdown) {
-      console.error('Airport autocomplete: Missing required elements');
       return;
     }
 
@@ -116,7 +115,6 @@ class AirportAutocomplete {
       );
 
       if (!response.ok) {
-        console.error('Airport search failed:', response.statusText);
         this.close();
         return;
       }
@@ -131,7 +129,6 @@ class AirportAutocomplete {
         this.close();
       }
     } catch (error) {
-      console.error('Airport search error:', error);
       this.close();
     }
   }

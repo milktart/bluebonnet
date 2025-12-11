@@ -137,7 +137,6 @@
           searchResults.classList.remove('hidden');
         }
       } catch (error) {
-        console.error('Error searching companions:', error);
         searchResults.innerHTML = '<div class="px-4 py-2 text-sm text-red-500">Error searching companions</div>';
         searchResults.classList.remove('hidden');
       }
