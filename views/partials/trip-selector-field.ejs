@@ -81,16 +81,21 @@
 </div>
 
 <script>
-  // Initialize trip selector state
-  let currentTripId = '<%= currentTripId || "" %>';
-  let currentTripName = '<%= currentTripName || "" %>';
+  // Trip selector functions - defined globally so onclick handlers can access them
+  window.tripSelectorState = {
+    currentTripId: '<%= currentTripId || "" %>',
+    currentTripName: '<%= currentTripName || "" %>'
+  };
 
-  function selectTrip(tripId, tripName) {
-    currentTripId = tripId;
-    currentTripName = tripName;
+  window.selectTrip = function(tripId, tripName) {
+    window.tripSelectorState.currentTripId = tripId;
+    window.tripSelectorState.currentTripName = tripName;
 
     // Update hidden input
-    document.getElementById('tripSelectorInput').value = tripId;
+    const input = document.getElementById('tripSelectorInput');
+    if (input) {
+      input.value = tripId;
+    }
 
     // Close dropdown
     const dropdown = document.getElementById('tripSelectorDropdown');
@@ -98,16 +103,18 @@
       dropdown.classList.add('hidden');
     }
 
-    // Update UI to reflect selection
-    updateTripSelectorUI();
-  }
+    console.log('Trip selected:', { tripId, tripName });
+  };
 
-  function removeTrip() {
-    currentTripId = '';
-    currentTripName = '';
+  window.removeTrip = function() {
+    window.tripSelectorState.currentTripId = '';
+    window.tripSelectorState.currentTripName = '';
 
     // Update hidden input
-    document.getElementById('tripSelectorInput').value = '';
+    const input = document.getElementById('tripSelectorInput');
+    if (input) {
+      input.value = '';
+    }
 
     // Close dropdown
     const dropdown = document.getElementById('tripSelectorDropdown');
@@ -115,21 +122,22 @@
       dropdown.classList.add('hidden');
     }
 
-    // Update UI to reflect removal
-    updateTripSelectorUI();
-  }
+    console.log('Trip detached');
+  };
 
-  function updateTripSelectorUI() {
-    // This function updates the UI after selection/removal
-    // In a real implementation, you might want to re-render the component
-    // For now, we just log the state for debugging
-    console.log('Trip selector updated:', {
-      tripId: currentTripId,
-      tripName: currentTripName,
+  // Close dropdown when clicking outside (once DOM is ready)
+  document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('click', function(e) {
+      const dropdown = document.getElementById('tripSelectorDropdown');
+      const tripSelector = e.target.closest('[id$="Dropdown"], button[onclick*="tripSelectorDropdown"]');
+
+      if (!tripSelector && dropdown && !dropdown.classList.contains('hidden')) {
+        dropdown.classList.add('hidden');
+      }
     });
-  }
+  });
 
-  // Close dropdown when clicking outside
+  // Also attach immediately in case DOMContentLoaded already fired
   document.addEventListener('click', function(e) {
     const dropdown = document.getElementById('tripSelectorDropdown');
     const tripSelector = e.target.closest('[id$="Dropdown"], button[onclick*="tripSelectorDropdown"]');

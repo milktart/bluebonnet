@@ -19,7 +19,7 @@ async function getAvailableTrips(userId) {
     const trips = await Trip.findAll({
       where: {
         userId,
-        departureDate: {
+        returnDate: {
           [Sequelize.Op.gte]: today,
         },
       },
