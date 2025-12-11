@@ -1,74 +1,78 @@
 <!-- Trip Selector Field - Reusable partial for all item edit forms -->
 
-<div class="mb-4 pb-4 border-b border-gray-200">
-  <label class="block text-sm font-medium text-gray-700 mb-2">Trip Association</label>
+<div>
+  <label class="block text-sm font-medium text-gray-700 mb-1">Trip Association</label>
 
-  <% if (currentTripId) { %>
-    <!-- Item is currently attached to a trip -->
-    <div class="flex items-center gap-2 mb-3">
-      <div class="flex-1 px-3 py-2 bg-blue-50 border border-blue-200 rounded-md text-sm text-gray-900">
-        📌 <strong><%= currentTripName %></strong>
+  <!-- Display State: Show current trip or prompt to add -->
+  <div class="relative">
+    <% if (currentTripId) { %>
+      <!-- Currently attached to a trip -->
+      <div class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors" onclick="document.getElementById('tripSelectorDropdown').classList.toggle('hidden'); return false;">
+        <span><%= currentTripName %></span>
+        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+        </svg>
       </div>
-      <button
-        type="button"
-        onclick="document.getElementById('tripSelectorDropdown').classList.toggle('hidden'); return false;"
-        class="px-3 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-      >
-        Change
-      </button>
-    </div>
-  <% } else { %>
-    <!-- Item is standalone (not attached to any trip) -->
-    <div class="mb-3">
-      <button
-        type="button"
-        onclick="document.getElementById('tripSelectorDropdown').classList.toggle('hidden'); return false;"
-        class="w-full px-3 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-      >
-        + Add to trip
-      </button>
-    </div>
-  <% } %>
+    <% } else { %>
+      <!-- Not attached to any trip -->
+      <div class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-500 text-sm flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors" onclick="document.getElementById('tripSelectorDropdown').classList.toggle('hidden'); return false;">
+        <span>Select a trip (optional)</span>
+        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+        </svg>
+      </div>
+    <% } %>
 
-  <!-- Trip Selection Dropdown -->
-  <div
-    id="tripSelectorDropdown"
-    class="hidden mb-3 border border-gray-200 rounded-md bg-white shadow-sm overflow-hidden"
-  >
-    <div class="max-h-48 overflow-y-auto">
-      <% if (availableTrips && availableTrips.length > 0) { %>
-        <% availableTrips.forEach(function(trip) { %>
-          <% const isCurrentTrip = trip.id === currentTripId; %>
-          <button
-            type="button"
-            class="w-full text-left px-4 py-3 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors <%= isCurrentTrip ? 'bg-blue-100 font-medium text-blue-900' : 'text-gray-900' %>"
-            onclick="selectTrip('<%= trip.id %>', '<%= trip.name.replace(/'/g, "&apos;") %>'); return false;"
-          >
-            <%= isCurrentTrip ? '✓ ' : '' %><%= trip.name %>
-          </button>
-        <% }); %>
-      <% } else { %>
-        <div class="px-4 py-3 text-sm text-gray-500">
-          No upcoming trips available
-        </div>
+    <!-- Trip Selection Dropdown -->
+    <div
+      id="tripSelectorDropdown"
+      class="hidden absolute top-full left-0 right-0 mt-1 z-50 border border-gray-300 rounded-md bg-white shadow-lg overflow-hidden"
+    >
+      <div class="max-h-48 overflow-y-auto">
+        <% if (availableTrips && availableTrips.length > 0) { %>
+          <% availableTrips.forEach(function(trip) { %>
+            <% const isCurrentTrip = trip.id === currentTripId; %>
+            <button
+              type="button"
+              class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 border-b border-gray-100 last:border-b-0 transition-colors <%= isCurrentTrip ? 'bg-gray-100 font-medium' : '' %>"
+              onclick="selectTrip('<%= trip.id %>', '<%= trip.name.replace(/'/g, "&apos;") %>'); return false;"
+            >
+              <div class="flex items-center">
+                <% if (isCurrentTrip) { %>
+                  <svg class="w-4 h-4 text-blue-600 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                  </svg>
+                <% } else { %>
+                  <div class="w-4 h-4 mr-2"></div>
+                <% } %>
+                <span><%= trip.name %></span>
+              </div>
+            </button>
+          <% }); %>
+        <% } else { %>
+          <div class="px-3 py-2 text-sm text-gray-500">
+            No available trips
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Remove Trip Option (only show if currently attached) -->
+      <% if (currentTripId) { %>
+        <div class="border-t border-gray-200"></div>
+        <button
+          type="button"
+          class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium"
+          onclick="removeTrip(); return false;"
+        >
+          <div class="flex items-center">
+            <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+            </svg>
+            <span>Remove from trip</span>
+          </div>
+        </button>
       <% } %>
     </div>
-
-    <!-- Divider -->
-    <% if (currentTripId && availableTrips && availableTrips.length > 0) { %>
-      <div class="border-t border-gray-200"></div>
-    <% } %>
-
-    <!-- Remove Trip Option (only show if currently attached) -->
-    <% if (currentTripId) { %>
-      <button
-        type="button"
-        class="w-full text-left px-4 py-3 hover:bg-red-50 text-red-600 text-sm font-medium transition-colors"
-        onclick="removeTrip(); return false;"
-      >
-        ✕ Remove trip association
-      </button>
-    <% } %>
   </div>
 
   <!-- Hidden input to store selected tripId -->
