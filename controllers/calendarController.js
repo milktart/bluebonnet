@@ -110,6 +110,8 @@ exports.getCalendarSidebar = async (req, res) => {
       return items.map(item => {
         const itemData = item.dataValues || item;
         const itemWithTimezone = { ...itemData };
+
+        // Enrich origin timezone
         if (itemWithTimezone.origin) {
           const originMatch = itemWithTimezone.origin.match(/^([A-Z]{3})/);
           if (originMatch) {
@@ -119,6 +121,18 @@ exports.getCalendarSidebar = async (req, res) => {
             }
           }
         }
+
+        // Enrich destination timezone
+        if (itemWithTimezone.destination) {
+          const destinationMatch = itemWithTimezone.destination.match(/^([A-Z]{3})/);
+          if (destinationMatch) {
+            const airportData = airportService.getAirportByCode(destinationMatch[1]);
+            if (airportData) {
+              itemWithTimezone.destinationTimezone = airportData.timezone || itemWithTimezone.destinationTimezone;
+            }
+          }
+        }
+
         return itemWithTimezone;
       });
     };
