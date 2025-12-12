@@ -653,8 +653,8 @@
                   %>
                   <!-- Trip bar container with nested items positioned inside -->
                   <div class="trip-container-wrapper" data-item-id="<%= itemId %>" style="--day-idx: <%= startCol %>; --span: <%= daysSpanned %>; --row-in-month: <%= rowInMonth %>; --height: <%= tripContainerHeight %>rem;">
-                    <!-- Trip bar header - spans full width -->
-                    <div class="row-multi-day-bar calendar-item trip-bar <% if (!item.data.isConfirmed) { %>calendar-item-tentative<% } %>" data-item-id="<%= itemId %>" data-item-type="trip" data-col="<%= startCol %>" data-span="<%= daysSpanned %>" style="background-color: <%= tripColor %>33; color: <%= tripColor %>;">
+                    <!-- Trip bar header - custom styling, not inheriting from row-multi-day-bar -->
+                    <div class="trip-bar-header calendar-item <% if (!item.data.isConfirmed) { %>calendar-item-tentative<% } %>" data-item-id="<%= itemId %>" data-item-type="trip" style="background-color: <%= tripColor %>33; color: <%= tripColor %>;">
                       <span class="material-symbols-outlined" style="font-size: 14px; flex-shrink: 0; color: <%= tripColor %>;">luggage</span>
                       <span class="truncate"><%= item.data.name %></span>
                     </div>
@@ -967,15 +967,19 @@
   }
 
   /* Trip bar header - first item in trip container */
-  .trip-bar {
-    position: static !important;
-    top: auto !important;
-    left: auto !important;
-    width: 100% !important;
-    height: 1.5rem !important;
-    margin: 0 !important;
-    padding: 0.25rem 0.5rem !important;
+  .trip-bar-header {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 1.5rem;
     flex-shrink: 0;
+    margin: 0;
   }
 
   /* Nested items container - vertical flex layout for items stacked within trip */
