@@ -662,7 +662,7 @@
                     <!-- Nested items inside trip container -->
                     <div class="nested-items-container">
                       <% nestedItems.flights.forEach((flight, idx) => { %>
-                        <div class="nested-item nested-flight" data-item-id="<%= flight.data.id %>" data-item-type="flight" style="background-color: <%= getItemHexColor('flight') %>33; color: <%= getItemHexColor('flight') %>;">
+                        <div class="trip-nested-item" data-item-id="<%= flight.data.id %>" data-item-type="flight" style="background-color: <%= getItemHexColor('flight') %>33; color: <%= getItemHexColor('flight') %>;">
                           <span class="material-symbols-outlined" style="font-size: 12px; flex-shrink: 0; color: <%= getItemHexColor('flight') %>;">flight_takeoff</span>
                           <span class="truncate">
                             <%= flight.data.origin ? flight.data.origin.substring(0, 3).toUpperCase() : '' %>
@@ -672,25 +672,25 @@
                         </div>
                       <% }) %>
                       <% nestedItems.hotels.forEach((hotel, idx) => { %>
-                        <div class="nested-item nested-hotel" data-item-id="<%= hotel.data.id %>" data-item-type="hotel" style="background-color: <%= getItemHexColor('hotel') %>33; color: <%= getItemHexColor('hotel') %>;">
+                        <div class="trip-nested-item" data-item-id="<%= hotel.data.id %>" data-item-type="hotel" style="background-color: <%= getItemHexColor('hotel') %>33; color: <%= getItemHexColor('hotel') %>;">
                           <span class="material-symbols-outlined" style="font-size: 12px; flex-shrink: 0; color: <%= getItemHexColor('hotel') %>;">hotel</span>
                           <span class="truncate"><%= hotel.data.hotelName %></span>
                         </div>
                       <% }) %>
                       <% nestedItems.transportation.forEach((trans, idx) => { %>
-                        <div class="nested-item nested-transportation" data-item-id="<%= trans.data.id %>" data-item-type="transportation" style="background-color: <%= getItemHexColor('transportation') %>33; color: <%= getItemHexColor('transportation') %>;">
+                        <div class="trip-nested-item" data-item-id="<%= trans.data.id %>" data-item-type="transportation" style="background-color: <%= getItemHexColor('transportation') %>33; color: <%= getItemHexColor('transportation') %>;">
                           <span class="material-symbols-outlined" style="font-size: 12px; flex-shrink: 0; color: <%= getItemHexColor('transportation') %>;"><%= getTransportationIcon(trans.data.method) %></span>
                           <span class="truncate"><%= trans.data.origin %> → <%= trans.data.destination %></span>
                         </div>
                       <% }) %>
                       <% nestedItems.carRentals.forEach((carRental, idx) => { %>
-                        <div class="nested-item nested-car-rental" data-item-id="<%= carRental.data.id %>" data-item-type="carRental" style="background-color: <%= getItemHexColor('carRental') %>33; color: <%= getItemHexColor('carRental') %>;">
+                        <div class="trip-nested-item" data-item-id="<%= carRental.data.id %>" data-item-type="carRental" style="background-color: <%= getItemHexColor('carRental') %>33; color: <%= getItemHexColor('carRental') %>;">
                           <span class="material-symbols-outlined" style="font-size: 12px; flex-shrink: 0; color: <%= getItemHexColor('carRental') %>;">directions_car</span>
                           <span class="truncate"><%= carRental.data.company %></span>
                         </div>
                       <% }) %>
                       <% nestedItems.events.forEach((event, idx) => { %>
-                        <div class="nested-item nested-event <% if (!event.data.isConfirmed) { %>calendar-item-tentative<% } %>" data-item-id="<%= event.data.id %>" data-item-type="event" style="background-color: <%= getItemHexColor('event') %>33; color: <%= getItemHexColor('event') %>;">
+                        <div class="trip-nested-item <% if (!event.data.isConfirmed) { %>trip-nested-tentative<% } %>" data-item-id="<%= event.data.id %>" data-item-type="event" style="background-color: <%= getItemHexColor('event') %>33; color: <%= getItemHexColor('event') %>;">
                           <span class="material-symbols-outlined" style="font-size: 12px; flex-shrink: 0; color: <%= getItemHexColor('event') %>;">event</span>
                           <span class="truncate"><%= event.data.name %></span>
                         </div>
@@ -988,19 +988,21 @@
 
   /* Nested items container - vertical flex layout for items stacked within trip */
   .nested-items-container {
-    position: relative;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
+    position: relative !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
     gap: 0.25rem;
     padding: 0.25rem;
     flex: 1;
     overflow: visible;
     border: 1px solid blue;
+    left: auto !important;
+    top: auto !important;
   }
 
-  /* Individual nested item styling - regular flow within container */
-  .nested-item {
+  /* Trip nested item styling - simple flex items, no calendar bar positioning */
+  .trip-nested-item {
     display: flex;
     align-items: center;
     gap: 0.25rem;
@@ -1011,33 +1013,30 @@
     overflow: hidden;
     text-overflow: ellipsis;
     height: 1.25rem;
-    position: static;
-    flex-shrink: 0;
     cursor: pointer;
     border-left: 2px solid currentColor;
-    width: 100%;
-    margin: 0;
+    flex-shrink: 0;
   }
 
-  .nested-item:hover {
+  .trip-nested-item:hover {
     opacity: 0.85;
     box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.1);
   }
 
-  .nested-item .material-symbols-outlined {
+  .trip-nested-item .material-symbols-outlined {
     font-size: 10px;
     flex-shrink: 0;
   }
 
-  .nested-item .truncate {
+  .trip-nested-item .truncate {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     min-width: 0;
   }
 
-  /* Tentative nested item styling */
-  .nested-item.calendar-item-tentative::after {
+  /* Tentative trip nested item styling */
+  .trip-nested-tentative::after {
     content: '';
     position: absolute;
     top: 0;
