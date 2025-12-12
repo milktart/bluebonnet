@@ -1125,8 +1125,17 @@
         const checkInDate = new Date(hotelData.checkInDateTime);
         const checkOutDate = new Date(hotelData.checkOutDateTime);
 
-        const checkInFormatted = formatDetailDateTime(checkInDate);
-        const checkOutFormatted = formatDetailDateTime(checkOutDate);
+        // Format dates without times (DD MMM YYYY)
+        const formatDate = (date) => {
+          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          const day = String(date.getDate()).padStart(2, '0');
+          const month = months[date.getMonth()];
+          const year = date.getFullYear();
+          return `${day} ${month} ${year}`;
+        };
+
+        const checkInFormatted = formatDate(checkInDate);
+        const checkOutFormatted = formatDate(checkOutDate);
 
         content = `
           <div class="detail-info hotel-detail">
