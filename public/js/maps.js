@@ -324,6 +324,8 @@ async function initializeMap(tripData, isPast = false, currentTripId = null) {
           itemId: segment.itemId,
           // Store trip ID for trip hover filtering
           tripId: segment.tripId,
+          // Store time for chronological ordering in hover animations
+          time: segment.time,
         });
       });
     }
