@@ -1329,32 +1329,26 @@
             return null;
           }
 
-          const startPartsTemp = formatEventDateTime(eventData.startDateTime, eventData.timezone, true);
+          const startPartsTemp = formatEventDateTime(eventData.startDateTime, eventData.timezone, false);
           const endPartsTemp = formatEventDateTime(eventData.endDateTime, eventData.timezone, false);
 
           if (startPartsTemp && endPartsTemp) {
-            // Check if event is on the same day
+            // Check if event is on the same day (need to check full year for comparison)
             const isSameDay = startPartsTemp.day === endPartsTemp.day &&
                               startPartsTemp.month === endPartsTemp.month &&
-                              (startPartsTemp.year === endPartsTemp.year || String(startPartsTemp.year) === String(endPartsTemp.year).slice(-2));
+                              startPartsTemp.year === endPartsTemp.year;
 
             let startParts = startPartsTemp;
             let endParts = endPartsTemp;
 
-            // For multi-day events, we need 4-digit years for both
-            if (!isSameDay) {
-              startParts = formatEventDateTime(eventData.startDateTime, eventData.timezone, false);
-              endParts = formatEventDateTime(eventData.endDateTime, eventData.timezone, false);
-            }
-
             if (startParts && endParts) {
               // Format the date/time string
               if (isSameDay) {
-                // Same day: "DD MMM YY HH:MM - HH:MM"
-                dateTimeString = `${startParts.day} ${startParts.month} ${startParts.year} ${startParts.hour}:${startParts.min} - ${endParts.hour}:${endParts.min}`;
+                // Same day: "DD MMM YYYY HH:MM HH:MM"
+                dateTimeString = `${startParts.day} ${startParts.month} ${startParts.year} ${startParts.hour}:${startParts.min} ${endParts.hour}:${endParts.min}`;
               } else {
-                // Multiple days: "DD MMM YYYY - DD MMM YYYY"
-                dateTimeString = `${startParts.day} ${startParts.month} ${startParts.year} - ${endParts.day} ${endParts.month} ${endParts.year}`;
+                // Multiple days: "DD MMM YYYY DD MMM YYYY"
+                dateTimeString = `${startParts.day} ${startParts.month} ${startParts.year} ${endParts.day} ${endParts.month} ${endParts.year}`;
               }
             }
           }
@@ -1373,7 +1367,7 @@
             return { day, month, year, hour, min };
           }
 
-          const startPartsTemp2 = formatBasicDateTime(startDate, true);
+          const startPartsTemp2 = formatBasicDateTime(startDate, false);
           const endPartsTemp2 = formatBasicDateTime(endDate, false);
 
           const isSameDay = startDate.getDate() === endDate.getDate() &&
@@ -1383,16 +1377,10 @@
           let startParts2 = startPartsTemp2;
           let endParts2 = endPartsTemp2;
 
-          // For multi-day events, we need 4-digit years for both
-          if (!isSameDay) {
-            startParts2 = formatBasicDateTime(startDate, false);
-            endParts2 = formatBasicDateTime(endDate, false);
-          }
-
           if (isSameDay) {
-            dateTimeString = `${startParts2.day} ${startParts2.month} ${startParts2.year} ${startParts2.hour}:${startParts2.min} - ${endParts2.hour}:${endParts2.min}`;
+            dateTimeString = `${startParts2.day} ${startParts2.month} ${startParts2.year} ${startParts2.hour}:${startParts2.min} ${endParts2.hour}:${endParts2.min}`;
           } else {
-            dateTimeString = `${startParts2.day} ${startParts2.month} ${startParts2.year} - ${endParts2.day} ${endParts2.month} ${endParts2.year}`;
+            dateTimeString = `${startParts2.day} ${startParts2.month} ${startParts2.year} ${endParts2.day} ${endParts2.month} ${endParts2.year}`;
           }
         }
 
