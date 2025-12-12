@@ -54,11 +54,11 @@
     <div class="grid grid-cols-2 gap-3">
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Check-in Date</label>
-        <input type="date" name="checkInDate" id="<%= isAddMode ? '' : 'edit_hotel_checkInDate' %>" value="<%= (data?.checkInDate && data.checkInDate !== 'undefined') ? data.checkInDate : '' %>" placeholder="YYYY-MM-DD" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+        <input type="date" name="checkInDate" id="<%= isAddMode ? 'add_hotel_checkInDate' : 'edit_hotel_checkInDate' %>" value="<%= (data?.checkInDate && data.checkInDate !== 'undefined') ? data.checkInDate : '' %>" placeholder="YYYY-MM-DD" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Check-in Time</label>
-        <input type="text" name="checkInTime" id="<%= isAddMode ? '' : 'edit_hotel_checkInTime' %>" data-time-input value="<%= (data?.checkInTime && data.checkInTime !== 'undefined') ? data.checkInTime : '14:00' %>" placeholder="HH:MM" maxlength="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+        <input type="text" name="checkInTime" id="<%= isAddMode ? 'add_hotel_checkInTime' : 'edit_hotel_checkInTime' %>" data-time-input value="<%= (data?.checkInTime && data.checkInTime !== 'undefined') ? data.checkInTime : '14:00' %>" placeholder="HH:MM" maxlength="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
       </div>
     </div>
 
@@ -66,11 +66,11 @@
     <div class="grid grid-cols-2 gap-3">
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Check-out Date</label>
-        <input type="date" name="checkOutDate" id="<%= isAddMode ? '' : 'edit_hotel_checkOutDate' %>" value="<%= (data?.checkOutDate && data.checkOutDate !== 'undefined') ? data.checkOutDate : '' %>" placeholder="YYYY-MM-DD" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+        <input type="date" name="checkOutDate" id="<%= isAddMode ? 'add_hotel_checkOutDate' : 'edit_hotel_checkOutDate' %>" value="<%= (data?.checkOutDate && data.checkOutDate !== 'undefined') ? data.checkOutDate : '' %>" placeholder="YYYY-MM-DD" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Check-out Time</label>
-        <input type="text" name="checkOutTime" id="<%= isAddMode ? '' : 'edit_hotel_checkOutTime' %>" data-time-input value="<%= (data?.checkOutTime && data.checkOutTime !== 'undefined') ? data.checkOutTime : '11:00' %>" placeholder="HH:MM" maxlength="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+        <input type="text" name="checkOutTime" id="<%= isAddMode ? 'add_hotel_checkOutTime' : 'edit_hotel_checkOutTime' %>" data-time-input value="<%= (data?.checkOutTime && data.checkOutTime !== 'undefined') ? data.checkOutTime : '11:00' %>" placeholder="HH:MM" maxlength="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
       </div>
     </div>
 
@@ -119,95 +119,31 @@
 </div>
 
 <script>
-function initializeHotelDateSync() {
-  const checkInDateInput = document.querySelector('input[name="checkInDate"]');
-  const checkOutDateInput = document.querySelector('input[name="checkOutDate"]');
+// Load form utilities module
+const formUtilitiesScript = document.createElement('script');
+formUtilitiesScript.src = '/js/form-utilities.js';
+document.head.appendChild(formUtilitiesScript);
 
-  if (checkInDateInput && checkOutDateInput) {
-    checkInDateInput.addEventListener('change', function() {
-      const checkInDate = this.value;
-      const checkOutDate = checkOutDateInput.value;
+function initializeHotelForm() {
+  // Use shared date sync utility for check-in/check-out dates
+  initializeFormOnLoad(() => {
+    initializeDateSync('input[name="checkInDate"]', 'input[name="checkOutDate"]');
+  });
 
-      // Case 1: Check-out date is blank - auto-fill with check-in date
-      if (!checkOutDate) {
-        checkOutDateInput.value = checkInDate;
-      }
-      // Case 2: Check-in date is after check-out date - update check-out date to match check-in date
-      else if (checkInDate > checkOutDate) {
-        checkOutDateInput.value = checkInDate;
-      }
-      // Case 3: Check-in date is before check-out date - leave check-out date unchanged
-    });
-  }
-}
+  // Use shared timezone inference utility for address
+  initializeFormOnLoad(() => {
+    const timezoneFieldId = '<%= isAddMode ? "hotelTimezone" : "edit_hotel_timezone" %>';
+    initializeTimezoneInference('edit_hotel_address', timezoneFieldId);
+  });
 
-function initializeHotelTimezoneUpdate() {
-  const addressInput = document.querySelector('textarea[name="address"]');
-  const timezoneField = document.getElementById('hotelTimezone') || document.getElementById('edit_hotel_timezone');
-
-  if (addressInput && timezoneField) {
-    // Function to infer timezone from address
-    async function inferAndUpdateTimezone(address) {
-      if (!address || address.trim().length === 0) return;
-
-      try {
-        // Use the existing geocoding service to get timezone
-        const response = await fetch(`/api/v1/geocode?address=${encodeURIComponent(address)}`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.timezone) {
-            timezoneField.value = data.timezone;
-          }
-        }
-      } catch (error) {
-      }
-    }
-
-    // IMPORTANT: Infer timezone on initial form load if address is present
-    // This ensures editing existing hotels gets the correct timezone
-    const initialAddress = addressInput.value;
-    if (initialAddress && initialAddress.trim().length > 0) {
-      // Only infer on load if timezone field is empty (form is being edited but timezone wasn't set)
-      if (!timezoneField.value || timezoneField.value === '') {
-        inferAndUpdateTimezone(initialAddress);
-      }
-    }
-
-    // Debounce the address input to avoid too many API calls
-    let timeoutId;
-    addressInput.addEventListener('blur', function() {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        inferAndUpdateTimezone(this.value);
-      }, 500);
-    });
-  }
-}
-
-// Add form submission handler to ensure timezone is never empty
-function ensureTimezoneBeforeSubmit() {
-  const form = document.getElementById('addHotelForm') || document.getElementById('editHotelForm');
-  if (!form) return;
-
-  form.addEventListener('submit', function(e) {
-    const timezoneField = document.getElementById('hotelTimezone') || document.getElementById('edit_hotel_timezone');
-
-    // If timezone is still empty, set it to UTC as fallback
-    if (timezoneField && (!timezoneField.value || timezoneField.value.trim() === '')) {
-      timezoneField.value = 'UTC';
-    }
+  // Ensure timezone is set before form submission
+  const formId = '<%= isAddMode ? "addHotelForm" : "editHotelForm" %>';
+  const timezoneFieldId = '<%= isAddMode ? "hotelTimezone" : "edit_hotel_timezone" %>';
+  initializeFormOnLoad(() => {
+    ensureTimezoneBeforeSubmit(timezoneFieldId, formId);
   });
 }
 
-// Call on initial page load
-document.addEventListener('DOMContentLoaded', () => {
-  initializeHotelDateSync();
-  initializeHotelTimezoneUpdate();
-  ensureTimezoneBeforeSubmit();
-});
-
-// Also call immediately in case the form is already loaded
-initializeHotelDateSync();
-initializeHotelTimezoneUpdate();
-ensureTimezoneBeforeSubmit();
+// Initialize immediately when script runs
+initializeHotelForm();
 </script>

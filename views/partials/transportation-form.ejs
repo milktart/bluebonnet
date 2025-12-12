@@ -71,11 +71,11 @@
     <div class="grid grid-cols-2 gap-3">
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Departure Date</label>
-        <input type="date" name="departureDate" id="<%= isAddMode ? 'transportation_departureDate' : 'edit_transportation_departureDate' %>" value="<%= (data?.departureDate && data.departureDate !== 'undefined') ? data.departureDate : '' %>" placeholder="YYYY-MM-DD" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500" required>
+        <input type="date" name="departureDate" id="<%= isAddMode ? 'add_transportation_departureDate' : 'edit_transportation_departureDate' %>" value="<%= (data?.departureDate && data.departureDate !== 'undefined') ? data.departureDate : '' %>" placeholder="YYYY-MM-DD" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500" required>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Departure Time</label>
-        <input type="text" name="departureTime" id="<%= isAddMode ? 'transportation_departureTime' : 'edit_transportation_departureTime' %>" data-time-input value="<%= (data?.departureTime && data.departureTime !== 'undefined') ? data.departureTime : '' %>" placeholder="HH:MM" maxlength="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500" required>
+        <input type="text" name="departureTime" id="<%= isAddMode ? 'add_transportation_departureTime' : 'edit_transportation_departureTime' %>" data-time-input value="<%= (data?.departureTime && data.departureTime !== 'undefined') ? data.departureTime : '' %>" placeholder="HH:MM" maxlength="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500" required>
       </div>
     </div>
 
@@ -83,11 +83,11 @@
     <div class="grid grid-cols-2 gap-3">
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Arrival Date</label>
-        <input type="date" name="arrivalDate" id="<%= isAddMode ? 'transportation_arrivalDate' : 'edit_transportation_arrivalDate' %>" value="<%= (data?.arrivalDate && data.arrivalDate !== 'undefined') ? data.arrivalDate : '' %>" placeholder="YYYY-MM-DD" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500" required>
+        <input type="date" name="arrivalDate" id="<%= isAddMode ? 'add_transportation_arrivalDate' : 'edit_transportation_arrivalDate' %>" value="<%= (data?.arrivalDate && data.arrivalDate !== 'undefined') ? data.arrivalDate : '' %>" placeholder="YYYY-MM-DD" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500" required>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Arrival Time</label>
-        <input type="text" name="arrivalTime" id="<%= isAddMode ? 'transportation_arrivalTime' : 'edit_transportation_arrivalTime' %>" data-time-input value="<%= (data?.arrivalTime && data.arrivalTime !== 'undefined') ? data.arrivalTime : '' %>" placeholder="HH:MM" maxlength="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500" required>
+        <input type="text" name="arrivalTime" id="<%= isAddMode ? 'add_transportation_arrivalTime' : 'edit_transportation_arrivalTime' %>" data-time-input value="<%= (data?.arrivalTime && data.arrivalTime !== 'undefined') ? data.arrivalTime : '' %>" placeholder="HH:MM" maxlength="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500" required>
       </div>
     </div>
 
@@ -136,93 +136,25 @@
 </div>
 
 <script>
-function initializeTransportationDateSync() {
-  const departureDateInput = document.querySelector('input[name="departureDate"]');
-  const arrivalDateInput = document.querySelector('input[name="arrivalDate"]');
+// Load form utilities module
+const formUtilitiesScript = document.createElement('script');
+formUtilitiesScript.src = '/js/form-utilities.js';
+document.head.appendChild(formUtilitiesScript);
 
-  if (departureDateInput && arrivalDateInput) {
-    departureDateInput.addEventListener('change', function() {
-      const departureDate = this.value;
-      const arrivalDate = arrivalDateInput.value;
+function initializeTransportationForm() {
+  // Use shared date sync utility for departure/arrival dates
+  initializeFormOnLoad(() => {
+    initializeDateSync('input[name="departureDate"]', 'input[name="arrivalDate"]');
+  });
 
-      // Case 1: Arrival date is blank - auto-fill with departure date
-      if (!arrivalDate) {
-        arrivalDateInput.value = departureDate;
-      }
-      // Case 2: Departure date is after arrival date - update arrival date to match departure date
-      else if (departureDate > arrivalDate) {
-        arrivalDateInput.value = departureDate;
-      }
-      // Case 3: Departure date is before arrival date - leave arrival date unchanged
-    });
-  }
+  // Use shared timezone inference utility for origin/destination
+  initializeFormOnLoad(() => {
+    const originTzFieldId = '<%= isAddMode ? "transportation_originTimezone" : "edit_transportation_originTimezone" %>';
+    const destTzFieldId = '<%= isAddMode ? "transportation_destinationTimezone" : "edit_transportation_destinationTimezone" %>';
+    initializeOriginDestTimezoneInference('transportation_origin', 'transportation_destination', originTzFieldId, destTzFieldId);
+  });
 }
 
-function initializeTransportationTimezoneUpdate() {
-  const originInput = document.querySelector('input[name="origin"]');
-  const destinationInput = document.querySelector('input[name="destination"]');
-  const originTimezoneField = document.getElementById('transportation_originTimezone') || document.getElementById('edit_transportation_originTimezone');
-  const destTimezoneField = document.getElementById('transportation_destinationTimezone') || document.getElementById('edit_transportation_destinationTimezone');
-
-  if (originInput && originTimezoneField) {
-    async function inferAndUpdateOriginTimezone(location) {
-      if (!location || location.trim().length === 0) return;
-
-      try {
-        const response = await fetch(`/api/v1/geocode?address=${encodeURIComponent(location)}`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.timezone) {
-            originTimezoneField.value = data.timezone;
-          }
-        }
-      } catch (error) {
-      }
-    }
-
-    let timeoutId;
-    originInput.addEventListener('blur', function() {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        inferAndUpdateOriginTimezone(this.value);
-      }, 500);
-    });
-  }
-
-  if (destinationInput && destTimezoneField) {
-    async function inferAndUpdateDestTimezone(location) {
-      if (!location || location.trim().length === 0) return;
-
-      try {
-        const response = await fetch(`/api/v1/geocode?address=${encodeURIComponent(location)}`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.timezone) {
-            destTimezoneField.value = data.timezone;
-          }
-        }
-      } catch (error) {
-      }
-    }
-
-    let timeoutId;
-    destinationInput.addEventListener('blur', function() {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        inferAndUpdateDestTimezone(this.value);
-      }, 500);
-    });
-  }
-}
-
-// Call on initial page load
-document.addEventListener('DOMContentLoaded', () => {
-  initializeTransportationDateSync();
-  initializeTransportationTimezoneUpdate();
-});
-
-// Also call immediately in case the form is already loaded
-initializeTransportationDateSync();
-initializeTransportationTimezoneUpdate();
-
+// Initialize immediately when script runs
+initializeTransportationForm();
 </script>

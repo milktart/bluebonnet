@@ -67,19 +67,19 @@
     <div id="dateTimeLayout" class="grid grid-cols-2 gap-3">
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-        <input type="date" name="startDate" id="<%= isAddMode ? '' : 'edit_event_startDate' %>" value="<%= data?.startDate || '' %>" placeholder="YYYY-MM-DD" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500" required>
+        <input type="date" name="startDate" id="<%= isAddMode ? 'add_event_startDate' : 'edit_event_startDate' %>" value="<%= data?.startDate || '' %>" placeholder="YYYY-MM-DD" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500" required>
       </div>
       <div id="startTimeContainer">
         <label class="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-        <input type="text" name="startTime" id="<%= isAddMode ? '' : 'edit_event_startTime' %>" data-time-input value="<%= data?.startTime || '' %>" placeholder="HH:MM" maxlength="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500" required>
+        <input type="text" name="startTime" id="<%= isAddMode ? 'add_event_startTime' : 'edit_event_startTime' %>" data-time-input value="<%= data?.startTime || '' %>" placeholder="HH:MM" maxlength="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500" required>
       </div>
       <div id="endDateContainer">
         <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-        <input type="date" name="endDate" id="<%= isAddMode ? '' : 'edit_event_endDate' %>" value="<%= data?.endDate || '' %>" placeholder="YYYY-MM-DD" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500" required>
+        <input type="date" name="endDate" id="<%= isAddMode ? 'add_event_endDate' : 'edit_event_endDate' %>" value="<%= data?.endDate || '' %>" placeholder="YYYY-MM-DD" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500" required>
       </div>
       <div id="endTimeContainer">
         <label class="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-        <input type="text" name="endTime" id="<%= isAddMode ? '' : 'edit_event_endTime' %>" data-time-input value="<%= data?.endTime || '' %>" placeholder="HH:MM" maxlength="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500" required>
+        <input type="text" name="endTime" id="<%= isAddMode ? 'add_event_endTime' : 'edit_event_endTime' %>" data-time-input value="<%= data?.endTime || '' %>" placeholder="HH:MM" maxlength="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500" required>
       </div>
     </div>
 
@@ -126,78 +126,74 @@
 </div>
 
 <script>
-function initializeEventDateSync() {
-  const startDateInput = document.querySelector('input[name="startDate"]');
-  const endDateInput = document.querySelector('input[name="endDate"]');
+// Load form utilities module
+const formUtilitiesScript = document.createElement('script');
+formUtilitiesScript.src = '/js/form-utilities.js';
+document.head.appendChild(formUtilitiesScript);
 
-  if (startDateInput && endDateInput) {
-    startDateInput.addEventListener('change', function() {
-      const startDate = this.value;
-      const endDate = endDateInput.value;
+function initializeEventForm() {
+  // Use shared date sync utility for start/end dates
+  initializeFormOnLoad(() => {
+    initializeDateSync('input[name="startDate"]', 'input[name="endDate"]');
+  });
 
-      // Case 1: End date is blank - auto-fill with start date
-      if (!endDate) {
-        endDateInput.value = startDate;
+  // Initialize all-day event toggle
+  initializeFormOnLoad(() => {
+    initializeAllDayEvent();
+  });
+
+  // Use shared timezone inference for location
+  initializeFormOnLoad(() => {
+    const timezoneFieldId = '<%= isAddMode ? "event_timezone" : "edit_event_timezone" %>';
+    initializeTimezoneInference('edit_event_location', timezoneFieldId);
+  });
+
+  // All-day event specific logic
+  function initializeAllDayEvent() {
+    const allDayCheckbox = document.getElementById('allDayEventCheckbox');
+    const startTimeInput = document.querySelector('input[name="startTime"]');
+    const endTimeInput = document.querySelector('input[name="endTime"]');
+    const startTimeContainer = document.getElementById('startTimeContainer');
+    const endTimeContainer = document.getElementById('endTimeContainer');
+
+    if (!allDayCheckbox || !startTimeInput || !endTimeInput) return;
+
+    // Check if current times indicate an all-day event (00:00 and 23:59)
+    const isCurrentlyAllDay = () => {
+      return startTimeInput.value === '00:00' && endTimeInput.value === '23:59';
+    };
+
+    // Function to update time input visibility
+    const updateTimeInputStates = () => {
+      const isAllDay = allDayCheckbox.checked;
+
+      if (isAllDay) {
+        // Hide time containers
+        startTimeContainer.classList.add('hidden');
+        endTimeContainer.classList.add('hidden');
+
+        // Set all-day event times
+        startTimeInput.value = '00:00';
+        endTimeInput.value = '23:59';
+      } else {
+        // Show time containers
+        startTimeContainer.classList.remove('hidden');
+        endTimeContainer.classList.remove('hidden');
       }
-      // Case 2: Start date is after end date - update end date to match start date
-      else if (startDate > endDate) {
-        endDateInput.value = startDate;
-      }
-      // Case 3: Start date is before end date - leave end date unchanged
-    });
-  }
-}
+    };
 
-function initializeAllDayEvent() {
-  const allDayCheckbox = document.getElementById('allDayEventCheckbox');
-  const startTimeInput = document.querySelector('input[name="startTime"]');
-  const endTimeInput = document.querySelector('input[name="endTime"]');
-  const startTimeContainer = document.getElementById('startTimeContainer');
-  const endTimeContainer = document.getElementById('endTimeContainer');
+    // Add change event listener
+    allDayCheckbox.addEventListener('change', updateTimeInputStates);
 
-  if (!allDayCheckbox || !startTimeInput || !endTimeInput) return;
-
-  // Check if current times indicate an all-day event (00:00 and 23:59)
-  const isCurrentlyAllDay = () => {
-    return startTimeInput.value === '00:00' && endTimeInput.value === '23:59';
-  };
-
-  // Function to update time input visibility
-  const updateTimeInputStates = () => {
-    const isAllDay = allDayCheckbox.checked;
-
-    if (isAllDay) {
-      // Hide time containers
-      startTimeContainer.classList.add('hidden');
-      endTimeContainer.classList.add('hidden');
-
-      // Set all-day event times
-      startTimeInput.value = '00:00';
-      endTimeInput.value = '23:59';
-    } else {
-      // Show time containers
-      startTimeContainer.classList.remove('hidden');
-      endTimeContainer.classList.remove('hidden');
+    // On page load, check if this is already an all-day event based on times
+    if (isCurrentlyAllDay()) {
+      allDayCheckbox.checked = true;
+      updateTimeInputStates();
     }
-  };
-
-  // Add change event listener
-  allDayCheckbox.addEventListener('change', updateTimeInputStates);
-
-  // On page load, check if this is already an all-day event based on times
-  if (isCurrentlyAllDay()) {
-    allDayCheckbox.checked = true;
-    updateTimeInputStates();
   }
 }
 
-// Call on initial page load
-document.addEventListener('DOMContentLoaded', () => {
-  initializeEventDateSync();
-  initializeAllDayEvent();
-});
-// Also call immediately in case the form is already loaded
-initializeEventDateSync();
-initializeAllDayEvent();
+// Initialize immediately when script runs
+initializeEventForm();
 </script>
 
