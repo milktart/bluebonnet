@@ -3,9 +3,9 @@
   const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; // Monday start
 
   function getDateKey(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
 
@@ -79,7 +79,8 @@
         if (flight.originTimezone && typeof formatInTimezone === 'function') {
           const formattedDate = formatInTimezone(flight.departureDateTime, flight.originTimezone, 'YYYY-MM-DD');
           const [year, month, day] = formattedDate.split('-').map(Number);
-          startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+          // Create date using UTC to avoid timezone issues
+          startDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
         } else {
           startDate.setHours(0, 0, 0, 0);
         }
@@ -89,7 +90,8 @@
         if (flight.destinationTimezone && typeof formatInTimezone === 'function') {
           const formattedEndDate = formatInTimezone(flight.arrivalDateTime || flight.departureDateTime, flight.destinationTimezone, 'YYYY-MM-DD');
           const [year, month, day] = formattedEndDate.split('-').map(Number);
-          endDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+          // Create date using UTC to avoid timezone issues
+          endDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
         } else {
           endDate.setHours(0, 0, 0, 0);
         }
@@ -105,10 +107,28 @@
     if (trip.hotels) {
       trip.hotels.forEach(hotel => {
         if (!hotel.checkInDateTime) return;
-        const startDate = new Date(hotel.checkInDateTime);
-        startDate.setHours(0, 0, 0, 0);
-        const endDate = new Date(hotel.checkOutDateTime || hotel.checkInDateTime);
-        endDate.setHours(0, 0, 0, 0);
+        // Convert UTC check-in time to hotel's timezone for calendar positioning
+        let startDate = new Date(hotel.checkInDateTime);
+        if (hotel.timezone && typeof formatInTimezone === 'function') {
+          const formattedDate = formatInTimezone(hotel.checkInDateTime, hotel.timezone, 'YYYY-MM-DD');
+          const [year, month, day] = formattedDate.split('-').map(Number);
+          // Create date using UTC to avoid timezone issues
+          startDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+        } else {
+          startDate.setHours(0, 0, 0, 0);
+        }
+
+        // Convert UTC check-out time to hotel's timezone for calendar positioning
+        let endDate = new Date(hotel.checkOutDateTime || hotel.checkInDateTime);
+        if (hotel.timezone && typeof formatInTimezone === 'function') {
+          const formattedEndDate = formatInTimezone(hotel.checkOutDateTime || hotel.checkInDateTime, hotel.timezone, 'YYYY-MM-DD');
+          const [year, month, day] = formattedEndDate.split('-').map(Number);
+          // Create date using UTC to avoid timezone issues
+          endDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+        } else {
+          endDate.setHours(0, 0, 0, 0);
+        }
+
         const hotelDurationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
         const key = getDateKey(startDate);
         if (dateToItems[key]) {
@@ -125,7 +145,8 @@
         if (trans.originTimezone && typeof formatInTimezone === 'function') {
           const formattedDate = formatInTimezone(trans.departureDateTime, trans.originTimezone, 'YYYY-MM-DD');
           const [year, month, day] = formattedDate.split('-').map(Number);
-          startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+          // Create date using UTC to avoid timezone issues
+          startDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
         } else {
           startDate.setHours(0, 0, 0, 0);
         }
@@ -134,7 +155,8 @@
         if (trans.originTimezone && typeof formatInTimezone === 'function') {
           const formattedEndDate = formatInTimezone(trans.arrivalDateTime || trans.departureDateTime, trans.originTimezone, 'YYYY-MM-DD');
           const [year, month, day] = formattedEndDate.split('-').map(Number);
-          endDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+          // Create date using UTC to avoid timezone issues
+          endDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
         } else {
           endDate.setHours(0, 0, 0, 0);
         }
@@ -170,7 +192,8 @@
         if (event.timezone && typeof formatInTimezone === 'function') {
           const formattedDate = formatInTimezone(event.startDateTime, event.timezone, 'YYYY-MM-DD');
           const [year, month, day] = formattedDate.split('-').map(Number);
-          startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+          // Create date using UTC to avoid timezone issues
+          startDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
         } else {
           startDate.setHours(0, 0, 0, 0);
         }
@@ -180,7 +203,8 @@
         if (event.timezone && typeof formatInTimezone === 'function') {
           const formattedEndDate = formatInTimezone(event.endDateTime || event.startDateTime, event.timezone, 'YYYY-MM-DD');
           const [year, month, day] = formattedEndDate.split('-').map(Number);
-          endDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+          // Create date using UTC to avoid timezone issues
+          endDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
         } else {
           endDate.setHours(0, 0, 0, 0);
         }
@@ -209,7 +233,8 @@
     if (flight.originTimezone && typeof formatInTimezone === 'function') {
       const formattedDate = formatInTimezone(flight.departureDateTime, flight.originTimezone, 'YYYY-MM-DD');
       const [year, month, day] = formattedDate.split('-').map(Number);
-      startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+      // Create date using UTC to avoid timezone issues
+      startDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
     } else {
       startDate.setHours(0, 0, 0, 0);
     }
@@ -219,7 +244,8 @@
     if (flight.destinationTimezone && typeof formatInTimezone === 'function') {
       const formattedEndDate = formatInTimezone(flight.arrivalDateTime || flight.departureDateTime, flight.destinationTimezone, 'YYYY-MM-DD');
       const [year, month, day] = formattedEndDate.split('-').map(Number);
-      endDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+      // Create date using UTC to avoid timezone issues
+      endDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
     } else {
       endDate.setHours(0, 0, 0, 0);
     }
@@ -234,10 +260,28 @@
   // Add standalone hotels
   safeStandaloneHotels.forEach(hotel => {
     if (!hotel.checkInDateTime) return;
-    const startDate = new Date(hotel.checkInDateTime);
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(hotel.checkOutDateTime || hotel.checkInDateTime);
-    endDate.setHours(0, 0, 0, 0);
+    // Convert UTC check-in time to hotel's timezone for calendar positioning
+    let startDate = new Date(hotel.checkInDateTime);
+    if (hotel.timezone && typeof formatInTimezone === 'function') {
+      const formattedDate = formatInTimezone(hotel.checkInDateTime, hotel.timezone, 'YYYY-MM-DD');
+      const [year, month, day] = formattedDate.split('-').map(Number);
+      // Create date using UTC to avoid timezone issues
+      startDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+    } else {
+      startDate.setHours(0, 0, 0, 0);
+    }
+
+    // Convert UTC check-out time to hotel's timezone for calendar positioning
+    let endDate = new Date(hotel.checkOutDateTime || hotel.checkInDateTime);
+    if (hotel.timezone && typeof formatInTimezone === 'function') {
+      const formattedEndDate = formatInTimezone(hotel.checkOutDateTime || hotel.checkInDateTime, hotel.timezone, 'YYYY-MM-DD');
+      const [year, month, day] = formattedEndDate.split('-').map(Number);
+      // Create date using UTC to avoid timezone issues
+      endDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+    } else {
+      endDate.setHours(0, 0, 0, 0);
+    }
+
     const durationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
     const key = getDateKey(startDate);
     if (dateToItems[key]) {
@@ -253,7 +297,8 @@
     if (trans.originTimezone && typeof formatInTimezone === 'function') {
       const formattedDate = formatInTimezone(trans.departureDateTime, trans.originTimezone, 'YYYY-MM-DD');
       const [year, month, day] = formattedDate.split('-').map(Number);
-      startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+      // Create date using UTC to avoid timezone issues
+      startDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
     } else {
       startDate.setHours(0, 0, 0, 0);
     }
@@ -262,7 +307,8 @@
     if (trans.originTimezone && typeof formatInTimezone === 'function') {
       const formattedEndDate = formatInTimezone(trans.arrivalDateTime || trans.departureDateTime, trans.originTimezone, 'YYYY-MM-DD');
       const [year, month, day] = formattedEndDate.split('-').map(Number);
-      endDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+      // Create date using UTC to avoid timezone issues
+      endDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
     } else {
       endDate.setHours(0, 0, 0, 0);
     }
@@ -296,7 +342,8 @@
     if (event.timezone && typeof formatInTimezone === 'function') {
       const formattedDate = formatInTimezone(event.startDateTime, event.timezone, 'YYYY-MM-DD');
       const [year, month, day] = formattedDate.split('-').map(Number);
-      startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+      // Create date using UTC to avoid timezone issues
+      startDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
     } else {
       startDate.setHours(0, 0, 0, 0);
     }
@@ -306,7 +353,8 @@
     if (event.timezone && typeof formatInTimezone === 'function') {
       const formattedEndDate = formatInTimezone(event.endDateTime || event.startDateTime, event.timezone, 'YYYY-MM-DD');
       const [year, month, day] = formattedEndDate.split('-').map(Number);
-      endDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+      // Create date using UTC to avoid timezone issues
+      endDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
     } else {
       endDate.setHours(0, 0, 0, 0);
     }
@@ -1285,7 +1333,7 @@
             </div>
             <div class="hotel-dates">
               <span class="material-symbols-outlined hotel-icon">check_in_out</span>
-              ${checkInFormatted} ${checkOutFormatted}
+              ${checkInFormatted} - ${checkOutFormatted}
             </div>
             ${hotelData.address ? `<div class="hotel-address"><span class="material-symbols-outlined hotel-icon">pin_drop</span>${escapeHtml(hotelData.address)}</div>` : ''}
             ${hotelData.phone ? `<div class="hotel-phone"><span class="material-symbols-outlined hotel-icon">dialpad</span>${escapeHtml(hotelData.phone)}</div>` : ''}
@@ -1315,8 +1363,10 @@
               minute: '2-digit',
               hour12: false
             });
-            // Parse and reformat: MM/DD/YYYY HH:mm
-            const parts = timeString.split(/[\/\s:]/);
+            // Parse and reformat: MM/DD/YYYY, HH:mm or MM/DD/YYYY HH:mm (may include comma after date)
+            // Remove comma, then split on slash, space, and colon
+            const cleanString = timeString.replace(/,\s*/g, ' ');
+            const parts = cleanString.split(/[\/\s:]+/);
             if (parts.length >= 5) {
               const month = months[parseInt(parts[0]) - 1];
               const day = String(parseInt(parts[1])).padStart(2, '0');
@@ -1344,11 +1394,11 @@
             if (startParts && endParts) {
               // Format the date/time string
               if (isSameDay) {
-                // Same day: "DD MMM YYYY HH:MM HH:MM"
-                dateTimeString = `${startParts.day} ${startParts.month} ${startParts.year} ${startParts.hour}:${startParts.min} ${endParts.hour}:${endParts.min}`;
+                // Same day: "DD MMM YYYY HH:MM-HH:MM"
+                dateTimeString = `${startParts.day} ${startParts.month} ${startParts.year} ${startParts.hour}:${startParts.min}-${endParts.hour}:${endParts.min}`;
               } else {
-                // Multiple days: "DD MMM YYYY DD MMM YYYY"
-                dateTimeString = `${startParts.day} ${startParts.month} ${startParts.year} ${endParts.day} ${endParts.month} ${endParts.year}`;
+                // Multiple days: "DD MMM YYYY - DD MMM YYYY"
+                dateTimeString = `${startParts.day} ${startParts.month} ${startParts.year} - ${endParts.day} ${endParts.month} ${endParts.year}`;
               }
             }
           }
@@ -1378,10 +1428,11 @@
           let endParts2 = endPartsTemp2;
 
           if (isSameDay) {
-            dateTimeString = `${startParts2.day} ${startParts2.month} ${startParts2.year} ${startParts2.hour}:${startParts2.min} ${endParts2.hour}:${endParts2.min}`;
+            dateTimeString = `${startParts2.day} ${startParts2.month} ${startParts2.year} ${startParts2.hour}:${startParts2.min}-${endParts2.hour}:${endParts2.min}`;
           } else {
-            dateTimeString = `${startParts2.day} ${startParts2.month} ${startParts2.year} ${endParts2.day} ${endParts2.month} ${endParts2.year}`;
+            dateTimeString = `${startParts2.day} ${startParts2.month} ${startParts2.year} - ${endParts2.day} ${endParts2.month} ${endParts2.year}`;
           }
+          console.log('Event dateTimeString (no timezone):', dateTimeString);
         }
 
         content = `

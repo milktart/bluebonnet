@@ -16,9 +16,9 @@
 
   // Helper function to get date key
   function getDateKey(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
 
@@ -93,10 +93,24 @@
     if (trip.hotels) {
       trip.hotels.forEach(hotel => {
         if (!hotel.checkInDateTime) return;
-        const startDate = new Date(hotel.checkInDateTime);
-        startDate.setHours(0, 0, 0, 0);
-        const endDate = new Date(hotel.checkOutDateTime || hotel.checkInDateTime);
-        endDate.setHours(0, 0, 0, 0);
+        // Convert UTC check-in time to hotel's local timezone
+        let startDate = new Date(hotel.checkInDateTime);
+        if (hotel.timezone && typeof formatInTimezone === 'function') {
+          const formattedDate = formatInTimezone(hotel.checkInDateTime, hotel.timezone, 'YYYY-MM-DD');
+          const [year, month, day] = formattedDate.split('-').map(Number);
+          startDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+        } else {
+          startDate.setHours(0, 0, 0, 0);
+        }
+        // Convert UTC check-out time to hotel's local timezone
+        let endDate = new Date(hotel.checkOutDateTime || hotel.checkInDateTime);
+        if (hotel.timezone && typeof formatInTimezone === 'function') {
+          const formattedEndDate = formatInTimezone(hotel.checkOutDateTime || hotel.checkInDateTime, hotel.timezone, 'YYYY-MM-DD');
+          const [year, month, day] = formattedEndDate.split('-').map(Number);
+          endDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+        } else {
+          endDate.setHours(0, 0, 0, 0);
+        }
         const hotelDurationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
         const key = getDateKey(startDate);
         if (!dateToItems[key]) dateToItems[key] = [];
@@ -210,10 +224,24 @@
   const safeStandaloneHotels = standaloneHotels || [];
   safeStandaloneHotels.forEach(hotel => {
     if (!hotel.checkInDateTime) return;
-    const startDate = new Date(hotel.checkInDateTime);
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(hotel.checkOutDateTime || hotel.checkInDateTime);
-    endDate.setHours(0, 0, 0, 0);
+    // Convert UTC check-in time to hotel's local timezone
+    let startDate = new Date(hotel.checkInDateTime);
+    if (hotel.timezone && typeof formatInTimezone === 'function') {
+      const formattedDate = formatInTimezone(hotel.checkInDateTime, hotel.timezone, 'YYYY-MM-DD');
+      const [year, month, day] = formattedDate.split('-').map(Number);
+      startDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+    } else {
+      startDate.setHours(0, 0, 0, 0);
+    }
+    // Convert UTC check-out time to hotel's local timezone
+    let endDate = new Date(hotel.checkOutDateTime || hotel.checkInDateTime);
+    if (hotel.timezone && typeof formatInTimezone === 'function') {
+      const formattedEndDate = formatInTimezone(hotel.checkOutDateTime || hotel.checkInDateTime, hotel.timezone, 'YYYY-MM-DD');
+      const [year, month, day] = formattedEndDate.split('-').map(Number);
+      endDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+    } else {
+      endDate.setHours(0, 0, 0, 0);
+    }
     const durationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
     const key = getDateKey(startDate);
     if (!dateToItems[key]) dateToItems[key] = [];
