@@ -651,9 +651,9 @@
                     // Calculate container height: base height + nested items rows
                     const tripContainerHeight = 1.5 + (totalNestedItems * 1.75);
                   %>
-                  <!-- Trip bar container (position: relative to hold nested items) -->
-                  <div class="trip-container" data-item-id="<%= itemId %>" style="--day-idx: <%= startCol %>; --span: <%= daysSpanned %>; --row-in-month: <%= rowInMonth %>; --height: <%= tripContainerHeight %>rem;">
-                    <!-- Trip bar header -->
+                  <!-- Trip bar container with nested items positioned inside -->
+                  <div class="trip-container-wrapper" data-item-id="<%= itemId %>" style="--day-idx: <%= startCol %>; --span: <%= daysSpanned %>; --row-in-month: <%= rowInMonth %>; --height: <%= tripContainerHeight %>rem;">
+                    <!-- Trip bar header - spans full width -->
                     <div class="row-multi-day-bar calendar-item trip-bar <% if (!item.data.isConfirmed) { %>calendar-item-tentative<% } %>" data-item-id="<%= itemId %>" data-item-type="trip" data-col="<%= startCol %>" data-span="<%= daysSpanned %>" style="background-color: <%= tripColor %>33; color: <%= tripColor %>;">
                       <span class="material-symbols-outlined" style="font-size: 14px; flex-shrink: 0; color: <%= tripColor %>;">luggage</span>
                       <span class="truncate"><%= item.data.name %></span>
@@ -662,7 +662,7 @@
                     <!-- Nested items inside trip container -->
                     <div class="nested-items-container">
                       <% nestedItems.flights.forEach((flight, idx) => { %>
-                        <div class="nested-item nested-flight" style="--nested-row: <%= idx %>; background-color: <%= getItemHexColor('flight') %>33; color: <%= getItemHexColor('flight') %>;">
+                        <div class="nested-item nested-flight" data-item-id="<%= flight.data.id %>" data-item-type="flight" style="background-color: <%= getItemHexColor('flight') %>33; color: <%= getItemHexColor('flight') %>;">
                           <span class="material-symbols-outlined" style="font-size: 12px; flex-shrink: 0; color: <%= getItemHexColor('flight') %>;">flight_takeoff</span>
                           <span class="truncate">
                             <%= flight.data.origin ? flight.data.origin.substring(0, 3).toUpperCase() : '' %>
@@ -672,25 +672,25 @@
                         </div>
                       <% }) %>
                       <% nestedItems.hotels.forEach((hotel, idx) => { %>
-                        <div class="nested-item nested-hotel" style="--nested-row: <%= nestedItems.flights.length + idx %>; background-color: <%= getItemHexColor('hotel') %>33; color: <%= getItemHexColor('hotel') %>;">
+                        <div class="nested-item nested-hotel" data-item-id="<%= hotel.data.id %>" data-item-type="hotel" style="background-color: <%= getItemHexColor('hotel') %>33; color: <%= getItemHexColor('hotel') %>;">
                           <span class="material-symbols-outlined" style="font-size: 12px; flex-shrink: 0; color: <%= getItemHexColor('hotel') %>;">hotel</span>
                           <span class="truncate"><%= hotel.data.hotelName %></span>
                         </div>
                       <% }) %>
                       <% nestedItems.transportation.forEach((trans, idx) => { %>
-                        <div class="nested-item nested-transportation" style="--nested-row: <%= nestedItems.flights.length + nestedItems.hotels.length + idx %>; background-color: <%= getItemHexColor('transportation') %>33; color: <%= getItemHexColor('transportation') %>;">
+                        <div class="nested-item nested-transportation" data-item-id="<%= trans.data.id %>" data-item-type="transportation" style="background-color: <%= getItemHexColor('transportation') %>33; color: <%= getItemHexColor('transportation') %>;">
                           <span class="material-symbols-outlined" style="font-size: 12px; flex-shrink: 0; color: <%= getItemHexColor('transportation') %>;"><%= getTransportationIcon(trans.data.method) %></span>
                           <span class="truncate"><%= trans.data.origin %> → <%= trans.data.destination %></span>
                         </div>
                       <% }) %>
                       <% nestedItems.carRentals.forEach((carRental, idx) => { %>
-                        <div class="nested-item nested-car-rental" style="--nested-row: <%= nestedItems.flights.length + nestedItems.hotels.length + nestedItems.transportation.length + idx %>; background-color: <%= getItemHexColor('carRental') %>33; color: <%= getItemHexColor('carRental') %>;">
+                        <div class="nested-item nested-car-rental" data-item-id="<%= carRental.data.id %>" data-item-type="carRental" style="background-color: <%= getItemHexColor('carRental') %>33; color: <%= getItemHexColor('carRental') %>;">
                           <span class="material-symbols-outlined" style="font-size: 12px; flex-shrink: 0; color: <%= getItemHexColor('carRental') %>;">directions_car</span>
                           <span class="truncate"><%= carRental.data.company %></span>
                         </div>
                       <% }) %>
                       <% nestedItems.events.forEach((event, idx) => { %>
-                        <div class="nested-item nested-event <% if (!event.data.isConfirmed) { %>calendar-item-tentative<% } %>" style="--nested-row: <%= nestedItems.flights.length + nestedItems.hotels.length + nestedItems.transportation.length + nestedItems.carRentals.length + idx %>; background-color: <%= getItemHexColor('event') %>33; color: <%= getItemHexColor('event') %>;">
+                        <div class="nested-item nested-event <% if (!event.data.isConfirmed) { %>calendar-item-tentative<% } %>" data-item-id="<%= event.data.id %>" data-item-type="event" style="background-color: <%= getItemHexColor('event') %>33; color: <%= getItemHexColor('event') %>;">
                           <span class="material-symbols-outlined" style="font-size: 12px; flex-shrink: 0; color: <%= getItemHexColor('event') %>;">event</span>
                           <span class="truncate"><%= event.data.name %></span>
                         </div>
@@ -953,38 +953,44 @@
     padding-top: 0;
   }
 
-  /* Trip container styles - holds trip bar and nested items */
-  .trip-container {
+  /* Trip container wrapper - positioned absolutely on the calendar grid */
+  .trip-container-wrapper {
     position: absolute;
     left: calc(var(--day-idx) * calc(100% / 30) + 1px);
     width: calc(var(--span) * calc(100% / 30) - 2px);
     top: calc(1.2rem + var(--row-in-month) * 1.75rem);
     height: var(--height);
     pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
   }
 
-  /* Trip bar header inside container */
+  /* Trip bar header - first item in trip container */
   .trip-bar {
-    position: relative !important;
-    top: 0 !important;
-    left: 0 !important;
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
     width: 100% !important;
-    height: 1.5rem;
-    margin-bottom: 0.25rem;
+    height: 1.5rem !important;
+    margin: 0 !important;
+    padding: 0.25rem 0.5rem !important;
+    flex-shrink: 0;
   }
 
-  /* Nested items container */
+  /* Nested items container - vertical flex layout for items stacked within trip */
   .nested-items-container {
     position: relative;
     width: 100%;
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    padding-left: 0.25rem;
-    padding-right: 0.25rem;
+    padding: 0.25rem;
+    flex: 1;
+    overflow: hidden;
   }
 
-  /* Individual nested item styling */
+  /* Individual nested item styling - regular flow within container */
   .nested-item {
     display: flex;
     align-items: center;
