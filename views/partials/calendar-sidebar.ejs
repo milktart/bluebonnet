@@ -1098,14 +1098,37 @@
       // Find the actual flight data from the document
       const flightData = window.calendarFlightData && window.calendarFlightData[itemId];
       if (flightData) {
-        const depTime = new Date(flightData.departureDateTime);
-        const arrTime = new Date(flightData.arrivalDateTime);
-
         const depCode = flightData.origin ? flightData.origin.substring(0, 3).toUpperCase() : '';
         const arrCode = flightData.destination ? flightData.destination.substring(0, 3).toUpperCase() : '';
 
-        const depFormatted = formatDetailDateTime(depTime);
-        const arrFormatted = formatDetailDateTime(arrTime);
+        // Format times using timezone helper
+        let depFormatted = 'N/A';
+        let arrFormatted = 'N/A';
+
+        if (typeof window.formatInTimezone === 'function') {
+          try {
+            // Format departure time in origin airport's timezone
+            if (flightData.originTimezone) {
+              depFormatted = window.formatInTimezone(flightData.departureDateTime, flightData.originTimezone, 'DD MMM HH:mm');
+            } else {
+              depFormatted = formatDetailDateTime(new Date(flightData.departureDateTime));
+            }
+
+            // Format arrival time in destination airport's timezone
+            if (flightData.destinationTimezone) {
+              arrFormatted = window.formatInTimezone(flightData.arrivalDateTime, flightData.destinationTimezone, 'DD MMM HH:mm');
+            } else {
+              arrFormatted = formatDetailDateTime(new Date(flightData.arrivalDateTime));
+            }
+          } catch (e) {
+            // Fallback to default formatting
+            depFormatted = formatDetailDateTime(new Date(flightData.departureDateTime));
+            arrFormatted = formatDetailDateTime(new Date(flightData.arrivalDateTime));
+          }
+        } else {
+          depFormatted = formatDetailDateTime(new Date(flightData.departureDateTime));
+          arrFormatted = formatDetailDateTime(new Date(flightData.arrivalDateTime));
+        }
 
         content = `
           <div class="detail-info flight-detail">
