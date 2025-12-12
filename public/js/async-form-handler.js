@@ -10,8 +10,24 @@ function setupAsyncFormSubmission(formId) {
     return;
   }
 
+  // Check if this form already has a submit listener (to prevent duplicates)
+  // Use a data attribute to flag that async submission is already set up
+  if (form.hasAttribute('data-async-submit-setup')) {
+    return;
+  }
+
+  // Mark this form as having async submission set up
+  form.setAttribute('data-async-submit-setup', 'true');
+
   form.addEventListener('submit', async function (e) {
     e.preventDefault();
+    e.stopPropagation();
+
+    // Call any custom cleanup functions before form submission
+    // Flight forms have cleanupFlightFormAirports() for airport code extraction
+    if (formId.includes('Flight') && typeof window.cleanupFlightFormAirports === 'function') {
+      window.cleanupFlightFormAirports();
+    }
 
     // Convert FormData to object
     const formData = new FormData(form);
