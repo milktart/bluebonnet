@@ -1229,20 +1229,54 @@
       // Find the actual hotel data from the document
       const hotelData = window.calendarHotelData && window.calendarHotelData[itemId];
       if (hotelData) {
-        const checkInDate = new Date(hotelData.checkInDateTime);
-        const checkOutDate = new Date(hotelData.checkOutDateTime);
+        let checkInFormatted = 'N/A';
+        let checkOutFormatted = 'N/A';
 
-        // Format dates without times (DD MMM YYYY)
-        const formatDate = (date) => {
-          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-          const day = String(date.getDate()).padStart(2, '0');
-          const month = months[date.getMonth()];
-          const year = date.getFullYear();
-          return `${day} ${month} ${year}`;
-        };
+        if (hotelData.timezone) {
+          // Helper function to format hotel date in specific timezone
+          function formatHotelDate(isoString, timezone) {
+            const date = new Date(isoString);
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const timeString = date.toLocaleString('en-US', {
+              timeZone: timezone,
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+            });
+            // Parse and reformat: MM/DD/YYYY
+            const parts = timeString.split('/');
+            if (parts.length >= 3) {
+              const month = months[parseInt(parts[0]) - 1];
+              const day = String(parseInt(parts[1])).padStart(2, '0');
+              const year = parts[2];
+              return `${day} ${month} ${year}`;
+            }
+            return null;
+          }
 
-        const checkInFormatted = formatDate(checkInDate);
-        const checkOutFormatted = formatDate(checkOutDate);
+          const checkInDate = formatHotelDate(hotelData.checkInDateTime, hotelData.timezone);
+          const checkOutDate = formatHotelDate(hotelData.checkOutDateTime, hotelData.timezone);
+
+          if (checkInDate && checkOutDate) {
+            checkInFormatted = checkInDate;
+            checkOutFormatted = checkOutDate;
+          }
+        } else {
+          // No timezone data, use browser's local time
+          const checkInDate = new Date(hotelData.checkInDateTime);
+          const checkOutDate = new Date(hotelData.checkOutDateTime);
+
+          function formatBasicDate(date) {
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = months[date.getMonth()];
+            const year = date.getFullYear();
+            return `${day} ${month} ${year}`;
+          }
+
+          checkInFormatted = formatBasicDate(checkInDate);
+          checkOutFormatted = formatBasicDate(checkOutDate);
+        }
 
         content = `
           <div class="detail-info hotel-detail">
