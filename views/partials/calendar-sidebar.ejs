@@ -1320,7 +1320,8 @@
             if (parts.length >= 5) {
               const month = months[parseInt(parts[0]) - 1];
               const day = String(parseInt(parts[1])).padStart(2, '0');
-              const year = use2DigitYear ? String(parts[2]).slice(-2) : parts[2];
+              const fullYear = parts[2];
+              const year = use2DigitYear ? fullYear.slice(-2) : fullYear;
               const hour = parts[3];
               const min = parts[4];
               return { day, month, year, hour, min };
