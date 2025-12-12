@@ -1,18 +1,164 @@
 const axios = require('axios');
+const http = require('http');
+const https = require('https');
 const { version } = require('../package.json');
 const logger = require('../utils/logger');
 
 // Configuration
 const NOMINATIM_BASE_URL = process.env.NOMINATIM_BASE_URL || 'https://nominatim.openstreetmap.org';
-const GEOCODING_TIMEOUT = parseInt(process.env.GEOCODING_TIMEOUT, 10) || 10000;
-const MIN_REQUEST_INTERVAL = parseInt(process.env.GEOCODING_RATE_LIMIT, 10) || 1000;
+const GEOCODING_TIMEOUT = parseInt(process.env.GEOCODING_TIMEOUT, 10) || 5000; // Reduced from 10s
+const MIN_REQUEST_INTERVAL = parseInt(process.env.GEOCODING_RATE_LIMIT, 10) || 100; // Reduced from 1000ms
 const USER_AGENT = `TravelPlannerApp/${version}`;
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY = 100; // ms
+const MAX_RETRY_DELAY = 2000; // ms
+const FAILURE_CACHE_TTL = 60000; // Cache failures for 1 minute
+const SUCCESS_CACHE_TTL = 24 * 60 * 60 * 1000; // Cache successes for 24 hours
+const MAX_CONCURRENT_REQUESTS = 2; // Limit concurrent requests to Nominatim
+const CIRCUIT_BREAKER_THRESHOLD = 10; // Failed requests before circuit opens
+const CIRCUIT_BREAKER_TIMEOUT = 30000; // How long before circuit tries again (30s)
 
-// Simple in-memory cache for geocoding results
+// Connection pooling for HTTP/HTTPS
+const httpAgent = new http.Agent({
+  keepAlive: true,
+  maxSockets: 5,
+  maxFreeSockets: 2,
+  timeout: 30000,
+  freeSocketTimeout: 30000,
+});
+
+const httpsAgent = new https.Agent({
+  keepAlive: true,
+  maxSockets: 5,
+  maxFreeSockets: 2,
+  timeout: 30000,
+  freeSocketTimeout: 30000,
+});
+
+// Cache with TTL support
 const geocodeCache = new Map();
 
-// Rate limiting: track last request time
-let lastRequestTime = 0;
+// Circuit breaker state
+let circuitState = 'closed'; // 'closed', 'open', 'half-open'
+let failureCount = 0;
+let lastCircuitOpenTime = 0;
+
+// Request queue management
+let concurrentRequests = 0;
+const requestQueue = [];
+
+/**
+ * Check circuit breaker state and potentially reset it
+ */
+function updateCircuitBreaker() {
+  if (circuitState === 'open') {
+    const timeSinceOpen = Date.now() - lastCircuitOpenTime;
+    if (timeSinceOpen > CIRCUIT_BREAKER_TIMEOUT) {
+      logger.info('Circuit breaker transitioning to half-open');
+      circuitState = 'half-open';
+      failureCount = 0;
+    }
+  }
+}
+
+/**
+ * Get cache entry with TTL validation
+ */
+function getCachedResult(key) {
+  if (!geocodeCache.has(key)) {
+    return null;
+  }
+
+  const entry = geocodeCache.get(key);
+  if (!entry) return null;
+
+  // Check if cache entry is still valid
+  if (entry.timestamp) {
+    const ttl = entry.success ? SUCCESS_CACHE_TTL : FAILURE_CACHE_TTL;
+    if (Date.now() - entry.timestamp > ttl) {
+      geocodeCache.delete(key);
+      return null;
+    }
+  }
+
+  return entry.data;
+}
+
+/**
+ * Set cache entry with metadata
+ */
+function setCacheEntry(key, data, success = true) {
+  geocodeCache.set(key, {
+    data,
+    timestamp: Date.now(),
+    success,
+  });
+}
+
+/**
+ * Queue request with concurrency control
+ */
+async function executeWithConcurrencyControl(fn) {
+  // Wait until we can execute
+  while (concurrentRequests >= MAX_CONCURRENT_REQUESTS) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+
+  concurrentRequests += 1;
+  try {
+    return await fn();
+  } finally {
+    concurrentRequests -= 1;
+  }
+}
+
+/**
+ * Retry logic with exponential backoff
+ */
+async function executeWithRetry(fn, location) {
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const result = await fn();
+      // Reset circuit breaker on success
+      if (circuitState !== 'closed') {
+        logger.info('Circuit breaker closing after successful request');
+        circuitState = 'closed';
+        failureCount = 0;
+      }
+      return result;
+    } catch (error) {
+      const isLastAttempt = attempt === MAX_RETRIES;
+
+      // Log retry
+      if (!isLastAttempt) {
+        const delay = Math.min(
+          INITIAL_RETRY_DELAY * Math.pow(2, attempt - 1),
+          MAX_RETRY_DELAY
+        );
+        logger.warn(
+          `Geocoding retry ${attempt}/${MAX_RETRIES} for "${location}" after ${error.message}, waiting ${delay}ms`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      } else {
+        // Final attempt failed
+        logger.error(
+          `Geocoding failed after ${MAX_RETRIES} attempts for "${location}":`,
+          error.message
+        );
+
+        // Update circuit breaker
+        failureCount += 1;
+        if (failureCount >= CIRCUIT_BREAKER_THRESHOLD && circuitState === 'closed') {
+          logger.error(`Circuit breaker opening after ${failureCount} consecutive failures`);
+          circuitState = 'open';
+          lastCircuitOpenTime = Date.now();
+        }
+
+        throw error;
+      }
+    }
+  }
+}
 
 /**
  * Geocode a location name to coordinates using Nominatim (OpenStreetMap)
@@ -29,58 +175,65 @@ async function geocodeLocation(locationName) {
     return null;
   }
 
-  // Check cache first
-  if (geocodeCache.has(trimmedLocation)) {
-    logger.info(`Geocoding cache hit for: ${trimmedLocation}`);
-    return geocodeCache.get(trimmedLocation);
+  // Check cache first (including expired entries)
+  const cached = getCachedResult(trimmedLocation);
+  if (cached !== null) {
+    logger.debug(`Geocoding cache hit for: ${trimmedLocation}`);
+    return cached;
+  }
+
+  // Check circuit breaker
+  updateCircuitBreaker();
+  if (circuitState === 'open') {
+    logger.warn(`Circuit breaker is open, skipping geocoding request for: ${trimmedLocation}`);
+    // Cache the null result temporarily to avoid repeated circuit breaker hits
+    setCacheEntry(trimmedLocation, null, false);
+    return null;
   }
 
   try {
-    // Respect rate limiting
-    const now = Date.now();
-    const timeSinceLastRequest = now - lastRequestTime;
-    if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-      await new Promise((resolve) =>
-        setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLastRequest)
-      );
-    }
-    lastRequestTime = Date.now();
+    logger.debug(`Geocoding: ${trimmedLocation}`);
 
-    logger.info(`Geocoding: ${trimmedLocation}`);
+    let result = null;
+    await executeWithConcurrencyControl(async () => {
+      result = await executeWithRetry(async () => {
+        // Use Nominatim API for geocoding
+        const response = await axios.get(`${NOMINATIM_BASE_URL}/search`, {
+          params: {
+            format: 'json',
+            q: trimmedLocation,
+            limit: 1,
+          },
+          headers: {
+            'User-Agent': USER_AGENT,
+          },
+          timeout: GEOCODING_TIMEOUT,
+          httpAgent,
+          httpsAgent,
+        });
 
-    // Use Nominatim API for geocoding
-    const response = await axios.get(`${NOMINATIM_BASE_URL}/search`, {
-      params: {
-        format: 'json',
-        q: trimmedLocation,
-        limit: 1,
-      },
-      headers: {
-        'User-Agent': USER_AGENT,
-      },
-      timeout: GEOCODING_TIMEOUT,
+        if (response.data && response.data.length > 0) {
+          const geoResult = response.data[0];
+          const coords = {
+            lat: parseFloat(geoResult.lat),
+            lng: parseFloat(geoResult.lon),
+          };
+          logger.info(`Geocoded ${trimmedLocation} to:`, coords);
+          return coords;
+        }
+
+        logger.debug(`No geocoding results for: ${trimmedLocation}`);
+        return null;
+      }, trimmedLocation);
     });
 
-    if (response.data && response.data.length > 0) {
-      const result = response.data[0];
-      const coords = {
-        lat: parseFloat(result.lat),
-        lng: parseFloat(result.lon),
-      };
-
-      // Cache the result
-      geocodeCache.set(trimmedLocation, coords);
-
-      logger.info(`Geocoded ${trimmedLocation} to:`, coords);
-      return coords;
-    }
-    logger.info(`No geocoding results for: ${trimmedLocation}`);
-    // Cache null result to avoid repeated failed lookups
-    geocodeCache.set(trimmedLocation, null);
-    return null;
+    // Cache the result
+    setCacheEntry(trimmedLocation, result, result !== null);
+    return result;
   } catch (error) {
     logger.error(`Geocoding error for "${trimmedLocation}":`, error.message);
-    // Don't cache errors, as they might be temporary
+    // Cache failure temporarily to reduce repeated API calls
+    setCacheEntry(trimmedLocation, null, false);
     return null;
   }
 }
@@ -112,50 +265,61 @@ async function reverseGeocode(lat, lng) {
   }
 
   const cacheKey = `reverse_${lat}_${lng}`;
-  if (geocodeCache.has(cacheKey)) {
-    return geocodeCache.get(cacheKey);
+  const cached = getCachedResult(cacheKey);
+  if (cached !== null) {
+    logger.debug(`Reverse geocoding cache hit for: ${lat}, ${lng}`);
+    return cached;
+  }
+
+  // Check circuit breaker
+  updateCircuitBreaker();
+  if (circuitState === 'open') {
+    logger.warn(`Circuit breaker is open, skipping reverse geocoding request for: ${lat}, ${lng}`);
+    setCacheEntry(cacheKey, null, false);
+    return null;
   }
 
   try {
-    // Respect rate limiting
-    const now = Date.now();
-    const timeSinceLastRequest = now - lastRequestTime;
-    if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-      await new Promise((resolve) =>
-        setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLastRequest)
-      );
-    }
-    lastRequestTime = Date.now();
+    logger.debug(`Reverse geocoding: ${lat}, ${lng}`);
 
-    logger.info(`Reverse geocoding: ${lat}, ${lng}`);
+    let result = null;
+    await executeWithConcurrencyControl(async () => {
+      result = await executeWithRetry(async () => {
+        // Use Nominatim reverse geocoding
+        const response = await axios.get(`${NOMINATIM_BASE_URL}/reverse`, {
+          params: {
+            format: 'json',
+            lat,
+            lon: lng,
+          },
+          headers: {
+            'User-Agent': USER_AGENT,
+          },
+          timeout: GEOCODING_TIMEOUT,
+          httpAgent,
+          httpsAgent,
+        });
 
-    // Use Nominatim reverse geocoding
-    const response = await axios.get(`${NOMINATIM_BASE_URL}/reverse`, {
-      params: {
-        format: 'json',
-        lat,
-        lon: lng,
-      },
-      headers: {
-        'User-Agent': USER_AGENT,
-      },
-      timeout: GEOCODING_TIMEOUT,
+        if (response.data && response.data.address) {
+          const countryCode = response.data.address.country_code?.toUpperCase();
+          const geoResult = {
+            country_code: countryCode,
+            timezone: getTimezoneForCountry(countryCode, lat, lng),
+          };
+          logger.info(`Reverse geocoded (${lat}, ${lng}) to country: ${countryCode}`);
+          return geoResult;
+        }
+
+        logger.debug(`No reverse geocoding results for: ${lat}, ${lng}`);
+        return null;
+      }, `${lat},${lng}`);
     });
 
-    if (response.data && response.data.address) {
-      const countryCode = response.data.address.country_code?.toUpperCase();
-      const result = {
-        country_code: countryCode,
-        timezone: getTimezoneForCountry(countryCode, lat, lng),
-      };
-
-      geocodeCache.set(cacheKey, result);
-      return result;
-    }
-
-    return null;
+    setCacheEntry(cacheKey, result, result !== null);
+    return result;
   } catch (error) {
     logger.error(`Reverse geocoding error for (${lat}, ${lng}):`, error.message);
+    setCacheEntry(cacheKey, null, false);
     return null;
   }
 }
@@ -317,6 +481,22 @@ function getUSTimezone(lat, lng) {
   return timezone;
 }
 
+/**
+ * Get diagnostic information about the geocoding service
+ */
+function getDiagnostics() {
+  return {
+    circuitState,
+    failureCount,
+    concurrentRequests,
+    cacheSize: geocodeCache.size,
+    timeout: GEOCODING_TIMEOUT,
+    maxRetries: MAX_RETRIES,
+    maxConcurrentRequests: MAX_CONCURRENT_REQUESTS,
+    circuitBreakerThreshold: CIRCUIT_BREAKER_THRESHOLD,
+  };
+}
+
 module.exports = {
   geocodeLocation,
   reverseGeocode,
@@ -324,4 +504,5 @@ module.exports = {
   getTimezoneForCountry,
   clearCache,
   getCacheSize,
+  getDiagnostics,
 };

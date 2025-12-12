@@ -383,33 +383,8 @@
     });
   });
 
-  // Add buffer days at the start to align the first day to a Monday
-  // Find what day of the week the first day is (0 = Sunday, 1 = Monday, etc.)
-  const firstDate = new Date(allDays[0].dateKey.split('-').map(Number)[0], allDays[0].dateKey.split('-').map(Number)[1] - 1, allDays[0].dateKey.split('-').map(Number)[2]);
-  const firstDayOfWeek = firstDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-
-  // Calculate how many days before this date we need to add to align to Monday
-  const daysBeforeMonday = (firstDayOfWeek + 6) % 7; // Convert Sunday=0 to Sunday=6, then -1 for days before Monday
-
-  // Add buffer days from the previous month if needed
-  if (daysBeforeMonday > 0) {
-    let bufferDate = new Date(firstDate);
-    bufferDate.setDate(bufferDate.getDate() - daysBeforeMonday);
-    for (let i = 0; i < daysBeforeMonday; i++) {
-      const key = getDateKey(bufferDate);
-      allDays.unshift({
-        dateKey: key,
-        day: bufferDate.getDate(),
-        items: dateToItems[key] || [],
-        isToday: key === getDateKey(today),
-        isInvalid: false,
-        isBufferDay: true,
-        originalMonth: bufferDate.getMonth(),
-        originalYear: bufferDate.getFullYear()
-      });
-      bufferDate.setDate(bufferDate.getDate() + 1);
-    }
-  }
+  // Note: Buffer days are no longer needed since we're using month-based layout with fixed 31 columns
+  // The old continuous flow logic has been replaced with month-specific rows
 
   // Pre-calculate global item row assignments based on overlaps
   const globalItemRowAssignments = {};
@@ -477,24 +452,36 @@
   });
 
 
-  // Group days into chunks of 30, creating month rows
-  // Each row is exactly 30 days (approximately 4 weeks + buffer)
-  let rowStartIndex = 0;
+  // Group days into months, each with exactly 31 columns (31 days per month)
+  // Blank boxes fill the end of months with fewer than 31 days
   let monthIndex = 0;
 
-  while (rowStartIndex < allDays.length && monthIndex < months.length) {
+  while (monthIndex < months.length) {
+    const monthData = months[monthIndex];
     const monthRowDays = [];
 
-    // Collect exactly 30 days for this row
-    for (let i = 0; i < 30 && rowStartIndex < allDays.length; i++) {
-      monthRowDays.push(allDays[rowStartIndex]);
-      rowStartIndex++;
+    // Add all days in this month
+    monthData.days.forEach(day => {
+      monthRowDays.push(day);
+    });
+
+    // Pad with blank days up to 31
+    const daysInMonth = monthData.days.length;
+    for (let i = daysInMonth; i < 31; i++) {
+      monthRowDays.push({
+        day: null,
+        dateKey: null,
+        items: [],
+        isToday: false,
+        isInvalid: true,
+        isBlank: true
+      });
     }
 
     reflowedMonths.push({
-      month: months[monthIndex].month,
-      year: months[monthIndex].year,
-      name: months[monthIndex].name,
+      month: monthData.month,
+      year: monthData.year,
+      name: monthData.name,
       days: monthRowDays
     });
 
@@ -511,18 +498,27 @@
       <% reflowedMonths.forEach((monthData) => { %>
         <%
           // Calculate the number of item rows needed for this row
-          // Get the date range for this row
-          const heightRowStartDate = monthData.days.length > 0
-            ? new Date(monthData.days[0].dateKey.split('-').map(Number)[0],
-                       monthData.days[0].dateKey.split('-').map(Number)[1] - 1,
-                       monthData.days[0].dateKey.split('-').map(Number)[2])
-            : new Date();
+          // Get the date range for this row - find first and last valid dateKeys
+          let heightRowStartDate = new Date();
+          let heightRowEndDate = new Date();
 
-          const heightRowEndDate = monthData.days.length > 0
-            ? new Date(monthData.days[monthData.days.length - 1].dateKey.split('-').map(Number)[0],
-                       monthData.days[monthData.days.length - 1].dateKey.split('-').map(Number)[1] - 1,
-                       monthData.days[monthData.days.length - 1].dateKey.split('-').map(Number)[2])
-            : new Date();
+          // Find the first valid dateKey
+          for (let i = 0; i < monthData.days.length; i++) {
+            if (monthData.days[i].dateKey) {
+              const parts = monthData.days[i].dateKey.split('-').map(Number);
+              heightRowStartDate = new Date(parts[0], parts[1] - 1, parts[2]);
+              break;
+            }
+          }
+
+          // Find the last valid dateKey
+          for (let i = monthData.days.length - 1; i >= 0; i--) {
+            if (monthData.days[i].dateKey) {
+              const parts = monthData.days[i].dateKey.split('-').map(Number);
+              heightRowEndDate = new Date(parts[0], parts[1] - 1, parts[2]);
+              break;
+            }
+          }
 
           // Calculate month height based on max global row number that appears in this row
           let maxRowInMonth = -1;
@@ -570,18 +566,27 @@
                 const monthItems = [];
                 const rowItemIds = new Set();
 
-                // Get the date range for this row
-                const rowStartDate = monthData.days.length > 0
-                  ? new Date(monthData.days[0].dateKey.split('-').map(Number)[0],
-                             monthData.days[0].dateKey.split('-').map(Number)[1] - 1,
-                             monthData.days[0].dateKey.split('-').map(Number)[2])
-                  : new Date();
+                // Get the date range for this row - find first and last valid dateKeys
+                let rowStartDate = new Date();
+                let rowEndDate = new Date();
 
-                const rowEndDate = monthData.days.length > 0
-                  ? new Date(monthData.days[monthData.days.length - 1].dateKey.split('-').map(Number)[0],
-                             monthData.days[monthData.days.length - 1].dateKey.split('-').map(Number)[1] - 1,
-                             monthData.days[monthData.days.length - 1].dateKey.split('-').map(Number)[2])
-                  : new Date();
+                // Find the first valid dateKey
+                for (let i = 0; i < monthData.days.length; i++) {
+                  if (monthData.days[i].dateKey) {
+                    const parts = monthData.days[i].dateKey.split('-').map(Number);
+                    rowStartDate = new Date(parts[0], parts[1] - 1, parts[2]);
+                    break;
+                  }
+                }
+
+                // Find the last valid dateKey
+                for (let i = monthData.days.length - 1; i >= 0; i--) {
+                  if (monthData.days[i].dateKey) {
+                    const parts = monthData.days[i].dateKey.split('-').map(Number);
+                    rowEndDate = new Date(parts[0], parts[1] - 1, parts[2]);
+                    break;
+                  }
+                }
 
                 // Iterate through all dateToItems to find items that overlap with this row
                 Object.keys(dateToItems).forEach(dateKey => {
@@ -614,25 +619,29 @@
 
                   // Find the first day this item appears in this row
                   for (let i = 0; i < monthData.days.length; i++) {
-                    const dayDate = new Date(monthData.days[i].dateKey.split('-').map(Number)[0],
-                                            monthData.days[i].dateKey.split('-').map(Number)[1] - 1,
-                                            monthData.days[i].dateKey.split('-').map(Number)[2]);
+                    if (monthData.days[i].dateKey) {
+                      const dayDate = new Date(monthData.days[i].dateKey.split('-').map(Number)[0],
+                                              monthData.days[i].dateKey.split('-').map(Number)[1] - 1,
+                                              monthData.days[i].dateKey.split('-').map(Number)[2]);
 
-                    if (normalizeDate(dayDate).getTime() >= normalizeDate(itemStartDate).getTime()) {
-                      startCol = i;
-                      break;
+                      if (normalizeDate(dayDate).getTime() >= normalizeDate(itemStartDate).getTime()) {
+                        startCol = i;
+                        break;
+                      }
                     }
                   }
 
                   // Find the last day this item appears in this row
                   for (let i = monthData.days.length - 1; i >= 0; i--) {
-                    const dayDate = new Date(monthData.days[i].dateKey.split('-').map(Number)[0],
-                                            monthData.days[i].dateKey.split('-').map(Number)[1] - 1,
-                                            monthData.days[i].dateKey.split('-').map(Number)[2]);
+                    if (monthData.days[i].dateKey) {
+                      const dayDate = new Date(monthData.days[i].dateKey.split('-').map(Number)[0],
+                                              monthData.days[i].dateKey.split('-').map(Number)[1] - 1,
+                                              monthData.days[i].dateKey.split('-').map(Number)[2]);
 
-                    if (normalizeDate(dayDate).getTime() <= normalizeDate(itemEndDate).getTime()) {
-                      endCol = i;
-                      break;
+                      if (normalizeDate(dayDate).getTime() <= normalizeDate(itemEndDate).getTime()) {
+                        endCol = i;
+                        break;
+                      }
                     }
                   }
 
@@ -701,19 +710,25 @@
             <!-- Day cells -->
             <% monthData.days.forEach((dayData, dayIdx) => { %>
               <%
+                const isBlankDay = dayData.isBlank;
                 const hasItems = dayData.items && dayData.items.length > 0;
-                // Weekend detection based on actual day of week from the date
-                const dayDate = new Date(dayData.dateKey.split('-').map(Number)[0],
-                                        dayData.dateKey.split('-').map(Number)[1] - 1,
-                                        dayData.dateKey.split('-').map(Number)[2]);
-                // getDay: 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
-                // We want: Saturday (6) and Sunday (0) to be weekends
-                const dayOfWeek = dayDate.getDay();
-                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday and Saturday
-                const isBufferDay = dayData.isBufferDay || dayData.isInvalid;
+                let isWeekend = false;
+                let isBufferDay = false;
+
+                if (!isBlankDay && dayData.dateKey) {
+                  // Weekend detection based on actual day of week from the date
+                  const dayDate = new Date(dayData.dateKey.split('-').map(Number)[0],
+                                          dayData.dateKey.split('-').map(Number)[1] - 1,
+                                          dayData.dateKey.split('-').map(Number)[2]);
+                  // getDay: 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
+                  // We want: Saturday (6) and Sunday (0) to be weekends
+                  const dayOfWeek = dayDate.getDay();
+                  isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday and Saturday
+                  isBufferDay = dayData.isBufferDay || dayData.isInvalid;
+                }
               %>
-              <div class="row-day-cell <% if (isBufferDay) { %>buffer-day<% } %> <% if (dayData.isToday) { %>today<% } %> <% if (hasItems) { %>has-items<% } %> <% if (isWeekend) { %>weekend<% } %>" id="date-<%= dayData.dateKey %>" data-date="<%= dayData.dateKey %>">
-                <% if (!isBufferDay) { %>
+              <div class="row-day-cell <% if (isBlankDay) { %>blank-day<% } %> <% if (isBufferDay) { %>buffer-day<% } %> <% if (dayData.isToday) { %>today<% } %> <% if (hasItems) { %>has-items<% } %> <% if (isWeekend) { %>weekend<% } %>" id="<% if (dayData.dateKey) { %>date-<%= dayData.dateKey %><% } %>" data-date="<%= dayData.dateKey %>">
+                <% if (!isBlankDay && !isBufferDay && dayData.day) { %>
                   <div class="day-number"><%= dayData.day %></div>
                 <% } %>
               </div>
@@ -772,7 +787,7 @@
 
   .days-row-grid {
     display: grid;
-    grid-template-columns: repeat(30, minmax(24px, 1fr));
+    grid-template-columns: repeat(31, minmax(24px, 1fr));
     gap: 0;
     flex: 1;
     position: relative;
@@ -805,8 +820,8 @@
     height: 1.5rem;
     pointer-events: auto;
     top: calc(1.2rem + var(--row-in-month) * 1.75rem);
-    left: calc(var(--day-idx) * calc(100% / 30) + 1px);
-    width: calc(var(--span) * calc(100% / 30) - 2px);
+    left: calc(var(--day-idx) * calc(100% / 31) + 1px);
+    width: calc(var(--span) * calc(100% / 31) - 2px);
   }
 
   /* Calendar item styling */
@@ -917,6 +932,15 @@
 
   .row-day-cell.has-items {
     padding-top: 0;
+  }
+
+  .row-day-cell.blank-day {
+    background-color: #f3f4f6;
+    cursor: default;
+  }
+
+  .row-day-cell.blank-day:hover {
+    background-color: #f3f4f6;
   }
 </style>
 
