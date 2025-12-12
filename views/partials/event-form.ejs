@@ -129,24 +129,19 @@
 // Load form utilities module
 const formUtilitiesScript = document.createElement('script');
 formUtilitiesScript.src = '/js/form-utilities.js';
+formUtilitiesScript.onload = initializeEventForm;
 document.head.appendChild(formUtilitiesScript);
 
 function initializeEventForm() {
   // Use shared date sync utility for start/end dates
-  initializeFormOnLoad(() => {
-    initializeDateSync('input[name="startDate"]', 'input[name="endDate"]');
-  });
+  initializeDateSync('input[name="startDate"]', 'input[name="endDate"]');
 
   // Initialize all-day event toggle
-  initializeFormOnLoad(() => {
-    initializeAllDayEvent();
-  });
+  initializeAllDayEvent();
 
   // Use shared timezone inference for location
-  initializeFormOnLoad(() => {
-    const timezoneFieldId = '<%= isAddMode ? "event_timezone" : "edit_event_timezone" %>';
-    initializeTimezoneInference('edit_event_location', timezoneFieldId);
-  });
+  const timezoneFieldId = '<%= isAddMode ? "event_timezone" : "edit_event_timezone" %>';
+  initializeTimezoneInference('edit_event_location', timezoneFieldId);
 
   // All-day event specific logic
   function initializeAllDayEvent() {
@@ -192,8 +187,5 @@ function initializeEventForm() {
     }
   }
 }
-
-// Initialize immediately when script runs
-initializeEventForm();
 </script>
 

@@ -19,7 +19,7 @@ const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManag
 exports.createHotel = async (req, res) => {
   try {
     const { tripId } = req.params;
-    const {
+    let {
       hotelName,
       address,
       phone,
@@ -27,6 +27,8 @@ exports.createHotel = async (req, res) => {
       checkInTime,
       checkOutDate,
       checkOutTime,
+      checkInDateTime: checkInDateTimeCombined,
+      checkOutDateTime: checkOutDateTimeCombined,
       timezone,
       confirmationNumber,
       roomNumber,
@@ -46,24 +48,34 @@ exports.createHotel = async (req, res) => {
       }
     }
 
-    // Validate required date/time fields
-    if (!checkInDate || !checkInTime || !checkOutDate || !checkOutTime) {
-      logger.error('[Hotel Create] Missing required date/time fields:', {
-        checkInDate,
-        checkInTime,
-        checkOutDate,
-        checkOutTime,
-      });
-      const isAsync = req.headers['x-async-request'] === 'true';
-      if (isAsync) {
-        return res.status(400).json({ success: false, error: 'All date and time fields are required' });
-      }
-      return redirectAfterError(res, req, tripId, 'All date and time fields are required');
-    }
+    // Handle both combined datetime (from async form) and split date/time fields (from traditional forms)
+    let checkInDateTime;
+    let checkOutDateTime;
 
-    // Combine date and time fields
-    const checkInDateTime = `${checkInDate}T${checkInTime}`;
-    const checkOutDateTime = `${checkOutDate}T${checkOutTime}`;
+    if (checkInDateTimeCombined && checkOutDateTimeCombined) {
+      // Async form submission sends combined datetime
+      checkInDateTime = checkInDateTimeCombined;
+      checkOutDateTime = checkOutDateTimeCombined;
+    } else {
+      // Traditional form submission sends split date/time fields
+      // Validate required date/time fields
+      if (!checkInDate || !checkInTime || !checkOutDate || !checkOutTime) {
+        logger.error('[Hotel Create] Missing required date/time fields:', {
+          checkInDate,
+          checkInTime,
+          checkOutDate,
+          checkOutTime,
+        });
+        const isAsync = req.headers['x-async-request'] === 'true';
+        if (isAsync) {
+          return res.status(400).json({ success: false, error: 'All date and time fields are required' });
+        }
+        return redirectAfterError(res, req, tripId, 'All date and time fields are required');
+      }
+      // Combine date and time fields
+      checkInDateTime = `${checkInDate}T${checkInTime}`;
+      checkOutDateTime = `${checkOutDate}T${checkOutTime}`;
+    }
 
     // Geocode address
     const coords = await geocodeIfChanged(address);

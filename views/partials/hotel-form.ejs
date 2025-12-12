@@ -122,29 +122,20 @@
 // Load form utilities module
 const formUtilitiesScript = document.createElement('script');
 formUtilitiesScript.src = '/js/form-utilities.js';
+formUtilitiesScript.onload = initializeHotelForm;
 document.head.appendChild(formUtilitiesScript);
 
 function initializeHotelForm() {
   // Use shared date sync utility for check-in/check-out dates
-  initializeFormOnLoad(() => {
-    initializeDateSync('input[name="checkInDate"]', 'input[name="checkOutDate"]');
-  });
+  initializeDateSync('input[name="checkInDate"]', 'input[name="checkOutDate"]');
 
   // Use shared timezone inference utility for address
-  initializeFormOnLoad(() => {
-    const addressFieldId = '<%= isAddMode ? "add_hotel_address" : "edit_hotel_address" %>';
-    const timezoneFieldId = '<%= isAddMode ? "hotelTimezone" : "edit_hotel_timezone" %>';
-    initializeTimezoneInference(addressFieldId, timezoneFieldId);
-  });
+  const addressFieldId = '<%= isAddMode ? "add_hotel_address" : "edit_hotel_address" %>';
+  const timezoneFieldId = '<%= isAddMode ? "hotelTimezone" : "edit_hotel_timezone" %>';
+  initializeTimezoneInference(addressFieldId, timezoneFieldId);
 
   // Ensure timezone is set before form submission
   const formId = '<%= isAddMode ? "addHotelForm" : "editHotelForm" %>';
-  const timezoneFieldId = '<%= isAddMode ? "hotelTimezone" : "edit_hotel_timezone" %>';
-  initializeFormOnLoad(() => {
-    ensureTimezoneBeforeSubmit(timezoneFieldId, formId);
-  });
+  ensureTimezoneBeforeSubmit(timezoneFieldId, formId);
 }
-
-// Initialize immediately when script runs
-initializeHotelForm();
 </script>
