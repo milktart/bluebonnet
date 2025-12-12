@@ -1,0 +1,740 @@
+<%
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  // Get today's date
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Calculate 19-month range: 3 months back, current month, 15 months forward
+  const startMonth = new Date(today);
+  startMonth.setMonth(today.getMonth() - 3);
+  startMonth.setDate(1);
+
+  const endMonth = new Date(today);
+  endMonth.setMonth(today.getMonth() + 15);
+  endMonth.setDate(1);
+
+  // Helper function to get date key
+  function getDateKey(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // Helper function to parse DATEONLY strings
+  const parseDateOnly = (dateStr) => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day, 0, 0, 0, 0);
+    return date;
+  };
+
+  // Build dateToItems map from trips and standalone items
+  const dateToItems = {}; // { dateKey: [{ type, data, startDate, endDate, durationDays }] }
+
+  // Add trips to dates
+  const safeTrips = trips || [];
+  safeTrips.forEach(trip => {
+    if (!trip.departureDate || !trip.returnDate) return;
+
+    const depDate = parseDateOnly(trip.departureDate);
+    const retDate = parseDateOnly(trip.returnDate);
+
+    const durationDays = Math.ceil((retDate - depDate) / (1000 * 60 * 60 * 24)) + 1;
+    const startKey = getDateKey(depDate);
+    if (!dateToItems[startKey]) dateToItems[startKey] = [];
+    dateToItems[startKey].push({
+      type: 'trip',
+      data: trip,
+      startDate: depDate,
+      endDate: retDate,
+      durationDays: durationDays
+    });
+
+    // Add flights
+    if (trip.flights) {
+      trip.flights.forEach(flight => {
+        if (!flight.departureDateTime) return;
+        let startDate = new Date(flight.departureDateTime);
+        if (flight.originTimezone && typeof formatInTimezone === 'function') {
+          const formattedDate = formatInTimezone(flight.departureDateTime, flight.originTimezone, 'YYYY-MM-DD');
+          const [year, month, day] = formattedDate.split('-').map(Number);
+          startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+        } else {
+          startDate.setHours(0, 0, 0, 0);
+        }
+
+        let endDate = new Date(flight.arrivalDateTime || flight.departureDateTime);
+        if (flight.originTimezone && typeof formatInTimezone === 'function') {
+          const formattedEndDate = formatInTimezone(flight.arrivalDateTime || flight.departureDateTime, flight.originTimezone, 'YYYY-MM-DD');
+          const [year, month, day] = formattedEndDate.split('-').map(Number);
+          endDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+        } else {
+          endDate.setHours(0, 0, 0, 0);
+        }
+
+        const flightDurationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        const key = getDateKey(startDate);
+        if (!dateToItems[key]) dateToItems[key] = [];
+        dateToItems[key].push({ type: 'flight', data: flight, startDate, endDate, durationDays: flightDurationDays });
+      });
+    }
+
+    // Add hotels
+    if (trip.hotels) {
+      trip.hotels.forEach(hotel => {
+        if (!hotel.checkInDateTime) return;
+        const startDate = new Date(hotel.checkInDateTime);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(hotel.checkOutDateTime || hotel.checkInDateTime);
+        endDate.setHours(0, 0, 0, 0);
+        const hotelDurationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        const key = getDateKey(startDate);
+        if (!dateToItems[key]) dateToItems[key] = [];
+        dateToItems[key].push({ type: 'hotel', data: hotel, startDate, endDate, durationDays: hotelDurationDays });
+      });
+    }
+
+    // Add transportation
+    if (trip.transportation) {
+      trip.transportation.forEach(trans => {
+        if (!trans.departureDateTime) return;
+        let startDate = new Date(trans.departureDateTime);
+        if (trans.originTimezone && typeof formatInTimezone === 'function') {
+          const formattedDate = formatInTimezone(trans.departureDateTime, trans.originTimezone, 'YYYY-MM-DD');
+          const [year, month, day] = formattedDate.split('-').map(Number);
+          startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+        } else {
+          startDate.setHours(0, 0, 0, 0);
+        }
+
+        let endDate = new Date(trans.arrivalDateTime || trans.departureDateTime);
+        if (trans.originTimezone && typeof formatInTimezone === 'function') {
+          const formattedEndDate = formatInTimezone(trans.arrivalDateTime || trans.departureDateTime, trans.originTimezone, 'YYYY-MM-DD');
+          const [year, month, day] = formattedEndDate.split('-').map(Number);
+          endDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+        } else {
+          endDate.setHours(0, 0, 0, 0);
+        }
+
+        const transDurationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        const key = getDateKey(startDate);
+        if (!dateToItems[key]) dateToItems[key] = [];
+        dateToItems[key].push({ type: 'transportation', data: trans, startDate, endDate, durationDays: transDurationDays });
+      });
+    }
+
+    // Add car rentals
+    if (trip.carRentals) {
+      trip.carRentals.forEach(carRental => {
+        if (!carRental.pickupDateTime) return;
+        const startDate = new Date(carRental.pickupDateTime);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(carRental.dropoffDateTime || carRental.pickupDateTime);
+        endDate.setHours(0, 0, 0, 0);
+        const carDurationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        const key = getDateKey(startDate);
+        if (!dateToItems[key]) dateToItems[key] = [];
+        dateToItems[key].push({ type: 'carRental', data: carRental, startDate, endDate, durationDays: carDurationDays });
+      });
+    }
+
+    // Add events
+    if (trip.events) {
+      trip.events.forEach(event => {
+        if (!event.startDateTime) return;
+        const startDate = new Date(event.startDateTime);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(event.endDateTime || event.startDateTime);
+        endDate.setHours(0, 0, 0, 0);
+        const eventDurationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        const key = getDateKey(startDate);
+        if (!dateToItems[key]) dateToItems[key] = [];
+        dateToItems[key].push({ type: 'event', data: event, startDate, endDate, durationDays: eventDurationDays });
+      });
+    }
+  });
+
+  // Add standalone flights
+  const safeStandaloneFlights = standaloneFlights || [];
+  safeStandaloneFlights.forEach(flight => {
+    if (!flight.departureDateTime) return;
+    let startDate = new Date(flight.departureDateTime);
+    if (flight.originTimezone && typeof formatInTimezone === 'function') {
+      const formattedDate = formatInTimezone(flight.departureDateTime, flight.originTimezone, 'YYYY-MM-DD');
+      const [year, month, day] = formattedDate.split('-').map(Number);
+      startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+    } else {
+      startDate.setHours(0, 0, 0, 0);
+    }
+
+    let endDate = new Date(flight.arrivalDateTime || flight.departureDateTime);
+    if (flight.originTimezone && typeof formatInTimezone === 'function') {
+      const formattedEndDate = formatInTimezone(flight.arrivalDateTime || flight.departureDateTime, flight.originTimezone, 'YYYY-MM-DD');
+      const [year, month, day] = formattedEndDate.split('-').map(Number);
+      endDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+    } else {
+      endDate.setHours(0, 0, 0, 0);
+    }
+
+    const durationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+    const key = getDateKey(startDate);
+    if (!dateToItems[key]) dateToItems[key] = [];
+    dateToItems[key].push({ type: 'flight', data: flight, startDate, endDate, durationDays });
+  });
+
+  // Add standalone hotels
+  const safeStandaloneHotels = standaloneHotels || [];
+  safeStandaloneHotels.forEach(hotel => {
+    if (!hotel.checkInDateTime) return;
+    const startDate = new Date(hotel.checkInDateTime);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(hotel.checkOutDateTime || hotel.checkInDateTime);
+    endDate.setHours(0, 0, 0, 0);
+    const durationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+    const key = getDateKey(startDate);
+    if (!dateToItems[key]) dateToItems[key] = [];
+    dateToItems[key].push({ type: 'hotel', data: hotel, startDate, endDate, durationDays });
+  });
+
+  // Add standalone transportation
+  const safeStandaloneTransportation = standaloneTransportation || [];
+  safeStandaloneTransportation.forEach(trans => {
+    if (!trans.departureDateTime) return;
+    let startDate = new Date(trans.departureDateTime);
+    if (trans.originTimezone && typeof formatInTimezone === 'function') {
+      const formattedDate = formatInTimezone(trans.departureDateTime, trans.originTimezone, 'YYYY-MM-DD');
+      const [year, month, day] = formattedDate.split('-').map(Number);
+      startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+    } else {
+      startDate.setHours(0, 0, 0, 0);
+    }
+
+    let endDate = new Date(trans.arrivalDateTime || trans.departureDateTime);
+    if (trans.originTimezone && typeof formatInTimezone === 'function') {
+      const formattedEndDate = formatInTimezone(trans.arrivalDateTime || trans.departureDateTime, trans.originTimezone, 'YYYY-MM-DD');
+      const [year, month, day] = formattedEndDate.split('-').map(Number);
+      endDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+    } else {
+      endDate.setHours(0, 0, 0, 0);
+    }
+
+    const durationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+    const key = getDateKey(startDate);
+    if (!dateToItems[key]) dateToItems[key] = [];
+    dateToItems[key].push({ type: 'transportation', data: trans, startDate, endDate, durationDays });
+  });
+
+  // Add standalone car rentals
+  const safeStandaloneCarRentals = standaloneCarRentals || [];
+  safeStandaloneCarRentals.forEach(carRental => {
+    if (!carRental.pickupDateTime) return;
+    const startDate = new Date(carRental.pickupDateTime);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(carRental.dropoffDateTime || carRental.pickupDateTime);
+    endDate.setHours(0, 0, 0, 0);
+    const durationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+    const key = getDateKey(startDate);
+    if (!dateToItems[key]) dateToItems[key] = [];
+    dateToItems[key].push({ type: 'carRental', data: carRental, startDate, endDate, durationDays });
+  });
+
+  // Add standalone events
+  const safeStandaloneEvents = standaloneEvents || [];
+  safeStandaloneEvents.forEach(event => {
+    if (!event.startDateTime) return;
+    const startDate = new Date(event.startDateTime);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(event.endDateTime || event.startDateTime);
+    endDate.setHours(0, 0, 0, 0);
+    const durationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+    const key = getDateKey(startDate);
+    if (!dateToItems[key]) dateToItems[key] = [];
+    dateToItems[key].push({ type: 'event', data: event, startDate, endDate, durationDays });
+  });
+
+  // Helper function to get transportation icon
+  function getTransportationIcon(method) {
+    const iconMap = {
+      'train': 'train',
+      'bus': 'directions_bus',
+      'ferry': 'directions_boat',
+      'shuttle': 'airport_shuttle',
+      'taxi': 'hail',
+      'rideshare': 'hail',
+      'taxi/rideshare': 'hail',
+      'subway': 'directions_subway',
+      'metro': 'directions_subway',
+      'subway/metro': 'directions_subway',
+      'tram': 'tram',
+      'funicular': 'funicular',
+      'gondola': 'gondola_lift',
+      'monorail': 'monorail',
+      'other': 'directions_run'
+    };
+    return iconMap[method?.toLowerCase()] || 'transportation';
+  }
+
+  // Generate 13 months of data
+  const months = [];
+  let currentDate = new Date(startMonth);
+  while (currentDate < endMonth) {
+    const monthYear = { month: currentDate.getMonth(), year: currentDate.getFullYear() };
+    const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+
+    const days = [];
+    for (let day = 1; day <= 31; day++) {
+      if (day <= daysInMonth) {
+        const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day, 0, 0, 0, 0);
+        const key = getDateKey(dateObj);
+        days.push({
+          day: day,
+          dateKey: key,
+          items: dateToItems[key] || [],
+          isToday: key === getDateKey(today)
+        });
+      } else {
+        // Placeholder for non-existent days
+        days.push({
+          day: day,
+          dateKey: null,
+          items: [],
+          isToday: false,
+          isInvalid: true
+        });
+      }
+    }
+
+    months.push({
+      month: monthYear.month,
+      year: monthYear.year,
+      name: monthNames[monthYear.month],
+      days: days
+    });
+
+    currentDate.setMonth(currentDate.getMonth() + 1);
+  }
+
+%>
+
+<div class="calendar-row-view h-full flex flex-col">
+  <!-- Calendar grid - scrollable -->
+  <div class="flex-1 overflow-auto">
+    <div class="row-calendar-grid">
+      <!-- Month rows -->
+      <% months.forEach((monthData) => { %>
+        <%
+          // Calculate the number of item rows needed for this month
+          let monthMaxRow = 0;
+          const monthItemsTemp = [];
+          const heightMonthStart = new Date(monthData.year, monthData.month, 1, 0, 0, 0, 0);
+          const heightMonthEnd = new Date(monthData.year, monthData.month + 1, 0, 23, 59, 59, 999);
+          const tempMonthItemIds = new Set();
+
+          // Find all items that overlap with this month
+          Object.keys(dateToItems).forEach(dateKey => {
+            const [year, month, day] = dateKey.split('-').map(Number);
+            const itemDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+
+            if (itemDate <= heightMonthEnd) {
+              const items = dateToItems[dateKey] || [];
+              items.forEach(item => {
+                const itemId = item.data.id;
+                if (item.endDate >= heightMonthStart && !tempMonthItemIds.has(itemId)) {
+                  tempMonthItemIds.add(itemId);
+                  let dayIdx;
+                  if (item.startDate >= heightMonthStart) {
+                    dayIdx = item.startDate.getDate() - 1;
+                  } else {
+                    dayIdx = 0;
+                  }
+                  monthItemsTemp.push({ item, dayIdx, itemId });
+                }
+              });
+            }
+          });
+
+          // Sort and assign rows
+          monthItemsTemp.sort((a, b) => a.item.startDate.getTime() - b.item.startDate.getTime());
+          const monthRowOccupancy = [];
+          monthItemsTemp.forEach((itemData) => {
+            const startCol = itemData.dayIdx;
+            const daysSpanned = Math.min(itemData.item.durationDays, 31 - itemData.dayIdx);
+            const endCol = startCol + daysSpanned;
+            let assignedRow = -1;
+            for (let rowIdx = 0; rowIdx < monthRowOccupancy.length; rowIdx++) {
+              const occupiedRanges = monthRowOccupancy[rowIdx];
+              let canFitInRow = true;
+              for (const range of occupiedRanges) {
+                if (startCol < range.endCol && endCol > range.startCol) {
+                  canFitInRow = false;
+                  break;
+                }
+              }
+              if (canFitInRow) {
+                assignedRow = rowIdx;
+                occupiedRanges.push({ startCol: startCol, endCol: endCol });
+                break;
+              }
+            }
+            if (assignedRow === -1) {
+              assignedRow = monthRowOccupancy.length;
+              monthRowOccupancy.push([{ startCol: startCol, endCol: endCol }]);
+            }
+            monthMaxRow = Math.max(monthMaxRow, assignedRow);
+          });
+
+          const monthHeight = Math.max(2, 1.2 + (monthMaxRow + 1) * 1.75);
+        %>
+        <div class="month-row-wrapper" style="min-height: <%= monthHeight %>rem;">
+          <!-- Month label -->
+          <div class="month-row-label">
+            <div class="month-name"><%= monthData.name.substring(0, 3) %></div>
+            <div class="year"><%= monthData.year %></div>
+          </div>
+
+          <!-- Days grid with items -->
+          <div class="days-row-grid">
+            <!-- Multi-day items layer -->
+            <div class="row-multi-day-layer">
+              <%
+                // Collect items for this month (including items that span into this month)
+                const monthItems = [];
+                const monthStartDate = new Date(monthData.year, monthData.month, 1, 0, 0, 0, 0);
+                const monthEndDate = new Date(monthData.year, monthData.month + 1, 0, 23, 59, 59, 999);
+                const monthItemIds = new Set();
+
+                // Iterate through all dateToItems to find items that overlap with this month
+                Object.keys(dateToItems).forEach(dateKey => {
+                  const [year, month, day] = dateKey.split('-').map(Number);
+                  const itemDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+
+                  // Only process dates within or before this month
+                  if (itemDate <= monthEndDate) {
+                    const items = dateToItems[dateKey] || [];
+                    items.forEach(item => {
+                      const itemId = item.data.id;
+
+                      // Check if this item overlaps with this month and hasn't been added yet
+                      if (item.endDate >= monthStartDate && !monthItemIds.has(itemId)) {
+                        monthItemIds.add(itemId);
+
+                        // Determine the starting day in this month
+                        let dayIdx;
+                        if (item.startDate >= monthStartDate) {
+                          // Item starts in this month
+                          dayIdx = item.startDate.getDate() - 1;
+                        } else {
+                          // Item started in a previous month, show from day 1
+                          dayIdx = 0;
+                        }
+
+                        monthItems.push({ item, dayIdx, itemId });
+                      }
+                    });
+                  }
+                });
+
+                // Sort items by start date ascending
+                monthItems.sort((a, b) => {
+                  const dateA = a.item.startDate;
+                  const dateB = b.item.startDate;
+                  return dateA.getTime() - dateB.getTime();
+                });
+
+                // Assign row numbers - items can share a row if they don't overlap
+                const rowOccupancy = []; // Array of arrays: [{ startCol, endCol }, ...]
+
+                monthItems.forEach((itemData) => {
+                  // Calculate the actual column range for this item
+                  const startCol = itemData.dayIdx;
+                  const monthStartDate = new Date(monthData.year, monthData.month, 1, 0, 0, 0, 0);
+                  const monthEndDate = new Date(monthData.year, monthData.month + 1, 0, 23, 59, 59, 999);
+
+                  // Determine how many days the item spans in this specific month
+                  let itemEndInMonth = Math.min(itemData.item.endDate, monthEndDate);
+                  let itemStartInMonth = Math.max(itemData.item.startDate, monthStartDate);
+                  let daysSpanned = Math.ceil((itemEndInMonth - itemStartInMonth) / (1000 * 60 * 60 * 24)) + 1;
+                  daysSpanned = Math.min(daysSpanned, 31 - startCol);
+
+                  const endCol = startCol + daysSpanned;
+
+                  // Find the first row where this item doesn't overlap
+                  let assignedRow = -1;
+                  for (let rowIdx = 0; rowIdx < rowOccupancy.length; rowIdx++) {
+                    const occupiedRanges = rowOccupancy[rowIdx];
+                    let canFitInRow = true;
+
+                    // Check if this item overlaps with any occupied range in this row
+                    for (const range of occupiedRanges) {
+                      // Items overlap if: itemStart < rangeEnd AND itemEnd > rangeStart
+                      if (startCol < range.endCol && endCol > range.startCol) {
+                        canFitInRow = false;
+                        break;
+                      }
+                    }
+
+                    if (canFitInRow) {
+                      assignedRow = rowIdx;
+                      occupiedRanges.push({ startCol: startCol, endCol: endCol });
+                      break;
+                    }
+                  }
+
+                  // If no suitable row found, create a new one
+                  if (assignedRow === -1) {
+                    assignedRow = rowOccupancy.length;
+                    rowOccupancy.push([{ startCol: startCol, endCol: endCol }]);
+                  }
+
+                  // Store calculated row for rendering
+                  itemData.rowInMonth = assignedRow;
+                  itemData.daysSpanned = daysSpanned;
+                });
+              %>
+              <% monthItems.forEach((itemData) => { %>
+                <%
+                  const { item, dayIdx, itemId, rowInMonth, daysSpanned } = itemData;
+                  const itemType = item.type;
+                  const itemColor = getItemHexColor(itemType);
+                %>
+                <% if (itemType === 'trip') { %>
+                  <% const tripColor = item.data.purpose === 'business' ? getItemHexColor('business') : getItemHexColor('trip'); %>
+                  <div class="row-multi-day-bar <% if (!item.data.isConfirmed) { %>calendar-item-tentative<% } %>" data-item-id="<%= itemId %>" data-day-idx="<%= dayIdx %>" data-span="<%= daysSpanned %>" style="--day-idx: <%= dayIdx %>; --span: <%= daysSpanned %>; --row-in-month: <%= rowInMonth %>; background-color: <%= tripColor %>33; color: <%= tripColor %>;">
+                    <span class="material-symbols-outlined" style="font-size: 14px; flex-shrink: 0; color: <%= tripColor %>;">luggage</span>
+                    <span class="truncate"><%= item.data.name %></span>
+                  </div>
+                <% } else if (itemType === 'flight') { %>
+                  <%
+                    const originCode = item.data.origin ? item.data.origin.substring(0, 3).toUpperCase() : '';
+                    const destCode = item.data.destination ? item.data.destination.substring(0, 3).toUpperCase() : '';
+                  %>
+                  <div class="row-multi-day-bar" data-item-id="<%= itemId %>" data-day-idx="<%= dayIdx %>" data-span="<%= daysSpanned %>" style="--day-idx: <%= dayIdx %>; --span: <%= daysSpanned %>; --row-in-month: <%= rowInMonth %>; background-color: <%= itemColor %>33; color: <%= itemColor %>;">
+                    <span class="material-symbols-outlined" style="font-size: 14px; flex-shrink: 0; color: <%= itemColor %>;">flight</span>
+                    <span class="truncate"><%= originCode %>→<%= destCode %></span>
+                  </div>
+                <% } else if (itemType === 'hotel') { %>
+                  <div class="row-multi-day-bar" data-item-id="<%= itemId %>" data-day-idx="<%= dayIdx %>" data-span="<%= daysSpanned %>" style="--day-idx: <%= dayIdx %>; --span: <%= daysSpanned %>; --row-in-month: <%= rowInMonth %>; background-color: <%= itemColor %>33; color: <%= itemColor %>;">
+                    <span class="material-symbols-outlined" style="font-size: 14px; flex-shrink: 0; color: <%= itemColor %>;">hotel</span>
+                    <span class="truncate"><%= item.data.hotelName %></span>
+                  </div>
+                <% } else if (itemType === 'event') { %>
+                  <div class="row-multi-day-bar <% if (!item.data.isConfirmed) { %>calendar-item-tentative<% } %>" data-item-id="<%= itemId %>" data-day-idx="<%= dayIdx %>" data-span="<%= daysSpanned %>" style="--day-idx: <%= dayIdx %>; --span: <%= daysSpanned %>; --row-in-month: <%= rowInMonth %>; background-color: <%= itemColor %>33; color: <%= itemColor %>;">
+                    <span class="material-symbols-outlined" style="font-size: 14px; flex-shrink: 0; color: <%= itemColor %>;">event</span>
+                    <span class="truncate"><%= item.data.name %></span>
+                  </div>
+                <% } else if (itemType === 'transportation') { %>
+                  <div class="row-multi-day-bar" data-item-id="<%= itemId %>" data-day-idx="<%= dayIdx %>" data-span="<%= daysSpanned %>" style="--day-idx: <%= dayIdx %>; --span: <%= daysSpanned %>; --row-in-month: <%= rowInMonth %>; background-color: <%= itemColor %>33; color: <%= itemColor %>;">
+                    <span class="material-symbols-outlined" style="font-size: 14px; flex-shrink: 0; color: <%= itemColor %>;"><%= getTransportationIcon(item.data.method) %></span>
+                    <span class="truncate"><%= item.data.origin %> → <%= item.data.destination %></span>
+                  </div>
+                <% } else if (itemType === 'carRental') { %>
+                  <div class="row-multi-day-bar" data-item-id="<%= itemId %>" data-day-idx="<%= dayIdx %>" data-span="<%= daysSpanned %>" style="--day-idx: <%= dayIdx %>; --span: <%= daysSpanned %>; --row-in-month: <%= rowInMonth %>; background-color: <%= itemColor %>33; color: <%= itemColor %>;">
+                    <span class="material-symbols-outlined" style="font-size: 14px; flex-shrink: 0; color: <%= itemColor %>;">directions_car</span>
+                    <span class="truncate"><%= item.data.company %></span>
+                  </div>
+                <% } %>
+              <% }) %>
+            </div>
+
+            <!-- Day cells -->
+            <% monthData.days.forEach((dayData, dayIdx) => { %>
+              <%
+                const hasItems = dayData.items && dayData.items.length > 0;
+                // Calculate day of week (0 = Sunday, 6 = Saturday)
+                const dateForWeek = new Date(monthData.year, monthData.month, dayIdx + 1);
+                const dayOfWeek = dateForWeek.getDay();
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+              %>
+              <div class="row-day-cell <% if (dayData.isInvalid) { %>invalid-day<% } %> <% if (dayData.isToday) { %>today<% } %> <% if (hasItems) { %>has-items<% } %> <% if (isWeekend) { %>weekend<% } %>" id="date-<%= dayData.dateKey %>" data-date="<%= dayData.dateKey %>">
+                <% if (!dayData.isInvalid) { %>
+                  <div class="day-number"><%= dayData.day %></div>
+                <% } %>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</div>
+
+<style>
+  .calendar-row-view {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .row-calendar-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .month-row-wrapper {
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+    border-left: 2px solid #e5e7eb;
+    position: relative;
+  }
+
+  .month-row-label {
+    width: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    background: #f9fafb;
+    padding: 0.5rem 0.25rem;
+    flex-shrink: 0;
+    text-align: center;
+    border-right: 2px solid #e5e7eb;
+  }
+
+  .month-row-label .month-name {
+    font-weight: 700;
+  }
+
+  .month-row-label .year {
+    font-size: 0.65rem;
+    color: #9ca3af;
+  }
+
+  .days-row-grid {
+    display: grid;
+    grid-template-columns: repeat(31, minmax(24px, 1fr));
+    gap: 0;
+    flex: 1;
+    position: relative;
+  }
+
+  .row-multi-day-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .row-multi-day-bar {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 1.5rem;
+    pointer-events: auto;
+    top: calc(1.2rem + var(--row-in-month) * 1.75rem);
+    left: calc(var(--day-idx) * calc(100% / 31) + 1px);
+    width: calc(var(--span) * calc(100% / 31) - 2px);
+  }
+
+  .calendar-item-tentative {
+    position: relative;
+  }
+
+  .calendar-item-tentative::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.1) 2px,
+      rgba(0, 0, 0, 0.1) 4px
+    );
+    pointer-events: none;
+    border-radius: 0.25rem;
+  }
+
+  .row-day-cell {
+    border-right: 1px solid rgba(229, 231, 235, 0.4);
+    border-bottom: none;
+    padding: 0;
+    overflow: visible;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    min-height: 32px;
+    background: white;
+    transition: background-color 0.2s;
+  }
+
+  .row-day-cell:hover {
+    background-color: #f9fafb;
+  }
+
+  .row-day-cell.weekend {
+    background-color: #fafafa;
+  }
+
+  .row-day-cell.weekend:hover {
+    background-color: #f5f5f5;
+  }
+
+  .row-day-cell.today {
+    background-color: #eff6ff;
+    border-right-color: #3b82f6;
+  }
+
+  .row-day-cell.today .day-number {
+    color: #3b82f6;
+    font-weight: 600;
+  }
+
+  .row-day-cell.invalid-day {
+    background-color: #f3f4f6;
+    cursor: not-allowed;
+    border-right-color: rgba(209, 213, 219, 0.4);
+  }
+
+  .row-day-cell.invalid-day:hover {
+    background-color: #f3f4f6;
+  }
+
+  .day-number {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #374151;
+    padding: 0.25rem;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 5;
+  }
+
+  .row-day-cell.has-items {
+    padding-top: 0;
+  }
+</style>
+
+<script>
+  function scrollYearViewToday() {
+    const todayCell = document.querySelector('.row-day-cell.today');
+    if (todayCell) {
+      todayCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  window.scrollYearViewToday = scrollYearViewToday;
+</script>
