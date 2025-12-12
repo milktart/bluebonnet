@@ -1264,38 +1264,81 @@
       // Find the actual event data from the document
       const eventData = window.calendarEventData && window.calendarEventData[itemId];
       if (eventData) {
-        const startDate = new Date(eventData.startDateTime);
-        const endDate = new Date(eventData.endDateTime);
+        // Format dates/times with timezone awareness
+        let dateTimeString = 'N/A';
 
-        // Helper function to format dates
-        const formatEventDateTime = (date) => {
-          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-          const day = String(date.getDate()).padStart(2, '0');
-          const month = months[date.getMonth()];
-          const year = String(date.getFullYear()).slice(-2); // 2-digit year
-          const hour = String(date.getHours()).padStart(2, '0');
-          const min = String(date.getMinutes()).padStart(2, '0');
-          return { day, month, year, hour, min };
-        };
+        if (eventData.timezone) {
+          // Helper function to format event date/time in specific timezone
+          function formatEventDateTime(isoString, timezone, use2DigitYear = true) {
+            const date = new Date(isoString);
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const timeString = date.toLocaleString('en-US', {
+              timeZone: timezone,
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false
+            });
+            // Parse and reformat: MM/DD/YYYY HH:mm
+            const parts = timeString.split(/[\/\s:]/);
+            if (parts.length >= 5) {
+              const month = months[parseInt(parts[0]) - 1];
+              const day = String(parseInt(parts[1])).padStart(2, '0');
+              const year = use2DigitYear ? String(parts[2]).slice(-2) : parts[2];
+              const hour = parts[3];
+              const min = parts[4];
+              return { day, month, year, hour, min };
+            }
+            return null;
+          }
 
-        const startParts = formatEventDateTime(startDate);
-        const endParts = formatEventDateTime(endDate);
+          const startParts = formatEventDateTime(eventData.startDateTime, eventData.timezone, true);
+          const endParts = formatEventDateTime(eventData.endDateTime, eventData.timezone, false);
 
-        // Check if event is on the same day
-        const isSameDay = startDate.getDate() === endDate.getDate() &&
-                          startDate.getMonth() === endDate.getMonth() &&
-                          startDate.getFullYear() === endDate.getFullYear();
+          if (startParts && endParts) {
+            // Check if event is on the same day
+            const isSameDay = startParts.day === endParts.day &&
+                              startParts.month === endParts.month &&
+                              (startParts.year === endParts.year || String(startParts.year) === String(endParts.year).slice(-2));
 
-        // Format the date/time string
-        let dateTimeString;
-        if (isSameDay) {
-          // Same day: "DD MMM YY HH:MM - HH:MM"
-          dateTimeString = `${startParts.day} ${startParts.month} ${startParts.year} ${startParts.hour}:${startParts.min} - ${endParts.hour}:${endParts.min}`;
+            // Format the date/time string
+            if (isSameDay) {
+              // Same day: "DD MMM YY HH:MM - HH:MM"
+              dateTimeString = `${startParts.day} ${startParts.month} ${startParts.year} ${startParts.hour}:${startParts.min} - ${endParts.hour}:${endParts.min}`;
+            } else {
+              // Multiple days: "DD MMM YYYY - DD MMM YYYY"
+              dateTimeString = `${startParts.day} ${startParts.month} ${startParts.year} - ${endParts.day} ${endParts.month} ${endParts.year}`;
+            }
+          }
         } else {
-          // Multiple days: "DD MMM YYYY - DD MMM YYYY"
-          const fullYear = String(startDate.getFullYear()); // 4-digit year
-          const endFullYear = String(endDate.getFullYear()); // 4-digit year
-          dateTimeString = `${startParts.day} ${startParts.month} ${fullYear} - ${endParts.day} ${endParts.month} ${endFullYear}`;
+          // No timezone data, use browser's local time
+          const startDate = new Date(eventData.startDateTime);
+          const endDate = new Date(eventData.endDateTime);
+
+          function formatBasicDateTime(date, use2DigitYear = true) {
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = months[date.getMonth()];
+            const year = use2DigitYear ? String(date.getFullYear()).slice(-2) : String(date.getFullYear());
+            const hour = String(date.getHours()).padStart(2, '0');
+            const min = String(date.getMinutes()).padStart(2, '0');
+            return { day, month, year, hour, min };
+          }
+
+          const startParts = formatBasicDateTime(startDate, true);
+          const endParts = formatBasicDateTime(endDate, false);
+
+          const isSameDay = startDate.getDate() === endDate.getDate() &&
+                            startDate.getMonth() === endDate.getMonth() &&
+                            startDate.getFullYear() === endDate.getFullYear();
+
+          if (isSameDay) {
+            dateTimeString = `${startParts.day} ${startParts.month} ${startParts.year} ${startParts.hour}:${startParts.min} - ${endParts.hour}:${endParts.min}`;
+          } else {
+            dateTimeString = `${startParts.day} ${startParts.month} ${startParts.year} - ${endParts.day} ${endParts.month} ${endParts.year}`;
+          }
         }
 
         content = `
