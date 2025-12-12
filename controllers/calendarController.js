@@ -24,7 +24,7 @@ exports.getCalendarSidebar = async (req, res) => {
     // Simplified includes - only fetch what we need for calendar display
     const minimalTripIncludes = [
       { model: Flight, as: 'flights', attributes: ['id', 'tripId', 'departureDateTime', 'arrivalDateTime', 'origin', 'destination', 'originTimezone', 'destinationTimezone'] },
-      { model: Hotel, as: 'hotels', attributes: ['id', 'tripId', 'checkInDateTime', 'checkOutDateTime', 'hotelName'] },
+      { model: Hotel, as: 'hotels', attributes: ['id', 'tripId', 'checkInDateTime', 'checkOutDateTime', 'hotelName', 'address', 'phone'] },
       { model: Transportation, as: 'transportation', attributes: ['id', 'tripId', 'departureDateTime', 'arrivalDateTime', 'origin', 'destination', 'method', 'originTimezone', 'destinationTimezone'] },
       { model: CarRental, as: 'carRentals', attributes: ['id', 'tripId', 'pickupDateTime', 'dropoffDateTime', 'company'] },
       { model: Event, as: 'events', attributes: ['id', 'tripId', 'startDateTime', 'endDateTime', 'name', 'isConfirmed', 'timezone'] },
@@ -84,7 +84,7 @@ exports.getCalendarSidebar = async (req, res) => {
       }).catch(() => []),
       Hotel.findAll({
         where: { userId: req.user.id, tripId: null },
-        attributes: ['id', 'checkInDateTime', 'checkOutDateTime', 'hotelName'],
+        attributes: ['id', 'checkInDateTime', 'checkOutDateTime', 'hotelName', 'address', 'phone'],
         order: [['checkInDateTime', 'ASC']],
       }).catch(() => []),
       Transportation.findAll({
