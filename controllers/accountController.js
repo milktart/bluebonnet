@@ -1,40 +1,9 @@
 const bcrypt = require('bcrypt');
 const { Sequelize, Op } = require('sequelize');
 const logger = require('../utils/logger');
-const { User, TravelCompanion, Voucher, Trip, Flight, Hotel, Transportation, CarRental, Event } = require('../models');
+const { User, TravelCompanion, Voucher, Trip, Flight, Hotel, Transportation, CarRental, Event, sequelize } = require('../models');
 const versionInfo = require('../utils/version');
-
-exports.getAccountSettings = async (req, res) => {
-  try {
-    // Get companion profiles where this user is linked
-    // Exclude profiles created by the user themselves (prevent self-removal)
-    const linkedCompanions = await TravelCompanion.findAll({
-      where: {
-        userId: req.user.id,
-        createdBy: { [Op.ne]: req.user.id }, // Exclude self-created profiles
-      },
-      include: [
-        {
-          model: User,
-          as: 'creator',
-          attributes: ['id', 'firstName', 'lastName', 'email'],
-        },
-      ],
-      order: [['createdAt', 'DESC']],
-    });
-
-    res.render('account/settings', {
-      title: 'Account Settings',
-      user: req.user,
-      linkedCompanions,
-      versionInfo,
-    });
-  } catch (error) {
-    logger.error('Error loading account settings:', error);
-    req.flash('error_msg', 'Error loading account settings');
-    res.redirect('/trips');
-  }
-};
+const importPreviewProcessor = require('../utils/importPreviewProcessor');
 
 exports.updateProfile = async (req, res) => {
   try {
@@ -642,5 +611,372 @@ exports.importAccountData = async (req, res) => {
     logger.error('Error importing account data:', error);
     req.flash('error_msg', 'An error occurred while importing data');
     res.redirect('/account');
+  }
+};
+
+exports.getDataManagement = async (req, res) => {
+  try {
+    res.render('account/data-management', {
+      title: 'Manage Account Data',
+      user: req.user,
+    });
+  } catch (error) {
+    logger.error('Error loading data management page:', error);
+    req.flash('error_msg', 'Error loading data management');
+    res.redirect('/trips');
+  }
+};
+
+exports.getDataManagementSidebar = async (req, res) => {
+  try {
+    res.render('partials/data-management-sidebar', {
+      user: req.user,
+      layout: false,
+    });
+  } catch (error) {
+    logger.error('Error loading data management sidebar:', error);
+    res
+      .status(500)
+      .send(
+        '<div class="p-4"><p class="text-red-600">Error loading data management. Please try again.</p></div>'
+      );
+  }
+};
+
+exports.previewImportData = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No file uploaded' });
+    }
+
+    // Parse the JSON file
+    let importData;
+    try {
+      importData = JSON.parse(req.file.buffer.toString('utf8'));
+    } catch (parseError) {
+      logger.error('JSON parse error:', parseError);
+      return res.status(400).json({ success: false, error: 'Invalid JSON file format' });
+    }
+
+    // Validate version
+    if (importData.version !== '1.0') {
+      return res
+        .status(400)
+        .json({ success: false, error: 'Incompatible export file version' });
+    }
+
+    // Fetch all user's current data for duplicate detection
+    const currentTrips = await Trip.findAll({
+      where: { userId },
+      include: [
+        { model: Flight, as: 'flights' },
+        { model: Hotel, as: 'hotels' },
+        { model: Transportation, as: 'transportation' },
+        { model: CarRental, as: 'carRentals' },
+        { model: Event, as: 'events' },
+      ],
+    });
+
+    const allFlights = await Flight.findAll({ where: { userId } });
+    const allHotels = await Hotel.findAll({ where: { userId } });
+    const allTransportation = await Transportation.findAll({ where: { userId } });
+    const allCarRentals = await CarRental.findAll({ where: { userId } });
+    const allEvents = await Event.findAll({ where: { userId } });
+    const allVouchers = await Voucher.findAll({ where: { userId } });
+    const allCompanions = await TravelCompanion.findAll({
+      where: { createdBy: userId },
+    });
+
+    // Structure current data for preview processor
+    const currentUserData = {
+      trips: currentTrips,
+      allFlights,
+      allHotels,
+      allTransportation,
+      allCarRentals,
+      allEvents,
+      vouchers: allVouchers,
+      companions: allCompanions,
+    };
+
+    // Generate preview with duplicate detection
+    const preview = importPreviewProcessor.generatePreviewData(importData, currentUserData);
+
+    res.json({ success: true, preview });
+  } catch (error) {
+    logger.error('Error previewing import data:', error);
+    res.status(500).json({ success: false, error: 'Error processing file' });
+  }
+};
+
+exports.importSelectedData = async (req, res) => {
+  let transaction;
+  try {
+    const userId = req.user.id;
+    const { importData, selectedItemIds } = req.body;
+
+    if (!importData || !selectedItemIds || !Array.isArray(selectedItemIds)) {
+      return res
+        .status(400)
+        .json({ success: false, error: 'Invalid request parameters' });
+    }
+
+    logger.info('Import request received:', {
+      selectedItemIds: selectedItemIds.length,
+      trips: importData.trips?.length || 0,
+      standaloneFlights: importData.standaloneFlights?.length || 0,
+      standaloneHotels: importData.standaloneHotels?.length || 0,
+      previewItems: importData.previewItems?.length || 0,
+    });
+
+    // Start transaction for atomicity
+    transaction = await sequelize.transaction();
+
+    const stats = {
+      trips: 0,
+      flights: 0,
+      hotels: 0,
+      transportation: 0,
+      carRentals: 0,
+      events: 0,
+      vouchers: 0,
+      companions: 0,
+    };
+
+    // Import trips first and track which ones were imported
+    // NOTE: Frontend already filtered to ONLY include selected items, so we can import all of them
+    if (importData.trips && Array.isArray(importData.trips)) {
+      logger.info(`Processing ${importData.trips.length} trips for import`);
+      for (const tripData of importData.trips) {
+        // Since frontend already filtered, just import all trips provided
+        logger.info(`Importing trip: ${tripData.id} (${tripData.name})`);
+
+        // Create trip with new ID and user ID
+        const newTrip = await Trip.create(
+          {
+            ...tripData,
+            userId,
+            id: undefined, // Generate new UUID
+          },
+          { transaction }
+        );
+
+        stats.trips++;
+
+        // Import all children of this trip (frontend already filtered to selected items)
+        if (tripData.flights && Array.isArray(tripData.flights)) {
+          for (const flight of tripData.flights) {
+            await Flight.create(
+              {
+                ...flight,
+                tripId: newTrip.id,
+                userId,
+                id: undefined,
+              },
+              { transaction }
+            );
+            stats.flights++;
+          }
+        }
+
+        if (tripData.hotels && Array.isArray(tripData.hotels)) {
+          for (const hotel of tripData.hotels) {
+            await Hotel.create(
+              {
+                ...hotel,
+                tripId: newTrip.id,
+                userId,
+                id: undefined,
+              },
+              { transaction }
+            );
+            stats.hotels++;
+          }
+        }
+
+        if (tripData.transportation && Array.isArray(tripData.transportation)) {
+          for (const trans of tripData.transportation) {
+            await Transportation.create(
+              {
+                ...trans,
+                tripId: newTrip.id,
+                userId,
+                id: undefined,
+              },
+              { transaction }
+            );
+            stats.transportation++;
+          }
+        }
+
+        if (tripData.carRentals && Array.isArray(tripData.carRentals)) {
+          for (const carRental of tripData.carRentals) {
+            await CarRental.create(
+              {
+                ...carRental,
+                tripId: newTrip.id,
+                userId,
+                id: undefined,
+              },
+              { transaction }
+            );
+            stats.carRentals++;
+          }
+        }
+
+        if (tripData.events && Array.isArray(tripData.events)) {
+          for (const event of tripData.events) {
+            await Event.create(
+              {
+                ...event,
+                tripId: newTrip.id,
+                userId,
+                id: undefined,
+              },
+              { transaction }
+            );
+            stats.events++;
+          }
+        }
+      }
+    }
+
+    // Import standalone items (frontend already filtered to selected items)
+    if (importData.standaloneFlights && Array.isArray(importData.standaloneFlights)) {
+      for (const flight of importData.standaloneFlights) {
+        await Flight.create(
+          {
+            ...flight,
+            userId,
+            tripId: null,
+            id: undefined,
+          },
+          { transaction }
+        );
+        stats.flights++;
+      }
+    }
+
+    if (importData.standaloneHotels && Array.isArray(importData.standaloneHotels)) {
+      for (const hotel of importData.standaloneHotels) {
+        await Hotel.create(
+          {
+            ...hotel,
+            userId,
+            tripId: null,
+            id: undefined,
+          },
+          { transaction }
+        );
+        stats.hotels++;
+      }
+    }
+
+    if (
+      importData.standaloneTransportation &&
+      Array.isArray(importData.standaloneTransportation)
+    ) {
+      for (const trans of importData.standaloneTransportation) {
+        await Transportation.create(
+          {
+            ...trans,
+            userId,
+            tripId: null,
+            id: undefined,
+          },
+          { transaction }
+        );
+        stats.transportation++;
+      }
+    }
+
+    if (
+      importData.standaloneCarRentals &&
+      Array.isArray(importData.standaloneCarRentals)
+    ) {
+      for (const carRental of importData.standaloneCarRentals) {
+        await CarRental.create(
+          {
+            ...carRental,
+            userId,
+            tripId: null,
+            id: undefined,
+          },
+          { transaction }
+        );
+        stats.carRentals++;
+      }
+    }
+
+    if (importData.standaloneEvents && Array.isArray(importData.standaloneEvents)) {
+      for (const event of importData.standaloneEvents) {
+        await Event.create(
+          {
+            ...event,
+            userId,
+            tripId: null,
+            id: undefined,
+          },
+          { transaction }
+        );
+        stats.events++;
+      }
+    }
+
+    // Import vouchers (frontend already filtered to selected items)
+    if (importData.vouchers && Array.isArray(importData.vouchers)) {
+      for (const voucher of importData.vouchers) {
+        // Don't include parentVoucherId since parent vouchers won't exist in new database
+        const { parentVoucherId, ...voucherData } = voucher;
+
+        await Voucher.create(
+          {
+            ...voucherData,
+            userId,
+            id: undefined,
+            parentVoucherId: null, // Clear parent reference on import
+          },
+          { transaction }
+        );
+        stats.vouchers++;
+      }
+    }
+
+    // Import companions (frontend already filtered to selected items)
+    if (importData.companions && Array.isArray(importData.companions)) {
+      for (const companion of importData.companions) {
+        // Don't include userId from imported companion (it references old database)
+        const { userId: importedUserId, ...companionData } = companion;
+
+        await TravelCompanion.create(
+          {
+            ...companionData,
+            createdBy: userId,
+            id: undefined,
+            userId: null, // Clear user link on import
+          },
+          { transaction }
+        );
+        stats.companions++;
+      }
+    }
+
+    // Commit transaction
+    await transaction.commit();
+
+    logger.info(`User ${userId} imported data:`, stats);
+    res.json({
+      success: true,
+      message: 'Data imported successfully',
+      stats,
+    });
+  } catch (error) {
+    if (transaction) {
+      await transaction.rollback();
+    }
+    logger.error('Error importing selected data:', error);
+    res.status(500).json({ success: false, error: 'Error importing data' });
   }
 };

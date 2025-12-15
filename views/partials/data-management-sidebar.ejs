@@ -1,0 +1,472 @@
+<!-- Account Data Management Sidebar -->
+<div>
+  <!-- Header with Close Button -->
+  <div class="flex items-center justify-between mb-6 gap-2">
+    <h2 class="text-lg font-bold text-gray-900 truncate">Manage Account Data</h2>
+    <button data-action="closeSecondarySidebar" class="text-gray-400 hover:text-gray-600 flex-shrink-0">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="space-y-6">
+    <!-- Combined Export/Import Data Card -->
+    <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+      <!-- Export Section -->
+      <div class="mb-6">
+        <div class="flex items-center mb-3">
+          <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+            <span class="material-symbols-outlined text-blue-600" style="font-size: 16px;">download</span>
+          </div>
+          <h3 class="text-sm font-semibold text-gray-900">Export Account Data</h3>
+        </div>
+        <p class="text-sm text-gray-600 mb-3">Download a complete backup of all your trips, items, vouchers, and travel companions as a JSON file.</p>
+        <a href="/account/export" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+          <span class="material-symbols-outlined mr-2" style="font-size: 18px;">download</span>
+          Download Backup
+        </a>
+      </div>
+
+      <!-- Divider -->
+      <div class="border-t border-gray-200 my-6"></div>
+
+      <!-- Import Section -->
+      <div>
+      <div class="flex items-center mb-4">
+        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+          <span class="material-symbols-outlined text-green-600" style="font-size: 16px;">upload</span>
+        </div>
+        <h3 class="text-base font-semibold text-gray-900">Import Account Data</h3>
+      </div>
+      <p class="text-sm text-gray-600 mb-4">Restore data from a previously exported JSON file. You'll be able to review items and select which ones to import before adding them to your account.</p>
+
+      <div class="mb-4">
+        <label for="importFile" class="block text-sm font-medium text-gray-700 mb-2">Select JSON File</label>
+        <input type="file" id="importFile" accept=".json" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 transition-colors">
+        <p class="text-xs text-gray-500 mt-2">Maximum file size: 10MB</p>
+      </div>
+
+      <!-- File input error message (hidden by default) -->
+      <div id="fileError" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+        <p class="text-sm text-red-700"></p>
+      </div>
+
+      <!-- Loading state (hidden by default) -->
+      <div id="loadingState" class="hidden mb-4">
+        <div class="flex items-center gap-2">
+          <div class="animate-spin">
+            <span class="material-symbols-outlined text-gray-400" style="font-size: 20px;">hourglass_empty</span>
+          </div>
+          <p class="text-sm text-gray-600">Processing file...</p>
+        </div>
+      </div>
+
+      <!-- Preview table container (hidden until file is loaded) -->
+      <div id="previewContainer" class="hidden">
+        <div id="previewTable"></div>
+      </div>
+
+      <!-- Import button area (shown after preview) -->
+      <div id="importButtonArea" class="hidden mt-4 flex gap-2 pt-4 border-t border-gray-200">
+        <button id="importBtn" onclick="submitImport()" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          <span class="material-symbols-outlined mr-2" style="font-size: 18px;">check</span>
+          Import Selected
+        </button>
+        <button id="backBtn" onclick="backToFileSelection()" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors">
+          <span class="material-symbols-outlined mr-2" style="font-size: 18px;">arrow_back</span>
+          Back
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Global state for import preview
+  window.importPreviewData = null;
+  window.selectedItemIds = new Set();
+
+  /**
+   * Load and display import preview
+   */
+  async function loadImportPreview() {
+    const fileInput = document.getElementById('importFile');
+    const file = fileInput.files[0];
+    const errorDiv = document.getElementById('fileError');
+    const loadingDiv = document.getElementById('loadingState');
+    const previewDiv = document.getElementById('previewContainer');
+
+    // Reset error state
+    errorDiv.classList.add('hidden');
+
+    if (!file) {
+      errorDiv.classList.remove('hidden');
+      errorDiv.querySelector('p').textContent = 'Please select a file first';
+      return;
+    }
+
+    // Show loading state
+    loadingDiv.classList.remove('hidden');
+    previewDiv.classList.add('hidden');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/account/data/preview', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Sidebar-Request': 'true',
+        },
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to process file');
+      }
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to preview file');
+      }
+
+      // Store preview data globally
+      window.importPreviewData = data.preview;
+      window.selectedItemIds = new Set();
+
+      // Initialize all non-duplicate items as selected
+      data.preview.items.forEach((item) => {
+        if (!item.isDuplicate) {
+          window.selectedItemIds.add(item.id);
+        }
+      });
+
+      // Display preview table
+      displayPreviewTable(data.preview);
+
+      // Show import buttons
+      document.getElementById('importButtonArea').classList.remove('hidden');
+      previewDiv.classList.remove('hidden');
+    } catch (error) {
+      errorDiv.classList.remove('hidden');
+      errorDiv.querySelector('p').textContent = error.message || 'Error processing file';
+    } finally {
+      loadingDiv.classList.add('hidden');
+    }
+  }
+
+  /**
+   * Display preview table with grouped sections
+   */
+  function displayPreviewTable(preview) {
+    const container = document.getElementById('previewTable');
+    let html = '';
+
+    // Summary stats
+    html += `
+      <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <h4 class="text-sm font-semibold text-blue-900 mb-2">Import Summary</h4>
+        <div class="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <p class="text-blue-700"><span class="font-semibold">${preview.stats.totalItems}</span> total items</p>
+            <p class="text-blue-600 text-xs">${preview.stats.totalDuplicates} possible duplicates</p>
+          </div>
+          <div>
+            <p class="text-blue-700">Select items to import (duplicates unchecked)</p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Define section order and labels
+    const sections = [
+      { key: 'trips', label: 'Trips', icon: 'luggage' },
+      { key: 'standaloneFlights', label: 'Standalone Flights', icon: 'flight' },
+      { key: 'standaloneHotels', label: 'Standalone Hotels', icon: 'apartment' },
+      { key: 'standaloneTransportation', label: 'Standalone Transportation', icon: 'local_taxi' },
+      { key: 'standaloneCarRentals', label: 'Standalone Car Rentals', icon: 'directions_car' },
+      { key: 'standaloneEvents', label: 'Standalone Events', icon: 'event' },
+      { key: 'vouchers', label: 'Vouchers & Credits', icon: 'card_giftcard' },
+      { key: 'companions', label: 'Travel Companions', icon: 'person_add' },
+    ];
+
+    // Render sections
+    sections.forEach(({ key, label, icon }) => {
+      const section = preview.sections[key];
+      if (!section || section.count === 0) return;
+
+      // Get items for this section
+      const sectionItems = preview.items.filter((item) => item.category === key);
+      if (sectionItems.length === 0) return;
+
+      html += `
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-gray-600" style="font-size: 20px;">${icon}</span>
+              <h4 class="text-sm font-semibold text-gray-900">${label}</h4>
+              <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">${section.count} items</span>
+              ${section.duplicates > 0 ? `<span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">${section.duplicates} duplicates</span>` : ''}
+            </div>
+            <div class="flex gap-1">
+              <button onclick="selectAllInSection('${key}')" class="text-xs px-2 py-1 text-blue-600 hover:text-blue-700 font-medium">Select All</button>
+              <button onclick="deselectAllInSection('${key}')" class="text-xs px-2 py-1 text-gray-600 hover:text-gray-700 font-medium">Deselect</button>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+      `;
+
+      // Render items in this section
+      sectionItems.forEach((item) => {
+        const duplicateClass = item.isDuplicate ? 'bg-yellow-50 border-yellow-200' : 'bg-white';
+        const checkboxId = `item-${item.id}`;
+        const isChecked = window.selectedItemIds.has(item.id) ? 'checked' : '';
+
+        html += `
+          <div class="border border-gray-200 rounded-lg ${duplicateClass}">
+            <div class="flex items-start gap-3 p-3">
+              <input type="checkbox" id="${checkboxId}" value="${item.id}" class="mt-1 sectionCheckbox-${key}"
+                onchange="updateItemSelection('${item.id}', this.checked)" ${isChecked}>
+              <div class="flex-1 min-w-0">
+                <label for="${checkboxId}" class="block text-sm font-medium text-gray-900 cursor-pointer">${item.name}</label>
+                <p class="text-xs text-gray-600 mt-1">${item.summary}</p>
+                ${item.isDuplicate ? `
+                  <div class="mt-2 inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 rounded text-xs text-yellow-800">
+                    <span class="material-symbols-outlined" style="font-size: 14px;">warning</span>
+                    Possible duplicate: ${item.duplicateOf.name}
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+        `;
+
+        // Show nested items under trip if this is a trip item
+        if (key === 'trips' && item.children) {
+          const childTypes = ['flights', 'hotels', 'transportation', 'carRentals', 'events'];
+          const hasChildren = childTypes.some(ct => item.children[ct] && item.children[ct].length > 0);
+
+          if (hasChildren) {
+            html += `<div class="bg-gray-50 border-t border-gray-200 p-3 space-y-2">`;
+            html += `<p class="text-xs font-semibold text-gray-700 mb-2">Trip Items:</p>`;
+
+            childTypes.forEach(childType => {
+              if (item.children[childType] && item.children[childType].length > 0) {
+                item.children[childType].forEach(childId => {
+                  const childItem = preview.items.find(i => i.id === childId);
+                  if (childItem) {
+                    const childCheckboxId = `item-${childItem.id}`;
+                    const childIsChecked = window.selectedItemIds.has(childItem.id) ? 'checked' : '';
+                    const childDuplicateClass = childItem.isDuplicate ? 'bg-yellow-50 border-yellow-200' : 'bg-white';
+
+                    html += `
+                      <div class="flex items-start gap-3 p-2 border border-gray-200 rounded-lg ${childDuplicateClass}">
+                        <input type="checkbox" id="${childCheckboxId}" value="${childItem.id}" class="mt-1 sectionCheckbox-${key}"
+                          onchange="updateItemSelection('${childItem.id}', this.checked)" ${childIsChecked}>
+                        <div class="flex-1 min-w-0">
+                          <label for="${childCheckboxId}" class="block text-xs font-medium text-gray-700 cursor-pointer">${childItem.name}</label>
+                          <p class="text-xs text-gray-500 mt-0.5">${childItem.summary}</p>
+                          ${childItem.isDuplicate ? `
+                            <div class="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 bg-yellow-100 rounded text-xs text-yellow-700">
+                              <span class="material-symbols-outlined" style="font-size: 12px;">warning</span>
+                              Duplicate
+                            </div>
+                          ` : ''}
+                        </div>
+                      </div>
+                    `;
+                  }
+                });
+              }
+            });
+
+            html += `</div>`;
+          }
+        }
+
+        html += `</div>`;
+      });
+
+      html += `
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
+  /**
+   * Update item selection
+   */
+  function updateItemSelection(itemId, isChecked) {
+    if (isChecked) {
+      window.selectedItemIds.add(itemId);
+    } else {
+      window.selectedItemIds.delete(itemId);
+    }
+    updateImportButtonState();
+  }
+
+  /**
+   * Select all items in a section
+   */
+  function selectAllInSection(sectionKey) {
+    const checkboxes = document.querySelectorAll(`.sectionCheckbox-${sectionKey}`);
+    checkboxes.forEach((checkbox) => {
+      const itemId = checkbox.value;
+      const item = window.importPreviewData.items.find((i) => i.id === itemId);
+      if (item && !item.isDuplicate) {
+        checkbox.checked = true;
+        window.selectedItemIds.add(itemId);
+      }
+    });
+    updateImportButtonState();
+  }
+
+  /**
+   * Deselect all items in a section
+   */
+  function deselectAllInSection(sectionKey) {
+    const checkboxes = document.querySelectorAll(`.sectionCheckbox-${sectionKey}`);
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = false;
+      window.selectedItemIds.delete(checkbox.value);
+    });
+    updateImportButtonState();
+  }
+
+  /**
+   * Update import button state
+   */
+  function updateImportButtonState() {
+    const importBtn = document.getElementById('importBtn');
+    importBtn.disabled = window.selectedItemIds.size === 0;
+  }
+
+  /**
+   * Submit import with selected items
+   */
+  async function submitImport() {
+    const importBtn = document.getElementById('importBtn');
+    const loadingDiv = document.getElementById('loadingState');
+    const errorDiv = document.getElementById('fileError');
+
+    try {
+      importBtn.disabled = true;
+      loadingDiv.classList.remove('hidden');
+      errorDiv.classList.add('hidden');
+
+      // Prepare request data
+      const requestData = {
+        importData: {
+          ...window.importPreviewData.items.reduce(
+            (acc, item) => {
+              // Group items back to their original structure
+              if (!acc[item.category]) acc[item.category] = [];
+              acc[item.category].push(item.data);
+              return acc;
+            },
+            {
+              trips: [],
+              standaloneFlights: [],
+              standaloneHotels: [],
+              standaloneTransportation: [],
+              standaloneCarRentals: [],
+              standaloneEvents: [],
+              vouchers: [],
+              companions: [],
+            }
+          ),
+          previewItems: window.importPreviewData.items,
+        },
+        selectedItemIds: Array.from(window.selectedItemIds),
+      };
+
+      // Get necessary data from preview to reconstruct import structure
+      // Only include SELECTED items
+      const importStructure = {
+        trips: window.importPreviewData.items
+          .filter((i) => i.category === 'trips' && window.selectedItemIds.has(i.id))
+          .map((i) => i.data),
+        standaloneFlights: window.importPreviewData.items
+          .filter((i) => i.category === 'standaloneFlights' && window.selectedItemIds.has(i.id))
+          .map((i) => i.data),
+        standaloneHotels: window.importPreviewData.items
+          .filter((i) => i.category === 'standaloneHotels' && window.selectedItemIds.has(i.id))
+          .map((i) => i.data),
+        standaloneTransportation: window.importPreviewData.items
+          .filter((i) => i.category === 'standaloneTransportation' && window.selectedItemIds.has(i.id))
+          .map((i) => i.data),
+        standaloneCarRentals: window.importPreviewData.items
+          .filter((i) => i.category === 'standaloneCarRentals' && window.selectedItemIds.has(i.id))
+          .map((i) => i.data),
+        standaloneEvents: window.importPreviewData.items
+          .filter((i) => i.category === 'standaloneEvents' && window.selectedItemIds.has(i.id))
+          .map((i) => i.data),
+        vouchers: window.importPreviewData.items
+          .filter((i) => i.category === 'vouchers' && window.selectedItemIds.has(i.id))
+          .map((i) => i.data),
+        companions: window.importPreviewData.items
+          .filter((i) => i.category === 'companions' && window.selectedItemIds.has(i.id))
+          .map((i) => i.data),
+        previewItems: window.importPreviewData.items,
+      };
+
+      const response = await fetch('/account/data/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Sidebar-Request': 'true',
+        },
+        body: JSON.stringify({
+          importData: importStructure,
+          selectedItemIds: Array.from(window.selectedItemIds),
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to import data');
+      }
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to import data');
+      }
+
+      // Refresh the dashboard to show imported data
+      window.location.href = '/trips';
+    } catch (error) {
+      errorDiv.classList.remove('hidden');
+      errorDiv.querySelector('p').textContent = error.message || 'Error importing data';
+      importBtn.disabled = false;
+    } finally {
+      loadingDiv.classList.add('hidden');
+    }
+  }
+
+  /**
+   * Go back to file selection
+   */
+  function backToFileSelection() {
+    window.importPreviewData = null;
+    window.selectedItemIds = new Set();
+
+    document.getElementById('importFile').value = '';
+    document.getElementById('previewContainer').classList.add('hidden');
+    document.getElementById('previewTable').innerHTML = '';
+    document.getElementById('importButtonArea').classList.add('hidden');
+    document.getElementById('fileError').classList.add('hidden');
+  }
+
+  // Auto-trigger preview when file is selected
+  document.getElementById('importFile').addEventListener('change', function () {
+    // Auto-trigger preview when a file is selected
+    if (this.files[0]) {
+      loadImportPreview();
+    }
+  });
+</script>

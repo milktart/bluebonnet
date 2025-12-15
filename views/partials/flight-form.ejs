@@ -164,17 +164,30 @@
 </div>
 
 <script>
-// Load form utilities module
-const formUtilitiesScript = document.createElement('script');
-formUtilitiesScript.src = '/js/form-utilities.js';
-formUtilitiesScript.onload = initializeFlightForm;
-document.head.appendChild(formUtilitiesScript);
+// Load form utilities module (check if already loaded to avoid duplicates)
+if (!window.formUtilitiesLoaded) {
+  const formUtilitiesScript = document.createElement('script');
+  formUtilitiesScript.src = '/js/form-utilities.js';
+  formUtilitiesScript.onload = function() {
+    window.formUtilitiesLoaded = true;
+    initializeFlightForm();
+  };
+  document.head.appendChild(formUtilitiesScript);
+} else {
+  // Already loaded, just initialize the form
+  initializeFlightForm();
+}
 
-// Load airport autocomplete module
-const autocompleteScript = document.createElement('script');
-autocompleteScript.src = '/js/airport-autocomplete.js';
-autocompleteScript.type = 'module';
-document.head.appendChild(autocompleteScript);
+// Load airport autocomplete module (check if already loaded to avoid duplicates)
+if (!window.airportAutocompleteLoaded) {
+  const autocompleteScript = document.createElement('script');
+  autocompleteScript.src = '/js/airport-autocomplete.js';
+  autocompleteScript.type = 'module';
+  autocompleteScript.onload = function() {
+    window.airportAutocompleteLoaded = true;
+  };
+  document.head.appendChild(autocompleteScript);
+}
 
 function initializeFlightForm() {
   // Use shared date sync utility for departure/arrival dates

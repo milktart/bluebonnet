@@ -119,11 +119,19 @@
 </div>
 
 <script>
-// Load form utilities module
-const formUtilitiesScript = document.createElement('script');
-formUtilitiesScript.src = '/js/form-utilities.js';
-formUtilitiesScript.onload = initializeHotelForm;
-document.head.appendChild(formUtilitiesScript);
+// Load form utilities module (check if already loaded to avoid duplicates)
+if (!window.formUtilitiesLoaded) {
+  const formUtilitiesScript = document.createElement('script');
+  formUtilitiesScript.src = '/js/form-utilities.js';
+  formUtilitiesScript.onload = function() {
+    window.formUtilitiesLoaded = true;
+    initializeHotelForm();
+  };
+  document.head.appendChild(formUtilitiesScript);
+} else {
+  // Already loaded, just initialize the form
+  initializeHotelForm();
+}
 
 function initializeHotelForm() {
   // Use shared date sync utility for check-in/check-out dates
