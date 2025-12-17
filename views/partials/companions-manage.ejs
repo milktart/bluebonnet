@@ -341,11 +341,9 @@ document.getElementById('confirmPermissionChange').addEventListener('click', asy
     if (response.ok) {
       bootstrap.Modal.getInstance(document.getElementById('changePermissionModal')).hide();
       loadCompanionData();
-    } else {
-      alert('Error changing permission level');
     }
   } catch (error) {
-    alert('Error changing permission level');
+    // Silently fail on error
   }
 });
 
@@ -362,41 +360,31 @@ document.getElementById('confirmAcceptRequest').addEventListener('click', async 
     if (response.ok) {
       bootstrap.Modal.getInstance(document.getElementById('acceptCompanionModal')).hide();
       loadCompanionData();
-    } else {
-      alert('Error accepting companion request');
     }
   } catch (error) {
-    alert('Error accepting companion request');
+    // Silently fail on error
   }
 });
 
 async function declineRequest(relationshipId) {
-  if (!confirm('Are you sure you want to decline this request?')) return;
-
   try {
     const response = await fetch(`/companion-relationships/${relationshipId}/decline`, { method: 'PUT' });
     if (response.ok) {
       loadCompanionData();
-    } else {
-      alert('Error declining request');
     }
   } catch (error) {
-    alert('Error declining request');
+    // Silently fail on error
   }
 }
 
 async function cancelRequest(relationshipId) {
-  if (!confirm('Are you sure you want to cancel this request?')) return;
-
   try {
     const response = await fetch(`/companion-relationships/${relationshipId}`, { method: 'DELETE' });
     if (response.ok) {
       loadCompanionData();
-    } else {
-      alert('Error cancelling request');
     }
   } catch (error) {
-    alert('Error cancelling request');
+    // Silently fail on error
   }
 }
 
@@ -408,43 +396,32 @@ async function resendRequest(relationshipId) {
     });
 
     if (response.ok) {
-      alert('Request resent successfully');
       loadCompanionData();
-    } else {
-      alert('Error resending request');
     }
   } catch (error) {
-    alert('Error resending request');
+    // Silently fail on error
   }
 }
 
 async function revokeCompanion(relationshipId) {
-  if (!confirm('Are you sure you want to revoke this companion relationship?')) return;
-
   try {
     const response = await fetch(`/companion-relationships/${relationshipId}`, { method: 'DELETE' });
     if (response.ok) {
       loadCompanionData();
-    } else {
-      alert('Error revoking companion');
     }
   } catch (error) {
-    alert('Error revoking companion');
+    // Silently fail on error
   }
 }
 
 async function deleteUnlinkedCompanion(companionId) {
-  if (!confirm('Are you sure you want to delete this unlinked companion?')) return;
-
   try {
     const response = await fetch(`/companions/${companionId}`, { method: 'DELETE' });
     if (response.ok) {
       loadCompanionData();
-    } else {
-      alert('Error deleting companion');
     }
   } catch (error) {
-    alert('Error deleting companion');
+    // Silently fail on error
   }
 }
 </script>

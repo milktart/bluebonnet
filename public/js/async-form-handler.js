@@ -427,7 +427,70 @@ function extractTripIdFromUrl() {
   return result;
 }
 
+/**
+ * Delete an item and refresh the sidebar asynchronously
+ * @param {string} type - Type of item (flight, hotel, transportation, car-rental, event)
+ * @param {string} id - ID of the item to delete
+ * @param {string} itemName - Display name of the item (unused, kept for compatibility)
+ */
+async function deleteItem(type, id, itemName = '') {
+  try {
+    // Determine the correct endpoint based on item type
+    let endpoint;
+    switch (type) {
+      case 'flight':
+        endpoint = `/flights/${id}`;
+        break;
+      case 'hotel':
+        endpoint = `/hotels/${id}`;
+        break;
+      case 'transportation':
+        endpoint = `/transportation/${id}`;
+        break;
+      case 'carRental':
+      case 'car-rental':
+        endpoint = `/car-rentals/${id}`;
+        break;
+      case 'event':
+        endpoint = `/events/${id}`;
+        break;
+      default:
+        return;
+    }
+
+    // Perform the DELETE request
+    const response = await fetch(endpoint, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Async-Request': 'true',
+      },
+    });
+
+    if (response.ok) {
+      // Close the sidebar
+      if (typeof closeSecondarySidebar === 'function') {
+        closeSecondarySidebar();
+      }
+
+      // Determine if this is a trip item or standalone item
+      let tripId = window.tripId;
+
+      if (!tripId || tripId.trim() === '') {
+        // Standalone item on dashboard - refresh primary sidebar without page reload
+        await refreshDashboardSidebar();
+      } else {
+        // Trip item - refresh trip view async without page reload
+        await refreshTripView();
+      }
+    }
+  } catch (error) {
+    // Silently fail on error
+  }
+}
+
 // Expose functions globally for cross-module access
 window.setupAsyncFormSubmission = setupAsyncFormSubmission;
 window.refreshTripView = refreshTripView;
 window.refreshDashboardSidebar = refreshDashboardSidebar;
+window.deleteItem = deleteItem;

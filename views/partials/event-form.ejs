@@ -116,84 +116,77 @@
   </form>
 
   <% if (!isAddMode) { %>
-    <form action="/events/<%= data?.id %>?_method=DELETE" method="POST" class="mt-4 pt-4 border-t border-gray-200">
-      <input type="hidden" name="tripId" value="<%= tripId %>">
-      <button type="submit" class="w-full text-white py-2 px-4 rounded-md transition-colors" style="background-color: <%= getDeclineColor() %>; opacity: 0.9;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.9'" onclick="return confirm('Are you sure you want to delete this event?')">
+    <div class="mt-4 pt-4 border-t border-gray-200">
+      <button type="button" class="w-full text-white py-2 px-4 rounded-md transition-colors" style="background-color: <%= getDeclineColor() %>; opacity: 0.9;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.9'" onclick="deleteItem('event', '<%= data?.id %>', 'event')">
         Delete Event
       </button>
-    </form>
+    </div>
   <% } %>
 </div>
 
 <script>
-// Load form utilities module (check if already loaded to avoid duplicates)
-if (!window.formUtilitiesLoaded) {
-  const formUtilitiesScript = document.createElement('script');
-  formUtilitiesScript.src = '/js/form-utilities.js';
-  formUtilitiesScript.onload = function() {
-    window.formUtilitiesLoaded = true;
-    initializeEventForm();
-  };
-  document.head.appendChild(formUtilitiesScript);
-} else {
-  // Already loaded, just initialize the form
-  initializeEventForm();
-}
-
 function initializeEventForm() {
+  console.log('[Event Form] Initializing event form');
+
   // Use shared date sync utility for start/end dates
   initializeDateSync('input[name="startDate"]', 'input[name="endDate"]');
 
-  // Initialize all-day event toggle
-  initializeAllDayEvent();
-
-  // Use shared timezone inference for location
+  // Use shared timezone inference for location (only works in edit mode since add mode has no location ID)
+  const locationFieldId = '<%= isAddMode ? "" : "edit_event_location" %>';
   const timezoneFieldId = '<%= isAddMode ? "event_timezone" : "edit_event_timezone" %>';
-  initializeTimezoneInference('edit_event_location', timezoneFieldId);
+  if (locationFieldId) {
+    initializeTimezoneInference(locationFieldId, timezoneFieldId);
+  }
 
-  // All-day event specific logic
-  function initializeAllDayEvent() {
-    const allDayCheckbox = document.getElementById('allDayEventCheckbox');
-    const startTimeInput = document.querySelector('input[name="startTime"]');
-    const endTimeInput = document.querySelector('input[name="endTime"]');
-    const startTimeContainer = document.getElementById('startTimeContainer');
-    const endTimeContainer = document.getElementById('endTimeContainer');
+  // Initialize all-day event toggle - direct inline setup
+  const allDayCheckbox = document.getElementById('allDayEventCheckbox');
+  const startTimeInput = document.querySelector('input[name="startTime"]');
+  const endTimeInput = document.querySelector('input[name="endTime"]');
+  const startTimeContainer = document.getElementById('startTimeContainer');
+  const endTimeContainer = document.getElementById('endTimeContainer');
 
-    if (!allDayCheckbox || !startTimeInput || !endTimeInput) return;
+  console.log('[Event Form] All-day checkbox found:', !!allDayCheckbox);
+  console.log('[Event Form] Time inputs found:', !!startTimeInput, !!endTimeInput);
+  console.log('[Event Form] Time containers found:', !!startTimeContainer, !!endTimeContainer);
 
-    // Check if current times indicate an all-day event (00:00 and 23:59)
-    const isCurrentlyAllDay = () => {
-      return startTimeInput.value === '00:00' && endTimeInput.value === '23:59';
-    };
+  if (allDayCheckbox && startTimeInput && endTimeInput && startTimeContainer && endTimeContainer) {
+    console.log('[Event Form] Setting up all-day event listener');
 
     // Function to update time input visibility
     const updateTimeInputStates = () => {
-      const isAllDay = allDayCheckbox.checked;
+      console.log('[Event Form] All-day checkbox changed to:', allDayCheckbox.checked);
 
-      if (isAllDay) {
+      if (allDayCheckbox.checked) {
         // Hide time containers
         startTimeContainer.classList.add('hidden');
         endTimeContainer.classList.add('hidden');
-
         // Set all-day event times
         startTimeInput.value = '00:00';
         endTimeInput.value = '23:59';
+        console.log('[Event Form] Hiding times, set to 00:00-23:59');
       } else {
         // Show time containers
         startTimeContainer.classList.remove('hidden');
         endTimeContainer.classList.remove('hidden');
+        console.log('[Event Form] Showing times');
       }
     };
 
     // Add change event listener
     allDayCheckbox.addEventListener('change', updateTimeInputStates);
+    console.log('[Event Form] Change listener added');
 
     // On page load, check if this is already an all-day event based on times
-    if (isCurrentlyAllDay()) {
+    if (startTimeInput.value === '00:00' && endTimeInput.value === '23:59') {
+      console.log('[Event Form] Detected all-day event on load');
       allDayCheckbox.checked = true;
       updateTimeInputStates();
     }
+  } else {
+    console.log('[Event Form] Missing elements, skipping all-day setup');
   }
 }
 </script>
+
+<script src="/js/form-loader.js" onload="setupEventFormInit();"></script>
 

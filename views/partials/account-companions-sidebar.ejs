@@ -92,17 +92,13 @@ async function editCompanion(companionId) {
     // Load the edit form in the secondary sidebar
     if (typeof window.loadSidebarContent === 'function') {
       await window.loadSidebarContent(`/companions/${companionId}/sidebar/edit`);
-    } else {
-      alert('Error loading edit form');
     }
   } catch (error) {
-    alert('Error loading edit form');
+    // Silently fail on error
   }
 }
 
 async function deleteCompanionClick(companionId) {
-  if (!confirm('Are you sure you want to delete this companion?')) return;
-
   try {
     const response = await fetch(`/companions/${companionId}`, {
       method: 'DELETE',
@@ -114,13 +110,9 @@ async function deleteCompanionClick(companionId) {
     if (response.ok) {
       // Reload companion data to reflect the deletion
       loadCompanionData();
-      alert('Companion deleted successfully');
-    } else {
-      const data = await response.json();
-      alert(data.error || 'Error deleting companion');
     }
   } catch (error) {
-    alert('Error deleting companion');
+    // Silently fail on error
   }
 }
 

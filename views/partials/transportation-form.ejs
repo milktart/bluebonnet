@@ -126,30 +126,15 @@
   </form>
 
   <% if (!isAddMode) { %>
-    <form action="/transportation/<%= data?.id %>?_method=DELETE" method="POST" class="mt-4 pt-4 border-t border-gray-200">
-      <input type="hidden" name="tripId" value="<%= tripId || '' %>">
-      <button type="submit" class="w-full text-white py-2 px-4 rounded-md transition-colors" style="background-color: <%= getDeclineColor() %>; opacity: 0.9;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.9'" onclick="return confirm('Are you sure you want to delete this transportation?')">
+    <div class="mt-4 pt-4 border-t border-gray-200">
+      <button type="button" class="w-full text-white py-2 px-4 rounded-md transition-colors" style="background-color: <%= getDeclineColor() %>; opacity: 0.9;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.9'" onclick="deleteItem('transportation', '<%= data?.id %>', 'transportation')">
         Delete Transportation
       </button>
-    </form>
+    </div>
   <% } %>
 </div>
 
 <script>
-// Load form utilities module (check if already loaded to avoid duplicates)
-if (!window.formUtilitiesLoaded) {
-  const formUtilitiesScript = document.createElement('script');
-  formUtilitiesScript.src = '/js/form-utilities.js';
-  formUtilitiesScript.onload = function() {
-    window.formUtilitiesLoaded = true;
-    initializeTransportationForm();
-  };
-  document.head.appendChild(formUtilitiesScript);
-} else {
-  // Already loaded, just initialize the form
-  initializeTransportationForm();
-}
-
 function initializeTransportationForm() {
   // Use shared date sync utility for departure/arrival dates
   initializeDateSync('input[name="departureDate"]', 'input[name="arrivalDate"]');
@@ -160,3 +145,5 @@ function initializeTransportationForm() {
   initializeOriginDestTimezoneInference('transportation_origin', 'transportation_destination', originTzFieldId, destTzFieldId);
 }
 </script>
+
+<script src="/js/form-loader.js" onload="setupTransportationFormInit();"></script>

@@ -83,6 +83,10 @@ The application follows an MVC pattern with clear separation:
 - Handle business logic and request processing
 - Controllers like `tripController.js` manage CRUD operations for their respective resources
 - All controllers expect authenticated users via middleware
+- Controllers support both HTML responses (traditional form submissions) and JSON responses (AJAX with `X-Async-Request` header)
+- When `X-Async-Request` header present, return JSON `{success: true/false, ...}`
+- When AJAX form submission occurs, DO NOT return rendered HTML - only JSON
+- For regular form submissions (non-AJAX), redirect or render HTML as normal
 
 **Routes** (`routes/`):
 - Define URL endpoints and map to controllers
@@ -267,6 +271,292 @@ Both the dashboard (`views/dashboard.ejs`) and trip detail page (`views/trips/tr
 - Initial load and subsequent data refreshes use identical JavaScript code
 - Reference implementation: `public/js/sidebar-loader.js`
 
+## Frontend Architecture & AJAX Patterns
+
+### Frontend JavaScript Organization (`public/js/`)
+
+The frontend uses modular JavaScript files organized by functionality:
+
+**Core Modules:**
+- `sidebar-loader.js` - Handles secondary/tertiary sidebar AJAX loading and history navigation
+- `async-form-handler.js` - Core async form submission handler for all item CRUD operations
+- `trip-view-sidebar.js` - Trip view specific sidebar controls (edit item, add item menu)
+- `main.js` - General UI interactions and event delegation
+- `event-delegation.js` - Event delegation patterns for dynamic content
+
+**Utility Modules:**
+- `form-utilities.js` - Shared form utility functions (date sync, timezone inference)
+- `time-input-formatter.js` - Format time inputs (HH:MM validation)
+- `datetime-formatter.js` - Client-side date/time formatting utilities
+- `airport-autocomplete.js` - Airport search autocomplete for flight forms
+- `maps.js` - Consolidated map implementation for trip visualization
+- `calendar.js` - Calendar and date picker functionality
+
+### Item CRUD Pattern (Flights, Hotels, Transportation, Car Rentals, Events)
+
+**Add/Edit Pattern:**
+1. User clicks "Add Item" or "Edit Item" button (onclick handler calls `editItem()` or `showAddForm()`)
+2. JavaScript calls `loadSidebarContent(formUrl)` to fetch the form via AJAX
+3. Form HTML loads into secondary sidebar
+4. Form includes `setupAsyncFormSubmission(formId)` to intercept form submissions
+5. On form submit: data is serialized and sent via `fetch()` with `X-Async-Request` header
+6. Server returns JSON response with `{success: true}`
+7. Client automatically calls `refreshTripView()` (for trip items) or `refreshDashboardSidebar()` (for standalone)
+8. Sidebar and map update without page reload
+
+**Key Files:**
+- Form handling: `public/js/async-form-handler.js:setupAsyncFormSubmission()`
+- Refresh logic: `public/js/async-form-handler.js:refreshTripView()` and `refreshDashboardSidebar()`
+
+**Delete Pattern:**
+1. User clicks "Delete" button in edit form
+2. Calls `deleteItem(type, id, itemName)` directly (no confirmation)
+3. Sends DELETE request via `fetch()` with `X-Async-Request` header
+4. Server deletes and returns OK response
+5. Client calls `closeSecondarySidebar()` then `refreshTripView()` or `refreshDashboardSidebar()`
+6. Sidebar updates with deleted item removed
+
+### Form Submission Flow
+
+**File:** `public/js/async-form-handler.js:setupAsyncFormSubmission()`
+
+1. **Intercept form submit** - Prevent default form submission
+2. **Combine date/time fields** - Convert separate date/time inputs into ISO datetime strings
+3. **Send AJAX request** - POST/PUT to form action with JSON body
+4. **Handle response** - Check for `response.ok` and `result.success`
+5. **Refresh views** - Call appropriate refresh function based on context
+
+**Important:** Trip items detected by checking `window.tripId` or hidden `tripId` form field. If no tripId, treated as standalone item.
+
+### Sidebar Content Refresh Pattern
+
+**Trip View Refresh (`refreshTripView`):**
+1. Fetch updated trip data from `/trips/{tripId}/api` as JSON
+2. Fetch updated sidebar HTML from `/trips/{tripId}/sidebar`
+3. Update `window.tripData` with fresh data
+4. Replace `.sidebar-content` innerHTML with new HTML
+5. Execute any scripts in the loaded content
+6. Call `refreshMapIfPresent()` to update map with new data
+
+**Dashboard Refresh (`refreshDashboardSidebar`):**
+1. Detect active dashboard tab (upcoming/past/settings)
+2. Fetch updated sidebar HTML from `/dashboard/primary-sidebar?activeTab={activeTab}`
+3. Replace `.sidebar-content` innerHTML
+4. Execute any scripts in the loaded content
+5. Restore active tab styling
+6. Fetch dashboard data from `/dashboard/api?activeTab={activeTab}` as JSON
+7. Update `window.tripData` with fresh data
+8. Call `refreshMapIfPresent()` to update map
+
+### Event Bus Pattern
+
+**File:** `public/js/eventBus.js`
+
+The application uses an event bus for cross-component communication:
+
+```javascript
+// Emit events
+eventBus.emit(EventTypes.SIDEBAR_CONTENT_LOADED, { url, fullWidth: true });
+eventBus.emit(EventTypes.DATA_SYNCED, { type: 'dashboard', activeTab: 'upcoming' });
+
+// Listen for events
+eventBus.on(EventTypes.SIDEBAR_OPENED, (data) => { /* ... */ });
+eventBus.on(EventTypes.SIDEBAR_CLOSED, (data) => { /* ... */ });
+```
+
+**Common Event Types:**
+- `SIDEBAR_CONTENT_LOADED` - Emitted after sidebar content loads
+- `SIDEBAR_OPENED` - Secondary sidebar opened
+- `SIDEBAR_CLOSED` - Secondary sidebar closed
+- `SIDEBAR_HISTORY_CHANGED` - Sidebar history navigation occurred
+- `DATA_SYNCED` - Data refreshed after CRUD operation
+
+### Global Functions Exposed to Window
+
+These functions are available globally for use in inline onclick handlers and other contexts:
+
+**Sidebar Control:**
+- `loadSidebarContent(url, options)` - Load content into secondary sidebar
+- `closeSecondarySidebar()` / `openSecondarySidebar()` - Control secondary sidebar
+- `closeTertiarySidebar()` / `openTertiarySidebar()` - Control tertiary sidebar
+- `goBackInSidebar()` - Navigate back in sidebar history
+
+**Item CRUD:**
+- `editItem(type, id)` - Load edit form for item
+- `showAddForm(type, isStandalone)` - Load add form for item
+- `showAddFormWithLayoverDates(type, arrivalDT, departureDT, tz)` - Add form with pre-filled dates
+- `deleteItem(type, id, itemName)` - Delete item asynchronously
+
+**Form Handling:**
+- `setupAsyncFormSubmission(formId)` - Setup async submission for form
+- `refreshTripView()` - Refresh trip sidebar and map
+- `refreshDashboardSidebar()` - Refresh dashboard sidebar and map
+
+### No User Feedback Pattern
+
+**Important Architectural Decision:**
+- **No confirmation dialogs** - All CRUD operations (edit, delete) execute immediately without user confirmation
+- **No success notifications** - Operations complete silently
+- **No error notifications** - Errors are silently handled (don't disrupt user)
+- **Exception:** Only use alerts/confirms temporarily for debugging, remove immediately
+
+This pattern keeps the UI clean and uncluttered while maintaining smooth interactions. Users can undo deletions through the soft-delete or recovery mechanism if one exists.
+
+
+## Backend API Patterns
+
+### AJAX Request Detection
+
+Controllers can detect AJAX requests using the `X-Async-Request` header:
+
+```javascript
+const isAsyncRequest = req.get('X-Async-Request') === 'true';
+
+if (isAsyncRequest) {
+  // Return JSON for AJAX
+  return res.json({ success: true, id: item.id });
+} else {
+  // Traditional response (redirect, render HTML)
+  res.redirect(`/trips/${tripId}`);
+}
+```
+
+### Sidebar Content Requests
+
+Sidebar requests use the `X-Sidebar-Request` header and should return rendered partial HTML:
+
+```javascript
+const isSidebarRequest = req.get('X-Sidebar-Request') === 'true';
+
+if (isSidebarRequest) {
+  // Return HTML partial for sidebar
+  res.send(html);
+}
+```
+
+### Response Format for AJAX Forms
+
+When receiving AJAX form submissions, return JSON with this format:
+
+```javascript
+// Success
+res.json({
+  success: true,
+  id: item.id,
+  // other data as needed
+})
+
+// Error
+res.status(400).json({
+  success: false,
+  error: 'Validation failed'
+})
+```
+
+### Trip Items vs Standalone Items
+
+The system distinguishes between:
+- **Trip Items** - Flights, Hotels, etc. attached to a trip (have `tripId`)
+- **Standalone Items** - Items not attached to a trip (no `tripId`)
+
+When processing forms:
+1. Check if `tripId` is provided in request (form field, body, or URL)
+2. If present: associate item with trip, refresh trip view
+3. If absent: create standalone item, refresh dashboard
+
+## File Organization Guide
+
+### Adding a New Item Type
+
+To add a new item type (e.g., "Restaurant Reservation"):
+
+1. **Create Model** - `models/Restaurant.js` with associations
+2. **Create Controller** - `controllers/restaurantController.js` with CRUD methods
+3. **Create Routes** - `routes/restaurants.js` with endpoints
+4. **Create Views** - `views/partials/restaurant-form.ejs` for edit/add forms
+5. **Add to Trip Sidebar** - Update `views/partials/trip-sidebar-content.ejs` to display
+6. **Update Associations** - Add `Restaurant` to Trip model associations
+7. **Create Tests** - `tests/unit/models/Restaurant.test.js`, etc.
+
+### Form File Organization
+
+All item forms follow consistent naming and structure:
+
+- **Add Mode** - `isAddMode = !isEditing` (true when creating)
+- **Edit Mode** - `isAddMode = !isEditing` (false when updating)
+- **Form IDs** - `addFlightForm` / `editFlightForm` pattern
+- **Submit Button** - Text changes based on mode: "Add Flight" vs "Update Flight"
+- **Delete Button** - Only shown in edit mode
+
+### JavaScript Module Pattern
+
+Frontend modules use the following structure:
+
+```javascript
+// 1. Imports
+import { eventBus, EventTypes } from './eventBus.js';
+
+// 2. Global state/functions
+let currentState = null;
+
+// 3. Private functions (not exposed to window)
+function privateHelper() { /* ... */ }
+
+// 4. Public functions
+function publicFunction() { /* ... */ }
+
+// 5. Event listeners
+document.addEventListener('DOMContentLoaded', init);
+
+// 6. Expose to global window
+window.publicFunction = publicFunction;
+```
+
+## Common Development Patterns
+
+### When to Use Each File
+
+**Use `async-form-handler.js` for:**
+- Form submission interception
+- Serializing form data to JSON
+- Handling form response
+- Triggering view refresh
+
+**Use `sidebar-loader.js` for:**
+- Loading arbitrary content into sidebars
+- Managing sidebar history
+- Executing scripts in loaded content
+- Opening/closing sidebars
+
+**Use `trip-view-sidebar.js` for:**
+- Trip-specific sidebar operations
+- Item edit/add form loading
+- Trip context management
+
+**Use `event-delegation.js` for:**
+- Dynamic event handling
+- Event bubbling patterns
+- Click delegation for dynamically loaded content
+
+### Date Handling
+
+**Backend (server.js/models):**
+- All dates stored in UTC/GMT-0
+- Sequelize uses ISO format (YYYY-MM-DDTHH:mm:ss.sssZ)
+- Use `formatDate()` helper when displaying
+
+**Frontend (JavaScript):**
+- Use `datetime-formatter.js` for timezone-aware formatting
+- Display format: "DD MMM YYYY" (e.g., "15 Oct 2025")
+- Time format: "HH:MM" 24-hour (e.g., "14:30")
+- Timezone info stored in item data (e.g., `originTimezone`, `timezone`)
+
+### API Response Headers
+
+Always check these headers in controllers:
+- `X-Async-Request: true` - AJAX form submission, return JSON
+- `X-Sidebar-Request: true` - Sidebar content request, return HTML partial
+- `Content-Type: application/json` - Request body is JSON (check with `req.body`)
 
 ## Travel Vouchers & Credits System
 
@@ -470,6 +760,199 @@ Before committing code:
 - [ ] No decrease in coverage percentages
 - [ ] New code has corresponding tests
 - [ ] Tests are readable and maintainable
+- [ ] No `alert()` or `confirm()` calls in code (except temporary debugging)
+- [ ] All AJAX operations silently fail (no error notifications)
+
+## Debugging & Common Gotchas
+
+### Debugging Async Operations
+
+**Problem:** Form submission or item deletion not updating sidebar
+
+**Check these:**
+1. Is `X-Async-Request` header being sent? (Check browser DevTools Network tab)
+2. Is server returning `{success: true}` in JSON response?
+3. Is the correct `tripId` being detected? (Check `window.tripId` in console)
+4. Are form field IDs correct? (Should match expected names for date/time combination)
+5. Is `setupAsyncFormSubmission()` being called for the form?
+
+**Debug steps:**
+```javascript
+// In browser console, check global state
+console.log('tripId:', window.tripId);
+console.log('tripData:', window.tripData);
+
+// Check if functions are available
+console.log('deleteItem:', typeof deleteItem);
+console.log('refreshTripView:', typeof refreshTripView);
+```
+
+### Common Issues
+
+**Issue: Edit form loads but submit doesn't work**
+- Check that `setupAsyncFormSubmission(formId)` is called with correct form ID
+- Verify form IDs match: `addFlightForm`, `editFlightForm`, etc.
+- Check that form `action` attribute is set correctly
+
+**Issue: Sidebar closes but view doesn't refresh**
+- Check browser console for errors
+- Verify server returned successful response
+- Check that `tripId` is correctly set
+- Ensure `/trips/{tripId}/sidebar` or `/dashboard/primary-sidebar` endpoints exist
+
+**Issue: Date/time fields not submitting correctly**
+- Form handler combines `departureDate` + `departureTime` into `departureDateTime`
+- Check form field names match expected convention
+- Ensure time format is HH:MM (24-hour)
+- Verify timezone fields are being set
+
+**Issue: Companion selector not loading in form**
+- Check that `initializeItemCompanions()` is being called
+- Verify companions module is loaded via `loadCompanions()`
+- Check that `window.tripId` is set before initializing
+- Check browser console for companion loading errors
+
+### Performance Considerations
+
+- **AJAX Requests:** All major operations use AJAX to avoid full page reloads
+- **Event Delegation:** Use event delegation for dynamically loaded content instead of re-binding
+- **Script Execution:** After loading content, execute scripts in loaded content only (don't re-load global scripts)
+- **Cache:** Maps and views are refreshed after data changes to keep UI in sync
+
+### When Adding New Features
+
+1. **Check if async pattern exists** - Follow existing CRUD pattern if possible
+2. **Use window functions** - Expose necessary functions to window for inline handlers
+3. **Avoid alerts/confirms** - Always fail silently, let UI update naturally
+4. **Test AJAX flow** - Verify with browser DevTools that requests/responses are correct
+5. **Update CLAUDE.md** - Document the pattern you implemented for future reference
+
+## EJS Template Consolidation & Best Practices
+
+### Script Consolidation Patterns
+
+**Problem:** Duplicated script loading logic across multiple form templates
+
+**Solution:** Use centralized loader modules for common patterns
+
+### Form Script Loading Pattern - Use `form-loader.js`
+
+**File:** `public/js/form-loader.js`
+
+Instead of each form template having its own script loading logic, use the centralized loader:
+
+**Before (duplicated in each form):**
+```html
+<script>
+if (!window.formUtilitiesLoaded) {
+  const formUtilitiesScript = document.createElement('script');
+  formUtilitiesScript.src = '/js/form-utilities.js';
+  formUtilitiesScript.onload = function() {
+    window.formUtilitiesLoaded = true;
+    initializeFlightForm();
+  };
+  document.head.appendChild(formUtilitiesScript);
+} else {
+  initializeFlightForm();
+}
+</script>
+```
+
+**After (consolidated in form-loader.js):**
+```html
+<script src="/js/form-loader.js"></script>
+<script>setupFlightFormInit();</script>
+```
+
+**Apply to all item forms:**
+- `flight-form.ejs` - `setupFlightFormInit()`
+- `hotel-form.ejs` - `setupHotelFormInit()`
+- `transportation-form.ejs` - `setupTransportationFormInit()`
+- `car-rental-form.ejs` - `setupCarRentalFormInit()`
+- `event-form.ejs` - `setupEventFormInit()`
+
+### Form Initialization Functions
+
+Each form still has its own `initializeForm()` function for form-specific logic, but the module loading is consolidated:
+
+```javascript
+// In form template
+function initializeFlightForm() {
+  // Form-specific initialization
+  initializeDateSync('input[name="departureDate"]', 'input[name="arrivalDate"]');
+  initializeOriginDestTimezoneInference(...);
+  // ... flight-specific setup
+}
+```
+
+### Guidelines for EJS JavaScript
+
+**When to keep inline:**
+- Event handler registration for dynamically loaded content
+- Form-specific initialization logic
+- Small utility functions under 50 lines
+
+**When to extract to external file:**
+- Duplicated functionality across multiple templates
+- Reusable logic patterns (200+ lines of similar code)
+- Third-party library initialization patterns
+
+**Current Extracted Patterns:**
+- Form module loading → `form-loader.js`
+- Form submission handling → `async-form-handler.js`
+- Sidebar content loading → `sidebar-loader.js`
+- Flight form utilities → `form-utilities.js`
+
+### No Alerts/Confirms Policy in EJS Templates
+
+**Rule:** Never use `alert()` or `confirm()` in EJS templates
+
+**Instead:**
+- Silent failures with error recovery
+- UI state changes to show operation results
+- Automatic data reloads to reflect changes
+
+**Example:**
+```javascript
+// BAD - has confirm()
+async function deleteItem(id) {
+  if (!confirm('Are you sure?')) return;  // ❌ No alerts/confirms
+  const response = await fetch(`/item/${id}`, { method: 'DELETE' });
+  alert('Item deleted');  // ❌ No alerts
+}
+
+// GOOD - silent operation
+async function deleteItem(id) {
+  try {
+    const response = await fetch(`/item/${id}`, { method: 'DELETE' });
+    if (response.ok) {
+      loadCompanionData();  // Silently reload data
+    }
+  } catch (error) {
+    // Silently fail on error
+  }
+}
+```
+
+### When to Consolidate EJS JavaScript
+
+**Watch for patterns that indicate consolidation opportunity:**
+1. Same module loading logic in 3+ templates
+2. Similar fetch/AJAX patterns repeating
+3. Nearly identical rendering functions
+4. Event handler setup that's nearly identical
+
+**Process:**
+1. Extract common code into new module file in `/public/js/`
+2. Add centralized function that templates can call
+3. Update all templates to use the new function
+4. Remove duplicated script tags from templates
+5. Document the new pattern in CLAUDE.md
+
+### Current Consolidations (2024)
+- ✅ Form module loading (`form-loader.js`)
+- ✅ Alert/confirm removal from companion management files
+- 🔄 Consider extracting common companion loading patterns to dedicated module if more duplicate code is discovered
 
 ### CI/CD Integration
 
@@ -484,3 +967,4 @@ Tests run automatically in GitHub Actions on:
 - Every pull request
 - trip items are independant items and do not require to be attached to a trip. Attaching to a trip is optional.
 - all changes to existing functionality and new features added should follow the architechture guidelines set out in claude.md
+- Never use javascript alert() or confirm() functions. The only exception to this is temporary usage to assist in debugging, and they should be removed immediately after the feature is working.
