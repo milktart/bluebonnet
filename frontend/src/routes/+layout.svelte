@@ -4,7 +4,6 @@
   import { authStore, authStoreActions } from '$lib/stores/authStore';
   import MapLayout from '$lib/components/MapLayout.svelte';
   import DebugInfo from '$lib/components/DebugInfo.svelte';
-  import '../app.css';
 
   // Debug logging
   console.log('Layout component loaded');
@@ -49,6 +48,7 @@
   <title>Bluebonnet - Travel Planner</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script src="https://cdn.tailwindcss.com"></script>
 </svelte:head>
 
 <!-- Map-based UI for all trip-related views -->
