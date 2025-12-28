@@ -17,7 +17,7 @@
         </div>
         <span class="text-lg font-semibold text-gray-900">Travel Planner</span>
       </div>
-      <a href="/auth/login" class="inline-flex items-center px-4 py-2 rounded-md bg-blue-600 text-sm font-semibold text-white hover:bg-blue-500 transition-colors duration-200">
+      <a href="/login" class="inline-flex items-center px-4 py-2 rounded-md bg-blue-600 text-sm font-semibold text-white hover:bg-blue-500 transition-colors duration-200">
         Log In
       </a>
     </div>
@@ -51,7 +51,7 @@
         </p>
 
         <div class="mt-10 flex items-center justify-center gap-x-6">
-          <a href="/auth/login" class="rounded-md bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-all duration-200">
+          <a href="/login" class="rounded-md bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-all duration-200">
             Start Planning
           </a>
           <a href="#features" class="text-sm font-semibold leading-6 text-gray-900 hover:text-blue-600 transition-colors duration-200">
