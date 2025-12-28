@@ -3,16 +3,44 @@
   import { onMount } from 'svelte';
   import { authStore, authStoreActions } from '$lib/stores/authStore';
   import MapLayout from '$lib/components/MapLayout.svelte';
+  import DebugInfo from '$lib/components/DebugInfo.svelte';
   import '../app.css';
 
+  // Debug logging
+  console.log('Layout component loaded');
+  console.log('Current route:', $page.route);
+  console.log('Page URL:', $page.url);
+
   // Check if current page is a map-based route
-  $: isMapView = $page.route.id?.startsWith('/(map)') ||
+  $: {
+    console.log('Route ID updated:', $page.route.id);
+    isMapView = $page.route.id?.startsWith('/(map)') ||
                  $page.route.id === '/trips/map' ||
                  $page.route.id?.includes('[tripId]');
+    console.log('Is map view:', isMapView);
+  }
+
+  let isMapView = false;
 
   onMount(() => {
+    console.log('Layout mounted');
+    // Check if CSS is loaded
+    const styles = document.styleSheets;
+    console.log('Total stylesheets:', styles.length);
+    for (let i = 0; i < styles.length; i++) {
+      try {
+        console.log(`Stylesheet ${i}:`, styles[i].href || 'inline');
+      } catch (e) {
+        console.log(`Stylesheet ${i}: (CORS protected)`);
+      }
+    }
+
+    // Check computed styles on body
+    const bodyStyles = window.getComputedStyle(document.body);
+    console.log('Body background:', bodyStyles.backgroundColor);
+    console.log('Body color:', bodyStyles.color);
+
     // Restore authentication state from localStorage on app load
-    // This ensures the user stays logged in even after page refresh
     authStoreActions.restoreFromStorage();
   });
 </script>
@@ -34,6 +62,8 @@
     </main>
   </div>
 {/if}
+
+<DebugInfo />
 
 <style global>
   :global(* ) {

@@ -1,4 +1,46 @@
 <script>
+  import { onMount } from 'svelte';
+
+  onMount(() => {
+    console.log('Landing page mounted');
+
+    // Check all elements with Tailwind classes
+    const navElement = document.querySelector('nav');
+    if (navElement) {
+      const computed = window.getComputedStyle(navElement);
+      console.log('Nav element found');
+      console.log('Nav background:', computed.backgroundColor);
+      console.log('Nav border:', computed.borderBottom);
+    }
+
+    // Check if app.css loaded
+    console.log('Checking for CSS in head:');
+    const links = document.head.querySelectorAll('link[rel="stylesheet"]');
+    console.log('Stylesheet links:', links.length);
+    links.forEach((link, i) => {
+      console.log(`  Link ${i}:`, link.href);
+    });
+
+    // Check computed styles on first nav child
+    const navChild = document.querySelector('nav > div');
+    if (navChild) {
+      const computed = window.getComputedStyle(navChild);
+      console.log('Nav > div padding:', computed.padding);
+      console.log('Nav > div margin-left:', computed.marginLeft);
+      console.log('Nav > div margin-right:', computed.marginRight);
+    }
+
+    // Log all class names on nav
+    if (navElement) {
+      console.log('Nav classes:', navElement.className);
+      const allElements = document.querySelectorAll('[class]');
+      console.log('Total elements with classes:', allElements.length);
+      console.log('First 5 elements with classes:');
+      for (let i = 0; i < Math.min(5, allElements.length); i++) {
+        console.log(`  ${allElements[i].tagName}: ${allElements[i].className.substring(0, 100)}`);
+      }
+    }
+  });
 </script>
 
 <svelte:head>
