@@ -4,6 +4,16 @@
   onMount(() => {
     console.log('Landing page mounted');
 
+    // Check scroll and click behavior
+    console.log('Body scrollHeight:', document.body.scrollHeight);
+    console.log('Body clientHeight:', document.body.clientHeight);
+    console.log('Body overflow-y:', window.getComputedStyle(document.body).overflowY);
+
+    const html = document.documentElement;
+    console.log('HTML scrollHeight:', html.scrollHeight);
+    console.log('HTML clientHeight:', html.clientHeight);
+    console.log('Body pointer-events:', window.getComputedStyle(document.body).pointerEvents);
+
     // Check all elements with Tailwind classes
     const navElement = document.querySelector('nav');
     if (navElement) {
@@ -11,6 +21,7 @@
       console.log('Nav element found');
       console.log('Nav background:', computed.backgroundColor);
       console.log('Nav border:', computed.borderBottom);
+      console.log('Nav pointer-events:', computed.pointerEvents);
     }
 
     // Check if app.css loaded
@@ -30,6 +41,16 @@
       console.log('Nav > div margin-right:', computed.marginRight);
     }
 
+    // Check main element
+    const mainElement = document.querySelector('main');
+    if (mainElement) {
+      const mainComputed = window.getComputedStyle(mainElement);
+      console.log('Main element height:', mainComputed.height);
+      console.log('Main element min-height:', mainComputed.minHeight);
+      console.log('Main element overflow:', mainComputed.overflow);
+      console.log('Main element pointer-events:', mainComputed.pointerEvents);
+    }
+
     // Log all class names on nav
     if (navElement) {
       console.log('Nav classes:', navElement.className);
@@ -40,6 +61,17 @@
         console.log(`  ${allElements[i].tagName}: ${allElements[i].className.substring(0, 100)}`);
       }
     }
+
+    // Try clicking on elements
+    setTimeout(() => {
+      console.log('Testing click on nav...');
+      const loginButton = document.querySelector('a[href="/login"]');
+      if (loginButton) {
+        console.log('Found login button, testing click...');
+        const clickEvent = new MouseEvent('click', { bubbles: true });
+        loginButton.dispatchEvent(clickEvent);
+      }
+    }, 100);
   });
 </script>
 

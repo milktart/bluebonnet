@@ -31,8 +31,13 @@
     const allElements = document.querySelectorAll('[class]');
     let tailwindCount = 0;
     allElements.forEach(el => {
-      if (el.className.includes('bg-') || el.className.includes('text-') || el.className.includes('px-')) {
-        tailwindCount++;
+      try {
+        const className = typeof el.className === 'string' ? el.className : (el.getAttribute('class') || '');
+        if (className.includes('bg-') || className.includes('text-') || className.includes('px-')) {
+          tailwindCount++;
+        }
+      } catch (e) {
+        // Ignore errors
       }
     });
     debugInfo.tailwindClasses = tailwindCount;
@@ -63,7 +68,7 @@
   });
 </script>
 
-<div style="position: fixed; bottom: 10px; right: 10px; background: #222; color: #0f0; padding: 10px; font-family: monospace; font-size: 11px; max-width: 400px; max-height: 300px; overflow-y: auto; z-index: 9999; border: 1px solid #0f0;">
+<div style="position: fixed; bottom: 10px; right: 10px; background: #222; color: #0f0; padding: 10px; font-family: monospace; font-size: 11px; max-width: 400px; max-height: 300px; overflow-y: auto; z-index: 9999; border: 1px solid #0f0; pointer-events: auto;">
   <div style="margin-bottom: 5px;"><strong>=== DEBUG INFO ===</strong></div>
   <div>Page: {debugInfo.pageTitle}</div>
   <div>Stylesheets: {debugInfo.stylesheets.length}</div>
