@@ -96,8 +96,10 @@ const sessionConfig = {
   cookie: {
     maxAge: parseInt(process.env.SESSION_MAX_AGE, 10) || MS_PER_DAY, // 24 hours default
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // Use secure cookies in production (HTTPS)
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Allow cross-site in production
+    // In development, allow cross-site cookies without requiring secure
+    // In production, use secure + sameSite: none for cross-site access
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : false, // false = no sameSite restriction (allows cookies to be sent in development)
   },
 };
 
@@ -255,23 +257,23 @@ app.get('/health', async (req, res) => {
   res.status(statusCode).json(health);
 });
 
-// Rate limiting middleware (Phase 3)
-const { authLimiter, apiLimiter, formLimiter } = require('./middleware/rateLimiter');
+// Rate limiting middleware disabled for development
+// const { authLimiter, apiLimiter, formLimiter } = require('./middleware/rateLimiter');
 
 // Routes
 app.use('/', require('./routes/index'));
-app.use('/auth', authLimiter, require('./routes/auth')); // Rate limit auth routes
+app.use('/auth', require('./routes/auth')); // Rate limiting disabled
 app.use('/account', require('./routes/account'));
 app.use('/companions', require('./routes/companions'));
 app.use('/companion-relationships', require('./routes/companionRelationships'));
-app.use('/api', apiLimiter, require('./routes/api')); // Rate limit API routes
+app.use('/api', require('./routes/api')); // Rate limiting disabled
 app.use('/trips', require('./routes/trips'));
 app.use('/trip-invitations', require('./routes/tripInvitations'));
-app.use('/flights', formLimiter, require('./routes/flights')); // Rate limit form submissions
-app.use('/hotels', formLimiter, require('./routes/hotels'));
-app.use('/transportation', formLimiter, require('./routes/transportation'));
-app.use('/car-rentals', formLimiter, require('./routes/carRentals'));
-app.use('/events', formLimiter, require('./routes/events'));
+app.use('/flights', require('./routes/flights')); // Rate limiting disabled
+app.use('/hotels', require('./routes/hotels'));
+app.use('/transportation', require('./routes/transportation'));
+app.use('/car-rentals', require('./routes/carRentals'));
+app.use('/events', require('./routes/events'));
 app.use('/vouchers', require('./routes/vouchers'));
 
 // Error handling middleware (Phase 3)

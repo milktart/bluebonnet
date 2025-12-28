@@ -11,6 +11,15 @@ const { ensureAuthenticated } = require('../../../middleware/auth');
 
 const router = express.Router();
 
+// Handle CORS preflight requests
+router.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.get('Origin') || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(200);
+});
+
 // All trip routes require authentication
 router.use(ensureAuthenticated);
 
@@ -22,6 +31,7 @@ router.use(ensureAuthenticated);
 router.get('/', async (req, res) => {
   try {
     const { filter = 'upcoming', page = 1, limit = 20 } = req.query;
+    console.log('[API v1/trips] GET / - userId:', req.user.id, 'filter:', filter);
 
     const result = await tripService.getUserTrips(req.user.id, {
       filter,
@@ -29,11 +39,24 @@ router.get('/', async (req, res) => {
       limit: parseInt(limit, 10),
     });
 
-    // Combine owned and companion trips
-    const trips = [...result.ownedTrips, ...result.companionTrips];
+    console.log('[API v1/trips] Retrieved trips - owned:', result.ownedTrips.length, 'companions:', result.companionTrips.length);
+
+    // Combine owned and companion trips, removing duplicates
+    const tripIds = new Set();
+    const trips = [];
+
+    [...result.ownedTrips, ...result.companionTrips].forEach(trip => {
+      if (!tripIds.has(trip.id)) {
+        tripIds.add(trip.id);
+        trips.push(trip);
+      }
+    });
+
+    console.log('[API v1/trips] Combined trips (after deduplication):', trips.length);
 
     // If past trips with pagination, return paginated response
     if (filter === 'past' && result.pagination.totalPages > 1) {
+      console.log('[API v1/trips] Returning paginated response');
       return apiResponse.paginated(
         res,
         trips,
@@ -42,6 +65,7 @@ router.get('/', async (req, res) => {
       );
     }
 
+    console.log('[API v1/trips] Returning success response with', trips.length, 'trips');
     return apiResponse.success(
       res,
       {
@@ -51,6 +75,7 @@ router.get('/', async (req, res) => {
       `Retrieved ${trips.length} ${filter} trips`
     );
   } catch (error) {
+    console.error('[API v1/trips] Error:', error.message, error.stack);
     return apiResponse.internalError(res, 'Failed to retrieve trips', error);
   }
 });
@@ -113,13 +138,13 @@ router.get('/:id', async (req, res) => {
  */
 router.post('/', async (req, res) => {
   try {
-    const { name, destination, departureDate } = req.body;
+    const { name, departureDate, returnDate } = req.body;
 
     // Basic validation
-    if (!name || !destination || !departureDate) {
+    if (!name || !departureDate) {
       return apiResponse.badRequest(
         res,
-        'Missing required fields: name, destination, departureDate'
+        'Missing required fields: name, departureDate'
       );
     }
 

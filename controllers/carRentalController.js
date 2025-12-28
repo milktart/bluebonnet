@@ -108,7 +108,7 @@ exports.createCarRental = async (req, res) => {
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
-      return res.json({ success: true, message: 'Car rental added successfully' });
+      return res.json({ success: true, data: carRental, message: 'Car rental added successfully' });
     }
 
     redirectAfterSuccess(res, req, tripId, 'carRentals', 'Car rental added successfully');

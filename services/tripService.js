@@ -150,11 +150,9 @@ class TripService extends BaseService {
       order: [['departureDate', orderDirection]],
     });
 
-    // Get standalone items (for upcoming/past filters)
+    // Get standalone items (always fetch them, filter determines which ones)
     let standaloneItems = {};
-    if (filter !== 'all') {
-      standaloneItems = await this.getStandaloneItems(userId, dateFilter);
-    }
+    standaloneItems = await this.getStandaloneItems(userId, dateFilter);
 
     // Calculate pagination metadata
     const pagination = {
@@ -165,9 +163,10 @@ class TripService extends BaseService {
       hasPrevPage: filter === 'past' && page > 1,
     };
 
+    // Convert trips to plain JSON objects to ensure associated items are serialized
     const result = {
-      ownedTrips,
-      companionTrips,
+      ownedTrips: ownedTrips.map(trip => trip.toJSON()),
+      companionTrips: companionTrips.map(trip => trip.toJSON()),
       standalone: standaloneItems,
       pagination,
     };
@@ -182,7 +181,7 @@ class TripService extends BaseService {
    * Get standalone items (not associated with trips)
    * @param {string} userId - User ID
    * @param {Object} dateFilter - Sequelize date filter
-   * @returns {Promise<Object>} { flights, events }
+   * @returns {Promise<Object>} { flights, hotels, transportation, carRentals, events }
    */
   async getStandaloneItems(userId, dateFilter = {}) {
     logger.debug(`${this.modelName}: Getting standalone items for user ${userId}`);
@@ -196,6 +195,33 @@ class TripService extends BaseService {
       order: [['departureDateTime', 'ASC']],
     });
 
+    const hotels = await Hotel.findAll({
+      where: {
+        userId,
+        tripId: null,
+        ...(dateFilter.departureDate && { checkOutDateTime: dateFilter.departureDate }),
+      },
+      order: [['checkInDateTime', 'ASC']],
+    });
+
+    const transportation = await Transportation.findAll({
+      where: {
+        userId,
+        tripId: null,
+        ...(dateFilter.departureDate && { departureDateTime: dateFilter.departureDate }),
+      },
+      order: [['departureDateTime', 'ASC']],
+    });
+
+    const carRentals = await CarRental.findAll({
+      where: {
+        userId,
+        tripId: null,
+        ...(dateFilter.departureDate && { dropoffDateTime: dateFilter.departureDate }),
+      },
+      order: [['pickupDateTime', 'ASC']],
+    });
+
     const events = await Event.findAll({
       where: {
         userId,
@@ -205,7 +231,7 @@ class TripService extends BaseService {
       order: [['startDateTime', 'ASC']],
     });
 
-    return { flights, events };
+    return { flights, hotels, transportation, carRentals, events };
   }
 
   /**
@@ -233,7 +259,8 @@ class TripService extends BaseService {
       return null;
     }
 
-    return trip;
+    // Convert to plain JSON object to ensure associated items are serialized
+    return trip.toJSON();
   }
 
   /**

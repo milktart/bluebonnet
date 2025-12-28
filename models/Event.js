@@ -39,10 +39,6 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: false, // Location is required for events
       },
-      timezone: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
       lat: {
         type: DataTypes.DECIMAL(10, 7),
         allowNull: true,

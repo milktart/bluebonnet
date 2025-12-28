@@ -6,6 +6,15 @@ const itemCompanionService = require('../services/itemCompanionService');
 const router = express.Router();
 const { ensureAuthenticated } = require('../middleware/auth');
 
+// Allow CORS preflight requests to pass through without authentication
+router.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.get('Origin') || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(200);
+});
+
 // Mount API v1 routes
 const v1Routes = require('./api/v1');
 

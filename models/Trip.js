@@ -25,7 +25,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       returnDate: {
         type: DataTypes.DATEONLY,
-        allowNull: false,
+        allowNull: true,
       },
       defaultCompanionEditPermission: {
         type: DataTypes.BOOLEAN,
@@ -33,9 +33,9 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: false,
       },
       purpose: {
-        type: DataTypes.ENUM('business', 'pleasure', 'other'),
+        type: DataTypes.ENUM('business', 'leisure', 'family', 'romantic', 'adventure', 'pleasure', 'other'),
         allowNull: false,
-        defaultValue: 'pleasure',
+        defaultValue: 'leisure',
       },
       isConfirmed: {
         type: DataTypes.BOOLEAN,
