@@ -15,7 +15,7 @@
   on:click
 >
   {#if loading}
-    <span class="spinner" />
+    <span class="spinner"></span>
   {/if}
   <slot />
 </button>
