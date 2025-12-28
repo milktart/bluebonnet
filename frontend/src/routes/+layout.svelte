@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import { authStore, authStoreActions } from '$lib/stores/authStore';
   import MapLayout from '$lib/components/MapLayout.svelte';
+  import '../app.css';
 
   // Check if current page is a map-based route
   $: isMapView = $page.route.id?.startsWith('/(map)') ||
@@ -20,7 +21,6 @@
   <title>Bluebonnet - Travel Planner</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-  <link href="https://cdn.tailwindcss.com" rel="stylesheet" />
 </svelte:head>
 
 <!-- Map-based UI for all trip-related views -->
