@@ -1,44 +1,36 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import TextInput from './TextInput.svelte';
-  import Button from './Button.svelte';
   import Alert from './Alert.svelte';
-  import Card from './Card.svelte';
-  import Grid from './Grid.svelte';
   import { settingsApi } from '$lib/services/settings';
   import '$lib/styles/form-styles.css';
 
-  export let onAddCompanion: (() => void) | null = null;
-
   let companions: any[] = [];
-  let companionProfiles: any[] = [];
   let loading = true;
   let error: string | null = null;
   let successMessage: string | null = null;
 
-  let showAddForm = false;
-  let formLoading = false;
-  let formData = {
-    email: '',
-    canEdit: false
-  };
-
   onMount(async () => {
     await loadCompanions();
+
+    // Listen for companion update events (after form submission)
+    window.addEventListener('companions-updated', handleCompanionsUpdated);
+
+    return () => {
+      window.removeEventListener('companions-updated', handleCompanionsUpdated);
+    };
   });
+
+  async function handleCompanionsUpdated() {
+    await loadCompanions();
+  }
 
   async function loadCompanions() {
     try {
       loading = true;
       error = null;
-      const response = await settingsApi.getCompanions();
-
-      // Handle response structure: { success: true, companions: [...] }
-      const companionsData = response.companions || response.data || [];
-      companions = Array.isArray(companionsData) ? companionsData : [];
-
-      // Companion profiles (people who added you) would be in: response.profiles or response.companionProfiles
-      companionProfiles = response.profiles || response.companionProfiles || [];
+      const response = await settingsApi.getAllCompanions();
+      companions = response.companions || [];
+      console.log('Loaded companions:', companions);
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to load companions';
     } finally {
@@ -46,57 +38,15 @@
     }
   }
 
-  async function handleAddCompanion() {
-    try {
-      if (!formData.email.trim()) {
-        error = 'Email is required';
-        return;
-      }
-
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        error = 'Please enter a valid email address';
-        return;
-      }
-
-      formLoading = true;
-      error = null;
-
-      const response = await settingsApi.createCompanion({
-        email: formData.email,
-        canEdit: formData.canEdit
-      });
-
-      const newCompanion = response.data || response;
-      companions = [...companions, newCompanion];
-      successMessage = 'Companion added successfully';
-
-      // Reset form
-      formData = { email: '', canEdit: false };
-      showAddForm = false;
-
-      setTimeout(() => {
-        successMessage = null;
-      }, 3000);
-    } catch (err) {
-      error = err instanceof Error ? err.message : 'Failed to add companion';
-    } finally {
-      formLoading = false;
-    }
-  }
-
   async function handleRemoveCompanion(companionId: string) {
-    if (!confirm('Are you sure you want to remove this companion?')) {
-      return;
-    }
-
     try {
-      formLoading = true;
+      loading = true;
       error = null;
 
       await settingsApi.removeCompanion(companionId);
 
-      companions = companions.filter((c) => c.id !== companionId);
       successMessage = 'Companion removed successfully';
+      await loadCompanions();
 
       setTimeout(() => {
         successMessage = null;
@@ -104,40 +54,49 @@
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to remove companion';
     } finally {
-      formLoading = false;
+      loading = false;
     }
   }
 
-  async function handleRevokeProfile(profileId: string) {
-    if (!confirm('Are you sure you want to revoke this companion\'s access to your trips?')) {
-      return;
-    }
-
+  async function handleRevokeAccess(companionId: string) {
     try {
-      formLoading = true;
+      loading = true;
       error = null;
 
-      await settingsApi.revokeCompanionAccess(profileId);
+      await settingsApi.revokeCompanionAccess(companionId);
 
-      companionProfiles = companionProfiles.filter((p) => p.id !== profileId);
       successMessage = 'Companion access revoked successfully';
+      await loadCompanions();
 
       setTimeout(() => {
         successMessage = null;
       }, 3000);
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Failed to revoke companion access';
+      error = err instanceof Error ? err.message : 'Failed to revoke access';
     } finally {
-      formLoading = false;
+      loading = false;
     }
   }
 
-  function handleCancel() {
-    showAddForm = false;
-    formData = { email: '', canEdit: false };
-    error = null;
+  function getDisplayName(companion: any): string {
+    if (companion.firstName && companion.lastName) {
+      return `${companion.firstName} ${companion.lastName.charAt(0)}.`;
+    } else if (companion.firstName) {
+      return companion.firstName;
+    } else if (companion.lastName) {
+      return companion.lastName;
+    }
+    return companion.email;
   }
 
+  function dispatch(event: string, detail: any) {
+    window.dispatchEvent(new CustomEvent(event, { detail }));
+  }
+
+  function handleEditCompanion(companion: any) {
+    // Dispatch event to parent to open edit form
+    dispatch('edit-companion', { companion });
+  }
 </script>
 
 <div class="settings-companions-container">
@@ -154,163 +113,79 @@
       <span class="material-symbols-outlined">hourglass_empty</span>
       <p>Loading companions...</p>
     </div>
-  {:else}
-    <!-- Companions You've Created Section -->
-    <div class="companions-section">
-      <div class="section-header">
-        <h3>Companions You've Added</h3>
-        <Button
-          variant="primary"
-          on:click={() => {
-            if (onAddCompanion) {
-              onAddCompanion();
-            } else {
-              showAddForm = !showAddForm;
-            }
-          }}
-          disabled={formLoading}
-          size="small"
-        >
-          + Add Companion
-        </Button>
-      </div>
-
-      {#if showAddForm}
-        <Card title="Invite Travel Companion">
-          <div class="add-form">
-            <TextInput
-              label="Companion Email"
-              bind:value={formData.email}
-              required={true}
-              type="email"
-              placeholder="email@example.com"
-              autocomplete="new-email"
-              disabled={formLoading}
-            />
-
-            <div class="permission-option">
-              <label for="can-edit">
-                <input
-                  id="can-edit"
-                  type="checkbox"
-                  bind:checked={formData.canEdit}
-                  disabled={formLoading}
-                />
-                Allow editing of trip items
-              </label>
-              <p class="help-text">
-                If unchecked, companion can only view your trips
-              </p>
-            </div>
-
-            <div class="form-actions">
-              <Button
-                variant="primary"
-                on:click={handleAddCompanion}
-                disabled={formLoading}
-                loading={formLoading}
-              >
-                Add Companion
-              </Button>
-              <Button
-                variant="secondary"
-                on:click={handleCancel}
-                disabled={formLoading}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </Card>
-      {/if}
-
-      {#if companions && companions.length > 0}
-        <Grid columns={2} responsive={true} gap="1rem">
+  {:else if companions && companions.length > 0}
+    <div class="table-wrapper">
+      <table class="companions-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th class="center-col">You Invited</th>
+            <th class="center-col">They Invited</th>
+            <th class="actions-col"></th>
+          </tr>
+        </thead>
+        <tbody>
           {#each companions as companion (companion.id)}
-            <Card
-              title={companion.email}
-              subtitle={companion.canEdit ? 'Can edit trips' : 'View only'}
-            >
-              <div class="companion-info">
-                {#if companion.canEdit}
-                  <span class="permission-badge edit">Can edit and delete items</span>
-                {:else}
-                  <span class="permission-badge view">View only</span>
+            <tr>
+              <td class="name-cell">{getDisplayName(companion)}</td>
+              <td class="email-cell">{companion.email}</td>
+              <td class="center-col">
+                {#if companion.youInvited}
+                  <span class="indicator">✓</span>
                 {/if}
+              </td>
+              <td class="center-col">
+                {#if companion.theyInvited}
+                  <span class="indicator">✓</span>
+                {/if}
+              </td>
+              <td class="actions-cell">
+                <div class="actions-group">
+                  {#if companion.youInvited}
+                    <button
+                      class="action-btn edit-btn"
+                      title="Edit companion"
+                      on:click={() => handleEditCompanion(companion)}
+                      disabled={loading}
+                    >
+                      <span class="material-symbols-outlined">edit</span>
+                    </button>
+                    <button
+                      class="action-btn delete-btn"
+                      title="Remove companion"
+                      on:click={() => handleRemoveCompanion(companion.companionId)}
+                      disabled={loading}
+                    >
+                      <span class="material-symbols-outlined">delete</span>
+                    </button>
+                  {/if}
 
-                {#if companion.addedAt}
-                  <p class="added-date">
-                    Added: {new Date(companion.addedAt).toLocaleDateString()}
-                  </p>
-                {/if}
-              </div>
-              <div slot="footer" class="companion-actions">
-                <Button
-                  variant="danger"
-                  on:click={() => handleRemoveCompanion(companion.id)}
-                  disabled={formLoading}
-                >
-                  Remove
-                </Button>
-              </div>
-            </Card>
+                  {#if companion.theyInvited}
+                    <button
+                      class="action-btn revoke-btn"
+                      title="Revoke access"
+                      on:click={() => handleRevokeAccess(companion.companionId)}
+                      disabled={loading}
+                    >
+                      <span class="material-symbols-outlined">block</span>
+                    </button>
+                  {/if}
+                </div>
+              </td>
+            </tr>
           {/each}
-        </Grid>
-      {:else if !showAddForm}
-        <div class="empty-state">
-          <span class="material-symbols-outlined">groups</span>
-          <p>No companions added yet</p>
-        </div>
-      {/if}
+        </tbody>
+      </table>
     </div>
-
-    <!-- Your Companion Profile Section -->
-    {#if companionProfiles && companionProfiles.length > 0}
-      <div class="companions-section profile-section">
-        <h3>Your Companion Profiles</h3>
-        <p class="section-description">
-          People who have added you as a travel companion. They can see trips they've included you in.
-        </p>
-
-        <Grid columns={2} responsive={true} gap="1rem">
-          {#each companionProfiles as profile (profile.id)}
-            <Card
-              title={profile.name || 'Companion'}
-              subtitle={`Added by ${profile.creator?.firstName || ''} ${profile.creator?.lastName || ''}`}
-            >
-              <div class="profile-info">
-                {#if profile.creator?.email}
-                  <p class="creator-email">
-                    <span class="material-symbols-outlined">email</span>
-                    {profile.creator.email}
-                  </p>
-                {/if}
-
-                {#if profile.createdAt}
-                  <p class="added-date">
-                    Added: {new Date(profile.createdAt).toLocaleDateString()}
-                  </p>
-                {/if}
-              </div>
-              <div slot="footer" class="profile-actions">
-                <Button
-                  variant="danger"
-                  on:click={() => handleRevokeProfile(profile.id)}
-                  disabled={formLoading}
-                >
-                  Revoke Access
-                </Button>
-              </div>
-            </Card>
-          {/each}
-        </Grid>
-      </div>
-    {:else}
-      <div class="no-profiles">
-        <span class="material-symbols-outlined">person_outline</span>
-        <p>No one has added you as a travel companion yet</p>
-      </div>
-    {/if}
+  {:else}
+    <div class="empty-state">
+      <span class="material-symbols-outlined">groups</span>
+      <p>No companions yet</p>
+      <p class="empty-description">
+        Start adding travel companions to share your trips and collaborate on travel planning.
+      </p>
+    </div>
   {/if}
 </div>
 
@@ -341,169 +216,212 @@
     opacity: 0.5;
   }
 
-  .companions-section {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+  .table-wrapper {
+    overflow-x: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
   }
 
-  .companions-section.profile-section {
-    padding-top: 2rem;
-    border-top: 1px solid #e0e0e0;
+  .companions-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    font-size: 0.9rem;
   }
 
-  .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+  .companions-table thead {
+    background-color: #f5f5f5;
+    border-bottom: 1px solid #e0e0e0;
   }
 
-  .section-header h3,
-  .companions-section h3 {
-    margin: 0;
-    font-size: 0.95rem;
+  .companions-table th {
+    padding: 0.875rem;
+    text-align: left;
     font-weight: 600;
+    color: #374151;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    vertical-align: middle;
+  }
+
+  .companions-table th.actions-col {
+    text-align: center;
+  }
+
+  .companions-table td {
+    padding: 0.875rem;
+    border-bottom: 1px solid #f0f0f0;
+    color: #1f2937;
+    vertical-align: middle;
+  }
+
+  .companions-table tbody tr:hover {
+    background-color: #fafafa;
+  }
+
+  .companions-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .name-cell {
+    font-weight: 500;
     color: #1f2937;
   }
 
-  .section-description {
-    margin: 0;
-    font-size: 0.9rem;
-    color: #666;
-    line-height: 1.5;
-  }
-
-  .add-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .form-actions {
-    display: flex;
-    gap: 0.75rem;
-    justify-content: flex-start;
-  }
-
-  .permission-option {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .permission-option label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    font-size: 0.95rem;
-    font-weight: 500;
-  }
-
-  .permission-option input[type='checkbox'] {
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
-  }
-
-  .help-text {
-    margin: 0;
+  .email-cell {
+    color: #6b7280;
+    font-family: 'Courier New', monospace;
     font-size: 0.85rem;
-    color: #666;
   }
 
-  .companion-info,
-  .profile-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+  .center-col {
+    text-align: center;
+    width: 120px;
   }
 
-  .permission-badge {
+  .indicator {
     display: inline-block;
-    padding: 0.4rem 0.75rem;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    width: fit-content;
-  }
-
-  .permission-badge.edit {
+    width: 24px;
+    height: 24px;
     background-color: #d4edda;
     color: #155724;
-  }
-
-  .permission-badge.view {
-    background-color: #e2e3e5;
-    color: #383d41;
-  }
-
-  .added-date {
-    margin: 0;
-    font-size: 0.85rem;
-    color: #999;
-  }
-
-  .creator-email {
-    margin: 0;
-    font-size: 0.9rem;
-    color: #666;
+    border-radius: 50%;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
   }
 
-  .creator-email :global(.material-symbols-outlined) {
-    font-size: 16px;
+  .actions-col {
+    width: 200px;
+    text-align: center;
   }
 
-  .companion-actions,
-  .profile-actions {
+  .actions-cell {
+    text-align: center;
+    padding: 0.875rem 0.5rem;
+  }
+
+  .actions-group {
+    display: grid;
+    grid-template-columns: repeat(2, 32px);
+    gap: 1rem;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .action-btn {
     display: flex;
-    gap: 0.5rem;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    margin: 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    line-height: 1;
+    vertical-align: top;
   }
 
-  .empty-state,
-  .no-profiles {
+  .action-btn :global(.material-symbols-outlined) {
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .edit-btn {
+    background-color: #e3f2fd;
+    color: #1976d2;
+  }
+
+  .edit-btn:hover:not(:disabled) {
+    background-color: #bbdefb;
+  }
+
+  .delete-btn {
+    background-color: #ffebee;
+    color: #c62828;
+  }
+
+  .delete-btn:hover:not(:disabled) {
+    background-color: #ffcdd2;
+  }
+
+  .revoke-btn {
+    background-color: #fce4ec;
+    color: #ad1457;
+  }
+
+  .revoke-btn:hover:not(:disabled) {
+    background-color: #f8bbd0;
+  }
+
+  .action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .empty-state {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 1rem;
-    padding: 2rem 1rem;
+    padding: 3rem 1rem;
     text-align: center;
     color: #999;
     background: #fafafa;
     border-radius: 8px;
   }
 
-  .empty-state :global(.material-symbols-outlined),
-  .no-profiles :global(.material-symbols-outlined) {
+  .empty-state :global(.material-symbols-outlined) {
     font-size: 48px;
     opacity: 0.5;
   }
 
-  .empty-state p,
-  .no-profiles p {
+  .empty-state p {
     margin: 0;
     font-size: 1rem;
   }
 
-  @media (max-width: 640px) {
-    .section-header {
+  .empty-description {
+    font-size: 0.9rem;
+    color: #999;
+  }
+
+  @media (max-width: 768px) {
+    .companions-header {
       flex-direction: column;
       align-items: flex-start;
     }
 
-    .form-actions {
-      flex-direction: column;
-      width: 100%;
+    .companions-table {
+      font-size: 0.8rem;
     }
 
-    :global(.form-actions button) {
-      width: 100%;
+    .companions-table th,
+    .companions-table td {
+      padding: 0.625rem;
+    }
+
+    .name-cell {
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .email-cell {
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   }
 </style>

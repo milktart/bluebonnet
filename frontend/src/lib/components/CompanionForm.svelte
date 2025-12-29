@@ -2,19 +2,44 @@
   import { settingsApi } from '$lib/services/settings';
   import '$lib/styles/form-styles.css';
 
+  // Props for edit mode
+  export let companion: {
+    id?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  } | null = null;
+
   export let onSuccess: ((companion: any) => void) | null = null;
   export let onCancel: (() => void) | null = null;
 
   let loading = false;
   let error: string | null = null;
+
   let formData = {
+    firstName: '',
+    lastName: '',
     email: '',
     canEdit: false
   };
 
+  // Initialize form data if in edit mode
+  $: if (companion) {
+    formData = {
+      firstName: companion.firstName || '',
+      lastName: companion.lastName || '',
+      email: companion.email || '',
+      canEdit: companion.canBeAddedByOthers || false
+    };
+  }
+
+  const isEditMode = !!companion?.id;
+
   async function handleSubmit() {
     try {
       // Validation
+      error = null;
+
       if (!formData.email.trim()) {
         error = 'Email is required';
         return;
@@ -25,21 +50,37 @@
         return;
       }
 
+      // In edit mode, both firstName and lastName should be provided together, or neither
+      if (isEditMode && (formData.firstName || formData.lastName)) {
+        if (!formData.firstName || !formData.lastName) {
+          error = 'Please provide both first name and last name, or neither';
+          return;
+        }
+      }
+
       loading = true;
-      error = null;
 
-      const response = await settingsApi.createCompanion({
+      const submitData = {
+        firstName: formData.firstName || undefined,
+        lastName: formData.lastName || undefined,
         email: formData.email,
-        canEdit: formData.canEdit
-      });
+        canBeAddedByOthers: formData.canEdit
+      };
 
-      const newCompanion = response.data || response;
+      let response;
+      if (isEditMode) {
+        response = await settingsApi.updateCompanion(companion!.id!, submitData);
+      } else {
+        response = await settingsApi.createCompanion(submitData);
+      }
+
+      const resultCompanion = response.data || response.companion || response;
 
       if (onSuccess) {
-        onSuccess(newCompanion);
+        onSuccess(resultCompanion);
       }
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Failed to add companion';
+      error = err instanceof Error ? err.message : (isEditMode ? 'Failed to update companion' : 'Failed to add companion');
     } finally {
       loading = false;
     }
@@ -59,14 +100,44 @@
 
   <form on:submit|preventDefault={handleSubmit}>
     <div class="form-fields">
+      <div class="form-row cols-2-1">
+        <div class="form-group">
+          <label for="firstName">First Name</label>
+          <input
+            id="firstName"
+            type="text"
+            bind:value={formData.firstName}
+            placeholder="John"
+            disabled={loading}
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="lastName">Last Initial</label>
+          <input
+            id="lastName"
+            type="text"
+            bind:value={formData.lastName}
+            placeholder="D"
+            maxlength="1"
+            disabled={loading}
+          />
+        </div>
+      </div>
+
       <div class="form-group">
-        <label>Email Address *</label>
+        <label for="email">Email Address *</label>
         <input
+          id="email"
           type="email"
           bind:value={formData.email}
           placeholder="companion@example.com"
           required
+          disabled={loading || isEditMode}
         />
+        {#if isEditMode}
+          <p class="help-text">Email cannot be changed</p>
+        {/if}
       </div>
 
       <div class="checkbox-wrapper">
@@ -87,7 +158,7 @@
 
     <div class="form-buttons">
       <button class="submit-btn" type="submit" disabled={loading}>
-        Add Companion
+        {isEditMode ? 'Update' : 'Add Companion'}
       </button>
       <button class="cancel-btn" type="button" on:click={handleCancel} disabled={loading}>
         Cancel
@@ -97,6 +168,12 @@
 </div>
 
 <style>
+  .help-text {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #6b7280;
+  }
+
   .checkbox-wrapper {
     display: flex;
     flex-direction: column;
@@ -119,6 +196,10 @@
     width: 18px;
     height: 18px;
     flex-shrink: 0;
+  }
+
+  .checkbox-label input[type='checkbox']:disabled {
+    cursor: not-allowed;
   }
 
   .checkbox-help-text {

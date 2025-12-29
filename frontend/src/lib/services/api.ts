@@ -337,6 +337,9 @@ export const carRentalsApi = {
  * Companions API
  */
 export const companionsApi = {
+  getAll: () =>
+    apiCall(`/v1/companions/all`),
+
   getByTrip: (tripId: string) =>
     apiCall(`/v1/companions/trips/${tripId}`),
 

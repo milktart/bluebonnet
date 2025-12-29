@@ -191,6 +191,23 @@ export const settingsApi = {
   },
 
   /**
+   * Get all companions with bidirectional relationship info
+   */
+  async getAllCompanions(): Promise<any> {
+    const base = getAccountBase();
+    const response = await fetch(`${base}/companions/api/all`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch all companions: ${response.statusText}`);
+    }
+
+    return response.json();
+  },
+
+  /**
    * Create a new travel companion
    */
   async createCompanion(data: any): Promise<any> {
@@ -199,6 +216,7 @@ export const settingsApi = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest', // Mark as AJAX request
       },
       body: JSON.stringify(data),
       credentials: 'include',
@@ -206,6 +224,28 @@ export const settingsApi = {
 
     if (!response.ok) {
       throw new Error(`Failed to create companion: ${response.statusText}`);
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Update a travel companion
+   */
+  async updateCompanion(companionId: string, data: any): Promise<any> {
+    const base = getAccountBase();
+    const response = await fetch(`${base}/companions/${companionId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest', // Mark as AJAX request
+      },
+      body: JSON.stringify(data),
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to update companion: ${response.statusText}`);
     }
 
     return response.json();

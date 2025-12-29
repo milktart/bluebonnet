@@ -3,6 +3,8 @@
   import { tripStore } from '$lib/stores/tripStore';
   import { utcToLocalTimeString } from '$lib/utils/timezoneUtils';
   import AirportAutocomplete from './AirportAutocomplete.svelte';
+  import ItemCompanionsSelector from './ItemCompanionsSelector.svelte';
+  import TripCompanionsForm from './TripCompanionsForm.svelte';
   import '$lib/styles/form-styles.css';
 
   export let itemType: string; // 'flight', 'hotel', 'transportation', 'carRental', 'event', 'trip'
@@ -159,12 +161,15 @@
   let formData: any = initializeFormData(data);
   let airlineLookupLoading = false;
   let selectedTripId: string = '';
+  let selectedCompanions: any[] = [];
 
   // Re-initialize formData and selectedTripId when data or itemType changes
   $: if (data) {
     const initialized = initializeFormData(data);
     formData = initialized;
     selectedTripId = data?.tripId || '';
+    // Initialize companions if available
+    selectedCompanions = data?.travelCompanions || [];
   }
 
   // Auto-lookup airline when flight number changes (for flights)
@@ -507,6 +512,19 @@
             {/each}
           </select>
         </div>
+
+        {#if selectedTripId}
+          <div class="form-group">
+            <label>Companions</label>
+            <ItemCompanionsSelector
+              tripId={selectedTripId}
+              currentItemCompanions={selectedCompanions}
+              onCompanionsChange={(companions) => {
+                selectedCompanions = companions;
+              }}
+            />
+          </div>
+        {/if}
       {/if}
       {#if itemType === 'flight'}
         <!-- Flight Number & Airline (3-col: 1-2) -->
@@ -873,6 +891,19 @@
             {/if}
           </div>
         {/each}
+
+        <!-- Trip Companions (shown when editing a trip) -->
+        {#if itemType === 'trip' && isEditing && data?.id}
+          <TripCompanionsForm
+            tripId={data.id}
+            companions={data.travelCompanions || []}
+            onCompanionsUpdate={(companions) => {
+              if (data) {
+                data.travelCompanions = companions;
+              }
+            }}
+          />
+        {/if}
       {/if}
     </div>
 
@@ -894,7 +925,6 @@
 </div>
 
 <style>
-
   .checkbox-group label {
     display: flex;
     align-items: center;

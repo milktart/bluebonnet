@@ -23,6 +23,85 @@ router.options("*", (req, res) => {
 router.use(ensureAuthenticated);
 
 /**
+ * GET /api/v1/companions/all
+ * Get all available companions for the current user
+ * Returns companions created by user + companion profiles (where user was added)
+ */
+router.get('/all', async (req, res) => {
+  try {
+    const TravelCompanion = require('../../../models').TravelCompanion;
+    const { Op } = require('sequelize');
+    const userId = req.user.id;
+
+    // Fetch companions created by user
+    const companionsCreated = await TravelCompanion.findAll({
+      where: {
+        createdBy: userId,
+        [Op.or]: [{ userId: null }, { userId: { [Op.ne]: userId } }]
+      },
+      attributes: ['id', 'firstName', 'lastName', 'email', 'canBeAddedByOthers'],
+      raw: true
+    });
+
+    // Fetch companion profiles (where user was added by others)
+    const companionProfiles = await TravelCompanion.findAll({
+      where: {
+        userId: userId,
+        createdBy: { [Op.ne]: userId }
+      },
+      attributes: ['id', 'firstName', 'lastName', 'email', 'canBeAddedByOthers'],
+      raw: true
+    });
+
+    // Build combined list with direction indicators
+    const companionMap = new Map();
+
+    // Add created companions
+    companionsCreated.forEach(companion => {
+      const email = companion.email;
+      if (!companionMap.has(email)) {
+        companionMap.set(email, {
+          id: companion.id,
+          firstName: companion.firstName,
+          lastName: companion.lastName,
+          email: companion.email,
+          youInvited: true,
+          theyInvited: false,
+          canBeAddedByOthers: companion.canBeAddedByOthers
+        });
+      } else {
+        const existing = companionMap.get(email);
+        existing.youInvited = true;
+      }
+    });
+
+    // Add companion profiles
+    companionProfiles.forEach(profile => {
+      const email = profile.email;
+      if (!companionMap.has(email)) {
+        companionMap.set(email, {
+          id: profile.id,
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          email: profile.email,
+          youInvited: false,
+          theyInvited: true,
+          canBeAddedByOthers: profile.canBeAddedByOthers
+        });
+      } else {
+        const existing = companionMap.get(email);
+        existing.theyInvited = true;
+      }
+    });
+
+    const companionsList = Array.from(companionMap.values());
+    return apiResponse.success(res, companionsList, `Retrieved ${companionsList.length} companions`);
+  } catch (error) {
+    return apiResponse.internalError(res, 'Failed to retrieve companions', error);
+  }
+});
+
+/**
  * GET /api/v1/companions/trips/:tripId
  * Get all companions for a trip
  */

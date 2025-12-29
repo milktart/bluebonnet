@@ -1,6 +1,7 @@
 <script lang="ts">
   import Card from './Card.svelte';
   import Button from './Button.svelte';
+  import CompanionIndicators from './CompanionIndicators.svelte';
 
   export let tripId: string;
   export let title: string;
@@ -8,6 +9,7 @@
   export let startDate: string = '';
   export let endDate: string = '';
   export let companions: number = 0;
+  export let companionList: any[] = [];
   export let itemCount: number = 0;
   export let onEdit: (() => void) | null = null;
   export let onDelete: (() => void) | null = null;
@@ -35,6 +37,11 @@
 </script>
 
 <Card title={title} subtitle={destination} clickable={!!onView}>
+  {#if companionList && companionList.length > 0}
+    <div slot="indicators">
+      <CompanionIndicators companions={companionList} />
+    </div>
+  {/if}
   <div class="trip-info">
     {#if startDate || endDate}
       <div class="info-row">

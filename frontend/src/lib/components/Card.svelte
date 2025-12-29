@@ -5,13 +5,20 @@
 </script>
 
 <div class="card" class:clickable on:click>
-  {#if title || subtitle}
+  {#if title || subtitle || $$slots.indicators}
     <div class="card-header">
-      {#if title}
-        <h3>{title}</h3>
-      {/if}
-      {#if subtitle}
-        <p class="subtitle">{subtitle}</p>
+      <div class="header-content">
+        {#if title}
+          <h3>{title}</h3>
+        {/if}
+        {#if subtitle}
+          <p class="subtitle">{subtitle}</p>
+        {/if}
+      </div>
+      {#if $$slots.indicators}
+        <div class="header-indicators">
+          <slot name="indicators" />
+        </div>
       {/if}
     </div>
   {/if}
@@ -47,6 +54,14 @@
 
   .card-header {
     border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .header-content {
+    flex: 1;
   }
 
   .card-header h3 {
@@ -59,6 +74,10 @@
     margin: 0;
     color: #666;
     font-size: 0.9rem;
+  }
+
+  .header-indicators {
+    padding: 0.5rem 0;
   }
 
   .card-body {

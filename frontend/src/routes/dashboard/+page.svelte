@@ -17,6 +17,7 @@
   import SettingsBackup from '$lib/components/SettingsBackup.svelte';
   import VoucherForm from '$lib/components/VoucherForm.svelte';
   import CompanionForm from '$lib/components/CompanionForm.svelte';
+  import CompanionIndicators from '$lib/components/CompanionIndicators.svelte';
 
   let trips: any[] = [];
   let standaloneItems: any = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
@@ -33,6 +34,77 @@
   let secondarySidebarContent: { type: string; itemType?: string; data: any } | null = null;
   let tertiarySidebarContent: { type: string; data: any } | null = null;
   let showNewItemMenu = false;
+  let groupedItems: Record<string, Array<any>> = {};
+  let dateKeysInOrder: string[] = [];
+
+  // Helper function to extract month key (YYYY-MM) using item's timezone
+  function getDateKeyForItem(item: any): string {
+    let date: Date;
+    let timezone: string | null = null;
+
+    if (item.type === 'trip') {
+      date = parseLocalDate(item.data.departureDate);
+      // Trips use UTC by default (already in YYYY-MM-DD format)
+    } else {
+      date = item.sortDate;
+      // Extract timezone from item based on type
+      if (item.itemType === 'flight') {
+        timezone = item.data.originTimezone;
+      } else if (item.itemType === 'hotel') {
+        timezone = item.data.timezone;
+      } else if (item.itemType === 'transportation') {
+        timezone = item.data.originTimezone;
+      } else if (item.itemType === 'carRental') {
+        timezone = item.data.pickupTimezone;
+      } else if (item.itemType === 'event') {
+        timezone = item.data.timezone;
+      }
+    }
+
+    // Format date in item's timezone if available, otherwise UTC
+    if (timezone) {
+      try {
+        const formatter = new Intl.DateTimeFormat('en-CA', {
+          year: 'numeric',
+          month: '2-digit',
+          timeZone: timezone
+        });
+        const parts = formatter.formatToParts(date);
+        const values: Record<string, string> = {};
+        parts.forEach(part => {
+          if (part.type !== 'literal') {
+            values[part.type] = part.value;
+          }
+        });
+        return `${values.year}-${values.month}`;
+      } catch {
+        // Fallback to UTC if timezone invalid
+      }
+    }
+
+    // Fallback: use UTC date
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    return `${year}-${month}`;
+  }
+
+  // Reactive statement to regroup whenever filteredItems changes
+  $: if (filteredItems.length > 0) {
+    groupedItems = {};
+    dateKeysInOrder = [];
+
+    filteredItems.forEach(item => {
+      const dateKey = getDateKeyForItem(item);
+      if (!groupedItems[dateKey]) {
+        groupedItems[dateKey] = [];
+        dateKeysInOrder.push(dateKey);
+      }
+      groupedItems[dateKey].push(item);
+    });
+  } else {
+    groupedItems = {};
+    dateKeysInOrder = [];
+  }
 
   // Manage secondary sidebar full-width class and tertiary presence
   $: if (typeof window !== 'undefined' && secondarySidebarContent) {
@@ -93,14 +165,31 @@
     loadTripData();
   }
 
+  function handleAddCompanion() {
+    openTertiarySidebar('add-companion', {});
+  }
+
+  function handleEditCompanion(event: any) {
+    const companion = event.detail?.companion;
+    if (companion) {
+      openTertiarySidebar('edit-companion', { companion });
+    }
+  }
+
   onMount(async () => {
     await loadTripData();
 
     // Listen for data import events
     window.addEventListener('dataImported', handleDataImported);
 
+    // Listen for companion add/edit events from SettingsCompanions
+    window.addEventListener('add-companion', handleAddCompanion);
+    window.addEventListener('edit-companion', handleEditCompanion);
+
     return () => {
       window.removeEventListener('dataImported', handleDataImported);
+      window.removeEventListener('add-companion', handleAddCompanion);
+      window.removeEventListener('edit-companion', handleEditCompanion);
     };
   });
 
@@ -329,6 +418,173 @@
     return `${day} ${month} ${year}`;
   }
 
+  function formatMonthHeader(monthKey: string): string {
+    if (!monthKey) return '';
+    // monthKey is in format YYYY-MM
+    const [yearStr, monthStr] = monthKey.split('-');
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10);
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    return `${months[month - 1]} ${year}`;
+  }
+
+  function formatTripDateHeader(dateStr: string): string {
+    if (!dateStr) return '';
+    // dateStr is in format YYYY-MM-DD
+    const [yearStr, monthStr, dayStr] = dateStr.split('-');
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10) - 1;
+    const day = parseInt(dayStr, 10);
+
+    const date = new Date(year, month, day);
+    const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'short' });
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthStr2 = months[month];
+
+    return `${dayOfWeek}, ${day} ${monthStr2}`;
+  }
+
+  // Helper function to extract day key (YYYY-MM-DD) using item's timezone for nested items
+  function getDayKeyForItem(item: any): string {
+    let date: Date;
+    let timezone: string | null = null;
+
+    // For trip items, extract timezone from the item data
+    if (item.type === 'flight') {
+      date = new Date(item.departureDateTime);
+      timezone = item.originTimezone;
+    } else if (item.type === 'hotel') {
+      date = new Date(item.checkInDateTime);
+      timezone = item.timezone;
+    } else if (item.type === 'transportation') {
+      date = new Date(item.departureDateTime);
+      timezone = item.originTimezone;
+    } else if (item.type === 'carRental') {
+      date = new Date(item.pickupDateTime);
+      timezone = item.pickupTimezone;
+    } else if (item.type === 'event') {
+      date = new Date(item.startDateTime);
+      timezone = item.timezone;
+    } else {
+      return '';
+    }
+
+    // Format date in item's timezone if available, otherwise UTC
+    if (timezone) {
+      try {
+        const formatter = new Intl.DateTimeFormat('en-CA', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          timeZone: timezone
+        });
+        const parts = formatter.formatToParts(date);
+        const values: Record<string, string> = {};
+        parts.forEach(part => {
+          if (part.type !== 'literal') {
+            values[part.type] = part.value;
+          }
+        });
+        return `${values.year}-${values.month}-${values.day}`;
+      } catch {
+        // Fallback to UTC if timezone invalid
+      }
+    }
+
+    // Fallback: use UTC date
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // Helper function to group trip items by date
+  function groupTripItemsByDate(trip: any): Record<string, Array<any>> {
+    const grouped: Record<string, Array<any>> = {};
+    const dateOrder: string[] = [];
+
+    const allItems: any[] = [];
+
+    // Collect all items from the trip
+    if (trip.flights) {
+      trip.flights.forEach((f: any) => {
+        allItems.push({ type: 'flight', ...f });
+      });
+    }
+    if (trip.hotels) {
+      trip.hotels.forEach((h: any) => {
+        allItems.push({ type: 'hotel', ...h });
+      });
+    }
+    if (trip.transportation) {
+      trip.transportation.forEach((t: any) => {
+        allItems.push({ type: 'transportation', ...t });
+      });
+    }
+    if (trip.carRentals) {
+      trip.carRentals.forEach((c: any) => {
+        allItems.push({ type: 'carRental', ...c });
+      });
+    }
+    if (trip.events) {
+      trip.events.forEach((e: any) => {
+        allItems.push({ type: 'event', ...e });
+      });
+    }
+
+    // Sort items chronologically
+    allItems.sort((a, b) => {
+      const dateA = a.type === 'flight' ? new Date(a.departureDateTime) :
+                    a.type === 'hotel' ? new Date(a.checkInDateTime) :
+                    a.type === 'transportation' ? new Date(a.departureDateTime) :
+                    a.type === 'carRental' ? new Date(a.pickupDateTime) :
+                    a.type === 'event' ? new Date(a.startDateTime) : new Date(0);
+      const dateB = b.type === 'flight' ? new Date(b.departureDateTime) :
+                    b.type === 'hotel' ? new Date(b.checkInDateTime) :
+                    b.type === 'transportation' ? new Date(b.departureDateTime) :
+                    b.type === 'carRental' ? new Date(b.pickupDateTime) :
+                    b.type === 'event' ? new Date(b.startDateTime) : new Date(0);
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    // Group by date
+    allItems.forEach(item => {
+      const dateKey = getDayKeyForItem(item);
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
+        dateOrder.push(dateKey);
+      }
+      grouped[dateKey].push(item);
+    });
+
+    return grouped;
+  }
+
+  function capitalize(str: string): string {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  }
+
+  function formatTimeOnly(dateStr: string, timezone: string | null = null): string {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+
+    if (!timezone) {
+      const hours = String(date.getUTCHours()).padStart(2, '0');
+      const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+      return `${hours}:${minutes}`;
+    }
+
+    // With timezone conversion
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+    return formatter.format(date);
+  }
+
   function formatDateTime(dateStr: string, timezone: string | null = null): string {
     if (!dateStr) return '';
     const date = new Date(dateStr);
@@ -507,6 +763,165 @@
 
     return Array.from(cities).sort().join(', ');
   }
+
+  function calculateLayover(flight1: any, flight2: any): { duration: string; location: string } | null {
+    // Check if both are flights
+    if (flight1.type !== 'flight' || flight2.type !== 'flight') {
+      return null;
+    }
+
+    // Check if arrival airport matches departure airport
+    const arrivalAirportCode = flight1.destination?.split(' - ')[0]?.trim();
+    const departureAirportCode = flight2.origin?.split(' - ')[0]?.trim();
+
+    if (!arrivalAirportCode || !departureAirportCode || arrivalAirportCode !== departureAirportCode) {
+      return null;
+    }
+
+    // Get arrival time of first flight and departure time of second flight
+    const arrivalTime = new Date(flight1.arrivalDateTime);
+    const departureTime = new Date(flight2.departureDateTime);
+
+    // Calculate difference in milliseconds
+    const durationMs = departureTime.getTime() - arrivalTime.getTime();
+    const durationHours = durationMs / (1000 * 60 * 60);
+
+    // Only show layover if less than 24 hours
+    if (durationHours < 0 || durationHours >= 24) {
+      return null;
+    }
+
+    // Convert to hours and minutes
+    const hours = Math.floor(durationHours);
+    const minutes = Math.round((durationHours - hours) * 60);
+
+    // Format as "Xh Ym in AIRPORT"
+    const durationStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+    const location = arrivalAirportCode;
+
+    return {
+      duration: durationStr,
+      location
+    };
+  }
+
+  function getFlightLayoverInfo(trip: any, flightId: string): { duration: string; location: string } | null {
+    const allItems: any[] = [];
+
+    // Collect all items from the trip and sort chronologically
+    if (trip.flights) {
+      trip.flights.forEach((f: any) => {
+        allItems.push({ type: 'flight', ...f });
+      });
+    }
+    if (trip.hotels) {
+      trip.hotels.forEach((h: any) => {
+        allItems.push({ type: 'hotel', ...h });
+      });
+    }
+    if (trip.transportation) {
+      trip.transportation.forEach((t: any) => {
+        allItems.push({ type: 'transportation', ...t });
+      });
+    }
+    if (trip.carRentals) {
+      trip.carRentals.forEach((c: any) => {
+        allItems.push({ type: 'carRental', ...c });
+      });
+    }
+    if (trip.events) {
+      trip.events.forEach((e: any) => {
+        allItems.push({ type: 'event', ...e });
+      });
+    }
+
+    // Sort items chronologically
+    allItems.sort((a, b) => {
+      const dateA = a.type === 'flight' ? new Date(a.departureDateTime) :
+                    a.type === 'hotel' ? new Date(a.checkInDateTime) :
+                    a.type === 'transportation' ? new Date(a.departureDateTime) :
+                    a.type === 'carRental' ? new Date(a.pickupDateTime) :
+                    a.type === 'event' ? new Date(a.startDateTime) : new Date(0);
+      const dateB = b.type === 'flight' ? new Date(b.departureDateTime) :
+                    b.type === 'hotel' ? new Date(b.checkInDateTime) :
+                    b.type === 'transportation' ? new Date(b.departureDateTime) :
+                    b.type === 'carRental' ? new Date(b.pickupDateTime) :
+                    b.type === 'event' ? new Date(b.startDateTime) : new Date(0);
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    // Find the flight and check the next flight
+    for (let i = 0; i < allItems.length; i++) {
+      if (allItems[i].type === 'flight' && allItems[i].id === flightId) {
+        // Check if there's a next item that's a flight
+        if (i + 1 < allItems.length && allItems[i + 1].type === 'flight') {
+          return calculateLayover(allItems[i], allItems[i + 1]);
+        }
+        break;
+      }
+    }
+
+    return null;
+  }
+
+  function layoverSpansDates(trip: any, flightId: string, currentDayKey: string): boolean {
+    const allItems: any[] = [];
+
+    // Collect all items from the trip and sort chronologically
+    if (trip.flights) {
+      trip.flights.forEach((f: any) => {
+        allItems.push({ type: 'flight', ...f });
+      });
+    }
+    if (trip.hotels) {
+      trip.hotels.forEach((h: any) => {
+        allItems.push({ type: 'hotel', ...h });
+      });
+    }
+    if (trip.transportation) {
+      trip.transportation.forEach((t: any) => {
+        allItems.push({ type: 'transportation', ...t });
+      });
+    }
+    if (trip.carRentals) {
+      trip.carRentals.forEach((c: any) => {
+        allItems.push({ type: 'carRental', ...c });
+      });
+    }
+    if (trip.events) {
+      trip.events.forEach((e: any) => {
+        allItems.push({ type: 'event', ...e });
+      });
+    }
+
+    // Sort items chronologically
+    allItems.sort((a, b) => {
+      const dateA = a.type === 'flight' ? new Date(a.departureDateTime) :
+                    a.type === 'hotel' ? new Date(a.checkInDateTime) :
+                    a.type === 'transportation' ? new Date(a.departureDateTime) :
+                    a.type === 'carRental' ? new Date(a.pickupDateTime) :
+                    a.type === 'event' ? new Date(a.startDateTime) : new Date(0);
+      const dateB = b.type === 'flight' ? new Date(b.departureDateTime) :
+                    b.type === 'hotel' ? new Date(b.checkInDateTime) :
+                    b.type === 'transportation' ? new Date(b.departureDateTime) :
+                    b.type === 'carRental' ? new Date(b.pickupDateTime) :
+                    b.type === 'event' ? new Date(b.startDateTime) : new Date(0);
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    // Find the flight and check if next flight is on a different date
+    for (let i = 0; i < allItems.length; i++) {
+      if (allItems[i].type === 'flight' && allItems[i].id === flightId) {
+        if (i + 1 < allItems.length && allItems[i + 1].type === 'flight') {
+          const nextDayKey = getDayKeyForItem(allItems[i + 1]);
+          return nextDayKey !== currentDayKey;
+        }
+        break;
+      }
+    }
+
+    return false;
+  }
 </script>
 
 <svelte:head>
@@ -638,8 +1053,14 @@
         </div>
       {:else}
         <div class="trips-list">
-          {#each filteredItems as item (item.type === 'trip' ? item.data.id : `${item.itemType}-${item.data.id}`)}
-            {#if item.type === 'trip'}
+          {#each dateKeysInOrder as dateKey (dateKey)}
+            <div class="timeline-date-group">
+              <div class="timeline-date-header">
+                <span class="date-badge">{formatMonthHeader(dateKey)}</span>
+              </div>
+              <div class="timeline-items">
+                {#each groupedItems[dateKey] as item (item.type === 'trip' ? item.data.id : `${item.itemType}-${item.data.id}`)}
+                  {#if item.type === 'trip'}
             <div
               class="trip-card"
               class:expanded={expandedTrips.has(item.data.id)}
@@ -662,7 +1083,19 @@
                 </div>
 
                 <div class="trip-info">
-                  <h3 class="trip-name">{item.data.name}</h3>
+                  <div class="trip-name-row">
+                    <h3 class="trip-name">{item.data.name}</h3>
+                    <button
+                      class="edit-btn"
+                      title="Edit trip details and companions"
+                      on:click={(e) => {
+                        e.stopPropagation();
+                        secondarySidebarContent = { type: 'item', itemType: 'trip', data: item.data };
+                      }}
+                    >
+                      <span class="material-symbols-outlined">edit</span>
+                    </button>
+                  </div>
                   <p class="trip-dates">
                     {formatDate(item.data.departureDate)} - {formatDate(item.data.returnDate || item.data.departureDate)}
                   </p>
@@ -670,6 +1103,12 @@
                     <p class="trip-cities">{getTripCities(item.data)}</p>
                   {/if}
                 </div>
+
+                {#if item.data.travelCompanions && item.data.travelCompanions.length > 0}
+                  <div class="trip-companions">
+                    <CompanionIndicators companions={item.data.travelCompanions} />
+                  </div>
+                {/if}
 
                 <button
                   class="expand-btn"
@@ -683,105 +1122,156 @@
                 </button>
               </div>
 
-              <!-- Trip Items (Accordion Content) -->
+              <!-- Trip Items (Accordion Content) - Date-level Timeline -->
               {#if expandedTrips.has(item.data.id)}
                 <div class="trip-items">
-                  {#if item.data.flights && item.data.flights.length > 0}
-                    {#each item.data.flights as flight}
-                      <div
-                        class="standalone-item-card"
-                        class:item-highlighted={highlightedItemId === flight.id && highlightedItemType === 'flight'}
-                        on:mouseenter={() => handleItemHover('flight', flight.id)}
-                        on:mouseleave={handleItemLeave}
-                        on:click={() => handleItemClick('flight', 'flight', flight)}
-                        role="button"
-                        tabindex="0"
-                        on:keydown={(e) => e.key === 'Enter' && handleItemClick('flight', 'flight', flight)}
-                      >
-                        <div class="item-icon blue">
-                          <span class="material-symbols-outlined">flight</span>
-                        </div>
-                        <div class="item-content">
-                          <p class="item-title">{flight.flightNumber}</p>
-                          <p class="item-time">{formatDateTime(flight.departureDateTime, flight.originTimezone)}</p>
-                          <p class="item-route">
-                            {getCityName(flight.origin)} → {getCityName(flight.destination)}
-                          </p>
-                        </div>
-                      </div>
-                    {/each}
-                  {/if}
-
-                  {#if item.data.hotels && item.data.hotels.length > 0}
-                    {#each item.data.hotels as hotel}
-                      <div
-                        class="standalone-item-card"
-                        class:item-highlighted={highlightedItemId === hotel.id && highlightedItemType === 'hotel'}
-                        on:mouseenter={() => handleItemHover('hotel', hotel.id)}
-                        on:mouseleave={handleItemLeave}
-                        on:click={() => handleItemClick('hotel', 'hotel', hotel)}
-                        role="button"
-                        tabindex="0"
-                        on:keydown={(e) => e.key === 'Enter' && handleItemClick('hotel', 'hotel', hotel)}
-                      >
-                        <div class="item-icon green">
-                          <span class="material-symbols-outlined">hotel</span>
-                        </div>
-                        <div class="item-content">
-                          <p class="item-title">{hotel.hotelName || hotel.name}</p>
-                          <p class="item-dates">{formatDateOnly(hotel.checkInDateTime, hotel.timezone)} - {formatDateOnly(hotel.checkOutDateTime, hotel.timezone)}</p>
-                          <p class="item-route">{getCityName(hotel.address) ? getCityName(hotel.address) : getCityName(hotel.city)}</p>
+                  {#each Object.keys(groupTripItemsByDate(item.data)) as dayKey (dayKey)}
+                    <div class="trip-item-date-group">
+                      <div class="trip-item-date-header">
+                        <span class="trip-date-badge">{formatTripDateHeader(dayKey)}</span>
+                        <div class="date-header-layovers">
+                          {#if dayKey === Object.keys(groupTripItemsByDate(item.data))[0]}
+                            <!-- Check first day for layover indicators that span to it -->
+                            {@const dayKeys = Object.keys(groupTripItemsByDate(item.data))}
+                            {#if dayKeys.length > 1}
+                              {@const prevDayKey = dayKeys[dayKeys.indexOf(dayKey) - 1]}
+                              {#if prevDayKey}
+                                {@const prevDayItems = groupTripItemsByDate(item.data)[prevDayKey]}
+                                {#each prevDayItems as prevItem}
+                                  {#if prevItem.type === 'flight'}
+                                    {@const layover = getFlightLayoverInfo(item.data, prevItem.id)}
+                                    {@const spansDate = layoverSpansDates(item.data, prevItem.id, prevDayKey)}
+                                    {#if layover && spansDate}
+                                      <span class="date-header-layover">{layover.duration} in {layover.location}</span>
+                                    {/if}
+                                  {/if}
+                                {/each}
+                              {/if}
+                            {/if}
+                          {:else}
+                            <!-- Check previous day for layover indicators that span to this day -->
+                            {@const dayKeys = Object.keys(groupTripItemsByDate(item.data))}
+                            {@const currentIndex = dayKeys.indexOf(dayKey)}
+                            {#if currentIndex > 0}
+                              {@const prevDayKey = dayKeys[currentIndex - 1]}
+                              {@const prevDayItems = groupTripItemsByDate(item.data)[prevDayKey]}
+                              {#each prevDayItems as prevItem}
+                                {#if prevItem.type === 'flight'}
+                                  {@const layover = getFlightLayoverInfo(item.data, prevItem.id)}
+                                  {@const spansDate = layoverSpansDates(item.data, prevItem.id, prevDayKey)}
+                                  {#if layover && spansDate}
+                                    <span class="date-header-layover">{layover.duration} in {layover.location}</span>
+                                  {/if}
+                                {/if}
+                              {/each}
+                            {/if}
+                          {/if}
                         </div>
                       </div>
-                    {/each}
-                  {/if}
-
-                  {#if item.data.transportation && item.data.transportation.length > 0}
-                    {#each item.data.transportation as trans}
-                      <div class="standalone-item-card" on:click={() => handleItemClick('transportation', 'transportation', trans)} role="button" tabindex="0" on:keydown={(e) => e.key === 'Enter' && handleItemClick('transportation', 'transportation', trans)}>
-                        <div class="item-icon red">
-                          <span class="material-symbols-outlined">{getTransportIcon(trans.method)}</span>
-                        </div>
-                        <div class="item-content">
-                          <p class="item-title">{trans.method}</p>
-                          <p class="item-time">{formatDateTime(trans.departureDateTime, trans.originTimezone)}</p>
-                          <p class="item-route">
-                            {getCityName(trans.origin)} → {getCityName(trans.destination)}
-                          </p>
-                        </div>
+                      <div class="trip-item-date-items">
+                        {#each groupTripItemsByDate(item.data)[dayKey] as tripItem (tripItem.id)}
+                          {#if tripItem.type === 'flight'}
+                            <div
+                              class="standalone-item-card"
+                              class:item-highlighted={highlightedItemId === tripItem.id && highlightedItemType === 'flight'}
+                              on:mouseenter={() => handleItemHover('flight', tripItem.id)}
+                              on:mouseleave={handleItemLeave}
+                              on:click={() => handleItemClick('flight', 'flight', tripItem)}
+                              role="button"
+                              tabindex="0"
+                              on:keydown={(e) => e.key === 'Enter' && handleItemClick('flight', 'flight', tripItem)}
+                            >
+                              <div class="flight-icon-wrapper">
+                                <p class="flight-time-label">{formatTimeOnly(tripItem.departureDateTime, tripItem.originTimezone)}</p>
+                                <div class="item-icon blue">
+                                  <span class="material-symbols-outlined" style="font-size: 1.3rem;">flight</span>
+                                </div>
+                              </div>
+                              <div class="item-content">
+                                <p class="item-title">{tripItem.flightNumber}</p>
+                                <p class="item-route">
+                                  {getCityName(tripItem.origin)} → {getCityName(tripItem.destination)}
+                                </p>
+                              </div>
+                            </div>
+                            {@const layover = getFlightLayoverInfo(item.data, tripItem.id)}
+                            {@const spansDate = layoverSpansDates(item.data, tripItem.id, dayKey)}
+                            {#if layover && !spansDate}
+                              <div class="layover-indicator">
+                                <p class="layover-text">{layover.duration} in {layover.location}</p>
+                              </div>
+                            {/if}
+                          {:else if tripItem.type === 'hotel'}
+                            <div
+                              class="standalone-item-card"
+                              class:item-highlighted={highlightedItemId === tripItem.id && highlightedItemType === 'hotel'}
+                              on:mouseenter={() => handleItemHover('hotel', tripItem.id)}
+                              on:mouseleave={handleItemLeave}
+                              on:click={() => handleItemClick('hotel', 'hotel', tripItem)}
+                              role="button"
+                              tabindex="0"
+                              on:keydown={(e) => e.key === 'Enter' && handleItemClick('hotel', 'hotel', tripItem)}
+                            >
+                              <div class="item-icon green">
+                                <span class="material-symbols-outlined" style="font-size: 1.3rem;">hotel</span>
+                              </div>
+                              <div class="item-content">
+                                <p class="item-title">{tripItem.hotelName || tripItem.name}</p>
+                                <p class="item-dates">{formatDateOnly(tripItem.checkInDateTime, tripItem.timezone)} - {formatDateOnly(tripItem.checkOutDateTime, tripItem.timezone)}</p>
+                                <p class="item-route">{getCityName(tripItem.address) ? getCityName(tripItem.address) : getCityName(tripItem.city)}</p>
+                              </div>
+                            </div>
+                          {:else if tripItem.type === 'transportation'}
+                            <div class="standalone-item-card" on:click={() => handleItemClick('transportation', 'transportation', tripItem)} role="button" tabindex="0" on:keydown={(e) => e.key === 'Enter' && handleItemClick('transportation', 'transportation', tripItem)}>
+                              <div class="flight-icon-wrapper">
+                                <p class="flight-time-label">{formatTimeOnly(tripItem.departureDateTime, tripItem.originTimezone)}</p>
+                                <div class="item-icon red">
+                                  <span class="material-symbols-outlined" style="font-size: 1.3rem;">{getTransportIcon(tripItem.method)}</span>
+                                </div>
+                              </div>
+                              <div class="item-content">
+                                <p class="item-title">{capitalize(tripItem.method)}</p>
+                                <p class="item-route">
+                                  {getCityName(tripItem.origin)} → {getCityName(tripItem.destination)}
+                                </p>
+                              </div>
+                            </div>
+                          {:else if tripItem.type === 'carRental'}
+                            <div class="standalone-item-card" on:click={() => handleItemClick('carRental', 'carRental', tripItem)} role="button" tabindex="0" on:keydown={(e) => e.key === 'Enter' && handleItemClick('carRental', 'carRental', tripItem)}>
+                              <div class="item-icon gray">
+                                <span class="material-symbols-outlined" style="font-size: 1.3rem;">directions_car</span>
+                              </div>
+                              <div class="item-content">
+                                <p class="item-title">{tripItem.company}</p>
+                                <p class="item-time">{formatDateTime(tripItem.pickupDateTime, tripItem.pickupTimezone)}</p>
+                                <p class="item-route">{getCityName(tripItem.pickupLocation)}</p>
+                              </div>
+                            </div>
+                          {:else if tripItem.type === 'event'}
+                            <div class="standalone-item-card" on:click={() => handleItemClick('event', 'event', tripItem)} role="button" tabindex="0" on:keydown={(e) => e.key === 'Enter' && handleItemClick('event', 'event', tripItem)}>
+                              {#if tripItem.isAllDay}
+                                <div class="item-icon purple">
+                                  <span class="material-symbols-outlined" style="font-size: 1.3rem;">event</span>
+                                </div>
+                              {:else}
+                                <div class="flight-icon-wrapper">
+                                  <p class="flight-time-label">{formatTimeOnly(tripItem.startDateTime, tripItem.timezone)}</p>
+                                  <div class="item-icon purple">
+                                    <span class="material-symbols-outlined" style="font-size: 1.3rem;">event</span>
+                                  </div>
+                                </div>
+                              {/if}
+                              <div class="item-content">
+                                <p class="item-title">{tripItem.name}</p>
+                                <p class="item-time">{formatDateTime(tripItem.startDateTime, tripItem.timezone)}</p>
+                                <p class="item-route">{tripItem.location}</p>
+                              </div>
+                            </div>
+                          {/if}
+                        {/each}
                       </div>
-                    {/each}
-                  {/if}
-
-                  {#if item.data.carRentals && item.data.carRentals.length > 0}
-                    {#each item.data.carRentals as carRental}
-                      <div class="standalone-item-card" on:click={() => handleItemClick('carRental', 'carRental', carRental)} role="button" tabindex="0" on:keydown={(e) => e.key === 'Enter' && handleItemClick('carRental', 'carRental', carRental)}>
-                        <div class="item-icon gray">
-                          <span class="material-symbols-outlined">directions_car</span>
-                        </div>
-                        <div class="item-content">
-                          <p class="item-title">{carRental.company}</p>
-                          <p class="item-time">{formatDateTime(carRental.pickupDateTime, carRental.pickupTimezone)}</p>
-                          <p class="item-route">{getCityName(carRental.pickupLocation)}</p>
-                        </div>
-                      </div>
-                    {/each}
-                  {/if}
-
-                  {#if item.data.events && item.data.events.length > 0}
-                    {#each item.data.events as event}
-                      <div class="standalone-item-card" on:click={() => handleItemClick('event', 'event', event)} role="button" tabindex="0" on:keydown={(e) => e.key === 'Enter' && handleItemClick('event', 'event', event)}>
-                        <div class="item-icon purple">
-                          <span class="material-symbols-outlined">event</span>
-                        </div>
-                        <div class="item-content">
-                          <p class="item-title">{event.name}</p>
-                          <p class="item-time">{formatDateTime(event.startDateTime, event.timezone)}</p>
-                          <p class="item-route">{event.location}</p>
-                        </div>
-                      </div>
-                    {/each}
-                  {/if}
+                    </div>
+                  {/each}
                 </div>
               {/if}
 
@@ -829,6 +1319,9 @@
               </div>
             </div>
             {/if}
+                {/each}
+              </div>
+            </div>
           {/each}
         </div>
       {/if}
@@ -896,11 +1389,16 @@
         <div class="calendar-sidebar-container">
           <div class="calendar-sidebar-header">
             <h2>Travel Companions</h2>
-            <button class="close-btn" on:click={closeSecondarySidebar} title="Close">
-              <span class="material-symbols-outlined">close</span>
-            </button>
+            <div class="header-actions">
+              <button class="add-companion-btn" on:click={() => openTertiarySidebar('add-companion', {})} title="Add Companion">
+                <span class="material-symbols-outlined">group_add</span>
+              </button>
+              <button class="close-btn" on:click={closeSecondarySidebar} title="Close">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
           </div>
-          <SettingsCompanions onAddCompanion={() => openTertiarySidebar('add-companion', {})} />
+          <SettingsCompanions />
         </div>
       {:else if secondarySidebarContent?.type === 'settings-backup'}
         <div class="calendar-sidebar-container">
@@ -1160,8 +1658,29 @@
       </div>
       <div class="tertiary-form-container">
         <CompanionForm
+          companion={null}
           onSuccess={(companion) => {
             closeTertiarySidebar();
+            // Dispatch event to refresh companions list
+            window.dispatchEvent(new CustomEvent('companions-updated', { detail: { companion } }));
+          }}
+          onCancel={closeTertiarySidebar}
+        />
+      </div>
+    {:else if tertiarySidebarContent?.type === 'edit-companion'}
+      <div class="tertiary-header">
+        <h3>Edit Companion</h3>
+        <button class="close-btn" on:click={closeTertiarySidebar} title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="tertiary-form-container">
+        <CompanionForm
+          companion={tertiarySidebarContent.data?.companion}
+          onSuccess={(companion) => {
+            closeTertiarySidebar();
+            // Dispatch event to refresh companions list
+            window.dispatchEvent(new CustomEvent('companions-updated', { detail: { companion } }));
           }}
           onCancel={closeTertiarySidebar}
         />
@@ -1175,6 +1694,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    padding-bottom: 0;
   }
 
   .header-section {
@@ -1192,7 +1712,8 @@
 
   .header-top h1 {
     margin: 0;
-    font-size: 1rem;
+    font-size: 1.25rem;
+    font-weight: 700;
     color: #333;
   }
 
@@ -1290,15 +1811,20 @@
   .tab-btn.active {
     color: #007bff;
     border-bottom-color: #007bff;
-    background-color: #e0e0e0;
+    background-color: rgba(255, 255, 255, 0.9);
   }
 
   .tab-btn.settings-btn {
     padding: 0.4rem 0.8rem;
   }
 
+  .tab-btn.settings-btn.active {
+    border-bottom-color: #007bff;
+  }
+
   .tab-btn.settings-btn :global(.material-symbols-outlined) {
-    font-size: 1rem !important;
+    font-size: 1.1rem !important;
+    line-height: 1.1em !important;
   }
 
   .trips-content {
@@ -1306,6 +1832,12 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .trips-content::-webkit-scrollbar {
+    display: none;
   }
 
   .empty-state {
@@ -1328,8 +1860,45 @@
   .trips-list {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0;
     padding: 1rem 0;
+  }
+
+  .timeline-date-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-left: 0;
+    margin-bottom: 1rem;
+    border-left: none;
+  }
+
+  .timeline-date-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0;
+  }
+
+  .date-badge {
+    display: inline-block;
+    padding: 0.4rem 0;
+    background: transparent;
+    color: #007bff;
+    border: none;
+    border-radius: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.1rem;
+    font-style: oblique;
+  }
+
+  .timeline-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
   .trip-card {
@@ -1342,8 +1911,8 @@
 
   .trip-card:hover,
   .trip-card.highlighted {
-    border-color: #007bff;
-    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.1);
+    background: #f3f4f6;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   }
 
   .trip-header {
@@ -1381,6 +1950,12 @@
     min-width: 0;
   }
 
+  .trip-name-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
   .trip-name {
     margin: 0;
     font-size: 0.8rem;
@@ -1409,6 +1984,29 @@
     text-align: left;
   }
 
+  .edit-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #9ca3af;
+    opacity: 0;
+    transition: opacity 0.2s, color 0.2s;
+    font-size: 1.2rem;
+  }
+
+  .trip-card:hover .edit-btn {
+    opacity: 1;
+  }
+
+  .edit-btn:hover {
+    color: #3b82f6;
+  }
+
   .expand-btn {
     background: none;
     border: none;
@@ -1425,12 +2023,72 @@
     transform: rotate(180deg);
   }
 
+  .trip-companions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-shrink: 0;
+    margin: 0 0.5rem;
+  }
+
   .trip-items {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    padding: 0.5rem;
+    padding: 0 0.5rem 0.5rem;
     border-top: 1px solid #e5e7eb;
+  }
+
+  .trip-card.expanded .trip-items {
+    border-top: none;
+  }
+
+  .trip-item-date-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding-left: 0;
+    margin: 0.75rem 0 0 0;
+    border-left: none;
+  }
+
+  .trip-card.expanded .trip-item-date-group {
+    padding-left: 0.5rem;
+    border-left: 1px solid #007bff;
+  }
+
+  .trip-item-date-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.15rem 0px;
+  }
+
+  .date-header-layovers {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .trip-date-badge {
+    display: inline-block;
+    padding: 0.2rem 0;
+    background: transparent;
+    color: #007bff;
+    border: none;
+    border-radius: 0;
+    font-size: 0.65rem;
+    font-weight: 700;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.08rem;
+    font-style: oblique;
+  }
+
+  .trip-item-date-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
   }
 
 
@@ -1495,13 +2153,13 @@
   }
 
   :global(#secondary-sidebar.full-width) {
-    width: calc(100% - 360px - 7.5vh) !important;
+    width: calc(100% - 340px - 7.5vh) !important;
   }
 
   :global(#secondary-sidebar.full-width.with-tertiary) {
     width: auto !important;
-    left: calc(2.5vh + 360px + 2.5vh) !important;
-    right: calc(2.5vh + 360px + 2.5vh) !important;
+    left: calc(2.5vh + 340px + 2.5vh) !important;
+    right: calc(2.5vh + 340px + 2.5vh) !important;
   }
 
   .tertiary-content {
@@ -1558,11 +2216,42 @@
     color: #111827;
   }
 
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .add-companion-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .add-companion-btn:hover {
+    background-color: #0056b3;
+  }
+
+  .add-companion-btn :global(.material-symbols-outlined) {
+    font-size: 1.1rem;
+  }
+
   .standalone-item-card {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.75rem;
+    padding: 0.65rem;
     background: #ffffff90;
     border: 1px solid #e0e0e0;
     border-radius: 0.425rem;
@@ -1571,9 +2260,8 @@
   }
 
   .standalone-item-card:hover {
-    border-color: #007bff;
-    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.1);
-    background-color: #f8fafc;
+    background-color: #f3f4f6;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   }
 
   .standalone-item-card .item-icon {
@@ -1585,6 +2273,12 @@
     border-radius: 0.425rem;
     flex-shrink: 0;
     font-size: 0.875rem !important;
+  }
+
+  .trip-items .item-icon,
+  .trip-items .standalone-item-card .item-icon,
+  .trip-items .flight-icon-wrapper .item-icon {
+    font-size: 1.1rem !important;
   }
 
   .standalone-item-card .item-icon.blue {
@@ -1660,6 +2354,59 @@
     margin: 0;
     line-height: 1.2;
     text-align: left;
+  }
+
+  /* Flight icon wrapper with time above */
+  .flight-icon-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .flight-icon-wrapper .item-icon {
+    padding-top: 0.15rem;
+  }
+
+  .flight-time-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #4b5563;
+    margin: 0;
+    line-height: 1;
+  }
+
+  /* Inverted colors for trip items when trip is expanded */
+  .trip-items .standalone-item-card .item-icon.blue {
+    background-color: transparent;
+    color: #d4a823;
+  }
+
+  .trip-items .standalone-item-card .item-icon.green {
+    background-color: transparent;
+    color: #9b6db3;
+  }
+
+  .trip-items .standalone-item-card .item-icon.purple {
+    background-color: transparent;
+    color: #d6389f;
+  }
+
+  .trip-items .standalone-item-card .item-icon.gray {
+    background-color: transparent;
+    color: #d97a2f;
+  }
+
+  .trip-items .standalone-item-card .item-icon.red {
+    background-color: transparent;
+    color: #2b7ab6;
+  }
+
+  .trip-items .standalone-item-card .item-icon.amber {
+    background-color: transparent;
+    color: #28536b;
   }
 
   .edit-panel {
@@ -2000,5 +2747,31 @@
 
   .settings-logout-btn:hover {
     background: #b91c1c;
+  }
+
+  .layover-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.2rem 0;
+    margin: 0.1rem 0;
+  }
+
+  .layover-text {
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1;
+    text-align: center;
+  }
+
+  .date-header-layover {
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: #6b7280;
+    line-height: 1;
+    white-space: nowrap;
+    padding-right: 0.25rem;
   }
 </style>

@@ -113,7 +113,7 @@
 
   /* Primary sidebar - left, fixed width */
   :global(.primary-sidebar) {
-    width: 360px;
+    width: 340px;
     left: 2.5vh;
     z-index: 20;
     flex-shrink: 0;
@@ -121,28 +121,28 @@
 
   /* Secondary sidebar - default: same width as primary */
   :global(.secondary-sidebar) {
-    width: 360px;
-    left: calc(2.5vh + 360px + 2.5vh);
+    width: 340px;
+    left: calc(2.5vh + 340px + 2.5vh);
     z-index: 21;
   }
 
   /* Secondary sidebar full-width: takes remaining space */
   :global(.secondary-sidebar.full-width) {
     width: auto;
-    right: calc(2.5vh + 360px + 2.5vh);
-    left: calc(2.5vh + 360px + 2.5vh);
+    right: calc(2.5vh + 340px + 2.5vh);
+    left: calc(2.5vh + 340px + 2.5vh);
   }
 
   /* When tertiary sidebar is open, secondary shrinks to fit middle space */
   :global(.secondary-sidebar.full-width.with-tertiary) {
-    left: calc(2.5vh + 360px + 2.5vh) !important;
-    right: calc(2.5vh + 360px + 2.5vh) !important;
+    left: calc(2.5vh + 340px + 2.5vh) !important;
+    right: calc(2.5vh + 340px + 2.5vh) !important;
     width: auto !important;
   }
 
   /* Tertiary sidebar - right, fixed width */
   :global(.tertiary-sidebar) {
-    width: 360px;
+    width: 340px;
     right: 2.5vh;
     left: auto;
     z-index: 22;

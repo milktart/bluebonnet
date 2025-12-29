@@ -10,9 +10,12 @@ router.use(ensureAuthenticated);
 
 // Validation middleware for companion creation/update
 const validateCompanion = [
-  body('name').trim().isLength({ min: 1 }).withMessage('Name is required'),
+  body('firstName').optional().trim(),
+  body('lastName').optional().trim(),
+  body('name').optional().trim(),
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
   body('phone').optional().trim(),
+  body('canBeAddedByOthers').optional().isBoolean(),
 ];
 
 // GET companions list
@@ -31,6 +34,9 @@ router.get('/sidebar', companionController.listCompanionsSidebar);
 
 // GET companions as JSON (for dashboard/sidebar display)
 router.get('/api/json', companionController.getCompanionsJson);
+
+// GET all companions with bidirectional relationship info
+router.get('/api/all', companionController.getAllCompanions);
 
 // GET create companion form
 router.get('/create', companionController.getCreateCompanion);

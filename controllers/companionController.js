@@ -26,14 +26,21 @@ exports.listCompanions = async (req, res) => {
       order: [['name', 'ASC']],
     });
 
-    res.render('companions/list', {
-      title: 'Travel Companions',
-      companions,
+    res.json({
+      success: true,
+      companions: companions.map((c) => ({
+        id: c.id,
+        name: c.name,
+        email: c.email,
+        phone: c.phone,
+        canEdit: c.canBeAddedByOthers,
+        linkedAccount: c.linkedAccount,
+        createdAt: c.createdAt,
+      })),
     });
   } catch (error) {
     logger.error(error);
-    req.flash('error_msg', 'Error loading companions');
-    res.redirect('/');
+    res.status(500).json({ success: false, error: 'Error loading companions' });
   }
 };
 
@@ -114,25 +121,108 @@ exports.getCompanionsJson = async (req, res) => {
   }
 };
 
+// Get all companions with bidirectional relationship info
+// Returns both companions created by user AND companion profiles where user was added
+exports.getAllCompanions = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get companions created by user
+    const companionsCreated = await TravelCompanion.findAll({
+      where: {
+        createdBy: userId,
+        [Op.or]: [
+          { userId: { [Op.is]: null } },
+          { userId: { [Op.ne]: userId } }
+        ]
+      },
+      include: [
+        {
+          model: User,
+          as: 'linkedAccount',
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
+      ],
+      order: [['name', 'ASC']],
+    });
+
+    // Get companion profiles (where user was added by others)
+    const companionProfiles = await TravelCompanion.findAll({
+      where: {
+        userId: userId,
+        createdBy: { [Op.ne]: userId }
+      },
+      include: [
+        {
+          model: User,
+          as: 'creator',
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
+      ],
+      order: [['name', 'ASC']],
+    });
+
+    // Build combined map by email to handle bidirectional relationships
+    const companionMap = new Map();
+
+    // Add companions created by user
+    companionsCreated.forEach((companion) => {
+      const key = companion.email.toLowerCase();
+      companionMap.set(key, {
+        id: companion.id,
+        firstName: companion.firstName,
+        lastName: companion.lastName,
+        email: companion.email,
+        youInvited: true,
+        theyInvited: false,
+        companionId: companion.id, // ID of the companion record YOU created
+        canBeAddedByOthers: companion.canBeAddedByOthers,
+      });
+    });
+
+    // Add profiles (people who added you)
+    companionProfiles.forEach((profile) => {
+      const key = profile.email.toLowerCase();
+      if (companionMap.has(key)) {
+        // Bidirectional relationship
+        companionMap.get(key).theyInvited = true;
+        companionMap.get(key).theyInvitedId = profile.id;
+        companionMap.get(key).canBeAddedByOthers = companionMap.get(key).canBeAddedByOthers || profile.canBeAddedByOthers;
+      } else {
+        // They invited you, but you didn't create a companion for them
+        companionMap.set(key, {
+          id: profile.id,
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          email: profile.email,
+          youInvited: false,
+          theyInvited: true,
+          companionId: profile.id, // ID of the companion record THEY created
+          canBeAddedByOthers: profile.canBeAddedByOthers,
+        });
+      }
+    });
+
+    const companions = Array.from(companionMap.values());
+
+    res.json({
+      success: true,
+      companions,
+    });
+  } catch (error) {
+    logger.error('GET_ALL_COMPANIONS_ERROR', { error: error.message, stack: error.stack });
+    res.status(500).json({ success: false, error: 'Error loading companions' });
+  }
+};
+
 // Get form to create new companion
 exports.getCreateCompanion = (req, res) => {
-  res.render('companions/create', { title: 'Add Travel Companion' });
+  res.json({ success: true, message: 'Use POST to create a companion' });
 };
 
 // Get form to create new companion (sidebar version)
 exports.getCreateCompanionSidebar = (req, res) => {
-  try {
-    res.render('partials/companions-create', {
-      layout: false,
-    });
-  } catch (error) {
-    logger.error(error);
-    res
-      .status(500)
-      .send(
-        '<div class="p-4"><p class="text-red-600">Error loading form. Please try again.</p></div>'
-      );
-  }
+  res.json({ success: true, message: 'Use POST to create a companion' });
 };
 
 // Create new companion
@@ -145,7 +235,9 @@ exports.createCompanion = async (req, res) => {
         .array()
         .map((e) => e.msg)
         .join(', ');
-      const isAjax = req.get('X-Sidebar-Request') === 'true' || req.xhr;
+      const isAjax = req.get('X-Sidebar-Request') === 'true' ||
+                     req.xhr ||
+                     req.get('Content-Type')?.includes('application/json');
 
       if (isAjax) {
         return res.status(400).json({ success: false, error: errorMsg });
@@ -154,13 +246,33 @@ exports.createCompanion = async (req, res) => {
       return res.redirect('/companions/create');
     }
 
-    const { name, email, phone, canBeAddedByOthers } = req.body;
-    const isAjax = req.get('X-Sidebar-Request') === 'true' || req.xhr;
+    let { firstName, lastName, name, email, phone, canBeAddedByOthers, canEdit } = req.body;
+    // Check if this is an API request: X-Sidebar-Request header, xhr flag, JSON content-type, or X-Requested-With
+    const isAjax = req.get('X-Sidebar-Request') === 'true' ||
+                   req.xhr ||
+                   req.get('X-Requested-With') === 'XMLHttpRequest' ||
+                   req.get('Content-Type')?.includes('application/json');
+    const emailLower = email.toLowerCase();
+
+    // Convert string boolean to actual boolean
+    if (typeof canBeAddedByOthers === 'string') {
+      canBeAddedByOthers = canBeAddedByOthers === 'true' || canBeAddedByOthers === '1';
+    }
+    if (typeof canEdit === 'string') {
+      canEdit = canEdit === 'true' || canEdit === '1';
+    }
+
+    logger.info('COMPANION_CREATE_REQUEST', {
+      isAjax,
+      firstName,
+      lastName,
+      email: emailLower
+    });
 
     // Check if companion with this email already exists (globally unique)
     const existingCompanion = await TravelCompanion.findOne({
       where: {
-        email: email.toLowerCase(),
+        email: emailLower,
       },
     });
 
@@ -175,14 +287,30 @@ exports.createCompanion = async (req, res) => {
 
     // Check if there's already a user account with this email to auto-link
     const existingUser = await User.findOne({
-      where: { email: email.toLowerCase() },
+      where: { email: emailLower },
     });
 
+    // Generate display name from firstName/lastName or fallback to name/email
+    let companionName;
+    if (firstName && lastName) {
+      companionName = `${firstName} ${lastName.charAt(0)}.`;
+    } else if (firstName) {
+      companionName = firstName;
+    } else if (name) {
+      companionName = name;
+    } else {
+      companionName = email.split('@')[0];
+    }
+
+    const canAddByOthers = canBeAddedByOthers !== undefined ? !!canBeAddedByOthers : !!canEdit;
+
     const companion = await TravelCompanion.create({
-      name,
-      email: email.toLowerCase(),
+      firstName: firstName || null,
+      lastName: lastName || null,
+      name: companionName,
+      email: emailLower,
       phone,
-      canBeAddedByOthers: !!canBeAddedByOthers,
+      canBeAddedByOthers: canAddByOthers,
       createdBy: req.user.id,
       userId: existingUser ? existingUser.id : null,
     });
@@ -192,15 +320,34 @@ exports.createCompanion = async (req, res) => {
       : 'Travel companion added successfully';
 
     if (isAjax) {
-      return res.json({ success: true, message: successMsg, companion });
+      return res.json({
+        success: true,
+        message: successMsg,
+        data: {
+          id: companion.id,
+          firstName: companion.firstName,
+          lastName: companion.lastName,
+          name: companion.name,
+          email: companion.email,
+          phone: companion.phone,
+          canEdit: companion.canBeAddedByOthers,
+          addedAt: companion.createdAt
+        }
+      });
     }
 
     req.flash('success_msg', successMsg);
     res.redirect('/companions');
   } catch (error) {
-    logger.error(error);
+    logger.error('COMPANION_CREATE_ERROR', { error: error.message, stack: error.stack });
     const errorMsg = 'Error adding travel companion';
-    if (req.get('X-Sidebar-Request') === 'true' || req.xhr) {
+    const isAjax = req.get('X-Sidebar-Request') === 'true' ||
+                   req.xhr ||
+                   req.get('Content-Type')?.includes('application/json');
+
+    logger.info('COMPANION_CREATE_ERROR_RESPONSE', { isAjax, errorMsg });
+
+    if (isAjax) {
       return res.status(500).json({ success: false, error: errorMsg });
     }
     req.flash('error_msg', errorMsg);
@@ -366,18 +513,23 @@ exports.getEditCompanion = async (req, res) => {
     });
 
     if (!companion) {
-      req.flash('error_msg', 'Companion not found');
-      return res.redirect('/companions');
+      return res.status(404).json({ success: false, error: 'Companion not found' });
     }
 
-    res.render('companions/edit', {
-      title: 'Edit Travel Companion',
-      companion,
+    res.json({
+      success: true,
+      companion: {
+        id: companion.id,
+        name: companion.name,
+        email: companion.email,
+        phone: companion.phone,
+        canEdit: companion.canBeAddedByOthers,
+        linkedAccount: companion.linkedAccount,
+      }
     });
   } catch (error) {
     logger.error(error);
-    req.flash('error_msg', 'Error loading companion');
-    res.redirect('/companions');
+    res.status(500).json({ success: false, error: 'Error loading companion' });
   }
 };
 
@@ -405,22 +557,23 @@ exports.getEditCompanionSidebar = async (req, res) => {
     });
 
     if (!companion) {
-      return res
-        .status(404)
-        .send('<div class="p-4"><p class="text-red-600">Companion not found</p></div>');
+      return res.status(404).json({ success: false, error: 'Companion not found' });
     }
 
-    res.render('partials/companions-edit', {
-      companion,
-      layout: false,
+    res.json({
+      success: true,
+      companion: {
+        id: companion.id,
+        name: companion.name,
+        email: companion.email,
+        phone: companion.phone,
+        canEdit: companion.canBeAddedByOthers,
+        linkedAccount: companion.linkedAccount,
+      }
     });
   } catch (error) {
     logger.error(error);
-    res
-      .status(500)
-      .send(
-        '<div class="p-4"><p class="text-red-600">Error loading companion. Please try again.</p></div>'
-      );
+    res.status(500).json({ success: false, error: 'Error loading companion' });
   }
 };
 
@@ -434,7 +587,9 @@ exports.updateCompanion = async (req, res) => {
         .array()
         .map((e) => e.msg)
         .join(', ');
-      const isAjax = req.get('X-Sidebar-Request') === 'true' || req.xhr;
+      const isAjax = req.get('X-Sidebar-Request') === 'true' ||
+                     req.xhr ||
+                     req.get('Content-Type')?.includes('application/json');
 
       if (isAjax) {
         return res.status(400).json({ success: false, error: errorMsg });
@@ -443,9 +598,17 @@ exports.updateCompanion = async (req, res) => {
       return res.redirect(`/companions/${req.params.id}/edit`);
     }
 
-    const { name, email, phone, canBeAddedByOthers } = req.body;
+    let { firstName, lastName, name, email, phone, canBeAddedByOthers } = req.body;
     const companionId = req.params.id;
-    const isAjax = req.get('X-Sidebar-Request') === 'true' || req.xhr;
+    const isAjax = req.get('X-Sidebar-Request') === 'true' ||
+                   req.xhr ||
+                   req.get('X-Requested-With') === 'XMLHttpRequest' ||
+                   req.get('Content-Type')?.includes('application/json');
+
+    // Convert string boolean to actual boolean
+    if (typeof canBeAddedByOthers === 'string') {
+      canBeAddedByOthers = canBeAddedByOthers === 'true' || canBeAddedByOthers === '1';
+    }
 
     const companion = await TravelCompanion.findOne({
       where: {
@@ -492,16 +655,44 @@ exports.updateCompanion = async (req, res) => {
         where: { email: email.toLowerCase() },
       });
 
+      // Generate display name from firstName/lastName or fallback
+      let companionName;
+      if (firstName && lastName) {
+        companionName = `${firstName} ${lastName.charAt(0)}.`;
+      } else if (firstName) {
+        companionName = firstName;
+      } else if (name) {
+        companionName = name;
+      } else {
+        companionName = email.split('@')[0];
+      }
+
       await companion.update({
-        name,
+        firstName: firstName || null,
+        lastName: lastName || null,
+        name: companionName,
         email: email.toLowerCase(),
         phone,
         canBeAddedByOthers: !!canBeAddedByOthers,
         userId: existingUser ? existingUser.id : null,
       });
     } else {
+      // Generate display name from firstName/lastName or fallback
+      let companionName;
+      if (firstName && lastName) {
+        companionName = `${firstName} ${lastName.charAt(0)}.`;
+      } else if (firstName) {
+        companionName = firstName;
+      } else if (name) {
+        companionName = name;
+      } else {
+        companionName = companion.name; // keep existing
+      }
+
       await companion.update({
-        name,
+        firstName: firstName || null,
+        lastName: lastName || null,
+        name: companionName,
         phone,
         canBeAddedByOthers: !!canBeAddedByOthers,
       });
@@ -509,7 +700,20 @@ exports.updateCompanion = async (req, res) => {
 
     const successMsg = 'Companion updated successfully';
     if (isAjax) {
-      return res.json({ success: true, message: successMsg, companion });
+      return res.json({
+        success: true,
+        message: successMsg,
+        data: {
+          id: companion.id,
+          firstName: companion.firstName,
+          lastName: companion.lastName,
+          name: companion.name,
+          email: companion.email,
+          phone: companion.phone,
+          canEdit: companion.canBeAddedByOthers,
+          updatedAt: companion.updatedAt
+        }
+      });
     }
 
     req.flash('success_msg', successMsg);
