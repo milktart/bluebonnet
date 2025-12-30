@@ -190,14 +190,14 @@ class TripService extends BaseService {
       events: standaloneItems.events.map((item) => {
         const json = item.toJSON();
         json.itemCompanions = item.itemCompanions || [];
-        // Determine if event is all-day based on time values
+        // Determine if event is all-day based on time values (use UTC since dates are ISO strings)
         if (json.startDateTime && json.endDateTime) {
           const startDate = new Date(json.startDateTime);
           const endDate = new Date(json.endDateTime);
-          const startHours = startDate.getHours();
-          const startMinutes = startDate.getMinutes();
-          const endHours = endDate.getHours();
-          const endMinutes = endDate.getMinutes();
+          const startHours = startDate.getUTCHours();
+          const startMinutes = startDate.getUTCMinutes();
+          const endHours = endDate.getUTCHours();
+          const endMinutes = endDate.getUTCMinutes();
           json.isAllDay =
             startHours === 0 && startMinutes === 0 && endHours === 23 && endMinutes === 59;
         } else {
@@ -214,10 +214,10 @@ class TripService extends BaseService {
           if (event.startDateTime && event.endDateTime) {
             const startDate = new Date(event.startDateTime);
             const endDate = new Date(event.endDateTime);
-            const startHours = startDate.getHours();
-            const startMinutes = startDate.getMinutes();
-            const endHours = endDate.getHours();
-            const endMinutes = endDate.getMinutes();
+            const startHours = startDate.getUTCHours();
+            const startMinutes = startDate.getUTCMinutes();
+            const endHours = endDate.getUTCHours();
+            const endMinutes = endDate.getUTCMinutes();
             event.isAllDay =
               startHours === 0 && startMinutes === 0 && endHours === 23 && endMinutes === 59;
           } else {
@@ -460,16 +460,16 @@ class TripService extends BaseService {
       loadAndTransformItemCompanions(tripData.events, 'event'),
     ]);
 
-    // Add isAllDay flag to all events
+    // Add isAllDay flag to all events (use UTC since dates are ISO strings)
     if (tripData.events && Array.isArray(tripData.events)) {
       tripData.events.forEach((event) => {
         if (event.startDateTime && event.endDateTime) {
           const startDate = new Date(event.startDateTime);
           const endDate = new Date(event.endDateTime);
-          const startHours = startDate.getHours();
-          const startMinutes = startDate.getMinutes();
-          const endHours = endDate.getHours();
-          const endMinutes = endDate.getMinutes();
+          const startHours = startDate.getUTCHours();
+          const startMinutes = startDate.getUTCMinutes();
+          const endHours = endDate.getUTCHours();
+          const endMinutes = endDate.getUTCMinutes();
           event.isAllDay =
             startHours === 0 && startMinutes === 0 && endHours === 23 && endMinutes === 59;
         } else {
