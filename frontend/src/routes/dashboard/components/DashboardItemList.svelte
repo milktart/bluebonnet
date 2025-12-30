@@ -12,6 +12,24 @@
 
   const dispatch = createEventDispatcher();
 
+  // Debug: Log all events to console
+  $: {
+    filteredItems.forEach((item) => {
+      if (item.itemType === 'event') {
+        const startDate = new Date(item.data.startDateTime);
+        const endDate = new Date(item.data.endDateTime);
+        console.log(`[Event Debug] ${item.data.name}:`, {
+          startDateTime: item.data.startDateTime,
+          endDateTime: item.data.endDateTime,
+          startUTC: `${startDate.getUTCHours()}:${String(startDate.getUTCMinutes()).padStart(2, '0')}`,
+          endUTC: `${endDate.getUTCHours()}:${String(endDate.getUTCMinutes()).padStart(2, '0')}`,
+          isAllDay: item.data.isAllDay,
+          timezone: item.data.timezone,
+        });
+      }
+    });
+  }
+
   const handleItemHover = (itemType: string, itemId: string) => {
     dispatch('hoverItem', { itemType, itemId });
   };
