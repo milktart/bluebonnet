@@ -242,16 +242,17 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    padding: 1rem;
+    padding: 0;
   }
 
   .calendar-sidebar-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1rem;
+    padding: 0 0 0.75rem;
     border-bottom: 1px solid #e5e7eb;
     flex-shrink: 0;
+    margin: 0 0 0.75rem;
   }
 
   .calendar-sidebar-header h2 {
