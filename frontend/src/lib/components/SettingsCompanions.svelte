@@ -245,6 +245,10 @@
     vertical-align: middle;
   }
 
+  .companions-table th.center-col {
+    text-align: center;
+  }
+
   .companions-table th.actions-col {
     text-align: center;
   }
