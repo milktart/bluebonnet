@@ -330,7 +330,7 @@
   .settings-panel-content {
     flex: 1;
     overflow-y: auto;
-    padding: 1rem;
+    padding: 0.75rem;
     padding-top: 0;
     display: flex;
     flex-direction: column;
