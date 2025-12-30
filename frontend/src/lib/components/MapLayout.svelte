@@ -119,11 +119,12 @@
     flex-shrink: 0;
   }
 
-  /* Secondary sidebar - default: same width as primary */
+  /* Secondary sidebar - default: same width as primary, no padding for forms */
   :global(.secondary-sidebar) {
     width: 340px;
     left: calc(2.5vh + 340px + 2.5vh);
     z-index: 21;
+    padding: 0;
   }
 
   /* Secondary sidebar full-width: takes remaining space */

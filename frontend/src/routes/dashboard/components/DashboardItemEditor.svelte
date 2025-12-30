@@ -231,7 +231,7 @@
     flex-direction: column;
     height: 100%;
     overflow-y: auto;
-    padding: 1rem;
+    padding: 0;
   }
 
   .secondary-content.full-width {
@@ -242,6 +242,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    padding: 1rem;
   }
 
   .calendar-sidebar-header {
@@ -329,7 +330,8 @@
   .settings-panel-content {
     flex: 1;
     overflow-y: auto;
-    padding: 0;
+    padding: 1rem;
+    padding-top: 0;
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -340,15 +342,17 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    padding: 1rem;
   }
 
   .menu-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1rem;
+    padding: 0 0 1rem 0;
     border-bottom: 1px solid #e5e7eb;
     flex-shrink: 0;
+    margin-bottom: 1rem;
   }
 
   .menu-title {
@@ -376,7 +380,7 @@
   .menu-items {
     flex: 1;
     overflow-y: auto;
-    padding: 1rem;
+    padding: 0;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
@@ -473,5 +477,10 @@
     flex: 1;
     height: 1px;
     background: #e5e7eb;
+  }
+
+  /* ItemEditForm wrapper padding */
+  :global(.secondary-content :global(.edit-panel)) {
+    padding: 1rem;
   }
 </style>
