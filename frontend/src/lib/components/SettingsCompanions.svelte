@@ -278,6 +278,7 @@
   .center-col {
     text-align: center;
     width: 120px;
+    vertical-align: middle;
   }
 
   .indicator {
