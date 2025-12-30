@@ -8,7 +8,6 @@
   import '$lib/styles/form-styles.css';
 
   export let onEditVoucher: ((voucher: any) => void) | null = null;
-  export let onAddVoucher: (() => void) | null = null;
 
   let vouchers: any[] = [];
   let filteredVouchers: any[] = [];
@@ -62,18 +61,6 @@
   function handleTabChange(tab: 'open' | 'closed' | 'all') {
     activeTab = tab;
     filterVouchers();
-  }
-
-  function handleAddVoucher() {
-    if (onAddVoucher) {
-      // Call parent callback to open in tertiary sidebar
-      onAddVoucher();
-    } else {
-      // Default behavior: open in secondary sidebar
-      selectedVoucherId = null;
-      selectedVoucher = null;
-      currentView = 'form';
-    }
   }
 
   function handleEditVoucher(voucherId: string) {
@@ -201,10 +188,6 @@
               Expired ({vouchers.filter((v) => isExpired(v.expirationDate)).length})
             </button>
           </div>
-          <Button variant="primary" on:click={handleAddVoucher} disabled={loading}>
-            <span class="material-symbols-outlined">add</span>
-            Add Voucher
-          </Button>
         </div>
       {/if}
 
@@ -219,11 +202,6 @@
           <p>
             {activeTab === 'open' && vouchers.length === 0 ? 'No vouchers yet' : 'No vouchers in this category'}
           </p>
-          {#if activeTab === 'open' && vouchers.length === 0}
-            <Button variant="primary" on:click={handleAddVoucher}>
-              Add Your First Voucher
-            </Button>
-          {/if}
         </div>
       {:else}
         <div class="vouchers-table-container">
