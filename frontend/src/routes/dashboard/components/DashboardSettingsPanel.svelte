@@ -29,7 +29,7 @@
     <div class="settings-section">
       <h3>Manage Vouchers & Credits</h3>
       <button class="settings-item" on:click={() => handleSettingClick('settings-vouchers', {})}>
-        <span class="material-symbols-outlined">card_giftcard</span>
+        <span class="material-symbols-outlined">airplane_ticket</span>
         <span>Vouchers & Credits</span>
       </button>
     </div>

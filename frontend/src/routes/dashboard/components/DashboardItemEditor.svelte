@@ -86,13 +86,21 @@
     <div class="calendar-sidebar-container">
       <div class="calendar-sidebar-header">
         <h2>Vouchers & Credits</h2>
-        <button class="close-btn" on:click={closeSecondarySidebar} title="Close">
-          <span class="material-symbols-outlined">close</span>
-        </button>
+        <div class="header-actions">
+          <button
+            class="icon-btn"
+            on:click={() => handleTertiarySidebarAction('add-voucher', {})}
+            title="Add Voucher"
+          >
+            <span class="material-symbols-outlined">qr_code_2_add</span>
+          </button>
+          <button class="close-btn" on:click={closeSecondarySidebar} title="Close">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
       </div>
       <SettingsVouchers
         onEditVoucher={(voucher) => handleTertiarySidebarAction('edit-voucher', { voucher })}
-        onAddVoucher={() => handleTertiarySidebarAction('add-voucher', {})}
       />
     </div>
   {:else if secondarySidebarContent?.type === 'settings-companions'}
