@@ -137,7 +137,7 @@
   /* When tertiary sidebar is open, secondary shrinks to fit middle space */
   :global(.secondary-sidebar.full-width.with-tertiary) {
     left: calc(2.5vh + 340px + 2.5vh) !important;
-    right: calc(2.5vh + 340px + 2.5vh) !important;
+    right: calc(2.5vh + 340px + 2.5vh + 2.5vh) !important;
     width: auto !important;
   }
 
