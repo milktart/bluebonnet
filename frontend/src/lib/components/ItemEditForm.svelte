@@ -19,6 +19,7 @@
 
   // Debug logging
   $: if (data) {
+    console.log('[ItemEditForm] Received data:', {
       itemType,
       itemId: data.id,
       dataKeys: Object.keys(data),
@@ -34,6 +35,7 @@
 
   // Debug: Log selectedTripId
   $: {
+    console.log('[ItemEditForm] selectedTripId changed:', { selectedTripId, isEditing, itemType, itemId: data?.id });
   }
 
   // Show trip selector only for non-trip items (not for trip itself)
@@ -203,6 +205,7 @@
       }
     } catch (err) {
       // Silently fail - airline lookup is optional
+      console.debug('Airline lookup failed:', err);
     } finally {
       airlineLookupLoading = false;
     }
@@ -232,6 +235,7 @@
     const fieldName = input.name as keyof typeof formData;
     if (fieldName) {
       formData[fieldName] = value;
+      console.log('[ItemEditForm] formatTimeInput updated', fieldName, '=', value);
     }
   }
 
@@ -362,6 +366,7 @@
         }
       }
 
+      console.log('[ItemEditForm] Before submit - formData:', {
         departureDate: formData.departureDate,
         departureTime: formData.departureTime,
         arrivalDate: formData.arrivalDate,
@@ -370,6 +375,7 @@
         destinationTimezone: formData.destinationTimezone
       });
 
+      console.log('[ItemEditForm] Submitting:', {
         itemType,
         isEditing,
         tripId: effectiveTripId,
@@ -384,6 +390,7 @@
         }
       } else if (itemType === 'flight') {
         if (isEditing) {
+          console.log('[ItemEditForm] Updating flight with:', submitData);
           result = await flightsApi.update(data.id, submitData);
         } else {
           result = await flightsApi.create(effectiveTripId, submitData);
@@ -414,12 +421,14 @@
         }
       }
 
+      console.log('[ItemEditForm] Save successful, result:', result);
 
       // Save companions for the item if any were selected
       if (selectedCompanions && selectedCompanions.length > 0 && result && result.id) {
         try {
           const companionIds = selectedCompanions.map(c => c.id);
           await itemCompanionsApi.update(itemType, result.id, companionIds);
+          console.log('[ItemEditForm] Companions saved successfully');
 
           // After saving companions, fetch the complete item with companions to ensure data consistency
           if (itemType === 'flight') {
@@ -504,6 +513,7 @@
       // If the error contains "pattern" but we successfully deleted, ignore it
       if (errMessage.includes('pattern') || errMessage.includes('string')) {
         // The delete likely succeeded despite the error, close the form
+        console.debug('Ignoring validation error after delete:', errMessage);
         onSave(null);
         onClose();
       } else {
@@ -1034,6 +1044,7 @@
         <ItemCompanionsForm
           companions={selectedCompanions}
           onCompanionsUpdate={(companions) => {
+            console.log('[ItemEditForm] onCompanionsUpdate called:', {
               oldCount: selectedCompanions.length,
               newCount: companions.length,
               companions: companions,
@@ -1046,12 +1057,14 @@
             // For existing items in a trip, immediately save companions to trigger auto-propagation
             if (isEditing && data?.id && selectedTripId) {
               const companionIds = companions.map(c => c.id);
+              console.log('[ItemEditForm] Saving companions to API:', { itemType, itemId: data.id, companionIds });
               itemCompanionsApi.update(itemType, data.id, companionIds).catch((err) => {
                 console.error('Error saving companions:', err);
               });
             } else if (isEditing && data?.id && !selectedTripId) {
               // Standalone item - also save companions
               const companionIds = companions.map(c => c.id);
+              console.log('[ItemEditForm] Saving companions to API (standalone):', { itemType, itemId: data.id, companionIds });
               itemCompanionsApi.update(itemType, data.id, companionIds).catch((err) => {
                 console.error('Error saving companions:', err);
               });
@@ -1069,17 +1082,21 @@
         tripId={data.id}
         companions={data.tripCompanions || []}
         onCompanionsUpdate={async (companions) => {
+          console.log('[ItemEditForm] Trip companions updated:', {
             oldCount: data.tripCompanions?.length || 0,
             newCount: companions.length,
             companions: companions
           });
           if (data) {
             data.tripCompanions = companions;
+            console.log('[ItemEditForm] data.tripCompanions updated to:', data.tripCompanions);
 
             // Refetch full trip data to update items with new companions
             // (backend adds new companions to all items via addCompanionToAllItems)
             try {
+              console.log('[ItemEditForm] Refetching trip data after companion update');
               const updatedTrip = await tripsApi.getOne(data.id);
+              console.log('[ItemEditForm] Refetched trip data:', updatedTrip);
 
               // Update data with fresh trip info (including updated items with new companions)
               if (updatedTrip) {

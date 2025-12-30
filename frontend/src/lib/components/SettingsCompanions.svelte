@@ -30,6 +30,7 @@
       error = null;
       const response = await settingsApi.getAllCompanions();
       companions = response.companions || [];
+      console.log('Loaded companions:', companions);
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to load companions';
     } finally {
