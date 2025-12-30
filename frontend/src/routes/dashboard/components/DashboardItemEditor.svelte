@@ -270,10 +270,10 @@
 
   .icon-btn {
     padding: 0.25rem;
-    background: transparent;
+    background: #3b82f6;
     border: none;
     cursor: pointer;
-    color: #6b7280;
+    color: white;
     border-radius: 0.375rem;
     transition: all 0.2s;
     display: flex;
@@ -282,8 +282,7 @@
   }
 
   .icon-btn:hover {
-    background: #f3f4f6;
-    color: #111827;
+    background: #2563eb;
   }
 
   .close-btn {
