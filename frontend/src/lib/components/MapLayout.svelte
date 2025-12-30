@@ -125,13 +125,13 @@
     left: calc(2.5vh + 340px + 2.5vh);
     z-index: 21;
     padding: 0;
-    transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   /* Secondary sidebar full-width: takes remaining space */
   :global(.secondary-sidebar.full-width) {
     width: auto;
-    right: calc(2.5vh + 340px + 2.5vh);
+    right: calc(2.5vh + 340px + 2.5vh + 2.5vh);
     left: calc(2.5vh + 340px + 2.5vh);
   }
 
