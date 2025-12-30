@@ -484,45 +484,48 @@
   }
 
   .action-btn {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
     width: 32px;
     height: 32px;
     padding: 0;
-    background: #f0f0f0;
-    border: 1px solid #ddd;
+    margin: 0;
+    border: none;
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s ease;
-    color: #666;
   }
 
-  .action-btn:hover:not(:disabled) {
-    background: #e0e0e0;
-    border-color: #ccc;
-    color: #333;
+  .action-btn :global(.material-symbols-outlined) {
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  .action-btn.edit:hover {
-    background: #e3f2fd;
-    border-color: #1976d2;
+  .action-btn.edit {
+    background-color: #e3f2fd;
     color: #1976d2;
   }
 
-  .action-btn.delete:hover {
-    background: #ffebee;
-    border-color: #d32f2f;
-    color: #d32f2f;
+  .action-btn.edit:hover:not(:disabled) {
+    background-color: #bbdefb;
+  }
+
+  .action-btn.delete {
+    background-color: #ffebee;
+    color: #c62828;
+  }
+
+  .action-btn.delete:hover:not(:disabled) {
+    background-color: #ffcdd2;
   }
 
   .action-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-  }
-
-  .action-btn :global(.material-symbols-outlined) {
-    font-size: 18px;
   }
 
   @media (max-width: 640px) {
