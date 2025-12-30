@@ -412,11 +412,11 @@
   }
 
   .add-companion-btn {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    margin-bottom: 1rem;
+    padding: 0.5rem 0.875rem;
+    margin-bottom: 0.75rem;
     background: #3b82f6;
     color: white;
     border: none;
