@@ -167,7 +167,11 @@
                   <div class="item-content">
                     <p class="item-title">{item.data.name}</p>
                     {#if item.data.isAllDay}
-                      <p class="item-time">{formatDateOnly(item.data.startDateTime, item.data.timezone)}</p>
+                      {#if item.data.startDateTime && item.data.endDateTime && item.data.startDateTime !== item.data.endDateTime}
+                        <p class="item-time">{formatDateOnly(item.data.startDateTime, item.data.timezone)} - {formatDateOnly(item.data.endDateTime, item.data.timezone)}</p>
+                      {:else}
+                        <p class="item-time">{formatDateOnly(item.data.startDateTime, item.data.timezone)}</p>
+                      {/if}
                     {:else}
                       <p class="item-time">{formatDateTime(item.data.startDateTime, item.data.timezone)}</p>
                     {/if}
