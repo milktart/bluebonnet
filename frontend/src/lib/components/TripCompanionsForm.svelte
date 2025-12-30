@@ -119,24 +119,17 @@
       loading = true;
       error = null;
 
-      console.log('[TripCompanionsForm] Removing companion from trip:', { tripId, companionId });
-      console.log('[TripCompanionsForm] Current companions before filter:', companions);
       await companionsApi.removeFromTrip(tripId, companionId);
-      console.log('[TripCompanionsForm] Companion removed successfully from API');
 
       const beforeCount = companions.length;
       companions = companions.filter((c) => {
         const matches = (c.id === companionId || c.companionId === companionId);
-        console.log(`[TripCompanionsForm] Checking companion ${c.id} (companionId: ${c.companionId}) against ${companionId}: ${matches ? 'MATCH (remove)' : 'no match (keep)'}`);
         return !matches;
       });
-      console.log('[TripCompanionsForm] Companion filtered from local list, before:', beforeCount, 'after:', companions.length);
 
       if (onCompanionsUpdate) {
-        console.log('[TripCompanionsForm] Calling onCompanionsUpdate callback with', companions.length, 'companions');
         onCompanionsUpdate(companions);
       } else {
-        console.log('[TripCompanionsForm] No onCompanionsUpdate callback provided');
       }
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to remove companion';

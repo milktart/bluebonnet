@@ -18,7 +18,6 @@
 
   // Debug logging
   $: {
-    console.log('[ItemCompanionsForm] Props:', {
       companionsLength: companions?.length || 0,
       companions: companions,
     });
@@ -132,25 +131,18 @@
       loading = true;
       error = null;
 
-      console.log('[ItemCompanionsForm] handleRemoveCompanion called:', { companionId, companionsCount: companions.length });
 
       // Call the provided callback to remove companion
       if (onRemoveCompanion) {
-        console.log('[ItemCompanionsForm] Calling onRemoveCompanion callback');
         await onRemoveCompanion(companionId);
       } else {
-        console.log('[ItemCompanionsForm] No onRemoveCompanion callback provided');
       }
 
-      console.log('[ItemCompanionsForm] Filtering companions:', { companionId, beforeCount: companions.length });
       companions = companions.filter((c) => c.id !== companionId);
-      console.log('[ItemCompanionsForm] After filter:', { afterCount: companions.length });
 
       if (onCompanionsUpdate) {
-        console.log('[ItemCompanionsForm] Calling onCompanionsUpdate callback');
         onCompanionsUpdate(companions);
       } else {
-        console.log('[ItemCompanionsForm] No onCompanionsUpdate callback provided');
       }
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to remove companion';
