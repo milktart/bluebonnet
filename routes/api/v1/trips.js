@@ -1,7 +1,9 @@
 /**
  * API v1 Trips Routes
  * RESTful JSON API for trip management
- * Phase 3 - API Versioning
+ *
+ * All endpoints require authentication (ensureAuthenticated middleware)
+ * Response format: { success: boolean, data: ?, message: string }
  */
 
 const express = require('express');
@@ -25,8 +27,16 @@ router.use(ensureAuthenticated);
 
 /**
  * GET /api/v1/trips
- * List all trips for authenticated user
- * Query params: filter (upcoming/past/all), page, limit
+ *
+ * List all trips for authenticated user (both owned and companion trips)
+ *
+ * @query {string} filter - Filter trips: 'upcoming', 'past', or 'all' (default: 'upcoming')
+ * @query {number} page - Page number for pagination (default: 1)
+ * @query {number} limit - Items per page (default: 20)
+ *
+ * @returns {object} { trips: Trip[], standalone: any[] }
+ * @throws {401} Unauthorized if not authenticated
+ * @throws {500} Internal server error
  */
 router.get('/', async (req, res) => {
   try {
@@ -39,13 +49,18 @@ router.get('/', async (req, res) => {
       limit: parseInt(limit, 10),
     });
 
-    console.log('[API v1/trips] Retrieved trips - owned:', result.ownedTrips.length, 'companions:', result.companionTrips.length);
+    console.log(
+      '[API v1/trips] Retrieved trips - owned:',
+      result.ownedTrips.length,
+      'companions:',
+      result.companionTrips.length
+    );
 
     // Combine owned and companion trips, removing duplicates
     const tripIds = new Set();
     const trips = [];
 
-    [...result.ownedTrips, ...result.companionTrips].forEach(trip => {
+    [...result.ownedTrips, ...result.companionTrips].forEach((trip) => {
       if (!tripIds.has(trip.id)) {
         tripIds.add(trip.id);
         trips.push(trip);
@@ -82,7 +97,12 @@ router.get('/', async (req, res) => {
 
 /**
  * GET /api/v1/trips/stats
+ *
  * Get trip statistics for authenticated user
+ *
+ * @returns {object} { totalTrips, upcomingTrips, pastTrips, totalFlights, totalHotels, companionsCount }
+ * @throws {401} Unauthorized if not authenticated
+ * @throws {500} Internal server error
  */
 router.get('/stats', async (req, res) => {
   try {
@@ -95,8 +115,16 @@ router.get('/stats', async (req, res) => {
 
 /**
  * GET /api/v1/trips/search
+ *
  * Search trips by name or destination
- * Query params: q (query), limit
+ *
+ * @query {string} q - Search query string (minimum 2 characters, required)
+ * @query {number} limit - Maximum results to return (default: 10)
+ *
+ * @returns {Trip[]} Array of matching trips
+ * @throws {400} Bad request if query too short
+ * @throws {401} Unauthorized if not authenticated
+ * @throws {500} Internal server error
  */
 router.get('/search', async (req, res) => {
   try {
@@ -116,7 +144,15 @@ router.get('/search', async (req, res) => {
 
 /**
  * GET /api/v1/trips/:id
- * Get trip details by ID
+ *
+ * Get trip details by ID (with all associated items and companions)
+ *
+ * @param {string} id - Trip ID (UUID)
+ *
+ * @returns {Trip} Full trip object with flights, hotels, events, companions, etc.
+ * @throws {401} Unauthorized if not authenticated
+ * @throws {404} Trip not found
+ * @throws {500} Internal server error
  */
 router.get('/:id', async (req, res) => {
   try {
@@ -134,7 +170,19 @@ router.get('/:id', async (req, res) => {
 
 /**
  * POST /api/v1/trips
+ *
  * Create a new trip
+ *
+ * @body {string} name - Trip name (required)
+ * @body {string} departureDate - Departure date in ISO format YYYY-MM-DD (required)
+ * @body {string} returnDate - Return date in ISO format YYYY-MM-DD (optional)
+ * @body {string} purpose - Trip purpose: business, leisure, family, etc. (optional, default: leisure)
+ * @body {boolean} defaultCompanionEditPermission - Allow companions to edit by default (optional)
+ *
+ * @returns {Trip} Newly created trip
+ * @throws {400} Bad request if validation fails
+ * @throws {401} Unauthorized if not authenticated
+ * @throws {500} Internal server error
  */
 router.post('/', async (req, res) => {
   try {
@@ -142,10 +190,7 @@ router.post('/', async (req, res) => {
 
     // Basic validation
     if (!name || !departureDate) {
-      return apiResponse.badRequest(
-        res,
-        'Missing required fields: name, departureDate'
-      );
+      return apiResponse.badRequest(res, 'Missing required fields: name, departureDate');
     }
 
     const trip = await tripService.createTrip(req.body, req.user.id);
