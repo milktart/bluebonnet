@@ -305,10 +305,9 @@
   }
 
   .actions-group {
-    display: grid;
-    grid-template-columns: repeat(2, 32px);
-    gap: 1rem;
-    justify-content: center;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: end;
     align-items: center;
   }
 
