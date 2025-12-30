@@ -281,13 +281,12 @@
   }
 
   .indicator {
-    display: inline-block;
+    display: inline-flex;
     width: 24px;
     height: 24px;
     background-color: #d4edda;
     color: #155724;
     border-radius: 50%;
-    display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
