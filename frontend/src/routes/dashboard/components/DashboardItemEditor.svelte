@@ -279,10 +279,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 0.875rem;
   }
 
   .icon-btn:hover {
     background: #2563eb;
+  }
+
+  .icon-btn :global(.material-symbols-outlined) {
+    font-size: 1rem !important;
   }
 
   .close-btn {
