@@ -71,7 +71,7 @@
   .settings-main-content {
     flex: 1;
     overflow-y: auto;
-    padding: 0;
+    padding: 1rem 0;
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -81,7 +81,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    padding: 0 1rem;
+    padding: 0 0.75rem;
   }
 
   .settings-section h3 {
@@ -97,7 +97,7 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 0.875rem;
     background: #ffffff;
     border: 1px solid #e5e7eb;
     cursor: pointer;
