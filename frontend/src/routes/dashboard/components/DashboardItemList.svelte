@@ -14,6 +14,7 @@
 
   // Debug: Log all events to console
   $: {
+    console.log(`[DashboardItemList] filteredItems changed, total items: ${filteredItems.length}`);
     filteredItems.forEach((item) => {
       if (item.itemType === 'event') {
         const startDate = new Date(item.data.startDateTime);
