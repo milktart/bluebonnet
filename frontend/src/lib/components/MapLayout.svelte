@@ -148,7 +148,6 @@
     left: auto;
     z-index: 22;
     flex-shrink: 0;
-    padding: 0;
   }
 
   /* Responsive adjustments */
