@@ -493,55 +493,330 @@
           </Button>
         </div>
       {:else}
-        <DashboardTripsList
-          {trips}
-          {filteredItems}
-          {expandedTrips}
-          {highlightedTripId}
-          {highlightedItemId}
-          {highlightedItemType}
-          on:expandTrip={(e) => {
-            toggleTripExpanded(e.detail.tripId);
-          }}
-          on:hoverTrip={(e) => {
-            highlightedTripId = e.detail.tripId;
-          }}
-          on:leaveTrip={() => {
-            highlightedTripId = null;
-          }}
-          on:editTrip={(e) => {
-            secondarySidebarContent = { type: 'item', itemType: 'trip', data: e.detail.trip };
-          }}
-          on:hoverItem={(e) => {
-            highlightedItemType = e.detail.itemType;
-            highlightedItemId = e.detail.itemId;
-          }}
-          on:leaveItem={() => {
-            highlightedItemId = null;
-            highlightedItemType = null;
-          }}
-          on:itemClick={(e) => {
-            handleItemClick(e.detail.itemType, e.detail.itemType, e.detail.data);
-          }}
-        />
-        <DashboardItemList
-          {filteredItems}
-          {groupedItems}
-          {dateKeysInOrder}
-          {highlightedItemId}
-          {highlightedItemType}
-          on:hoverItem={(e) => {
-            highlightedItemType = e.detail.itemType;
-            highlightedItemId = e.detail.itemId;
-          }}
-          on:leaveItem={() => {
-            highlightedItemId = null;
-            highlightedItemType = null;
-          }}
-          on:itemClick={(e) => {
-            handleItemClick(e.detail.itemType, e.detail.itemType, e.detail.data);
-          }}
-        />
+        <!-- Chronological Timeline: Trips and standalone items interleaved by date -->
+        <div class="trips-list">
+          {#each dateKeysInOrder as dateKey (dateKey)}
+            <div class="timeline-date-group">
+              <div class="timeline-date-header">
+                <span class="date-badge">{formatMonthHeader(dateKey)}</span>
+              </div>
+              <div class="timeline-items">
+                {#each groupedItems[dateKey] as item (item.type === 'trip' ? item.data.id : `${item.itemType}-${item.data.id}`)}
+                  {#if item.type === 'trip'}
+                    <!-- Trip Card -->
+                    <div
+                      class="trip-card"
+                      class:expanded={expandedTrips.has(item.data.id)}
+                      class:highlighted={highlightedTripId === item.data.id}
+                      on:mouseenter={() => highlightedTripId = item.data.id}
+                      on:mouseleave={() => highlightedTripId = null}
+                    >
+                      <!-- Trip Header -->
+                      <div
+                        class="trip-header"
+                        on:click={() => toggleTripExpanded(item.data.id)}
+                        role="button"
+                        tabindex="0"
+                        on:keydown={(e) => e.key === 'Enter' && toggleTripExpanded(item.data.id)}
+                      >
+                        <div class="trip-icon-container">
+                          <span class="material-symbols-outlined trip-icon">
+                            {getTripIcon(item.data.purpose)}
+                          </span>
+                        </div>
+
+                        <div class="trip-info">
+                          <div class="trip-name-row">
+                            <h3 class="trip-name">{item.data.name}</h3>
+                            <button
+                              class="edit-btn"
+                              title="Edit trip details and companions"
+                              on:click={(e) => {
+                                e.stopPropagation();
+                                secondarySidebarContent = { type: 'item', itemType: 'trip', data: item.data };
+                              }}
+                            >
+                              <span class="material-symbols-outlined">edit</span>
+                            </button>
+                          </div>
+                          <p class="trip-dates">
+                            {formatDate(item.data.departureDate)} - {formatDate(item.data.returnDate || item.data.departureDate)}
+                          </p>
+                          {#if getTripCities(item.data)}
+                            <p class="trip-cities">{getTripCities(item.data)}</p>
+                          {/if}
+                        </div>
+
+                        <button
+                          class="expand-btn"
+                          class:rotated={expandedTrips.has(item.data.id)}
+                          on:click={(e) => {
+                            e.stopPropagation();
+                            toggleTripExpanded(item.data.id);
+                          }}
+                        >
+                          <span class="material-symbols-outlined">expand_more</span>
+                        </button>
+                      </div>
+
+                      {#if item.data.tripCompanions && item.data.tripCompanions.length > 0}
+                        <div class="trip-companions">
+                          <CompanionIndicators companions={item.data.tripCompanions} />
+                        </div>
+                      {/if}
+
+                      <!-- Trip Items (Accordion Content) - Date-level Timeline -->
+                      {#if expandedTrips.has(item.data.id)}
+                        <div class="trip-items">
+                          {#each Object.keys(groupTripItemsByDate(item.data)) as dayKey (dayKey)}
+                            <div class="trip-item-date-group">
+                              <div class="trip-item-date-header">
+                                <span class="trip-date-badge">{formatTripDateHeader(dayKey)}</span>
+                              </div>
+                              <div class="trip-item-date-items">
+                                {#each groupTripItemsByDate(item.data)[dayKey] as tripItem (tripItem.id)}
+                                  {#if tripItem.type === 'flight'}
+                                    <div
+                                      class="standalone-item-card"
+                                      class:item-highlighted={highlightedItemId === tripItem.id && highlightedItemType === 'flight'}
+                                      on:mouseenter={() => { highlightedItemType = 'flight'; highlightedItemId = tripItem.id; }}
+                                      on:mouseleave={() => { highlightedItemId = null; highlightedItemType = null; }}
+                                      on:click={() => handleItemClick('flight', 'flight', tripItem)}
+                                      role="button"
+                                      tabindex="0"
+                                      on:keydown={(e) => e.key === 'Enter' && handleItemClick('flight', 'flight', tripItem)}
+                                    >
+                                      <div class="flight-icon-wrapper">
+                                        <p class="flight-time-label">{formatTimeOnly(tripItem.departureDateTime, tripItem.originTimezone)}</p>
+                                        <div class="item-icon blue">
+                                          <span class="material-symbols-outlined" style="font-size: 1.3rem;">flight</span>
+                                        </div>
+                                      </div>
+                                      <div class="item-content">
+                                        <p class="item-title">{tripItem.flightNumber}</p>
+                                        <p class="item-route">
+                                          {getCityName(tripItem.origin)} → {getCityName(tripItem.destination)}
+                                        </p>
+                                      </div>
+                                      {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
+                                        <div class="item-companions">
+                                          <CompanionIndicators companions={tripItem.itemCompanions} />
+                                        </div>
+                                      {/if}
+                                    </div>
+                                  {:else if tripItem.type === 'hotel'}
+                                    <div
+                                      class="standalone-item-card"
+                                      class:item-highlighted={highlightedItemId === tripItem.id && highlightedItemType === 'hotel'}
+                                      on:mouseenter={() => { highlightedItemType = 'hotel'; highlightedItemId = tripItem.id; }}
+                                      on:mouseleave={() => { highlightedItemId = null; highlightedItemType = null; }}
+                                      on:click={() => handleItemClick('hotel', 'hotel', tripItem)}
+                                      role="button"
+                                      tabindex="0"
+                                      on:keydown={(e) => e.key === 'Enter' && handleItemClick('hotel', 'hotel', tripItem)}
+                                    >
+                                      <div class="item-icon green">
+                                        <span class="material-symbols-outlined" style="font-size: 1.3rem;">hotel</span>
+                                      </div>
+                                      <div class="item-content">
+                                        <p class="item-title">{tripItem.hotelName || tripItem.name}</p>
+                                        <p class="item-dates">{formatDateOnly(tripItem.checkInDateTime, tripItem.timezone)} - {formatDateOnly(tripItem.checkOutDateTime, tripItem.timezone)}</p>
+                                        <p class="item-route">{getCityName(tripItem.address) || getCityName(tripItem.city)}</p>
+                                      </div>
+                                      {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
+                                        <div class="item-companions">
+                                          <CompanionIndicators companions={tripItem.itemCompanions} />
+                                        </div>
+                                      {/if}
+                                    </div>
+                                  {:else if tripItem.type === 'transportation'}
+                                    <div
+                                      class="standalone-item-card"
+                                      on:mouseenter={() => { highlightedItemType = 'transportation'; highlightedItemId = tripItem.id; }}
+                                      on:mouseleave={() => { highlightedItemId = null; highlightedItemType = null; }}
+                                      on:click={() => handleItemClick('transportation', 'transportation', tripItem)}
+                                      role="button"
+                                      tabindex="0"
+                                      on:keydown={(e) => e.key === 'Enter' && handleItemClick('transportation', 'transportation', tripItem)}
+                                    >
+                                      <div class="flight-icon-wrapper">
+                                        <p class="flight-time-label">{formatTimeOnly(tripItem.departureDateTime, tripItem.originTimezone)}</p>
+                                        <div class="item-icon red">
+                                          <span class="material-symbols-outlined" style="font-size: 1.3rem;">{getTransportIcon(tripItem.method)}</span>
+                                        </div>
+                                      </div>
+                                      <div class="item-content">
+                                        <p class="item-title">{capitalize(tripItem.method)}</p>
+                                        <p class="item-route">
+                                          {getCityName(tripItem.origin)} → {getCityName(tripItem.destination)}
+                                        </p>
+                                      </div>
+                                      {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
+                                        <div class="item-companions">
+                                          <CompanionIndicators companions={tripItem.itemCompanions} />
+                                        </div>
+                                      {/if}
+                                    </div>
+                                  {:else if tripItem.type === 'carRental'}
+                                    <div
+                                      class="standalone-item-card"
+                                      on:mouseenter={() => { highlightedItemType = 'carRental'; highlightedItemId = tripItem.id; }}
+                                      on:mouseleave={() => { highlightedItemId = null; highlightedItemType = null; }}
+                                      on:click={() => handleItemClick('carRental', 'carRental', tripItem)}
+                                      role="button"
+                                      tabindex="0"
+                                      on:keydown={(e) => e.key === 'Enter' && handleItemClick('carRental', 'carRental', tripItem)}
+                                    >
+                                      <div class="item-icon gray">
+                                        <span class="material-symbols-outlined" style="font-size: 1.3rem;">directions_car</span>
+                                      </div>
+                                      <div class="item-content">
+                                        <p class="item-title">{tripItem.company}</p>
+                                        <p class="item-time">{formatDateTime(tripItem.pickupDateTime, tripItem.pickupTimezone)}</p>
+                                        <p class="item-route">{getCityName(tripItem.pickupLocation)}</p>
+                                      </div>
+                                      {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
+                                        <div class="item-companions">
+                                          <CompanionIndicators companions={tripItem.itemCompanions} />
+                                        </div>
+                                      {/if}
+                                    </div>
+                                  {:else if tripItem.type === 'event'}
+                                    <div
+                                      class="standalone-item-card"
+                                      on:mouseenter={() => { highlightedItemType = 'event'; highlightedItemId = tripItem.id; }}
+                                      on:mouseleave={() => { highlightedItemId = null; highlightedItemType = null; }}
+                                      on:click={() => handleItemClick('event', 'event', tripItem)}
+                                      role="button"
+                                      tabindex="0"
+                                      on:keydown={(e) => e.key === 'Enter' && handleItemClick('event', 'event', tripItem)}
+                                    >
+                                      {#if tripItem.isAllDay}
+                                        <div class="item-icon purple">
+                                          <span class="material-symbols-outlined" style="font-size: 1.3rem;">event</span>
+                                        </div>
+                                      {:else}
+                                        <div class="flight-icon-wrapper">
+                                          <p class="flight-time-label">{formatTimeOnly(tripItem.startDateTime, tripItem.timezone)}</p>
+                                          <div class="item-icon purple">
+                                            <span class="material-symbols-outlined" style="font-size: 1.3rem;">event</span>
+                                          </div>
+                                        </div>
+                                      {/if}
+                                      <div class="item-content">
+                                        <p class="item-title">{tripItem.name}</p>
+                                        <p class="item-time">{formatDateTime(tripItem.startDateTime, tripItem.timezone)}</p>
+                                        <p class="item-route">{tripItem.location}</p>
+                                      </div>
+                                      {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
+                                        <div class="item-companions">
+                                          <CompanionIndicators companions={tripItem.itemCompanions} />
+                                        </div>
+                                      {/if}
+                                    </div>
+                                  {/if}
+                                {/each}
+                              </div>
+                            </div>
+                          {/each}
+                        </div>
+                      {/if}
+                    </div>
+                  {:else}
+                    <!-- Standalone Item Card -->
+                    <div
+                      class="standalone-item-card"
+                      class:item-highlighted={highlightedItemId === item.data.id && highlightedItemType === item.itemType}
+                      on:mouseenter={() => { highlightedItemType = item.itemType; highlightedItemId = item.data.id; }}
+                      on:mouseleave={() => { highlightedItemId = null; highlightedItemType = null; }}
+                      on:click={() => handleItemClick(item.itemType, item.itemType, item.data)}
+                      role="button"
+                      tabindex="0"
+                      on:keydown={(e) => e.key === 'Enter' && handleItemClick(item.itemType, item.itemType, item.data)}
+                    >
+                      {#if item.itemType === 'flight'}
+                        <div class="flight-icon-wrapper">
+                          <p class="flight-time-label">{formatTimeOnly(item.data.departureDateTime, item.data.originTimezone)}</p>
+                          <div class="item-icon blue">
+                            <span class="material-symbols-outlined" style="font-size: 1.3rem;">flight</span>
+                          </div>
+                        </div>
+                      {:else if item.itemType === 'hotel'}
+                        <div class="item-icon green">
+                          <span class="material-symbols-outlined" style="font-size: 1.3rem;">hotel</span>
+                        </div>
+                      {:else if item.itemType === 'transportation'}
+                        <div class="flight-icon-wrapper">
+                          <p class="flight-time-label">{formatTimeOnly(item.data.departureDateTime, item.data.originTimezone)}</p>
+                          <div class="item-icon red">
+                            <span class="material-symbols-outlined" style="font-size: 1.3rem;">{getTransportIcon(item.data.method)}</span>
+                          </div>
+                        </div>
+                      {:else if item.itemType === 'carRental'}
+                        <div class="item-icon gray">
+                          <span class="material-symbols-outlined" style="font-size: 1.3rem;">directions_car</span>
+                        </div>
+                      {:else if item.itemType === 'event'}
+                        {#if item.data.isAllDay}
+                          <div class="item-icon purple">
+                            <span class="material-symbols-outlined" style="font-size: 1.3rem;">event</span>
+                          </div>
+                        {:else}
+                          <div class="flight-icon-wrapper">
+                            <p class="flight-time-label">{formatTimeOnly(item.data.startDateTime, item.data.timezone)}</p>
+                            <div class="item-icon purple">
+                              <span class="material-symbols-outlined" style="font-size: 1.3rem;">event</span>
+                            </div>
+                          </div>
+                        {/if}
+                      {/if}
+
+                      <div class="item-content">
+                        <p class="item-title">
+                          {item.itemType === 'flight' ? item.data.flightNumber : item.itemType === 'hotel' ? (item.data.hotelName || item.data.name) : item.itemType === 'carRental' ? item.data.company : item.itemType === 'event' ? item.data.name : capitalize(item.data.method)}
+                        </p>
+                        {#if item.itemType === 'hotel'}
+                          <p class="item-dates">{formatDateOnly(item.data.checkInDateTime, item.data.timezone)} - {formatDateOnly(item.data.checkOutDateTime, item.data.timezone)}</p>
+                        {:else}
+                          <p class="item-time">
+                            {#if item.itemType === 'flight'}
+                              {formatDateTime(item.data.departureDateTime, item.data.originTimezone)}
+                            {:else if item.itemType === 'transportation'}
+                              {formatDateTime(item.data.departureDateTime, item.data.originTimezone)}
+                            {:else if item.itemType === 'carRental'}
+                              {formatDateTime(item.data.pickupDateTime, item.data.pickupTimezone)}
+                            {:else if item.itemType === 'event'}
+                              {formatDateTime(item.data.startDateTime, item.data.timezone)}
+                            {/if}
+                          </p>
+                        {/if}
+                        <p class="item-route">
+                          {#if item.itemType === 'flight'}
+                            {getCityName(item.data.origin)} → {getCityName(item.data.destination)}
+                          {:else if item.itemType === 'hotel'}
+                            {getCityName(item.data.address)}
+                          {:else if item.itemType === 'transportation'}
+                            {getCityName(item.data.origin)} → {getCityName(item.data.destination)}
+                          {:else if item.itemType === 'carRental'}
+                            {getCityName(item.data.pickupLocation)}
+                          {:else if item.itemType === 'event'}
+                            {item.data.location}
+                          {/if}
+                        </p>
+                      </div>
+
+                      {#if item.data.itemCompanions && item.data.itemCompanions.length > 0}
+                        <div class="item-companions">
+                          <CompanionIndicators companions={item.data.itemCompanions} />
+                        </div>
+                      {/if}
+                    </div>
+                  {/if}
+                {/each}
+              </div>
+            </div>
+          {/each}
+        </div>
       {/if}
     </div>
   </div>
