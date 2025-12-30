@@ -24,7 +24,24 @@ router.use(ensureAuthenticated);
 /**
  * GET /api/v1/companions/all
  * Get all available companions for the current user
- * Returns companions created by user + companion profiles (where user was added)
+ *
+ * Returns companions created by user + companion profiles (where user was added by others)
+ * Combines both directions of companion relationships with flags indicating direction
+ *
+ * @returns {Object} 200 OK response with companions array
+ * @returns {Array} returns - Array of companion objects
+ * @returns {string} returns[].id - Companion ID (UUID)
+ * @returns {string} returns[].firstName - Companion first name
+ * @returns {string} returns[].lastName - Companion last name
+ * @returns {string} returns[].email - Companion email
+ * @returns {boolean} returns[].youInvited - Whether you invited them
+ * @returns {boolean} returns[].theyInvited - Whether they invited you
+ * @returns {boolean} returns[].canBeAddedByOthers - Whether companion allows being added to trips
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.get('/all', async (req, res) => {
   try {
@@ -106,7 +123,33 @@ router.get('/all', async (req, res) => {
 
 /**
  * GET /api/v1/companions/trips/:tripId
- * Get all companions for a trip
+ * Get all companions associated with a specific trip
+ *
+ * Returns trip-level companions with their edit permissions
+ * Validates that requesting user owns the trip
+ *
+ * @param {string} req.params.tripId - Trip ID (UUID)
+ *
+ * @returns {Object} 200 OK response with trip companions array
+ * @returns {Array} returns - Array of companion objects
+ * @returns {string} returns[].id - Relationship ID (TripCompanion)
+ * @returns {string} returns[].tripId - Associated trip ID
+ * @returns {string} returns[].companionId - Companion ID
+ * @returns {boolean} returns[].canEdit - Whether companion can edit trip
+ * @returns {string} returns[].permissionSource - How permission was granted
+ * @returns {Object} returns[].companion - Companion details
+ * @returns {string} returns[].companion.id - Companion ID
+ * @returns {string} returns[].companion.email - Companion email
+ * @returns {string} returns[].companion.firstName - First name
+ * @returns {string} returns[].companion.lastName - Last name
+ * @returns {string} returns[].companion.name - Full name
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {403} Forbidden - User does not own the trip
+ * @throws {404} Not found - Trip not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.get('/trips/:tripId', async (req, res) => {
   try {
@@ -143,7 +186,27 @@ router.get('/trips/:tripId', async (req, res) => {
 
 /**
  * GET /api/v1/companions/:id
- * Get companion details
+ * Get detailed information about a companion
+ *
+ * @param {string} req.params.id - Companion ID (UUID)
+ *
+ * @returns {Object} 200 OK response with companion details
+ * @returns {string} returns.id - Companion ID
+ * @returns {string} returns.email - Companion email address
+ * @returns {string} returns.firstName - Companion first name
+ * @returns {string} returns.lastName - Companion last name
+ * @returns {string} returns.name - Full name
+ * @returns {string} [returns.phone] - Phone number if available
+ * @returns {string} [returns.avatar] - Avatar URL if available
+ * @returns {boolean} returns.canBeAddedByOthers - Whether can be added to trips by others
+ * @returns {string} returns.createdAt - Creation timestamp (ISO format)
+ * @returns {string} returns.updatedAt - Last update timestamp (ISO format)
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {404} Not found - Companion not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.get('/:id', async (req, res) => {
   try {
@@ -163,7 +226,30 @@ router.get('/:id', async (req, res) => {
 /**
  * POST /api/v1/companions/trips/:tripId
  * Add a companion to a trip
- * Also automatically adds the companion to all existing items in the trip
+ *
+ * Creates trip-level companion relationship and automatically adds companion to all existing items
+ * Handles cascading companion assignment with optional edit permissions
+ *
+ * @param {string} req.params.tripId - Trip ID (UUID)
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.companionId - Companion ID to add
+ * @param {boolean} [req.body.canEdit] - Grant edit permissions (default: false)
+ *
+ * @returns {Object} 201 Created response with companion relationship
+ * @returns {string} returns.id - Companion ID
+ * @returns {string} returns.email - Companion email
+ * @returns {string} returns.firstName - Companion first name
+ * @returns {string} returns.lastName - Companion last name
+ * @returns {boolean} returns.canEdit - Edit permission granted
+ *
+ * @throws {400} Bad request - Invalid companion ID
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {403} Forbidden - User does not own the trip
+ * @throws {404} Not found - Trip or companion not found
+ * @throws {409} Conflict - Companion already added to trip
+ * @throws {500} Server error - Database or item assignment failure
+ *
+ * @requires authentication - User must be logged in
  */
 router.post('/trips/:tripId', async (req, res) => {
   try {
@@ -245,7 +331,21 @@ router.post('/trips/:tripId', async (req, res) => {
 /**
  * DELETE /api/v1/companions/trips/:tripId/:companionId
  * Remove a companion from a trip
- * Also removes the companion from all items in the trip (those inherited from trip level)
+ *
+ * Removes trip-level relationship and cascades deletion from all trip items
+ * Only removes item-level assignments that were inherited from trip level
+ *
+ * @param {string} req.params.tripId - Trip ID (UUID)
+ * @param {string} req.params.companionId - Companion ID to remove
+ *
+ * @returns {Object} 204 No Content - successful deletion (no response body)
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {403} Forbidden - User does not own the trip
+ * @throws {404} Not found - Trip, companion, or trip companion relationship not found
+ * @throws {500} Server error - Database or item removal failure
+ *
+ * @requires authentication - User must be logged in
  */
 router.delete('/trips/:tripId/:companionId', async (req, res) => {
   try {

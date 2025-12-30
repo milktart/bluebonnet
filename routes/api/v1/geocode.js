@@ -11,8 +11,40 @@ const router = express.Router();
 
 /**
  * GET /api/v1/geocode
- * Geocode an address and return coordinates and timezone
- * Query params: address (required)
+ * Geocode an address and infer timezone
+ *
+ * Converts an address string to geographic coordinates and determines timezone
+ * Used for location-based features in travel items
+ *
+ * @query {string} address - Address to geocode (required)
+ *   - Can be partial (e.g., "Paris", "NYC", "Times Square")
+ *   - More specific addresses yield more accurate results
+ *
+ * @returns {Object} 200 OK response with coordinates and timezone
+ * @returns {boolean} returns.success - Always true on successful geocoding
+ * @returns {string} returns.address - The address that was geocoded
+ * @returns {number} returns.lat - Latitude coordinate
+ * @returns {number} returns.lng - Longitude coordinate
+ * @returns {string} returns.timezone - IANA timezone string (e.g., "Europe/Paris")
+ *   - Falls back to 'UTC' if timezone inference fails
+ *   - Always returns a valid timezone string
+ *
+ * @throws {400} Bad request - Address parameter missing or empty
+ * @throws {404} Not found - Could not geocode the address
+ * @throws {500} Server error - Geocoding service error
+ *
+ * @note No authentication required for geocoding service
+ * @note Timezone inference always succeeds or returns 'UTC' as fallback
+ *
+ * @example
+ * GET /api/v1/geocode?address=Eiffel%20Tower
+ * Response: {
+ *   "success": true,
+ *   "address": "Eiffel Tower",
+ *   "lat": 48.8584,
+ *   "lng": 2.2945,
+ *   "timezone": "Europe/Paris"
+ * }
  */
 router.get('/', async (req, res) => {
   try {

@@ -23,7 +23,30 @@ router.use(ensureAuthenticated);
 
 /**
  * GET /api/v1/events/trips/:tripId
- * Get all events for a trip
+ * Retrieve all events associated with a specific trip
+ *
+ * Returns events ordered by start date/time (earliest first)
+ * Validates that requesting user owns the trip
+ *
+ * @param {string} req.params.tripId - Trip ID (UUID)
+ *
+ * @returns {Object} 200 OK response with events array
+ * @returns {Array} returns - Array of event objects
+ * @returns {string} returns[].id - Event ID
+ * @returns {string} returns[].tripId - Associated trip ID
+ * @returns {string} returns[].name - Event name
+ * @returns {string} returns[].location - Event location
+ * @returns {string} returns[].startDateTime - Start time in UTC ISO format
+ * @returns {string} returns[].endDateTime - End time in UTC ISO format
+ * @returns {string} [returns[].description] - Event description
+ * @returns {boolean} [returns[].allDay] - All-day event flag
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {403} Forbidden - User does not own the trip
+ * @throws {404} Not found - Trip not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.get('/trips/:tripId', async (req, res) => {
   try {
@@ -53,7 +76,34 @@ router.get('/trips/:tripId', async (req, res) => {
 
 /**
  * GET /api/v1/events/:id
- * Get event details
+ * Retrieve a specific event with its companion assignments
+ *
+ * Includes all companions assigned to this event (both direct and inherited from trip)
+ *
+ * @param {string} req.params.id - Event ID (UUID)
+ *
+ * @returns {Object} 200 OK response with event details
+ * @returns {string} returns.id - Event ID
+ * @returns {string} returns.name - Event name
+ * @returns {string} returns.location - Event location
+ * @returns {string} returns.startDateTime - Start time in UTC ISO format
+ * @returns {string} returns.endDateTime - End time in UTC ISO format
+ * @returns {string} [returns.description] - Event description/notes
+ * @returns {boolean} returns.allDay - All-day event flag
+ * @returns {string} [returns.category] - Event category (e.g., "conference", "meeting")
+ * @returns {string} [returns.url] - Event website or calendar URL
+ * @returns {Array} returns.itemCompanions - Assigned companions
+ * @returns {string} returns.itemCompanions[].id - Companion ID
+ * @returns {string} returns.itemCompanions[].email - Companion email
+ * @returns {string} returns.itemCompanions[].firstName - First name
+ * @returns {string} returns.itemCompanions[].lastName - Last name
+ * @returns {boolean} returns.itemCompanions[].inheritedFromTrip - Trip-level flag
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {404} Not found - Event not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.get('/:id', async (req, res) => {
   try {
@@ -96,6 +146,38 @@ router.get('/:id', async (req, res) => {
 /**
  * POST /api/v1/events
  * Create a standalone event (not associated with a trip)
+ *
+ * Supports multiple date/time formats:
+ * - startDate + startTime (separate fields)
+ * - endDate + endTime (separate fields)
+ * - allDay flag for all-day events
+ * Combines fields into startDateTime and endDateTime
+ *
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.name - Event name
+ * @param {string} req.body.location - Event location/venue
+ * @param {string} [req.body.description] - Event description
+ * @param {string} req.body.startDate - Start date (YYYY-MM-DD)
+ * @param {string} [req.body.startTime] - Start time (HH:mm)
+ * @param {string} [req.body.endDate] - End date (YYYY-MM-DD)
+ * @param {string} [req.body.endTime] - End time (HH:mm)
+ * @param {boolean} [req.body.allDay] - All-day event flag (defaults to midnight-23:59)
+ * @param {string} [req.body.category] - Event category
+ * @param {string} [req.body.url] - Event URL or calendar link
+ *
+ * @returns {Object} 201 Created response with event object
+ * @returns {string} returns.id - Event ID (UUID)
+ * @returns {string} returns.name - Event name
+ * @returns {string} returns.location - Location
+ * @returns {string} returns.startDateTime - Start time (ISO format)
+ * @returns {string} returns.endDateTime - End time (ISO format)
+ * @returns {boolean} returns.allDay - All-day flag
+ *
+ * @throws {400} Bad request - Missing required fields
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.post('/', async (req, res) => {
   try {
@@ -155,8 +237,34 @@ router.post('/', async (req, res) => {
 
 /**
  * POST /api/v1/events/trips/:tripId
- * Create an event for a trip
- * Auto-adds trip-level companions to the new event
+ * Create an event for a specific trip
+ *
+ * Automatically adds all trip-level companions to the new event
+ * Supports flexible date/time field combinations (same as POST /api/v1/events)
+ *
+ * @param {string} req.params.tripId - Trip ID (UUID)
+ * @param {Object} req.body - Request body (same as POST /api/v1/events)
+ * @param {string} req.body.name - Event name
+ * @param {string} req.body.location - Event location
+ * @param {string} [req.body.description] - Description
+ * @param {string} req.body.startDate - Start date (YYYY-MM-DD)
+ * @param {string} [req.body.startTime] - Start time (HH:mm)
+ * @param {string} [req.body.endDate] - End date (YYYY-MM-DD)
+ * @param {string} [req.body.endTime] - End time (HH:mm)
+ * @param {boolean} [req.body.allDay] - All-day event flag
+ *
+ * @returns {Object} 201 Created response with event object
+ * @returns {string} returns.id - Event ID
+ * @returns {string} returns.tripId - Associated trip ID
+ * @returns {Array} returns.itemCompanions - Auto-added companions from trip level
+ *
+ * @throws {400} Bad request - Invalid parameters
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {403} Forbidden - User does not own the trip
+ * @throws {404} Not found - Trip not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.post('/trips/:tripId', async (req, res) => {
   try {
@@ -236,7 +344,35 @@ router.post('/trips/:tripId', async (req, res) => {
 
 /**
  * PUT /api/v1/events/:id
- * Update an event
+ * Update an existing event
+ *
+ * Handles flexible date/time field combinations
+ * Validates event exists before updating
+ *
+ * @param {string} req.params.id - Event ID (UUID)
+ * @param {Object} req.body - Request body with updatable fields
+ * @param {string} [req.body.name] - Updated event name
+ * @param {string} [req.body.location] - Updated location
+ * @param {string} [req.body.description] - Updated description
+ * @param {string} [req.body.startDate] - Updated start date (YYYY-MM-DD)
+ * @param {string} [req.body.startTime] - Updated start time (HH:mm)
+ * @param {string} [req.body.endDate] - Updated end date (YYYY-MM-DD)
+ * @param {string} [req.body.endTime] - Updated end time (HH:mm)
+ * @param {boolean} [req.body.allDay] - Updated all-day flag
+ * @param {string} [req.body.category] - Updated category
+ * @param {string} [req.body.url] - Updated URL
+ *
+ * @returns {Object} 200 OK response with updated event
+ * @returns {string} returns.id - Event ID
+ * @returns {string} returns.name - Updated name
+ * @returns {string} returns.startDateTime - Updated start time (ISO format)
+ * @returns {string} returns.endDateTime - Updated end time (ISO format)
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {404} Not found - Event not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.put('/:id', async (req, res) => {
   try {
@@ -299,6 +435,19 @@ router.put('/:id', async (req, res) => {
 /**
  * DELETE /api/v1/events/:id
  * Delete an event
+ *
+ * Soft delete with cascade cleanup of companion assignments
+ * Validates event exists before deletion
+ *
+ * @param {string} req.params.id - Event ID (UUID)
+ *
+ * @returns {Object} 204 No Content - successful deletion (no response body)
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {404} Not found - Event not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.delete('/:id', async (req, res) => {
   try {

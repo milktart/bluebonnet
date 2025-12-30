@@ -23,7 +23,31 @@ router.use(ensureAuthenticated);
 
 /**
  * GET /api/v1/hotels/trips/:tripId
- * Get all hotels for a trip
+ * Retrieve all hotels associated with a specific trip
+ *
+ * Returns hotels ordered by check-in date (earliest first)
+ * Validates that requesting user owns the trip
+ *
+ * @param {string} req.params.tripId - Trip ID (UUID)
+ *
+ * @returns {Object} 200 OK response with hotels array
+ * @returns {Array} returns - Array of hotel objects
+ * @returns {string} returns[].id - Hotel ID
+ * @returns {string} returns[].tripId - Associated trip ID
+ * @returns {string} returns[].hotelName - Hotel name
+ * @returns {string} returns[].address - Hotel address
+ * @returns {string} returns[].city - City
+ * @returns {string} returns[].checkInDate - Check-in date (ISO format)
+ * @returns {string} returns[].checkOutDate - Check-out date (ISO format)
+ * @returns {string} [returns[].confirmationNumber] - Booking confirmation if available
+ * @returns {number} [returns[].price] - Nightly rate if available
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {403} Forbidden - User does not own the trip
+ * @throws {404} Not found - Trip not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.get('/trips/:tripId', async (req, res) => {
   try {
@@ -53,7 +77,39 @@ router.get('/trips/:tripId', async (req, res) => {
 
 /**
  * GET /api/v1/hotels/:id
- * Get hotel details
+ * Retrieve a specific hotel with its companion assignments
+ *
+ * Includes all companions assigned to this hotel (both direct and inherited from trip)
+ *
+ * @param {string} req.params.id - Hotel ID (UUID)
+ *
+ * @returns {Object} 200 OK response with hotel details
+ * @returns {string} returns.id - Hotel ID
+ * @returns {string} returns.hotelName - Hotel name
+ * @returns {string} returns.address - Street address
+ * @returns {string} returns.city - City
+ * @returns {string} returns.state - State/Province
+ * @returns {string} returns.postalCode - ZIP/postal code
+ * @returns {string} returns.country - Country
+ * @returns {string} returns.checkInDate - Check-in date (ISO format)
+ * @returns {string} returns.checkOutDate - Check-out date (ISO format)
+ * @returns {string} returns.checkInDateTime - Check-in with time (ISO format)
+ * @returns {string} returns.checkOutDateTime - Check-out with time (ISO format)
+ * @returns {string} [returns.confirmationNumber] - Booking reference
+ * @returns {string} [returns.phone] - Hotel phone number
+ * @returns {number} [returns.price] - Nightly rate
+ * @returns {Array} returns.itemCompanions - Assigned companions
+ * @returns {string} returns.itemCompanions[].id - Companion ID
+ * @returns {string} returns.itemCompanions[].email - Companion email
+ * @returns {string} returns.itemCompanions[].firstName - First name
+ * @returns {string} returns.itemCompanions[].lastName - Last name
+ * @returns {boolean} returns.itemCompanions[].inheritedFromTrip - Trip-level companion flag
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {404} Not found - Hotel not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.get('/:id', async (req, res) => {
   try {
@@ -96,6 +152,39 @@ router.get('/:id', async (req, res) => {
 /**
  * POST /api/v1/hotels
  * Create a standalone hotel (not associated with a trip)
+ *
+ * Supports both combined datetime and separate date/time fields
+ * Maps 'name' field to 'hotelName' for consistency
+ *
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.hotelName - Hotel name (or 'name' as alias)
+ * @param {string} req.body.address - Street address
+ * @param {string} req.body.city - City name
+ * @param {string} [req.body.state] - State or province
+ * @param {string} [req.body.postalCode] - ZIP or postal code
+ * @param {string} [req.body.country] - Country name
+ * @param {string} [req.body.checkInDate] - Check-in date (YYYY-MM-DD)
+ * @param {string} [req.body.checkInTime] - Check-in time (HH:mm)
+ * @param {string} [req.body.checkOutDate] - Check-out date (YYYY-MM-DD)
+ * @param {string} [req.body.checkOutTime] - Check-out time (HH:mm)
+ * @param {string} [req.body.confirmationNumber] - Booking reference
+ * @param {string} [req.body.phone] - Hotel contact phone
+ * @param {number} [req.body.price] - Nightly rate
+ * @param {string} [req.body.notes] - Additional notes
+ *
+ * @returns {Object} 201 Created response with hotel object
+ * @returns {string} returns.id - Hotel ID (UUID)
+ * @returns {string} returns.hotelName - Hotel name
+ * @returns {string} returns.address - Address
+ * @returns {string} returns.city - City
+ * @returns {string} returns.checkInDateTime - Check-in with time (ISO format)
+ * @returns {string} returns.checkOutDateTime - Check-out with time (ISO format)
+ *
+ * @throws {400} Bad request - Missing required fields
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.post('/', async (req, res) => {
   try {
@@ -131,8 +220,40 @@ router.post('/', async (req, res) => {
 
 /**
  * POST /api/v1/hotels/trips/:tripId
- * Create a hotel for a trip
- * Auto-adds trip-level companions to the new hotel
+ * Create a hotel for a specific trip
+ *
+ * Automatically adds all trip-level companions to the new hotel
+ * Validates trip ownership and processes date/time fields
+ *
+ * @param {string} req.params.tripId - Trip ID (UUID)
+ * @param {Object} req.body - Request body (same fields as POST /api/v1/hotels)
+ * @param {string} req.body.hotelName - Hotel name
+ * @param {string} req.body.address - Street address
+ * @param {string} req.body.city - City name
+ * @param {string} [req.body.state] - State or province
+ * @param {string} [req.body.postalCode] - ZIP code
+ * @param {string} [req.body.country] - Country
+ * @param {string} [req.body.checkInDate] - Check-in date (YYYY-MM-DD)
+ * @param {string} [req.body.checkInTime] - Check-in time (HH:mm)
+ * @param {string} [req.body.checkOutDate] - Check-out date (YYYY-MM-DD)
+ * @param {string} [req.body.checkOutTime] - Check-out time (HH:mm)
+ * @param {string} [req.body.confirmationNumber] - Booking reference
+ * @param {string} [req.body.phone] - Hotel phone
+ * @param {number} [req.body.price] - Nightly rate
+ * @param {string} [req.body.notes] - Notes
+ *
+ * @returns {Object} 201 Created response with hotel object
+ * @returns {string} returns.id - Hotel ID
+ * @returns {string} returns.tripId - Associated trip ID
+ * @returns {Array} returns.itemCompanions - Auto-added companions from trip level
+ *
+ * @throws {400} Bad request - Invalid parameters
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {403} Forbidden - User does not own the trip
+ * @throws {404} Not found - Trip not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.post('/trips/:tripId', async (req, res) => {
   try {
@@ -188,7 +309,39 @@ router.post('/trips/:tripId', async (req, res) => {
 
 /**
  * PUT /api/v1/hotels/:id
- * Update a hotel
+ * Update an existing hotel
+ *
+ * Processes date/time fields and maps field names appropriately
+ * Validates ownership and hotel exists
+ *
+ * @param {string} req.params.id - Hotel ID (UUID)
+ * @param {Object} req.body - Request body with updatable fields
+ * @param {string} [req.body.hotelName] - Updated hotel name
+ * @param {string} [req.body.address] - Updated address
+ * @param {string} [req.body.city] - Updated city
+ * @param {string} [req.body.state] - Updated state/province
+ * @param {string} [req.body.postalCode] - Updated postal code
+ * @param {string} [req.body.country] - Updated country
+ * @param {string} [req.body.checkInDate] - Updated check-in date (YYYY-MM-DD)
+ * @param {string} [req.body.checkInTime] - Updated check-in time (HH:mm)
+ * @param {string} [req.body.checkOutDate] - Updated check-out date (YYYY-MM-DD)
+ * @param {string} [req.body.checkOutTime] - Updated check-out time (HH:mm)
+ * @param {string} [req.body.confirmationNumber] - Updated confirmation number
+ * @param {string} [req.body.phone] - Updated phone number
+ * @param {number} [req.body.price] - Updated nightly rate
+ * @param {string} [req.body.notes] - Updated notes
+ *
+ * @returns {Object} 200 OK response with updated hotel
+ * @returns {string} returns.id - Hotel ID
+ * @returns {string} returns.hotelName - Updated name
+ * @returns {string} returns.checkInDateTime - Updated check-in (ISO format)
+ * @returns {string} returns.checkOutDateTime - Updated check-out (ISO format)
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {404} Not found - Hotel not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.put('/:id', async (req, res) => {
   try {
@@ -227,6 +380,19 @@ router.put('/:id', async (req, res) => {
 /**
  * DELETE /api/v1/hotels/:id
  * Delete a hotel
+ *
+ * Soft delete with cascade cleanup of companion assignments
+ * Validates hotel exists before deletion
+ *
+ * @param {string} req.params.id - Hotel ID (UUID)
+ *
+ * @returns {Object} 204 No Content - successful deletion (no response body)
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {404} Not found - Hotel not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.delete('/:id', async (req, res) => {
   try {

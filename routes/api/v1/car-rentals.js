@@ -23,7 +23,30 @@ router.use(ensureAuthenticated);
 
 /**
  * GET /api/v1/car-rentals/trips/:tripId
- * Get all car rentals for a trip
+ * Retrieve all car rentals associated with a specific trip
+ *
+ * Returns car rentals ordered by pickup date/time (earliest first)
+ * Validates that requesting user owns the trip
+ *
+ * @param {string} req.params.tripId - Trip ID (UUID)
+ *
+ * @returns {Object} 200 OK response with car rentals array
+ * @returns {Array} returns - Array of car rental objects
+ * @returns {string} returns[].id - Car rental ID
+ * @returns {string} returns[].tripId - Associated trip ID
+ * @returns {string} returns[].company - Rental company name
+ * @returns {string} returns[].carType - Vehicle type (sedan, SUV, etc.)
+ * @returns {string} returns[].pickupLocation - Pickup location
+ * @returns {string} returns[].pickupDateTime - Pickup in UTC ISO format
+ * @returns {string} returns[].dropoffDateTime - Dropoff in UTC ISO format
+ * @returns {string} [returns[].confirmationNumber] - Booking confirmation
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {403} Forbidden - User does not own the trip
+ * @throws {404} Not found - Trip not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.get('/trips/:tripId', async (req, res) => {
   try {
@@ -53,7 +76,37 @@ router.get('/trips/:tripId', async (req, res) => {
 
 /**
  * GET /api/v1/car-rentals/:id
- * Get car rental details
+ * Retrieve a specific car rental with its companion assignments
+ *
+ * Includes all companions assigned to this rental (both direct and inherited from trip)
+ *
+ * @param {string} req.params.id - Car rental ID (UUID)
+ *
+ * @returns {Object} 200 OK response with car rental details
+ * @returns {string} returns.id - Car rental ID
+ * @returns {string} returns.company - Rental company
+ * @returns {string} returns.carType - Vehicle type (sedan, SUV, compact, minivan, etc.)
+ * @returns {string} returns.carModel - Vehicle model
+ * @returns {string} returns.carColor - Vehicle color
+ * @returns {string} returns.pickupLocation - Pickup location address
+ * @returns {string} returns.dropoffLocation - Dropoff location address
+ * @returns {string} returns.pickupDateTime - Pickup in UTC ISO format
+ * @returns {string} returns.dropoffDateTime - Dropoff in UTC ISO format
+ * @returns {string} [returns.confirmationNumber] - Booking reference
+ * @returns {string} [returns.rentalAgreementNumber] - Agreement number
+ * @returns {number} [returns.dailyRate] - Daily rate
+ * @returns {Array} returns.itemCompanions - Assigned companions
+ * @returns {string} returns.itemCompanions[].id - Companion ID
+ * @returns {string} returns.itemCompanions[].email - Companion email
+ * @returns {string} returns.itemCompanions[].firstName - First name
+ * @returns {string} returns.itemCompanions[].lastName - Last name
+ * @returns {boolean} returns.itemCompanions[].inheritedFromTrip - Trip-level flag
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {404} Not found - Car rental not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.get('/:id', async (req, res) => {
   try {
@@ -96,6 +149,40 @@ router.get('/:id', async (req, res) => {
 /**
  * POST /api/v1/car-rentals
  * Create a standalone car rental (not associated with a trip)
+ *
+ * Supports separate date and time fields for pickup and dropoff
+ * Combines into pickupDateTime and dropoffDateTime
+ *
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.company - Rental company name
+ * @param {string} req.body.carType - Vehicle type (sedan, SUV, compact, minivan, etc.)
+ * @param {string} [req.body.carModel] - Vehicle model
+ * @param {string} [req.body.carColor] - Vehicle color
+ * @param {string} req.body.pickupLocation - Pickup location address
+ * @param {string} req.body.dropoffLocation - Dropoff location address
+ * @param {string} [req.body.pickupDate] - Pickup date (YYYY-MM-DD)
+ * @param {string} [req.body.pickupTime] - Pickup time (HH:mm)
+ * @param {string} [req.body.dropoffDate] - Dropoff date (YYYY-MM-DD)
+ * @param {string} [req.body.dropoffTime] - Dropoff time (HH:mm)
+ * @param {string} [req.body.confirmationNumber] - Booking confirmation
+ * @param {string} [req.body.rentalAgreementNumber] - Agreement number
+ * @param {number} [req.body.dailyRate] - Daily rental rate
+ * @param {string} [req.body.notes] - Additional notes
+ *
+ * @returns {Object} 201 Created response with car rental object
+ * @returns {string} returns.id - Car rental ID (UUID)
+ * @returns {string} returns.company - Rental company
+ * @returns {string} returns.carType - Vehicle type
+ * @returns {string} returns.pickupLocation - Pickup location
+ * @returns {string} returns.dropoffLocation - Dropoff location
+ * @returns {string} returns.pickupDateTime - Pickup in UTC ISO format
+ * @returns {string} returns.dropoffDateTime - Dropoff in UTC ISO format
+ *
+ * @throws {400} Bad request - Missing required fields
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.post('/', async (req, res) => {
   try {
@@ -126,8 +213,39 @@ router.post('/', async (req, res) => {
 
 /**
  * POST /api/v1/car-rentals/trips/:tripId
- * Create a car rental for a trip
- * Auto-adds trip-level companions to the new car rental
+ * Create a car rental for a specific trip
+ *
+ * Automatically adds all trip-level companions to the new car rental
+ * Validates trip ownership and processes date/time fields
+ *
+ * @param {string} req.params.tripId - Trip ID (UUID)
+ * @param {Object} req.body - Request body (same as POST /api/v1/car-rentals)
+ * @param {string} req.body.company - Rental company
+ * @param {string} req.body.carType - Vehicle type
+ * @param {string} [req.body.carModel] - Vehicle model
+ * @param {string} [req.body.carColor] - Vehicle color
+ * @param {string} req.body.pickupLocation - Pickup location
+ * @param {string} req.body.dropoffLocation - Dropoff location
+ * @param {string} [req.body.pickupDate] - Pickup date (YYYY-MM-DD)
+ * @param {string} [req.body.pickupTime] - Pickup time (HH:mm)
+ * @param {string} [req.body.dropoffDate] - Dropoff date (YYYY-MM-DD)
+ * @param {string} [req.body.dropoffTime] - Dropoff time (HH:mm)
+ * @param {string} [req.body.confirmationNumber] - Confirmation number
+ * @param {string} [req.body.rentalAgreementNumber] - Agreement number
+ * @param {number} [req.body.dailyRate] - Daily rate
+ *
+ * @returns {Object} 201 Created response with car rental object
+ * @returns {string} returns.id - Car rental ID
+ * @returns {string} returns.tripId - Associated trip ID
+ * @returns {Array} returns.itemCompanions - Auto-added companions from trip level
+ *
+ * @throws {400} Bad request - Invalid parameters
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {403} Forbidden - User does not own the trip
+ * @throws {404} Not found - Trip not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.post('/trips/:tripId', async (req, res) => {
   try {
@@ -183,7 +301,39 @@ router.post('/trips/:tripId', async (req, res) => {
 
 /**
  * PUT /api/v1/car-rentals/:id
- * Update a car rental
+ * Update an existing car rental
+ *
+ * Processes date/time fields and validates car rental exists
+ *
+ * @param {string} req.params.id - Car rental ID (UUID)
+ * @param {Object} req.body - Request body with updatable fields
+ * @param {string} [req.body.company] - Updated rental company
+ * @param {string} [req.body.carType] - Updated vehicle type
+ * @param {string} [req.body.carModel] - Updated vehicle model
+ * @param {string} [req.body.carColor] - Updated vehicle color
+ * @param {string} [req.body.pickupLocation] - Updated pickup location
+ * @param {string} [req.body.dropoffLocation] - Updated dropoff location
+ * @param {string} [req.body.pickupDate] - Updated pickup date (YYYY-MM-DD)
+ * @param {string} [req.body.pickupTime] - Updated pickup time (HH:mm)
+ * @param {string} [req.body.dropoffDate] - Updated dropoff date (YYYY-MM-DD)
+ * @param {string} [req.body.dropoffTime] - Updated dropoff time (HH:mm)
+ * @param {string} [req.body.confirmationNumber] - Updated confirmation number
+ * @param {string} [req.body.rentalAgreementNumber] - Updated agreement number
+ * @param {number} [req.body.dailyRate] - Updated daily rate
+ * @param {string} [req.body.notes] - Updated notes
+ *
+ * @returns {Object} 200 OK response with updated car rental
+ * @returns {string} returns.id - Car rental ID
+ * @returns {string} returns.company - Updated company
+ * @returns {string} returns.carType - Updated vehicle type
+ * @returns {string} returns.pickupDateTime - Updated pickup (ISO format)
+ * @returns {string} returns.dropoffDateTime - Updated dropoff (ISO format)
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {404} Not found - Car rental not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.put('/:id', async (req, res) => {
   try {
@@ -217,6 +367,19 @@ router.put('/:id', async (req, res) => {
 /**
  * DELETE /api/v1/car-rentals/:id
  * Delete a car rental
+ *
+ * Soft delete with cascade cleanup of companion assignments
+ * Validates car rental exists before deletion
+ *
+ * @param {string} req.params.id - Car rental ID (UUID)
+ *
+ * @returns {Object} 204 No Content - successful deletion (no response body)
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {404} Not found - Car rental not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.delete('/:id', async (req, res) => {
   try {

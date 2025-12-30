@@ -24,8 +24,28 @@ router.use(ensureAuthenticated);
 
 /**
  * PUT /api/v1/item-companions/:itemType/:itemId
- * Update companions for an item
- * Body: { companionIds: ['id1', 'id2', ...] }
+ * Update companion assignments for a specific travel item
+ *
+ * Replaces all companions for the item with the provided list
+ * Supports flights, hotels, events, transportation, and car rentals
+ *
+ * @param {string} req.params.itemType - Type of travel item
+ *   - Valid values: 'flight', 'hotel', 'event', 'transportation', 'car_rental'
+ * @param {string} req.params.itemId - Item ID (UUID)
+ * @param {Object} req.body - Request body
+ * @param {Array<string>} req.body.companionIds - Array of companion IDs to assign
+ *
+ * @returns {Object} 200 OK response with updated assignment
+ * @returns {string} returns.itemType - The item type
+ * @returns {string} returns.itemId - The item ID
+ * @returns {Array<string>} returns.companionIds - The assigned companion IDs
+ *
+ * @throws {400} Bad request - Invalid item type or companionIds is not an array
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {404} Not found - Item not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.put('/:itemType/:itemId', async (req, res) => {
   try {

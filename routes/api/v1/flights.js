@@ -25,7 +25,49 @@ router.use(ensureAuthenticated);
 /**
  * POST /api/v1/flights
  * Create a standalone flight (not associated with a trip)
- * NOTE: This must come BEFORE /trips/:tripId to avoid being matched as /trips/[id]
+ *
+ * NOTE: This route must come BEFORE /trips/:tripId to avoid being matched as /trips/[id]
+ * Automatically geocodes origin and destination to get coordinates and timezones
+ * Flight numbers are auto-converted to uppercase
+ *
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.flightNumber - Flight number (e.g., "AA123")
+ * @param {string} req.body.airline - Airline name (auto-populated from flight number if not provided)
+ * @param {string} req.body.origin - Departure city/airport code
+ * @param {string} [req.body.originTimezone] - Timezone for origin (e.g., "America/New_York")
+ * @param {string} req.body.destination - Arrival city/airport code
+ * @param {string} [req.body.destinationTimezone] - Timezone for destination
+ * @param {string} [req.body.departureDateTime] - ISO datetime (or use departureDate + departureTime)
+ * @param {string} [req.body.departureDate] - Date in YYYY-MM-DD format
+ * @param {string} [req.body.departureTime] - Time in HH:mm format
+ * @param {string} [req.body.arrivalDateTime] - ISO datetime (or use arrivalDate + arrivalTime)
+ * @param {string} [req.body.arrivalDate] - Date in YYYY-MM-DD format
+ * @param {string} [req.body.arrivalTime] - Time in HH:mm format
+ * @param {string} [req.body.pnr] - Booking reference number
+ * @param {string} [req.body.seat] - Seat number
+ *
+ * @returns {Object} 201 Created response with flight object
+ * @returns {string} returns.id - Flight ID (UUID)
+ * @returns {string} returns.flightNumber - Flight number (uppercase)
+ * @returns {string} returns.airline - Airline name
+ * @returns {string} returns.origin - Formatted origin location
+ * @returns {string} returns.originTimezone - IANA timezone string
+ * @returns {number} returns.originLat - Latitude of origin
+ * @returns {number} returns.originLng - Longitude of origin
+ * @returns {string} returns.destination - Formatted destination location
+ * @returns {string} returns.destinationTimezone - IANA timezone string
+ * @returns {number} returns.destinationLat - Latitude of destination
+ * @returns {number} returns.destinationLng - Longitude of destination
+ * @returns {string} returns.departureDateTime - Departure time in UTC ISO format
+ * @returns {string} returns.arrivalDateTime - Arrival time in UTC ISO format
+ * @returns {string} [returns.pnr] - Booking reference if provided
+ * @returns {string} [returns.seat] - Seat number if provided
+ *
+ * @throws {400} Bad request - Missing required fields or invalid timezone
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {500} Server error - Geocoding failure or database error
+ *
+ * @requires authentication - User must be logged in (session cookie)
  */
 router.post('/', async (req, res) => {
   try {
@@ -121,8 +163,40 @@ router.post('/', async (req, res) => {
 
 /**
  * POST /api/v1/flights/trips/:tripId
- * Create a flight for a trip
- * Auto-adds trip-level companions to the new flight
+ * Create a flight for a specific trip
+ *
+ * Automatically adds all trip-level companions to the new flight
+ * Geocodes origin/destination and validates trip ownership
+ *
+ * @param {string} req.params.tripId - Trip ID (UUID)
+ * @param {Object} req.body - Request body (same as POST /api/v1/flights)
+ * @param {string} req.body.flightNumber - Flight number
+ * @param {string} req.body.airline - Airline name (auto-populated if omitted)
+ * @param {string} req.body.origin - Departure city/airport
+ * @param {string} [req.body.originTimezone] - Origin timezone
+ * @param {string} req.body.destination - Arrival city/airport
+ * @param {string} [req.body.destinationTimezone] - Destination timezone
+ * @param {string} [req.body.departureDateTime] - ISO datetime or separate date/time
+ * @param {string} [req.body.departureDate] - Date in YYYY-MM-DD format
+ * @param {string} [req.body.departureTime] - Time in HH:mm format
+ * @param {string} [req.body.arrivalDateTime] - ISO datetime
+ * @param {string} [req.body.arrivalDate] - Date in YYYY-MM-DD format
+ * @param {string} [req.body.arrivalTime] - Time in HH:mm format
+ * @param {string} [req.body.pnr] - Booking reference
+ * @param {string} [req.body.seat] - Seat number
+ *
+ * @returns {Object} 201 Created response with flight and companion info
+ * @returns {string} returns.id - Flight ID
+ * @returns {string} returns.tripId - Associated trip ID
+ * @returns {Array} returns.itemCompanions - Auto-added companions from trip level
+ *
+ * @throws {400} Bad request - Invalid parameters
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {403} Forbidden - User does not own the trip
+ * @throws {404} Not found - Trip not found
+ * @throws {500} Server error - Database or geocoding failure
+ *
+ * @requires authentication - User must be logged in
  */
 router.post('/trips/:tripId', async (req, res) => {
   try {
@@ -235,7 +309,30 @@ router.post('/trips/:tripId', async (req, res) => {
 
 /**
  * GET /api/v1/flights/trips/:tripId
- * Get all flights for a trip
+ * Retrieve all flights associated with a specific trip
+ *
+ * Returns flights ordered by departure date/time (earliest first)
+ * Validates that requesting user owns the trip
+ *
+ * @param {string} req.params.tripId - Trip ID (UUID)
+ *
+ * @returns {Object} 200 OK response with flights array
+ * @returns {Array} returns - Array of flight objects
+ * @returns {string} returns[].id - Flight ID
+ * @returns {string} returns[].tripId - Associated trip ID
+ * @returns {string} returns[].flightNumber - Flight number
+ * @returns {string} returns[].airline - Airline name
+ * @returns {string} returns[].origin - Origin location
+ * @returns {string} returns[].destination - Destination location
+ * @returns {string} returns[].departureDateTime - Departure in UTC ISO format
+ * @returns {string} returns[].arrivalDateTime - Arrival in UTC ISO format
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {403} Forbidden - User does not own the trip
+ * @throws {404} Not found - Trip not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.get('/trips/:tripId', async (req, res) => {
   try {
@@ -265,7 +362,40 @@ router.get('/trips/:tripId', async (req, res) => {
 
 /**
  * GET /api/v1/flights/:id
- * Get flight details
+ * Retrieve a specific flight with its companion assignments
+ *
+ * Includes all companions assigned to this flight (both direct and inherited from trip)
+ *
+ * @param {string} req.params.id - Flight ID (UUID)
+ *
+ * @returns {Object} 200 OK response with flight details
+ * @returns {string} returns.id - Flight ID
+ * @returns {string} returns.flightNumber - Flight number
+ * @returns {string} returns.airline - Airline name
+ * @returns {string} returns.origin - Origin city/airport
+ * @returns {string} returns.destination - Destination city/airport
+ * @returns {string} returns.departureDateTime - Departure in UTC ISO format
+ * @returns {string} returns.arrivalDateTime - Arrival in UTC ISO format
+ * @returns {string} returns.originTimezone - Origin IANA timezone
+ * @returns {string} returns.destinationTimezone - Destination IANA timezone
+ * @returns {number} returns.originLat - Origin latitude
+ * @returns {number} returns.originLng - Origin longitude
+ * @returns {number} returns.destinationLat - Destination latitude
+ * @returns {number} returns.destinationLng - Destination longitude
+ * @returns {string} [returns.pnr] - Booking reference if available
+ * @returns {string} [returns.seat] - Seat number if available
+ * @returns {Array} returns.itemCompanions - Array of assigned companions
+ * @returns {string} returns.itemCompanions[].id - Companion ID
+ * @returns {string} returns.itemCompanions[].email - Companion email
+ * @returns {string} returns.itemCompanions[].firstName - Companion first name
+ * @returns {string} returns.itemCompanions[].lastName - Companion last name
+ * @returns {boolean} returns.itemCompanions[].inheritedFromTrip - Whether companion was added at trip level
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {404} Not found - Flight not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.get('/:id', async (req, res) => {
   try {
@@ -307,7 +437,49 @@ router.get('/:id', async (req, res) => {
 
 /**
  * PUT /api/v1/flights/:id
- * Update a flight
+ * Update an existing flight
+ *
+ * Validates ownership, geocodes location changes, and handles both combined and separate date/time formats
+ * Can reassign flight to a different trip via tripId parameter
+ *
+ * @param {string} req.params.id - Flight ID (UUID)
+ * @param {Object} req.body - Request body with updatable fields
+ * @param {string} [req.body.flightNumber] - Flight number to update
+ * @param {string} [req.body.airline] - Airline name
+ * @param {string} [req.body.origin] - Origin location (will be geocoded if changed)
+ * @param {string} [req.body.originTimezone] - Origin timezone
+ * @param {string} [req.body.destination] - Destination location (will be geocoded if changed)
+ * @param {string} [req.body.destinationTimezone] - Destination timezone
+ * @param {string} [req.body.departureDateTime] - ISO datetime or separate date/time
+ * @param {string} [req.body.departureDate] - Date in YYYY-MM-DD format
+ * @param {string} [req.body.departureTime] - Time in HH:mm format
+ * @param {string} [req.body.arrivalDateTime] - ISO datetime
+ * @param {string} [req.body.arrivalDate] - Date in YYYY-MM-DD format
+ * @param {string} [req.body.arrivalTime] - Time in HH:mm format
+ * @param {string} [req.body.pnr] - Booking reference
+ * @param {string} [req.body.seat] - Seat number
+ * @param {string} [req.body.tripId] - Trip ID to reassign flight
+ *
+ * @returns {Object} 200 OK response with updated flight
+ * @returns {string} returns.id - Flight ID
+ * @returns {string} returns.flightNumber - Updated flight number
+ * @returns {string} returns.airline - Updated airline
+ * @returns {string} returns.origin - Updated/geocoded origin
+ * @returns {string} returns.destination - Updated/geocoded destination
+ * @returns {number} returns.originLat - Updated latitude (geocoded if location changed)
+ * @returns {number} returns.originLng - Updated longitude
+ * @returns {number} returns.destinationLat - Updated latitude
+ * @returns {number} returns.destinationLng - Updated longitude
+ * @returns {string} returns.departureDateTime - Updated departure in UTC ISO format
+ * @returns {string} returns.arrivalDateTime - Updated arrival in UTC ISO format
+ *
+ * @throws {400} Bad request - Invalid parameters or timezone
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {403} Forbidden - User does not own the flight
+ * @throws {404} Not found - Flight not found
+ * @throws {500} Server error - Geocoding or database failure
+ *
+ * @requires authentication - User must be logged in
  */
 router.put('/:id', async (req, res) => {
   try {
@@ -476,6 +648,19 @@ router.put('/:id', async (req, res) => {
 /**
  * DELETE /api/v1/flights/:id
  * Delete a flight
+ *
+ * Soft delete - cascades companion assignments, but trip data remains intact
+ * Validates flight exists before deletion
+ *
+ * @param {string} req.params.id - Flight ID (UUID)
+ *
+ * @returns {Object} 204 No Content - successful deletion (no response body)
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {404} Not found - Flight not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
  */
 router.delete('/:id', async (req, res) => {
   try {
@@ -496,8 +681,36 @@ router.delete('/:id', async (req, res) => {
 
 /**
  * GET /api/v1/flights/lookup/airline/:flightNumber
- * Look up airline name from flight number
- * Flight numbers typically start with IATA code (e.g., AA123, KL668)
+ * Look up airline details from flight number
+ *
+ * Extracts IATA code from flight number and returns airline information
+ * Flight numbers typically start with 2-3 letter IATA code (e.g., AA123, KL668)
+ *
+ * @param {string} req.params.flightNumber - Flight number (must start with IATA code)
+ *
+ * @returns {Object} 200 OK response with airline details
+ * @returns {string} returns.iata - IATA airline code (e.g., "AA")
+ * @returns {string} returns.name - Airline name (e.g., "American Airlines")
+ * @returns {string} returns.country - Country of airline operation
+ * @returns {string} returns.alliance - Airline alliance (e.g., "Oneworld", "Star Alliance")
+ *
+ * @throws {400} Bad request - Invalid flight number format (too short or missing IATA code)
+ * @throws {404} Not found - IATA code not recognized
+ * @throws {500} Server error - File system or data loading error
+ *
+ * @note No authentication required for this lookup endpoint
+ *
+ * @example
+ * GET /api/v1/flights/lookup/airline/AA123
+ * Response: {
+ *   "success": true,
+ *   "data": {
+ *     "iata": "AA",
+ *     "name": "American Airlines",
+ *     "country": "United States",
+ *     "alliance": "Oneworld"
+ *   }
+ * }
  */
 router.get('/lookup/airline/:flightNumber', async (req, res) => {
   try {

@@ -43,7 +43,29 @@ router.use('/vouchers', vouchersRoutes);
 router.use('/airports', airportsRoutes);
 router.use('/geocode', geocodeRoutes);
 
-// API health check
+/**
+ * GET /api/v1/health
+ * Check API health status
+ *
+ * No authentication required - useful for monitoring and load balancers
+ *
+ * @returns {Object} 200 OK response with health status
+ * @returns {boolean} returns.success - Always true if endpoint responds
+ * @returns {string} returns.message - Status message (e.g., "API v1 is healthy")
+ * @returns {string} returns.timestamp - Current server timestamp in ISO format
+ * @returns {string} returns.version - API version (e.g., "1.0.0")
+ *
+ * @example
+ * GET /api/v1/health
+ * Response: {
+ *   "success": true,
+ *   "message": "API v1 is healthy",
+ *   "timestamp": "2025-12-30T12:34:56.789Z",
+ *   "version": "1.0.0"
+ * }
+ *
+ * @throws {500} Internal server error if database or critical services are down
+ */
 router.get('/health', (req, res) => {
   res.json({
     success: true,
