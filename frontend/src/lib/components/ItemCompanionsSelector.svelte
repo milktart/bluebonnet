@@ -1,12 +1,37 @@
 <script lang="ts">
   import { tripStore } from '$lib/stores/tripStore';
+  import { companionsApi } from '$lib/services/api';
+  import { onMount } from 'svelte';
 
   export let tripId: string = '';
   export let currentItemCompanions: any[] = [];
   export let onCompanionsChange: ((companions: any[]) => void) | null = null;
 
   let allTripCompanions: any[] = [];
+  let allAvailableCompanions: any[] = [];
   let selectedCompanionIds: Set<string> = new Set();
+  let loading = false;
+
+  // Load all available companions for standalone items
+  async function loadAllCompanions() {
+    if (!tripId) {
+      loading = true;
+      try {
+        const data = await companionsApi.getAll();
+        allAvailableCompanions = Array.isArray(data) ? data : (data?.data || []);
+      } catch (err) {
+        console.error('Failed to load companions:', err);
+        allAvailableCompanions = [];
+      } finally {
+        loading = false;
+      }
+    }
+  }
+
+  // Load on mount
+  onMount(() => {
+    loadAllCompanions();
+  });
 
   // Subscribe to trip store to get trip data with companions
   tripStore.subscribe(state => {
@@ -20,6 +45,9 @@
     selectedCompanionIds = new Set(currentItemCompanions.map(c => c.id));
   }
 
+  // Determine which companions to display
+  $: displayCompanions = tripId ? allTripCompanions : allAvailableCompanions;
+
   function toggleCompanion(companionId: string) {
     if (selectedCompanionIds.has(companionId)) {
       selectedCompanionIds.delete(companionId);
@@ -30,7 +58,7 @@
 
     // Notify parent of change
     if (onCompanionsChange) {
-      const selected = allTripCompanions.filter(c => selectedCompanionIds.has(c.id));
+      const selected = displayCompanions.filter(c => selectedCompanionIds.has(c.id));
       onCompanionsChange(selected);
     }
   }
@@ -52,9 +80,11 @@
 </script>
 
 <div class="companions-selector">
-  {#if allTripCompanions && allTripCompanions.length > 0}
+  {#if loading}
+    <p class="loading-message">Loading companions...</p>
+  {:else if displayCompanions && displayCompanions.length > 0}
     <div class="companions-list">
-      {#each allTripCompanions as companion (companion.id)}
+      {#each displayCompanions as companion (companion.id)}
         <label class="companion-checkbox">
           <input
             type="checkbox"
@@ -73,7 +103,7 @@
               <span class="companion-email">{companion.email}</span>
               {#if companion.canEdit}
                 <span class="permission-badge">Can edit</span>
-              {:else}
+              {:else if tripId}
                 <span class="permission-badge view-only">View only</span>
               {/if}
             </div>
@@ -82,7 +112,7 @@
       {/each}
     </div>
   {:else}
-    <p class="no-companions">No companions added to this trip yet.</p>
+    <p class="no-companions">{tripId ? 'No companions added to this trip yet.' : 'No companions available yet.'}</p>
   {/if}
 </div>
 
@@ -172,6 +202,13 @@
 
   .no-companions {
     color: #999;
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 1rem 0;
+  }
+
+  .loading-message {
+    color: #666;
     font-size: 0.9rem;
     text-align: center;
     padding: 1rem 0;

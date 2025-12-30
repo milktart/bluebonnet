@@ -11,14 +11,13 @@ const { ensureAuthenticated } = require('../../../middleware/auth');
 const router = express.Router();
 
 // Handle CORS preflight requests
-router.options("*", (req, res) => {
-  res.header("Access-Control-Allow-Origin", req.get("Origin") || "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Cookie");
-  res.header("Access-Control-Allow-Credentials", "true");
+router.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.get('Origin') || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
+  res.header('Access-Control-Allow-Credentials', 'true');
   res.sendStatus(200);
 });
-
 
 // All flight routes require authentication
 router.use(ensureAuthenticated);
@@ -32,17 +31,13 @@ router.post('/', async (req, res) => {
   try {
     const { Flight, Trip } = require('../../../models');
     const airportService = require('../../../services/airportService');
-    const { geocodeWithAirportFallback, convertToUTC } = require('../../../controllers/helpers/resourceController');
-
     const {
-      flightNumber,
-      departureDate,
-      departureTime,
-      arrivalDate,
-      arrivalTime,
-      pnr,
-      seat,
-    } = req.body;
+      geocodeWithAirportFallback,
+      convertToUTC,
+    } = require('../../../controllers/helpers/resourceController');
+
+    const { flightNumber, departureDate, departureTime, arrivalDate, arrivalTime, pnr, seat } =
+      req.body;
     let {
       airline,
       departureDateTime,
@@ -70,16 +65,28 @@ router.post('/', async (req, res) => {
     }
 
     // Sanitize timezone inputs
-    if (!originTimezone || originTimezone === 'undefined' || (typeof originTimezone === 'string' && originTimezone.trim() === '')) {
+    if (
+      !originTimezone ||
+      originTimezone === 'undefined' ||
+      (typeof originTimezone === 'string' && originTimezone.trim() === '')
+    ) {
       originTimezone = null;
     }
-    if (!destinationTimezone || destinationTimezone === 'undefined' || (typeof destinationTimezone === 'string' && destinationTimezone.trim() === '')) {
+    if (
+      !destinationTimezone ||
+      destinationTimezone === 'undefined' ||
+      (typeof destinationTimezone === 'string' && destinationTimezone.trim() === '')
+    ) {
       destinationTimezone = null;
     }
 
     // Geocode origin and destination with airport fallback
     const originResult = await geocodeWithAirportFallback(origin, airportService, originTimezone);
-    const destResult = await geocodeWithAirportFallback(destination, airportService, destinationTimezone);
+    const destResult = await geocodeWithAirportFallback(
+      destination,
+      airportService,
+      destinationTimezone
+    );
 
     // Update locations and timezones if airport data was found
     origin = originResult.formattedLocation;
@@ -115,13 +122,19 @@ router.post('/', async (req, res) => {
 /**
  * POST /api/v1/flights/trips/:tripId
  * Create a flight for a trip
+ * Auto-adds trip-level companions to the new flight
  */
 router.post('/trips/:tripId', async (req, res) => {
   try {
     const { tripId } = req.params;
     const { Trip, Flight } = require('../../../models');
     const airportService = require('../../../services/airportService');
-    const { geocodeWithAirportFallback, convertToUTC, verifyTripOwnership } = require('../../../controllers/helpers/resourceController');
+    const {
+      geocodeWithAirportFallback,
+      convertToUTC,
+      verifyTripOwnership,
+    } = require('../../../controllers/helpers/resourceController');
+    const itemCompanionHelper = require('../../../utils/itemCompanionHelper');
 
     // Verify trip ownership
     const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
@@ -129,15 +142,8 @@ router.post('/trips/:tripId', async (req, res) => {
       return apiResponse.forbidden(res, 'Access denied');
     }
 
-    const {
-      flightNumber,
-      departureDate,
-      departureTime,
-      arrivalDate,
-      arrivalTime,
-      pnr,
-      seat,
-    } = req.body;
+    const { flightNumber, departureDate, departureTime, arrivalDate, arrivalTime, pnr, seat } =
+      req.body;
     let {
       airline,
       departureDateTime,
@@ -165,16 +171,28 @@ router.post('/trips/:tripId', async (req, res) => {
     }
 
     // Sanitize timezone inputs
-    if (!originTimezone || originTimezone === 'undefined' || (typeof originTimezone === 'string' && originTimezone.trim() === '')) {
+    if (
+      !originTimezone ||
+      originTimezone === 'undefined' ||
+      (typeof originTimezone === 'string' && originTimezone.trim() === '')
+    ) {
       originTimezone = null;
     }
-    if (!destinationTimezone || destinationTimezone === 'undefined' || (typeof destinationTimezone === 'string' && destinationTimezone.trim() === '')) {
+    if (
+      !destinationTimezone ||
+      destinationTimezone === 'undefined' ||
+      (typeof destinationTimezone === 'string' && destinationTimezone.trim() === '')
+    ) {
       destinationTimezone = null;
     }
 
     // Geocode origin and destination with airport fallback
     const originResult = await geocodeWithAirportFallback(origin, airportService, originTimezone);
-    const destResult = await geocodeWithAirportFallback(destination, airportService, destinationTimezone);
+    const destResult = await geocodeWithAirportFallback(
+      destination,
+      airportService,
+      destinationTimezone
+    );
 
     // Update locations and timezones if airport data was found
     origin = originResult.formattedLocation;
@@ -201,6 +219,14 @@ router.post('/trips/:tripId', async (req, res) => {
       seat,
     });
 
+    // Auto-add trip-level companions to the new flight
+    try {
+      await itemCompanionHelper.autoAddTripCompanions('flight', flight.id, tripId, req.user.id);
+    } catch (companionError) {
+      // Log error but don't fail the flight creation
+      console.error('[Flight Creation] Error auto-adding companions:', companionError);
+    }
+
     return apiResponse.created(res, flight, 'Flight created successfully');
   } catch (error) {
     return apiResponse.internalError(res, 'Failed to create flight', error);
@@ -214,12 +240,12 @@ router.post('/trips/:tripId', async (req, res) => {
 router.get('/trips/:tripId', async (req, res) => {
   try {
     const { tripId } = req.params;
-    const Flight = require('../../../models').Flight;
-    const Trip = require('../../../models').Trip;
+    const { Flight } = require('../../../models');
+    const { Trip } = require('../../../models');
 
     // Verify trip belongs to user
     const trip = await Trip.findOne({
-      where: { id: tripId, userId: req.user.id }
+      where: { id: tripId, userId: req.user.id },
     });
 
     if (!trip) {
@@ -228,7 +254,7 @@ router.get('/trips/:tripId', async (req, res) => {
 
     const flights = await Flight.findAll({
       where: { tripId },
-      order: [['departureDateTime', 'ASC']]
+      order: [['departureDateTime', 'ASC']],
     });
 
     return apiResponse.success(res, flights, `Retrieved ${flights.length} flights`);
@@ -243,14 +269,37 @@ router.get('/trips/:tripId', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
-    const Flight = require('../../../models').Flight;
+    const { Flight, TravelCompanion, ItemCompanion } = require('../../../models');
     const flight = await Flight.findByPk(req.params.id);
 
     if (!flight) {
       return apiResponse.notFound(res, 'Flight not found');
     }
 
-    return apiResponse.success(res, flight, 'Flight retrieved successfully');
+    // Get companions for this flight
+    const itemCompanions = await ItemCompanion.findAll({
+      where: { itemType: 'flight', itemId: flight.id },
+      include: [
+        {
+          model: TravelCompanion,
+          as: 'companion',
+          attributes: ['id', 'email', 'firstName', 'lastName', 'name'],
+        },
+      ],
+    });
+
+    // Add companions to response
+    const flightData = flight.toJSON();
+    flightData.itemCompanions = itemCompanions.map((ic) => ({
+      id: ic.companion.id,
+      email: ic.companion.email,
+      firstName: ic.companion.firstName,
+      lastName: ic.companion.lastName,
+      name: ic.companion.name,
+      inheritedFromTrip: ic.inheritedFromTrip,
+    }));
+
+    return apiResponse.success(res, flightData, 'Flight retrieved successfully');
   } catch (error) {
     return apiResponse.internalError(res, 'Failed to retrieve flight', error);
   }
@@ -265,7 +314,11 @@ router.put('/:id', async (req, res) => {
     const logger = require('../../../utils/logger');
     const { Flight, Trip } = require('../../../models');
     const airportService = require('../../../services/airportService');
-    const { geocodeWithAirportFallback, convertToUTC, verifyResourceOwnership } = require('../../../controllers/helpers/resourceController');
+    const {
+      geocodeWithAirportFallback,
+      convertToUTC,
+      verifyResourceOwnership,
+    } = require('../../../controllers/helpers/resourceController');
 
     const flight = await Flight.findByPk(req.params.id, {
       include: [{ model: Trip, as: 'trip', required: false }],
@@ -323,10 +376,18 @@ router.put('/:id', async (req, res) => {
     }
 
     // Sanitize timezone inputs
-    if (!originTimezone || originTimezone === 'undefined' || (typeof originTimezone === 'string' && originTimezone.trim() === '')) {
+    if (
+      !originTimezone ||
+      originTimezone === 'undefined' ||
+      (typeof originTimezone === 'string' && originTimezone.trim() === '')
+    ) {
       originTimezone = null;
     }
-    if (!destinationTimezone || destinationTimezone === 'undefined' || (typeof destinationTimezone === 'string' && destinationTimezone.trim() === '')) {
+    if (
+      !destinationTimezone ||
+      destinationTimezone === 'undefined' ||
+      (typeof destinationTimezone === 'string' && destinationTimezone.trim() === '')
+    ) {
       destinationTimezone = null;
     }
 
@@ -335,8 +396,18 @@ router.put('/:id', async (req, res) => {
     let destResult;
 
     logger.info('[API v1] Before geocoding:', {
-      origin: { new: origin, old: flight.origin, changed: origin !== flight.origin, hasCoors: !!flight.originLat },
-      destination: { new: destination, old: flight.destination, changed: destination !== flight.destination, hasCoords: !!flight.destinationLat },
+      origin: {
+        new: origin,
+        old: flight.origin,
+        changed: origin !== flight.origin,
+        hasCoors: !!flight.originLat,
+      },
+      destination: {
+        new: destination,
+        old: flight.destination,
+        changed: destination !== flight.destination,
+        hasCoords: !!flight.destinationLat,
+      },
     });
 
     // Always geocode if coordinates are NULL, even if location hasn't changed
@@ -356,7 +427,11 @@ router.put('/:id', async (req, res) => {
 
     // Always geocode if coordinates are NULL, even if location hasn't changed
     if (destination !== flight.destination || !flight.destinationLat || !flight.destinationLng) {
-      destResult = await geocodeWithAirportFallback(destination, airportService, destinationTimezone);
+      destResult = await geocodeWithAirportFallback(
+        destination,
+        airportService,
+        destinationTimezone
+      );
       logger.info('[API v1] Destination geocoded:', destResult);
       destination = destResult.formattedLocation;
       if (!destinationTimezone) destinationTimezone = destResult.timezone;
@@ -404,7 +479,7 @@ router.put('/:id', async (req, res) => {
  */
 router.delete('/:id', async (req, res) => {
   try {
-    const Flight = require('../../../models').Flight;
+    const { Flight } = require('../../../models');
     const flight = await Flight.findByPk(req.params.id);
 
     if (!flight) {
@@ -453,12 +528,16 @@ router.get('/lookup/airline/:flightNumber', async (req, res) => {
       return apiResponse.notFound(res, 'Airline not found for this IATA code');
     }
 
-    return apiResponse.success(res, {
-      iata: airline.iata,
-      name: airline.name,
-      country: airline.country,
-      alliance: airline.alliance
-    }, 'Airline found');
+    return apiResponse.success(
+      res,
+      {
+        iata: airline.iata,
+        name: airline.name,
+        country: airline.country,
+        alliance: airline.alliance,
+      },
+      'Airline found'
+    );
   } catch (error) {
     return apiResponse.internalError(res, 'Failed to lookup airline', error);
   }

@@ -27,6 +27,7 @@ const eventsRoutes = require('./events');
 const transportationRoutes = require('./transportation');
 const carRentalsRoutes = require('./car-rentals');
 const companionsRoutes = require('./companions');
+const itemCompanionsRoutes = require('./item-companions');
 const vouchersRoutes = require('./vouchers');
 
 // Mount route modules
@@ -37,6 +38,7 @@ router.use('/events', eventsRoutes);
 router.use('/transportation', transportationRoutes);
 router.use('/car-rentals', carRentalsRoutes);
 router.use('/companions', companionsRoutes);
+router.use('/item-companions', itemCompanionsRoutes);
 router.use('/vouchers', vouchersRoutes);
 router.use('/airports', airportsRoutes);
 router.use('/geocode', geocodeRoutes);

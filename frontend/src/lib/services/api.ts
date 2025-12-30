@@ -90,12 +90,18 @@ export async function apiCall(
       } else if (response.status === 404) {
         throw new Error('The requested resource was not found.');
       } else if (response.status === 409) {
-        throw new Error('This item already exists or there was a conflict.');
+        // Use the API message if available, otherwise use generic message
+        throw new Error(errorMessage !== `API error (409)` ? errorMessage : 'This item already exists or there was a conflict.');
       } else if (response.status >= 500) {
         throw new Error('Server error. Please try again later.');
       }
 
       throw new Error(errorMessage);
+    }
+
+    // Handle 204 No Content response
+    if (response.status === 204) {
+      return null;
     }
 
     const data = await response.json();
@@ -147,6 +153,9 @@ export const tripsApi = {
  * Flights API
  */
 export const flightsApi = {
+  getById: (id: string) =>
+    apiCall(`/v1/flights/${id}`),
+
   getByTrip: (tripId: string) =>
     apiCall(`/v1/flights/trips/${tripId}`),
 
@@ -189,6 +198,9 @@ export const flightsApi = {
  * Hotels API
  */
 export const hotelsApi = {
+  getById: (id: string) =>
+    apiCall(`/v1/hotels/${id}`),
+
   getByTrip: (tripId: string) =>
     apiCall(`/v1/hotels/trips/${tripId}`),
 
@@ -226,6 +238,9 @@ export const hotelsApi = {
  * Events API
  */
 export const eventsApi = {
+  getById: (id: string) =>
+    apiCall(`/v1/events/${id}`),
+
   getByTrip: (tripId: string) =>
     apiCall(`/v1/events/trips/${tripId}`),
 
@@ -263,6 +278,9 @@ export const eventsApi = {
  * Transportation API
  */
 export const transportationApi = {
+  getById: (id: string) =>
+    apiCall(`/v1/transportation/${id}`),
+
   getByTrip: (tripId: string) =>
     apiCall(`/v1/transportation/trips/${tripId}`),
 
@@ -300,6 +318,9 @@ export const transportationApi = {
  * Car Rentals API
  */
 export const carRentalsApi = {
+  getById: (id: string) =>
+    apiCall(`/v1/car-rentals/${id}`),
+
   getByTrip: (tripId: string) =>
     apiCall(`/v1/car-rentals/trips/${tripId}`),
 
@@ -352,6 +373,17 @@ export const companionsApi = {
   removeFromTrip: (tripId: string, companionId: string) =>
     apiCall(`/v1/companions/trips/${tripId}/${companionId}`, {
       method: 'DELETE',
+    }),
+};
+
+/**
+ * Item Companions API
+ */
+export const itemCompanionsApi = {
+  update: (itemType: string, itemId: string, companionIds: string[]) =>
+    apiCall(`/v1/item-companions/${itemType}/${itemId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ companionIds }),
     }),
 };
 

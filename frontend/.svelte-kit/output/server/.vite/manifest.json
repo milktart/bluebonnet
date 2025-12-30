@@ -4,10 +4,7 @@
     "name": "internal",
     "src": ".svelte-kit/generated/server/internal.js",
     "isEntry": true,
-    "imports": [
-      "_internal.js",
-      "_environment.js"
-    ]
+    "imports": ["_internal.js", "_environment.js"]
   },
   "_Button.zPaaOB86.css": {
     "file": "_app/immutable/assets/Button.zPaaOB86.css",
@@ -32,36 +29,23 @@
   "_index.js": {
     "file": "chunks/index.js",
     "name": "index",
-    "imports": [
-      "_false.js"
-    ]
+    "imports": ["_false.js"]
   },
   "_internal.js": {
     "file": "chunks/internal.js",
     "name": "internal",
-    "imports": [
-      "_index.js",
-      "_environment.js"
-    ],
-    "dynamicImports": [
-      "src/hooks.server.ts"
-    ]
+    "imports": ["_index.js", "_environment.js"],
+    "dynamicImports": ["src/hooks.server.ts"]
   },
   "_shared.js": {
     "file": "chunks/shared.js",
     "name": "shared",
-    "imports": [
-      "_utils.js"
-    ]
+    "imports": ["_utils.js"]
   },
   "_stores.js": {
     "file": "chunks/stores.js",
     "name": "stores",
-    "imports": [
-      "_index.js",
-      "_exports.js",
-      "_utils.js"
-    ]
+    "imports": ["_index.js", "_exports.js", "_utils.js"]
   },
   "_utils.js": {
     "file": "chunks/utils.js",
@@ -72,11 +56,7 @@
     "name": "remote-entry",
     "src": "node_modules/@sveltejs/kit/src/runtime/app/server/remote/index.js",
     "isEntry": true,
-    "imports": [
-      "_shared.js",
-      "_false.js",
-      "_environment.js"
-    ]
+    "imports": ["_shared.js", "_false.js", "_environment.js"]
   },
   "node_modules/@sveltejs/kit/src/runtime/components/svelte-5/layout.svelte": {
     "file": "entries/fallbacks/layout.svelte.js",
@@ -110,10 +90,7 @@
     "name": "entries/pages/_error.svelte",
     "src": "src/routes/+error.svelte",
     "isEntry": true,
-    "imports": [
-      "_index.js",
-      "_stores.js"
-    ],
+    "imports": ["_index.js", "_stores.js"],
     "css": [
       "_app/immutable/assets/_error.CfnxiZWo.css",
       "_app/immutable/assets/Button.zPaaOB86.css"
@@ -124,12 +101,9 @@
     "name": "entries/pages/_layout.svelte",
     "src": "src/routes/+layout.svelte",
     "isEntry": true,
-    "imports": [
-      "_index.js",
-      "_stores.js"
-    ],
+    "imports": ["_index.js", "_stores.js"],
     "css": [
-      "_app/immutable/assets/_layout.BZYt1YGQ.css",
+      "_app/immutable/assets/_layout.BBZusvpV.css",
       "_app/immutable/assets/MapLayout.DNwebl1a.css"
     ]
   },
@@ -138,9 +112,7 @@
     "name": "entries/pages/_page.svelte",
     "src": "src/routes/+page.svelte",
     "isEntry": true,
-    "imports": [
-      "_index.js"
-    ]
+    "imports": ["_index.js"]
   },
   "src/routes/api/v1/car-rentals/[id]/+server.ts": {
     "file": "entries/endpoints/api/v1/car-rentals/_id_/_server.ts.js",
@@ -189,11 +161,9 @@
     "name": "entries/pages/dashboard/_page.svelte",
     "src": "src/routes/dashboard/+page.svelte",
     "isEntry": true,
-    "imports": [
-      "_index.js"
-    ],
+    "imports": ["_index.js"],
     "css": [
-      "_app/immutable/assets/_page.NSUznaFy.css",
+      "_app/immutable/assets/_page.gnEjU8Wp.css",
       "_app/immutable/assets/MapLayout.DNwebl1a.css",
       "_app/immutable/assets/Button.zPaaOB86.css"
     ]
@@ -203,9 +173,7 @@
     "name": "entries/pages/login/_page.svelte",
     "src": "src/routes/login/+page.svelte",
     "isEntry": true,
-    "imports": [
-      "_index.js"
-    ]
+    "imports": ["_index.js"]
   },
   "src/routes/logout/+server.ts": {
     "file": "entries/endpoints/logout/_server.ts.js",
@@ -218,8 +186,6 @@
     "name": "entries/pages/register/_page.svelte",
     "src": "src/routes/register/+page.svelte",
     "isEntry": true,
-    "imports": [
-      "_index.js"
-    ]
+    "imports": ["_index.js"]
   }
 }

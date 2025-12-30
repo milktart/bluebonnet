@@ -1,10 +1,37 @@
 <script lang="ts">
   export let companions: any[] = [];
 
-  function getInitials(email: string): string {
+  // Normalize companion object - handle both nested (tc.companion) and direct formats
+  function getNormalizedCompanion(comp: any) {
+    if (!comp) return null;
+    // If it has a nested companion property, extract it
+    if (comp.companion) {
+      return comp.companion;
+    }
+    // Otherwise, use the object directly
+    return comp;
+  }
+
+  function getInitials(email: string, name?: string, firstName?: string, lastName?: string): string {
     if (!email) return '?';
-    // Get first letter of email
-    return email.charAt(0).toUpperCase();
+
+    // Build name from firstName/lastName if available
+    let fullName = name;
+    if (!fullName && (firstName || lastName)) {
+      fullName = `${firstName || ''} ${lastName || ''}`.trim();
+    }
+
+    // If we have a name, use first letter of first and last name
+    if (fullName) {
+      const parts = fullName.trim().split(' ');
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      }
+      return parts[0][0].toUpperCase();
+    }
+
+    // Otherwise, use first two letters of email
+    return email.substring(0, 2).toUpperCase();
   }
 
   function getColorForInitial(initial: string): string {
@@ -27,21 +54,26 @@
 </script>
 
 <div class="companion-indicators">
-  {#each companions as companion (companion.id)}
-    <div
-      class="companion-circle"
-      style="background-color: {getColorForInitial(getInitials(companion.email))}"
-      title={companion.email}
-    >
-      {getInitials(companion.email)}
-    </div>
+  {#each companions as comp (getNormalizedCompanion(comp)?.id)}
+    {@const companion = getNormalizedCompanion(comp)}
+    {#if companion}
+      {@const initials = getInitials(companion.email, companion.name, companion.firstName, companion.lastName)}
+      {@const color = getColorForInitial(initials)}
+      <div
+        class="companion-circle"
+        style="border-color: {color}; color: {color}"
+        title={companion.email}
+      >
+        {initials}
+      </div>
+    {/if}
   {/each}
 </div>
 
 <style>
   .companion-indicators {
     display: flex;
-    gap: -4px;
+    gap: 2px;
     flex-direction: row-reverse;
     align-items: center;
   }
@@ -50,23 +82,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
-    font-size: 0.75rem;
-    font-weight: bold;
-    color: white;
-    border: 2px solid white;
-    margin-left: -8px;
+    font-size: 0.55rem;
+    font-weight: 500;
+    border: 1px solid;
+    background-color: transparent;
     cursor: pointer;
     transition: all 0.2s ease;
     flex-shrink: 0;
-  }
-
-  .companion-circle:hover {
-    transform: scale(1.1);
-    z-index: 10;
-    margin-left: 0;
   }
 
   .companion-circle:first-child {

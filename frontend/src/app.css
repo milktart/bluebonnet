@@ -6,6 +6,10 @@
 input,
 textarea,
 select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  -ms-appearance: none;
+  appearance: none;
   padding: 0.375rem 0.75rem;
   display: block;
   width: 100%;
@@ -31,14 +35,7 @@ select:focus {
   ring: 2px solid #2563eb inset;
 }
 
-/* Date and time input styling */
-input[type="date"],
-input[type="time"],
-input[type="datetime-local"] {
-  height: 2.5rem;
-}
-
 /* Calendar icon styling */
-input[type="date"]::-webkit-calendar-picker-indicator {
+input[type='date']::-webkit-calendar-picker-indicator {
   cursor: pointer;
 }

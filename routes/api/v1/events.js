@@ -10,14 +10,13 @@ const { ensureAuthenticated } = require('../../../middleware/auth');
 const router = express.Router();
 
 // Handle CORS preflight requests
-router.options("*", (req, res) => {
-  res.header("Access-Control-Allow-Origin", req.get("Origin") || "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Cookie");
-  res.header("Access-Control-Allow-Credentials", "true");
+router.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.get('Origin') || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
+  res.header('Access-Control-Allow-Credentials', 'true');
   res.sendStatus(200);
 });
-
 
 // All event routes require authentication
 router.use(ensureAuthenticated);
@@ -29,12 +28,12 @@ router.use(ensureAuthenticated);
 router.get('/trips/:tripId', async (req, res) => {
   try {
     const { tripId } = req.params;
-    const Event = require('../../../models').Event;
-    const Trip = require('../../../models').Trip;
+    const { Event } = require('../../../models');
+    const { Trip } = require('../../../models');
 
     // Verify trip belongs to user
     const trip = await Trip.findOne({
-      where: { id: tripId, userId: req.user.id }
+      where: { id: tripId, userId: req.user.id },
     });
 
     if (!trip) {
@@ -43,7 +42,7 @@ router.get('/trips/:tripId', async (req, res) => {
 
     const events = await Event.findAll({
       where: { tripId },
-      order: [['eventDateTime', 'ASC']]
+      order: [['eventDateTime', 'ASC']],
     });
 
     return apiResponse.success(res, events, `Retrieved ${events.length} events`);
@@ -58,14 +57,37 @@ router.get('/trips/:tripId', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
-    const Event = require('../../../models').Event;
+    const { Event, TravelCompanion, ItemCompanion } = require('../../../models');
     const event = await Event.findByPk(req.params.id);
 
     if (!event) {
       return apiResponse.notFound(res, 'Event not found');
     }
 
-    return apiResponse.success(res, event, 'Event retrieved successfully');
+    // Get companions for this event
+    const itemCompanions = await ItemCompanion.findAll({
+      where: { itemType: 'event', itemId: event.id },
+      include: [
+        {
+          model: TravelCompanion,
+          as: 'companion',
+          attributes: ['id', 'email', 'firstName', 'lastName', 'name'],
+        },
+      ],
+    });
+
+    // Add companions to response
+    const eventData = event.toJSON();
+    eventData.itemCompanions = itemCompanions.map((ic) => ({
+      id: ic.companion.id,
+      email: ic.companion.email,
+      firstName: ic.companion.firstName,
+      lastName: ic.companion.lastName,
+      name: ic.companion.name,
+      inheritedFromTrip: ic.inheritedFromTrip,
+    }));
+
+    return apiResponse.success(res, eventData, 'Event retrieved successfully');
   } catch (error) {
     return apiResponse.internalError(res, 'Failed to retrieve event', error);
   }
@@ -77,12 +99,12 @@ router.get('/:id', async (req, res) => {
  */
 router.post('/', async (req, res) => {
   try {
-    const Event = require('../../../models').Event;
+    const { Event } = require('../../../models');
 
     // Transform form data to match model
     const eventData = {
       ...req.body,
-      userId: req.user.id
+      userId: req.user.id,
     };
 
     // Combine date and time fields into datetime
@@ -134,16 +156,18 @@ router.post('/', async (req, res) => {
 /**
  * POST /api/v1/events/trips/:tripId
  * Create an event for a trip
+ * Auto-adds trip-level companions to the new event
  */
 router.post('/trips/:tripId', async (req, res) => {
   try {
     const { tripId } = req.params;
-    const Trip = require('../../../models').Trip;
-    const Event = require('../../../models').Event;
+    const { Trip } = require('../../../models');
+    const { Event } = require('../../../models');
+    const itemCompanionHelper = require('../../../utils/itemCompanionHelper');
 
     // Verify trip belongs to user
     const trip = await Trip.findOne({
-      where: { id: tripId, userId: req.user.id }
+      where: { id: tripId, userId: req.user.id },
     });
 
     if (!trip) {
@@ -153,7 +177,7 @@ router.post('/trips/:tripId', async (req, res) => {
     // Transform form data to match model
     const eventData = {
       ...req.body,
-      tripId
+      tripId,
     };
 
     // Combine date and time fields into datetime
@@ -196,6 +220,14 @@ router.post('/trips/:tripId', async (req, res) => {
     // Create event
     const event = await Event.create(eventData);
 
+    // Auto-add trip-level companions to the new event
+    try {
+      await itemCompanionHelper.autoAddTripCompanions('event', event.id, tripId, req.user.id);
+    } catch (companionError) {
+      // Log error but don't fail the event creation
+      console.error('[Event Creation] Error auto-adding companions:', companionError);
+    }
+
     return apiResponse.created(res, event, 'Event created successfully');
   } catch (error) {
     return apiResponse.internalError(res, 'Failed to create event', error);
@@ -208,7 +240,7 @@ router.post('/trips/:tripId', async (req, res) => {
  */
 router.put('/:id', async (req, res) => {
   try {
-    const Event = require('../../../models').Event;
+    const { Event } = require('../../../models');
     const event = await Event.findByPk(req.params.id);
 
     if (!event) {
@@ -270,7 +302,7 @@ router.put('/:id', async (req, res) => {
  */
 router.delete('/:id', async (req, res) => {
   try {
-    const Event = require('../../../models').Event;
+    const { Event } = require('../../../models');
     const event = await Event.findByPk(req.params.id);
 
     if (!event) {

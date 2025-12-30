@@ -3,9 +3,10 @@
   import { companionsApi } from '$lib/services/api';
   import Alert from './Alert.svelte';
 
-  export let tripId: string;
   export let companions: any[] = [];
   export let onCompanionsUpdate: ((companions: any[]) => void) | null = null;
+  export let onAddCompanion: ((companion: any) => Promise<any>) | null = null;
+  export let onRemoveCompanion: ((companionId: string) => Promise<void>) | null = null;
 
   let searchInput = '';
   let loading = false;
@@ -14,6 +15,14 @@
   let showResults = false;
   let availableCompanions: any[] = [];
   let loadingCompanions = true;
+
+  // Debug logging
+  $: {
+    console.log('[ItemCompanionsForm] Props:', {
+      companionsLength: companions?.length || 0,
+      companions: companions,
+    });
+  }
 
   // Load all companions on component mount
   async function loadCompanions() {
@@ -64,7 +73,7 @@
     const query = searchInput.toLowerCase();
 
     // Filter available companions that aren't already added
-    // Support both direct companions and tripCompanion objects with nested companion
+    // Support both direct companions and companion objects with nested companion
     const addedEmails = new Set(companions.map(c => getCompanionEmail(c)));
 
     searchResults = availableCompanions.filter(comp => {
@@ -83,8 +92,13 @@
       loading = true;
       error = null;
 
-      // Add companion to trip using companionId (without edit permission by default)
-      const newCompanion = await companionsApi.addToTrip(tripId, companion.id, false);
+      // Call the provided callback to add companion
+      let newCompanion;
+      if (onAddCompanion) {
+        newCompanion = await onAddCompanion(companion);
+      } else {
+        newCompanion = companion;
+      }
 
       companions = [...companions, newCompanion];
 
@@ -100,11 +114,10 @@
 
       // Check if this is a duplicate companion error (409 conflict or already exists)
       if (errorMsg.includes('already exists') || errorMsg.includes('conflict')) {
-        // Refresh the companion list from the trip to sync with server
         const displayName = getCompanionDisplayName(companion);
-        error = `${displayName} is already added to this trip`;
+        error = `${displayName} is already added`;
 
-        // Refresh companions list to ensure we're in sync
+        // Refresh search to ensure we're in sync
         searchCompanions();
       } else {
         error = errorMsg;
@@ -119,42 +132,31 @@
       loading = true;
       error = null;
 
-      console.log('[TripCompanionsForm] Removing companion from trip:', { tripId, companionId });
-      console.log('[TripCompanionsForm] Current companions before filter:', companions);
-      await companionsApi.removeFromTrip(tripId, companionId);
-      console.log('[TripCompanionsForm] Companion removed successfully from API');
+      console.log('[ItemCompanionsForm] handleRemoveCompanion called:', { companionId, companionsCount: companions.length });
 
-      const beforeCount = companions.length;
-      companions = companions.filter((c) => {
-        const matches = (c.id === companionId || c.companionId === companionId);
-        console.log(`[TripCompanionsForm] Checking companion ${c.id} (companionId: ${c.companionId}) against ${companionId}: ${matches ? 'MATCH (remove)' : 'no match (keep)'}`);
-        return !matches;
-      });
-      console.log('[TripCompanionsForm] Companion filtered from local list, before:', beforeCount, 'after:', companions.length);
+      // Call the provided callback to remove companion
+      if (onRemoveCompanion) {
+        console.log('[ItemCompanionsForm] Calling onRemoveCompanion callback');
+        await onRemoveCompanion(companionId);
+      } else {
+        console.log('[ItemCompanionsForm] No onRemoveCompanion callback provided');
+      }
+
+      console.log('[ItemCompanionsForm] Filtering companions:', { companionId, beforeCount: companions.length });
+      companions = companions.filter((c) => c.id !== companionId);
+      console.log('[ItemCompanionsForm] After filter:', { afterCount: companions.length });
 
       if (onCompanionsUpdate) {
-        console.log('[TripCompanionsForm] Calling onCompanionsUpdate callback with', companions.length, 'companions');
+        console.log('[ItemCompanionsForm] Calling onCompanionsUpdate callback');
         onCompanionsUpdate(companions);
       } else {
-        console.log('[TripCompanionsForm] No onCompanionsUpdate callback provided');
+        console.log('[ItemCompanionsForm] No onCompanionsUpdate callback provided');
       }
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to remove companion';
-      console.error('[TripCompanionsForm] Error removing companion:', err);
+      console.error('[ItemCompanionsForm] Error removing companion:', err);
     } finally {
       loading = false;
-    }
-  }
-
-  function togglePermission(companionId: string) {
-    // TODO: Implement permission toggle with API
-    const companion = companions.find(c => c.id === companionId);
-    if (companion) {
-      companion.canEdit = !companion.canEdit;
-      companions = companions;
-      if (onCompanionsUpdate) {
-        onCompanionsUpdate(companions);
-      }
     }
   }
 
@@ -168,7 +170,7 @@
 
 <svelte:window on:click={handleClickOutside} />
 
-<div class="trip-companions-form">
+<div class="companions-form">
   <h4 class="section-title">Travel Companions</h4>
 
   {#if error}
@@ -230,23 +232,12 @@
     <div class="companions-list">
       <div class="list-header">
         <span>Name</span>
-        <span class="permission-col">Can Edit</span>
         <span class="action-col"></span>
       </div>
       {#each companions as companion (companion.id)}
         <div class="companion-item">
           <div class="companion-info">
             <span class="companion-name">{getCompanionDisplayName(companion)}</span>
-          </div>
-          <div class="permission-cell">
-            <input
-              type="checkbox"
-              checked={companion.canEdit}
-              on:change={() => togglePermission(companion.id)}
-              disabled={loading}
-              title={companion.canEdit ? 'Click to make view-only' : 'Click to allow editing'}
-              class="permission-checkbox"
-            />
           </div>
           <button
             class="remove-btn"
@@ -265,7 +256,7 @@
 </div>
 
 <style>
-  .trip-companions-form {
+  .companions-form {
     display: flex;
     flex-direction: column;
     gap: 0.375rem;
@@ -425,7 +416,7 @@
 
   .list-header {
     display: grid;
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr auto;
     gap: 1rem;
     padding: 0.375rem 0;
     border-bottom: 1px solid #d1d5db;
@@ -438,18 +429,13 @@
     box-sizing: border-box;
   }
 
-  .permission-col {
-    text-align: center;
-    min-width: 60px;
-  }
-
   .action-col {
     width: 32px;
   }
 
   .companion-item {
     display: grid;
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr auto;
     gap: 1rem;
     padding: 0.375rem 0;
     border-bottom: 1px solid #e5e7eb;
@@ -480,25 +466,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  .permission-cell {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-width: 60px;
-  }
-
-  .permission-checkbox {
-    width: 1.125rem;
-    height: 1.125rem;
-    cursor: pointer;
-    accent-color: #3b82f6;
-  }
-
-  .permission-checkbox:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
   }
 
   .remove-btn {

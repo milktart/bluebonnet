@@ -103,8 +103,9 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    margin-bottom: 1.5rem;
     gap: 1rem;
+    padding: 0 0 0.75rem;
+    margin: 0 0 0.75rem;
   }
 
   .header-left {

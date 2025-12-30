@@ -127,7 +127,7 @@
     rows={4}
   />
 
-  <div class="two-column">
+  <div class="date-row">
     <DateTimePicker
       label="Departure Date"
       value={formData.departureDate}
@@ -174,6 +174,12 @@
 </FormContainer>
 
 <style>
+  .date-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
   .two-column {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -187,6 +193,7 @@
   }
 
   @media (max-width: 600px) {
+    .date-row,
     .two-column {
       grid-template-columns: 1fr;
     }

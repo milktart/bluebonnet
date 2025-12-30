@@ -10,14 +10,13 @@ const { ensureAuthenticated } = require('../../../middleware/auth');
 const router = express.Router();
 
 // Handle CORS preflight requests
-router.options("*", (req, res) => {
-  res.header("Access-Control-Allow-Origin", req.get("Origin") || "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Cookie");
-  res.header("Access-Control-Allow-Credentials", "true");
+router.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.get('Origin') || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
+  res.header('Access-Control-Allow-Credentials', 'true');
   res.sendStatus(200);
 });
-
 
 // All transportation routes require authentication
 router.use(ensureAuthenticated);
@@ -29,12 +28,12 @@ router.use(ensureAuthenticated);
 router.get('/trips/:tripId', async (req, res) => {
   try {
     const { tripId } = req.params;
-    const Transportation = require('../../../models').Transportation;
-    const Trip = require('../../../models').Trip;
+    const { Transportation } = require('../../../models');
+    const { Trip } = require('../../../models');
 
     // Verify trip belongs to user
     const trip = await Trip.findOne({
-      where: { id: tripId, userId: req.user.id }
+      where: { id: tripId, userId: req.user.id },
     });
 
     if (!trip) {
@@ -43,10 +42,14 @@ router.get('/trips/:tripId', async (req, res) => {
 
     const transportation = await Transportation.findAll({
       where: { tripId },
-      order: [['departureDateTime', 'ASC']]
+      order: [['departureDateTime', 'ASC']],
     });
 
-    return apiResponse.success(res, transportation, `Retrieved ${transportation.length} transportation items`);
+    return apiResponse.success(
+      res,
+      transportation,
+      `Retrieved ${transportation.length} transportation items`
+    );
   } catch (error) {
     return apiResponse.internalError(res, 'Failed to retrieve transportation', error);
   }
@@ -58,14 +61,37 @@ router.get('/trips/:tripId', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
-    const Transportation = require('../../../models').Transportation;
+    const { Transportation, TravelCompanion, ItemCompanion } = require('../../../models');
     const trans = await Transportation.findByPk(req.params.id);
 
     if (!trans) {
       return apiResponse.notFound(res, 'Transportation not found');
     }
 
-    return apiResponse.success(res, trans, 'Transportation retrieved successfully');
+    // Get companions for this transportation
+    const itemCompanions = await ItemCompanion.findAll({
+      where: { itemType: 'transportation', itemId: trans.id },
+      include: [
+        {
+          model: TravelCompanion,
+          as: 'companion',
+          attributes: ['id', 'email', 'firstName', 'lastName', 'name'],
+        },
+      ],
+    });
+
+    // Add companions to response
+    const transData = trans.toJSON();
+    transData.itemCompanions = itemCompanions.map((ic) => ({
+      id: ic.companion.id,
+      email: ic.companion.email,
+      firstName: ic.companion.firstName,
+      lastName: ic.companion.lastName,
+      name: ic.companion.name,
+      inheritedFromTrip: ic.inheritedFromTrip,
+    }));
+
+    return apiResponse.success(res, transData, 'Transportation retrieved successfully');
   } catch (error) {
     return apiResponse.internalError(res, 'Failed to retrieve transportation', error);
   }
@@ -77,12 +103,12 @@ router.get('/:id', async (req, res) => {
  */
 router.post('/', async (req, res) => {
   try {
-    const Transportation = require('../../../models').Transportation;
+    const { Transportation } = require('../../../models');
 
     // Transform form data to match model
     const transData = {
       ...req.body,
-      userId: req.user.id
+      userId: req.user.id,
     };
 
     // Combine date and time fields into datetime
@@ -105,16 +131,18 @@ router.post('/', async (req, res) => {
 /**
  * POST /api/v1/transportation/trips/:tripId
  * Create transportation for a trip
+ * Auto-adds trip-level companions to the new transportation
  */
 router.post('/trips/:tripId', async (req, res) => {
   try {
     const { tripId } = req.params;
-    const Trip = require('../../../models').Trip;
-    const Transportation = require('../../../models').Transportation;
+    const { Trip } = require('../../../models');
+    const { Transportation } = require('../../../models');
+    const itemCompanionHelper = require('../../../utils/itemCompanionHelper');
 
     // Verify trip belongs to user
     const trip = await Trip.findOne({
-      where: { id: tripId, userId: req.user.id }
+      where: { id: tripId, userId: req.user.id },
     });
 
     if (!trip) {
@@ -124,7 +152,7 @@ router.post('/trips/:tripId', async (req, res) => {
     // Transform form data to match model
     const transData = {
       ...req.body,
-      tripId
+      tripId,
     };
 
     // Combine date and time fields into datetime
@@ -138,6 +166,19 @@ router.post('/trips/:tripId', async (req, res) => {
     // Create transportation
     const trans = await Transportation.create(transData);
 
+    // Auto-add trip-level companions to the new transportation
+    try {
+      await itemCompanionHelper.autoAddTripCompanions(
+        'transportation',
+        trans.id,
+        tripId,
+        req.user.id
+      );
+    } catch (companionError) {
+      // Log error but don't fail the transportation creation
+      console.error('[Transportation Creation] Error auto-adding companions:', companionError);
+    }
+
     return apiResponse.created(res, trans, 'Transportation created successfully');
   } catch (error) {
     return apiResponse.internalError(res, 'Failed to create transportation', error);
@@ -150,7 +191,7 @@ router.post('/trips/:tripId', async (req, res) => {
  */
 router.put('/:id', async (req, res) => {
   try {
-    const Transportation = require('../../../models').Transportation;
+    const { Transportation } = require('../../../models');
     const trans = await Transportation.findByPk(req.params.id);
 
     if (!trans) {
@@ -183,7 +224,7 @@ router.put('/:id', async (req, res) => {
  */
 router.delete('/:id', async (req, res) => {
   try {
-    const Transportation = require('../../../models').Transportation;
+    const { Transportation } = require('../../../models');
     const trans = await Transportation.findByPk(req.params.id);
 
     if (!trans) {

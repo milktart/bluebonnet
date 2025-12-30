@@ -136,6 +136,16 @@
       const tripsData = response?.trips || [];
       standaloneItems = response?.standalone || { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
 
+      // Debug: Log standalone items with companions
+      console.log('[Dashboard] Loaded standalone items:', {
+        flights: standaloneItems.flights?.length || 0,
+        hotels: standaloneItems.hotels?.length || 0,
+        transportation: standaloneItems.transportation?.length || 0,
+        carRentals: standaloneItems.carRentals?.length || 0,
+        events: standaloneItems.events?.length || 0,
+        fullStandalone: standaloneItems
+      });
+
       // Fetch detailed data for each trip
       const detailedTrips = await Promise.all(
         tripsData.map(async (trip) => {
@@ -147,6 +157,29 @@
           }
         })
       );
+
+      // Debug: Log trip items to see if companions are loaded
+      detailedTrips.forEach(trip => {
+        console.log(`[Dashboard] Trip ${trip.id} (${trip.name}):`, {
+          flightCount: trip.flights?.length || 0,
+          hotelCount: trip.hotels?.length || 0,
+          eventCount: trip.events?.length || 0,
+          travelCompanions: trip.travelCompanions,
+          travelCompanionCount: trip.travelCompanions?.length || 0,
+        });
+        if (trip.flights && trip.flights.length > 0) {
+          trip.flights.forEach(f => {
+            const companionCount = f.itemCompanions?.length || 0;
+            console.log(`  - Flight ${f.id}: ${companionCount} companions`);
+          });
+        }
+        if (trip.events && trip.events.length > 0) {
+          trip.events.forEach(e => {
+            const companionCount = e.itemCompanions?.length || 0;
+            console.log(`  - Event ${e.id}: ${companionCount} companions`);
+          });
+        }
+      });
 
       tripStoreActions.setTrips(detailedTrips);
       trips = detailedTrips;
@@ -242,6 +275,9 @@
 
       if (standaloneItems[key]) {
         standaloneItems[key].forEach((item: any) => {
+          if (item.itemCompanions) {
+            console.log(`[Dashboard] Standalone ${itemTypeMap[key]} ${item.id} has ${item.itemCompanions.length} companions:`, item.itemCompanions);
+          }
           allItems.push({
             type: 'standalone',
             itemType: itemTypeMap[key],
@@ -292,9 +328,30 @@
       if (item.type === 'trip') {
         const trip = item.data;
         // Ensure each item has tripId attached so map highlighting can filter by trip
-        if (trip.flights) combined.flights.push(...trip.flights.map((f: any) => ({ ...f, tripId: trip.id })));
-        if (trip.hotels) combined.hotels.push(...trip.hotels.map((h: any) => ({ ...h, tripId: trip.id })));
-        if (trip.events) combined.events.push(...trip.events.map((e: any) => ({ ...e, tripId: trip.id })));
+        if (trip.flights) {
+          trip.flights.forEach((f: any) => {
+            if (f.itemCompanions) {
+              console.log(`[Dashboard] Trip flight ${f.id} has ${f.itemCompanions.length} companions:`, f.itemCompanions);
+            }
+          });
+          combined.flights.push(...trip.flights.map((f: any) => ({ ...f, tripId: trip.id })));
+        }
+        if (trip.hotels) {
+          trip.hotels.forEach((h: any) => {
+            if (h.itemCompanions) {
+              console.log(`[Dashboard] Trip hotel ${h.id} has ${h.itemCompanions.length} companions:`, h.itemCompanions);
+            }
+          });
+          combined.hotels.push(...trip.hotels.map((h: any) => ({ ...h, tripId: trip.id })));
+        }
+        if (trip.events) {
+          trip.events.forEach((e: any) => {
+            if (e.itemCompanions) {
+              console.log(`[Dashboard] Trip event ${e.id} has ${e.itemCompanions.length} companions:`, e.itemCompanions);
+            }
+          });
+          combined.events.push(...trip.events.map((e: any) => ({ ...e, tripId: trip.id })));
+        }
         if (trip.transportation) combined.transportation.push(...trip.transportation.map((t: any) => ({ ...t, tripId: trip.id })));
         if (trip.carRentals) combined.carRentals.push(...trip.carRentals.map((c: any) => ({ ...c, tripId: trip.id })));
       } else if (item.type === 'standalone') {
@@ -392,6 +449,14 @@
   }
 
   function handleItemClick(type: string, itemType: string | null, data: any) {
+    console.log('[Dashboard] handleItemClick:', {
+      type,
+      itemType,
+      itemId: data?.id,
+      hasItemCompanions: !!data?.itemCompanions,
+      companionCount: data?.itemCompanions?.length || 0,
+      itemCompanions: data?.itemCompanions
+    });
     secondarySidebarContent = { type, itemType: itemType || undefined, data };
   }
 
@@ -508,27 +573,41 @@
     // Collect all items from the trip
     if (trip.flights) {
       trip.flights.forEach((f: any) => {
-        allItems.push({ type: 'flight', ...f });
+        const item = { type: 'flight', ...f };
+        if (f.itemCompanions && f.itemCompanions.length > 0) {
+          console.log(`[groupTripItemsByDate] Flight ${f.id} had ${f.itemCompanions.length} companions, now has ${item.itemCompanions?.length || 0}`);
+        }
+        allItems.push(item);
       });
     }
     if (trip.hotels) {
       trip.hotels.forEach((h: any) => {
-        allItems.push({ type: 'hotel', ...h });
+        const item = { type: 'hotel', ...h };
+        if (h.itemCompanions && h.itemCompanions.length > 0) {
+          console.log(`[groupTripItemsByDate] Hotel ${h.id} had ${h.itemCompanions.length} companions, now has ${item.itemCompanions?.length || 0}`);
+        }
+        allItems.push(item);
       });
     }
     if (trip.transportation) {
       trip.transportation.forEach((t: any) => {
-        allItems.push({ type: 'transportation', ...t });
+        const item = { type: 'transportation', ...t };
+        allItems.push(item);
       });
     }
     if (trip.carRentals) {
       trip.carRentals.forEach((c: any) => {
-        allItems.push({ type: 'carRental', ...c });
+        const item = { type: 'carRental', ...c };
+        allItems.push(item);
       });
     }
     if (trip.events) {
       trip.events.forEach((e: any) => {
-        allItems.push({ type: 'event', ...e });
+        const item = { type: 'event', ...e };
+        if (e.itemCompanions && e.itemCompanions.length > 0) {
+          console.log(`[groupTripItemsByDate] Event ${e.id} had ${e.itemCompanions.length} companions, now has ${item.itemCompanions?.length || 0}`);
+        }
+        allItems.push(item);
       });
     }
 
@@ -1104,12 +1183,6 @@
                   {/if}
                 </div>
 
-                {#if item.data.travelCompanions && item.data.travelCompanions.length > 0}
-                  <div class="trip-companions">
-                    <CompanionIndicators companions={item.data.travelCompanions} />
-                  </div>
-                {/if}
-
                 <button
                   class="expand-btn"
                   class:rotated={expandedTrips.has(item.data.id)}
@@ -1121,6 +1194,12 @@
                   <span class="material-symbols-outlined">expand_more</span>
                 </button>
               </div>
+
+              {#if item.data.tripCompanions && item.data.tripCompanions.length > 0}
+                <div class="trip-companions">
+                  <CompanionIndicators companions={item.data.tripCompanions} />
+                </div>
+              {/if}
 
               <!-- Trip Items (Accordion Content) - Date-level Timeline -->
               {#if expandedTrips.has(item.data.id)}
@@ -1193,6 +1272,11 @@
                                   {getCityName(tripItem.origin)} → {getCityName(tripItem.destination)}
                                 </p>
                               </div>
+                              {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
+                                <div class="item-companions">
+                                  <CompanionIndicators companions={tripItem.itemCompanions} />
+                                </div>
+                              {/if}
                             </div>
                             {@const layover = getFlightLayoverInfo(item.data, tripItem.id)}
                             {@const spansDate = layoverSpansDates(item.data, tripItem.id, dayKey)}
@@ -1220,6 +1304,11 @@
                                 <p class="item-dates">{formatDateOnly(tripItem.checkInDateTime, tripItem.timezone)} - {formatDateOnly(tripItem.checkOutDateTime, tripItem.timezone)}</p>
                                 <p class="item-route">{getCityName(tripItem.address) ? getCityName(tripItem.address) : getCityName(tripItem.city)}</p>
                               </div>
+                              {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
+                                <div class="item-companions">
+                                  <CompanionIndicators companions={tripItem.itemCompanions} />
+                                </div>
+                              {/if}
                             </div>
                           {:else if tripItem.type === 'transportation'}
                             <div class="standalone-item-card" on:click={() => handleItemClick('transportation', 'transportation', tripItem)} role="button" tabindex="0" on:keydown={(e) => e.key === 'Enter' && handleItemClick('transportation', 'transportation', tripItem)}>
@@ -1235,6 +1324,11 @@
                                   {getCityName(tripItem.origin)} → {getCityName(tripItem.destination)}
                                 </p>
                               </div>
+                              {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
+                                <div class="item-companions">
+                                  <CompanionIndicators companions={tripItem.itemCompanions} />
+                                </div>
+                              {/if}
                             </div>
                           {:else if tripItem.type === 'carRental'}
                             <div class="standalone-item-card" on:click={() => handleItemClick('carRental', 'carRental', tripItem)} role="button" tabindex="0" on:keydown={(e) => e.key === 'Enter' && handleItemClick('carRental', 'carRental', tripItem)}>
@@ -1246,6 +1340,11 @@
                                 <p class="item-time">{formatDateTime(tripItem.pickupDateTime, tripItem.pickupTimezone)}</p>
                                 <p class="item-route">{getCityName(tripItem.pickupLocation)}</p>
                               </div>
+                              {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
+                                <div class="item-companions">
+                                  <CompanionIndicators companions={tripItem.itemCompanions} />
+                                </div>
+                              {/if}
                             </div>
                           {:else if tripItem.type === 'event'}
                             <div class="standalone-item-card" on:click={() => handleItemClick('event', 'event', tripItem)} role="button" tabindex="0" on:keydown={(e) => e.key === 'Enter' && handleItemClick('event', 'event', tripItem)}>
@@ -1266,6 +1365,11 @@
                                 <p class="item-time">{formatDateTime(tripItem.startDateTime, tripItem.timezone)}</p>
                                 <p class="item-route">{tripItem.location}</p>
                               </div>
+                              {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
+                                <div class="item-companions">
+                                  <CompanionIndicators companions={tripItem.itemCompanions} />
+                                </div>
+                              {/if}
                             </div>
                           {/if}
                         {/each}
@@ -1317,6 +1421,11 @@
                   {/if}
                 </p>
               </div>
+              {#if item.data.itemCompanions && item.data.itemCompanions.length > 0}
+                <div class="item-companions">
+                  <CompanionIndicators companions={item.data.itemCompanions} />
+                </div>
+              {/if}
             </div>
             {/if}
                 {/each}
@@ -1907,6 +2016,7 @@
     background: #ffffff90;
     overflow: hidden;
     transition: all 0.2s;
+    position: relative;
   }
 
   .trip-card:hover,
@@ -1948,12 +2058,16 @@
   .trip-info {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
   }
 
   .trip-name-row {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    margin-bottom: -2px;
   }
 
   .trip-name {
@@ -1966,7 +2080,7 @@
   }
 
   .trip-dates {
-    margin: 0.2rem 0 0 0;
+    margin: 0;
     font-size: 0.65rem;
     font-weight: 600;
     color: #4b5563;
@@ -1975,7 +2089,7 @@
   }
 
   .trip-cities {
-    margin: 0.2rem 0 0 0;
+    margin: 0;
     font-size: 0.65rem;
     font-weight: 600;
     color: #6b7280;
@@ -1996,7 +2110,10 @@
     color: #9ca3af;
     opacity: 0;
     transition: opacity 0.2s, color 0.2s;
-    font-size: 1.2rem;
+    font-size: 0.75rem;
+    width: 1rem;
+    height: 1rem;
+    margin-top: -2px;
   }
 
   .trip-card:hover .edit-btn {
@@ -2005,6 +2122,10 @@
 
   .edit-btn:hover {
     color: #3b82f6;
+  }
+
+  .edit-btn :global(.material-symbols-outlined) {
+    font-size: 0.9rem !important;
   }
 
   .expand-btn {
@@ -2024,11 +2145,13 @@
   }
 
   .trip-companions {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+    z-index: 5;
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    flex-shrink: 0;
-    margin: 0 0.5rem;
   }
 
   .trip-items {
@@ -2175,9 +2298,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 0 1rem 0;
+    padding: 0 0 0.75rem;
     border-bottom: 1px solid #e5e7eb;
     flex-shrink: 0;
+    margin: 0 0 0.75rem;
   }
 
   .tertiary-header h3 {
@@ -2204,9 +2328,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 0 1rem 0;
+    padding: 0 0 0.75rem;
     border-bottom: 1px solid #e5e7eb;
     flex-shrink: 0;
+    margin: 0 0 0.75rem;
   }
 
   .calendar-sidebar-header h2 {
@@ -2257,11 +2382,19 @@
     border-radius: 0.425rem;
     transition: all 0.2s;
     cursor: pointer;
+    position: relative;
   }
 
   .standalone-item-card:hover {
     background-color: #f3f4f6;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  }
+
+  .standalone-item-card .item-companions {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+    z-index: 5;
   }
 
   .standalone-item-card .item-icon {
@@ -2419,15 +2552,17 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.5rem;
-    border-bottom: 1px solid #e0e0e0;
+    padding: 0 0 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
     flex-shrink: 0;
+    margin: 0 0 0.75rem;
   }
 
   .edit-header h3 {
     margin: 0;
-    font-size: 1.1rem;
-    color: #333;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #111827;
   }
 
   .close-btn {
@@ -2474,9 +2609,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 0 1rem 0;
+    padding: 0 0 0.75rem;
     border-bottom: 1px solid #e5e7eb;
-    margin-bottom: 1rem;
+    margin: 0 0 0.75rem;
     flex-shrink: 0;
   }
 
@@ -2702,9 +2837,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 0 1rem 0;
+    padding: 0 0 0.75rem;
     border-bottom: 1px solid #e5e7eb;
     flex-shrink: 0;
+    margin: 0 0 0.75rem;
   }
 
   .settings-panel-header h2 {

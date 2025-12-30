@@ -10,14 +10,13 @@ const { ensureAuthenticated } = require('../../../middleware/auth');
 const router = express.Router();
 
 // Handle CORS preflight requests
-router.options("*", (req, res) => {
-  res.header("Access-Control-Allow-Origin", req.get("Origin") || "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Cookie");
-  res.header("Access-Control-Allow-Credentials", "true");
+router.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.get('Origin') || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
+  res.header('Access-Control-Allow-Credentials', 'true');
   res.sendStatus(200);
 });
-
 
 // All car rental routes require authentication
 router.use(ensureAuthenticated);
@@ -29,12 +28,12 @@ router.use(ensureAuthenticated);
 router.get('/trips/:tripId', async (req, res) => {
   try {
     const { tripId } = req.params;
-    const CarRental = require('../../../models').CarRental;
-    const Trip = require('../../../models').Trip;
+    const { CarRental } = require('../../../models');
+    const { Trip } = require('../../../models');
 
     // Verify trip belongs to user
     const trip = await Trip.findOne({
-      where: { id: tripId, userId: req.user.id }
+      where: { id: tripId, userId: req.user.id },
     });
 
     if (!trip) {
@@ -43,7 +42,7 @@ router.get('/trips/:tripId', async (req, res) => {
 
     const carRentals = await CarRental.findAll({
       where: { tripId },
-      order: [['pickupDateTime', 'ASC']]
+      order: [['pickupDateTime', 'ASC']],
     });
 
     return apiResponse.success(res, carRentals, `Retrieved ${carRentals.length} car rentals`);
@@ -58,14 +57,37 @@ router.get('/trips/:tripId', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
-    const CarRental = require('../../../models').CarRental;
+    const { CarRental, TravelCompanion, ItemCompanion } = require('../../../models');
     const carRental = await CarRental.findByPk(req.params.id);
 
     if (!carRental) {
       return apiResponse.notFound(res, 'Car rental not found');
     }
 
-    return apiResponse.success(res, carRental, 'Car rental retrieved successfully');
+    // Get companions for this car rental
+    const itemCompanions = await ItemCompanion.findAll({
+      where: { itemType: 'car_rental', itemId: carRental.id },
+      include: [
+        {
+          model: TravelCompanion,
+          as: 'companion',
+          attributes: ['id', 'email', 'firstName', 'lastName', 'name'],
+        },
+      ],
+    });
+
+    // Add companions to response
+    const rentalData = carRental.toJSON();
+    rentalData.itemCompanions = itemCompanions.map((ic) => ({
+      id: ic.companion.id,
+      email: ic.companion.email,
+      firstName: ic.companion.firstName,
+      lastName: ic.companion.lastName,
+      name: ic.companion.name,
+      inheritedFromTrip: ic.inheritedFromTrip,
+    }));
+
+    return apiResponse.success(res, rentalData, 'Car rental retrieved successfully');
   } catch (error) {
     return apiResponse.internalError(res, 'Failed to retrieve car rental', error);
   }
@@ -77,12 +99,12 @@ router.get('/:id', async (req, res) => {
  */
 router.post('/', async (req, res) => {
   try {
-    const CarRental = require('../../../models').CarRental;
+    const { CarRental } = require('../../../models');
 
     // Transform form data to match model
     const rentalData = {
       ...req.body,
-      userId: req.user.id
+      userId: req.user.id,
     };
 
     // Combine date and time fields into datetime
@@ -105,16 +127,18 @@ router.post('/', async (req, res) => {
 /**
  * POST /api/v1/car-rentals/trips/:tripId
  * Create a car rental for a trip
+ * Auto-adds trip-level companions to the new car rental
  */
 router.post('/trips/:tripId', async (req, res) => {
   try {
     const { tripId } = req.params;
-    const Trip = require('../../../models').Trip;
-    const CarRental = require('../../../models').CarRental;
+    const { Trip } = require('../../../models');
+    const { CarRental } = require('../../../models');
+    const itemCompanionHelper = require('../../../utils/itemCompanionHelper');
 
     // Verify trip belongs to user
     const trip = await Trip.findOne({
-      where: { id: tripId, userId: req.user.id }
+      where: { id: tripId, userId: req.user.id },
     });
 
     if (!trip) {
@@ -124,7 +148,7 @@ router.post('/trips/:tripId', async (req, res) => {
     // Transform form data to match model
     const rentalData = {
       ...req.body,
-      tripId
+      tripId,
     };
 
     // Combine date and time fields into datetime
@@ -138,6 +162,19 @@ router.post('/trips/:tripId', async (req, res) => {
     // Create car rental
     const carRental = await CarRental.create(rentalData);
 
+    // Auto-add trip-level companions to the new car rental
+    try {
+      await itemCompanionHelper.autoAddTripCompanions(
+        'car_rental',
+        carRental.id,
+        tripId,
+        req.user.id
+      );
+    } catch (companionError) {
+      // Log error but don't fail the car rental creation
+      console.error('[Car Rental Creation] Error auto-adding companions:', companionError);
+    }
+
     return apiResponse.created(res, carRental, 'Car rental created successfully');
   } catch (error) {
     return apiResponse.internalError(res, 'Failed to create car rental', error);
@@ -150,7 +187,7 @@ router.post('/trips/:tripId', async (req, res) => {
  */
 router.put('/:id', async (req, res) => {
   try {
-    const CarRental = require('../../../models').CarRental;
+    const { CarRental } = require('../../../models');
     const carRental = await CarRental.findByPk(req.params.id);
 
     if (!carRental) {
@@ -183,7 +220,7 @@ router.put('/:id', async (req, res) => {
  */
 router.delete('/:id', async (req, res) => {
   try {
-    const CarRental = require('../../../models').CarRental;
+    const { CarRental } = require('../../../models');
     const carRental = await CarRental.findByPk(req.params.id);
 
     if (!carRental) {

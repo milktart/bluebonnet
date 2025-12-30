@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { tripsApi, flightsApi, hotelsApi, eventsApi, transportationApi, carRentalsApi } from '$lib/services/api';
+  import { tripsApi, flightsApi, hotelsApi, eventsApi, transportationApi, carRentalsApi, itemCompanionsApi } from '$lib/services/api';
   import { tripStore } from '$lib/stores/tripStore';
   import { utcToLocalTimeString } from '$lib/utils/timezoneUtils';
   import AirportAutocomplete from './AirportAutocomplete.svelte';
-  import ItemCompanionsSelector from './ItemCompanionsSelector.svelte';
+  import ItemCompanionsForm from './ItemCompanionsForm.svelte';
   import TripCompanionsForm from './TripCompanionsForm.svelte';
   import '$lib/styles/form-styles.css';
 
@@ -17,8 +17,26 @@
   let loading = false;
   let error: string | null = null;
 
+  // Debug logging
+  $: if (data) {
+    console.log('[ItemEditForm] Received data:', {
+      itemType,
+      itemId: data.id,
+      dataKeys: Object.keys(data),
+      itemCompanions: data.itemCompanions,
+      hasCompanions: !!data.itemCompanions,
+      companionCount: data.itemCompanions?.length || 0,
+      fullData: data
+    });
+  }
+
   // Re-compute isEditing reactively based on data
   $: isEditing = !!data?.id;
+
+  // Debug: Log selectedTripId
+  $: {
+    console.log('[ItemEditForm] selectedTripId changed:', { selectedTripId, isEditing, itemType, itemId: data?.id });
+  }
 
   // Show trip selector only for non-trip items (not for trip itself)
   $: showTripSelector = itemType !== 'trip';
@@ -168,8 +186,8 @@
     const initialized = initializeFormData(data);
     formData = initialized;
     selectedTripId = data?.tripId || '';
-    // Initialize companions if available
-    selectedCompanions = data?.travelCompanions || [];
+    // Initialize companions if available (itemCompanions from API response)
+    selectedCompanions = data?.itemCompanions || data?.travelCompanions || [];
   }
 
   // Auto-lookup airline when flight number changes (for flights)
@@ -227,7 +245,7 @@
         title: isEditing ? 'Edit Trip' : 'Add Trip',
         fields: [
           { name: 'name', label: 'Trip Name', type: 'text', required: true, placeholder: 'Summer Vacation' },
-          { name: 'purpose', label: 'Purpose', type: 'select', options: ['leisure', 'business', 'family', 'romantic', 'adventure'], required: true },
+          { name: 'purpose', label: 'Purpose', type: 'select', options: [{ value: 'leisure', label: 'Leisure' }, { value: 'business', label: 'Business' }, { value: 'family', label: 'Family' }, { value: 'romantic', label: 'Romantic' }, { value: 'adventure', label: 'Adventure' }], required: true },
           { name: 'departureDate', label: 'Departure Date', type: 'date', required: true },
           { name: 'returnDate', label: 'Return Date', type: 'date', required: true },
           { name: 'notes', label: 'Notes', type: 'textarea' }
@@ -264,7 +282,7 @@
       transportation: {
         title: isEditing ? 'Edit Transportation' : 'Add Transportation',
         fields: [
-          { name: 'method', label: 'Method', type: 'select', options: ['train', 'bus', 'ferry', 'shuttle', 'taxi', 'rideshare', 'subway', 'metro', 'tram', 'other'], required: true },
+          { name: 'method', label: 'Method', type: 'select', options: [{ value: 'train', label: 'Train' }, { value: 'bus', label: 'Bus' }, { value: 'ferry', label: 'Ferry' }, { value: 'shuttle', label: 'Shuttle' }, { value: 'taxi', label: 'Taxi' }, { value: 'rideshare', label: 'Rideshare' }, { value: 'subway', label: 'Subway' }, { value: 'metro', label: 'Metro' }, { value: 'tram', label: 'Tram' }, { value: 'other', label: 'Other' }], required: true },
           { name: 'origin', label: 'From', type: 'text', required: true },
           { name: 'destination', label: 'To', type: 'text', required: true },
           { name: 'departureDate', label: 'Departure Date', type: 'date', required: true },
@@ -404,6 +422,32 @@
       }
 
       console.log('[ItemEditForm] Save successful, result:', result);
+
+      // Save companions for the item if any were selected
+      if (selectedCompanions && selectedCompanions.length > 0 && result && result.id) {
+        try {
+          const companionIds = selectedCompanions.map(c => c.id);
+          await itemCompanionsApi.update(itemType, result.id, companionIds);
+          console.log('[ItemEditForm] Companions saved successfully');
+
+          // After saving companions, fetch the complete item with companions to ensure data consistency
+          if (itemType === 'flight') {
+            result = await flightsApi.getById(result.id);
+          } else if (itemType === 'hotel') {
+            result = await hotelsApi.getById(result.id);
+          } else if (itemType === 'event') {
+            result = await eventsApi.getById(result.id);
+          } else if (itemType === 'transportation') {
+            result = await transportationApi.getById(result.id);
+          } else if (itemType === 'carRental') {
+            result = await carRentalsApi.getById(result.id);
+          }
+        } catch (companionError) {
+          // Log error but don't fail the form submission
+          console.error('[ItemEditForm] Error saving companions:', companionError);
+        }
+      }
+
       onSave(result || submitData);
       onClose();
     } catch (err) {
@@ -512,19 +556,6 @@
             {/each}
           </select>
         </div>
-
-        {#if selectedTripId}
-          <div class="form-group">
-            <label>Companions</label>
-            <ItemCompanionsSelector
-              tripId={selectedTripId}
-              currentItemCompanions={selectedCompanions}
-              onCompanionsChange={(companions) => {
-                selectedCompanions = companions;
-              }}
-            />
-          </div>
-        {/if}
       {/if}
       {#if itemType === 'flight'}
         <!-- Flight Number & Airline (3-col: 1-2) -->
@@ -666,8 +697,12 @@
           <label for="method">Method</label>
           <select id="method" name="method" bind:value={formData.method} required>
             <option value="">Select Method</option>
-            {#each ['train', 'bus', 'ferry', 'shuttle', 'taxi', 'rideshare', 'subway', 'metro', 'tram', 'other'] as option}
-              <option value={option}>{option}</option>
+            {#each config.fields.find(f => f.name === 'method')?.options || [] as option}
+              {#if typeof option === 'object' && option.value}
+                <option value={option.value}>{option.label}</option>
+              {:else}
+                <option value={option}>{option}</option>
+              {/if}
             {/each}
           </select>
         </div>
@@ -793,29 +828,43 @@
           </label>
         </div>
 
-        <!-- Start Date & Start Time (2-col) -->
-        <div class="form-row cols-2">
-          <div class="form-group">
-            <label for="startDate">Start Date</label>
-            <input type="date" id="startDate" name="startDate" bind:value={formData.startDate} required />
+        {#if formData.allDay}
+          <!-- All Day: Start & End Dates only (2-col) -->
+          <div class="form-row cols-2">
+            <div class="form-group">
+              <label for="startDate">Start Date</label>
+              <input type="date" id="startDate" name="startDate" bind:value={formData.startDate} required />
+            </div>
+            <div class="form-group">
+              <label for="endDate">End Date</label>
+              <input type="date" id="endDate" name="endDate" bind:value={formData.endDate} />
+            </div>
           </div>
-          <div class="form-group">
-            <label for="startTime">Start Time</label>
-            <input type="text" id="startTime" name="startTime" bind:value={formData.startTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} disabled={formData.allDay} />
+        {:else}
+          <!-- Start Date & Start Time (2-col) -->
+          <div class="form-row cols-2">
+            <div class="form-group">
+              <label for="startDate">Start Date</label>
+              <input type="date" id="startDate" name="startDate" bind:value={formData.startDate} required />
+            </div>
+            <div class="form-group">
+              <label for="startTime">Start Time</label>
+              <input type="text" id="startTime" name="startTime" bind:value={formData.startTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
+            </div>
           </div>
-        </div>
 
-        <!-- End Date & End Time (2-col) -->
-        <div class="form-row cols-2">
-          <div class="form-group">
-            <label for="endDate">End Date</label>
-            <input type="date" id="endDate" name="endDate" bind:value={formData.endDate} />
+          <!-- End Date & End Time (2-col) -->
+          <div class="form-row cols-2">
+            <div class="form-group">
+              <label for="endDate">End Date</label>
+              <input type="date" id="endDate" name="endDate" bind:value={formData.endDate} />
+            </div>
+            <div class="form-group">
+              <label for="endTime">End Time</label>
+              <input type="text" id="endTime" name="endTime" bind:value={formData.endTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
+            </div>
           </div>
-          <div class="form-group">
-            <label for="endTime">End Time</label>
-            <input type="text" id="endTime" name="endTime" bind:value={formData.endTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} disabled={formData.allDay} />
-          </div>
-        </div>
+        {/if}
 
         <!-- Ticket Number -->
         <div class="form-group">
@@ -836,80 +885,242 @@
 
       {:else}
         <!-- Generic form layout fallback -->
-        {#each config.fields as field}
-          <div class="form-group">
-            <label for={field.name}>{field.label}</label>
+        <!-- Special layout for trip departure and return dates -->
+        {#if itemType === 'trip' && config.fields.some(f => f.name === 'departureDate')}
+          {#each config.fields as field}
+            {#if field.name === 'departureDate'}
+              <div class="form-row cols-2">
+                <div class="form-group">
+                  <label for={field.name}>{field.label}</label>
+                  <input
+                    type="date"
+                    id={field.name}
+                    name={field.name}
+                    bind:value={formData[field.name]}
+                    required={field.required}
+                  />
+                </div>
+                {#if config.fields.some(f => f.name === 'returnDate')}
+                  {#each config.fields as returnField}
+                    {#if returnField.name === 'returnDate'}
+                      <div class="form-group">
+                        <label for={returnField.name}>{returnField.label}</label>
+                        <input
+                          type="date"
+                          id={returnField.name}
+                          name={returnField.name}
+                          bind:value={formData[returnField.name]}
+                          required={returnField.required}
+                        />
+                      </div>
+                    {/if}
+                  {/each}
+                {/if}
+              </div>
+            {:else if field.name !== 'returnDate'}
+              <div class="form-group">
+                <label for={field.name}>{field.label}</label>
 
-            {#if field.type === 'text'}
-              <input
-                type="text"
-                id={field.name}
-                name={field.name}
-                bind:value={formData[field.name]}
-                placeholder={field.placeholder}
-                required={field.required}
-                readonly={field.readonly}
-                class={field.readonly ? 'readonly' : ''}
-              />
-            {:else if field.type === 'date'}
-              <input
-                type="date"
-                id={field.name}
-                name={field.name}
-                bind:value={formData[field.name]}
-                required={field.required}
-              />
-            {:else if field.type === 'time'}
-              <input
-                type="text"
-                id={field.name}
-                name={field.name}
-                bind:value={formData[field.name]}
-                placeholder={field.placeholder}
-                maxlength="5"
-                on:keyup={formatTimeInput}
-              />
-            {:else if field.type === 'select'}
-              <select
-                id={field.name}
-                name={field.name}
-                bind:value={formData[field.name]}
-                required={field.required}
-              >
-                <option value="">Select {field.label}</option>
-                {#each field.options as option}
-                  <option value={option}>{option}</option>
-                {/each}
-              </select>
-            {:else if field.type === 'textarea'}
-              <textarea
-                id={field.name}
-                name={field.name}
-                bind:value={formData[field.name]}
-                placeholder={field.placeholder}
-              />
+                {#if field.type === 'text'}
+                  <input
+                    type="text"
+                    id={field.name}
+                    name={field.name}
+                    bind:value={formData[field.name]}
+                    placeholder={field.placeholder}
+                    required={field.required}
+                    readonly={field.readonly}
+                    class={field.readonly ? 'readonly' : ''}
+                  />
+                {:else if field.type === 'date'}
+                  <input
+                    type="date"
+                    id={field.name}
+                    name={field.name}
+                    bind:value={formData[field.name]}
+                    required={field.required}
+                  />
+                {:else if field.type === 'time'}
+                  <input
+                    type="text"
+                    id={field.name}
+                    name={field.name}
+                    bind:value={formData[field.name]}
+                    placeholder={field.placeholder}
+                    maxlength="5"
+                    on:keyup={formatTimeInput}
+                  />
+                {:else if field.type === 'select'}
+                  <select
+                    id={field.name}
+                    name={field.name}
+                    bind:value={formData[field.name]}
+                    required={field.required}
+                  >
+                    <option value="">Select {field.label}</option>
+                    {#each field.options as option}
+                      {#if typeof option === 'object' && option.value}
+                        <option value={option.value}>{option.label}</option>
+                      {:else}
+                        <option value={option}>{option}</option>
+                      {/if}
+                    {/each}
+                  </select>
+                {:else if field.type === 'textarea'}
+                  <textarea
+                    id={field.name}
+                    name={field.name}
+                    bind:value={formData[field.name]}
+                    placeholder={field.placeholder}
+                  />
+                {/if}
+              </div>
             {/if}
-          </div>
-        {/each}
+          {/each}
+        {:else}
+          <!-- Default field rendering for all other item types -->
+          {#each config.fields as field}
+            <div class="form-group">
+              <label for={field.name}>{field.label}</label>
 
-        <!-- Trip Companions (shown when editing a trip) -->
-        {#if itemType === 'trip' && isEditing && data?.id}
-          <TripCompanionsForm
-            tripId={data.id}
-            companions={data.travelCompanions || []}
-            onCompanionsUpdate={(companions) => {
-              if (data) {
-                data.travelCompanions = companions;
-              }
-            }}
-          />
+              {#if field.type === 'text'}
+                <input
+                  type="text"
+                  id={field.name}
+                  name={field.name}
+                  bind:value={formData[field.name]}
+                  placeholder={field.placeholder}
+                  required={field.required}
+                  readonly={field.readonly}
+                  class={field.readonly ? 'readonly' : ''}
+                />
+              {:else if field.type === 'date'}
+                <input
+                  type="date"
+                  id={field.name}
+                  name={field.name}
+                  bind:value={formData[field.name]}
+                  required={field.required}
+                />
+              {:else if field.type === 'time'}
+                <input
+                  type="text"
+                  id={field.name}
+                  name={field.name}
+                  bind:value={formData[field.name]}
+                  placeholder={field.placeholder}
+                  maxlength="5"
+                  on:keyup={formatTimeInput}
+                />
+              {:else if field.type === 'select'}
+                <select
+                  id={field.name}
+                  name={field.name}
+                  bind:value={formData[field.name]}
+                  required={field.required}
+                >
+                  <option value="">Select {field.label}</option>
+                  {#each field.options as option}
+                    <option value={option}>{option}</option>
+                  {/each}
+                </select>
+              {:else if field.type === 'textarea'}
+                <textarea
+                  id={field.name}
+                  name={field.name}
+                  bind:value={formData[field.name]}
+                  placeholder={field.placeholder}
+                />
+              {/if}
+            </div>
+          {/each}
         {/if}
       {/if}
     </div>
 
+    <!-- Travel Companions Section (at bottom for all non-trip items) -->
+    {#if showTripSelector}
+      <div class="form-group">
+        <ItemCompanionsForm
+          companions={selectedCompanions}
+          onCompanionsUpdate={(companions) => {
+            console.log('[ItemEditForm] onCompanionsUpdate called:', {
+              oldCount: selectedCompanions.length,
+              newCount: companions.length,
+              companions: companions,
+              isEditing,
+              itemId: data?.id,
+              selectedTripId
+            });
+            selectedCompanions = companions;
+
+            // For existing items in a trip, immediately save companions to trigger auto-propagation
+            if (isEditing && data?.id && selectedTripId) {
+              const companionIds = companions.map(c => c.id);
+              console.log('[ItemEditForm] Saving companions to API:', { itemType, itemId: data.id, companionIds });
+              itemCompanionsApi.update(itemType, data.id, companionIds).catch((err) => {
+                console.error('Error saving companions:', err);
+              });
+            } else if (isEditing && data?.id && !selectedTripId) {
+              // Standalone item - also save companions
+              const companionIds = companions.map(c => c.id);
+              console.log('[ItemEditForm] Saving companions to API (standalone):', { itemType, itemId: data.id, companionIds });
+              itemCompanionsApi.update(itemType, data.id, companionIds).catch((err) => {
+                console.error('Error saving companions:', err);
+              });
+            }
+          }}
+          onAddCompanion={null}
+          onRemoveCompanion={null}
+        />
+      </div>
+    {/if}
+
+    <!-- Trip Companions Section (at bottom for trips) -->
+    {#if itemType === 'trip' && isEditing && data?.id}
+      <TripCompanionsForm
+        tripId={data.id}
+        companions={data.tripCompanions || []}
+        onCompanionsUpdate={async (companions) => {
+          console.log('[ItemEditForm] Trip companions updated:', {
+            oldCount: data.tripCompanions?.length || 0,
+            newCount: companions.length,
+            companions: companions
+          });
+          if (data) {
+            data.tripCompanions = companions;
+            console.log('[ItemEditForm] data.tripCompanions updated to:', data.tripCompanions);
+
+            // Refetch full trip data to update items with new companions
+            // (backend adds new companions to all items via addCompanionToAllItems)
+            try {
+              console.log('[ItemEditForm] Refetching trip data after companion update');
+              const updatedTrip = await tripsApi.getOne(data.id);
+              console.log('[ItemEditForm] Refetched trip data:', updatedTrip);
+
+              // Update data with fresh trip info (including updated items with new companions)
+              if (updatedTrip) {
+                Object.assign(data, updatedTrip);
+                // Trigger reactivity
+                data = data;
+
+                // Call onSave to notify parent of changes
+                if (onSave) {
+                  onSave(updatedTrip);
+                }
+              }
+            } catch (err) {
+              console.error('[ItemEditForm] Error refetching trip data:', err);
+              // Continue - at least the trip companions were updated
+            }
+          }
+        }}
+      />
+    {/if}
+
     <div class="form-buttons">
       <button type="submit" disabled={loading} class="submit-btn">
-        {isEditing ? 'Update' : 'Add'} {itemType}
+        {isEditing ? 'Update' : 'Add'}
       </button>
       <button type="button" on:click={onClose} disabled={loading} class="cancel-btn">
         Cancel
@@ -918,7 +1129,7 @@
 
     {#if isEditing}
       <button type="button" on:click={handleDelete} disabled={loading} class="delete-btn">
-        Delete {itemType}
+        Delete
       </button>
     {/if}
   </form>

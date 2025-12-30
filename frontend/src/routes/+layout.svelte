@@ -78,16 +78,6 @@
     vertical-align: middle;
   }
 
-  /* Fix for Safari/iPad date and time input sizing */
-  :global(input[type="date"]),
-  :global(input[type="time"]) {
-    font-size: 0.875rem !important;
-    padding: 0.5rem !important;
-    line-height: 1rem !important;
-    box-sizing: border-box !important;
-    -webkit-appearance: none !important;
-    appearance: none !important;
-  }
 
   .app-wrapper {
     display: flex;
