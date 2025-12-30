@@ -166,7 +166,9 @@
                   {/if}
                   <div class="item-content">
                     <p class="item-title">{item.data.name}</p>
-                    <p class="item-time">{formatDateTime(item.data.startDateTime, item.data.timezone)}</p>
+                    {#if !item.data.isAllDay}
+                      <p class="item-time">{formatDateTime(item.data.startDateTime, item.data.timezone)}</p>
+                    {/if}
                     <p class="item-route">{item.data.location}</p>
                   </div>
                   {#if item.data.itemCompanions && item.data.itemCompanions.length > 0}
