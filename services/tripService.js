@@ -198,9 +198,6 @@ class TripService extends BaseService {
           const startMinutes = startDate.getUTCMinutes();
           const endHours = endDate.getUTCHours();
           const endMinutes = endDate.getUTCMinutes();
-          logger.debug(
-            `Event ${json.name}: start=${json.startDateTime} (UTC: ${startHours}:${startMinutes}), end=${json.endDateTime} (UTC: ${endHours}:${endMinutes})`
-          );
           json.isAllDay =
             startHours === 0 && startMinutes === 0 && endHours === 23 && endMinutes === 59;
         } else {
