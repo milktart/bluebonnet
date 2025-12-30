@@ -18,6 +18,14 @@
   import VoucherForm from '$lib/components/VoucherForm.svelte';
   import CompanionForm from '$lib/components/CompanionForm.svelte';
   import CompanionIndicators from '$lib/components/CompanionIndicators.svelte';
+  import DashboardHeader from './components/DashboardHeader.svelte';
+  import DashboardTripsList from './components/DashboardTripsList.svelte';
+  import DashboardItemList from './components/DashboardItemList.svelte';
+  import DashboardSettingsPanel from './components/DashboardSettingsPanel.svelte';
+  import DashboardItemEditor from './components/DashboardItemEditor.svelte';
+  import { parseLocalDate, getTripEndDate, getItemDate, getDateKeyForItem, getDayKeyForItem, groupTripItemsByDate } from '$lib/utils/dashboardGrouping';
+  import { formatDate, formatMonthHeader, formatTripDateHeader, formatTimeOnly, formatDateTime, formatDateOnly, capitalize } from '$lib/utils/dashboardFormatters';
+  import { getCityName, getTransportIcon, getTransportColor, getTripIcon, getTripCities, calculateLayover, getFlightLayoverInfo, layoverSpansDates } from '$lib/utils/dashboardItem';
 
   let trips: any[] = [];
   let standaloneItems: any = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
@@ -36,57 +44,6 @@
   let showNewItemMenu = false;
   let groupedItems: Record<string, Array<any>> = {};
   let dateKeysInOrder: string[] = [];
-
-  // Helper function to extract month key (YYYY-MM) using item's timezone
-  function getDateKeyForItem(item: any): string {
-    let date: Date;
-    let timezone: string | null = null;
-
-    if (item.type === 'trip') {
-      date = parseLocalDate(item.data.departureDate);
-      // Trips use UTC by default (already in YYYY-MM-DD format)
-    } else {
-      date = item.sortDate;
-      // Extract timezone from item based on type
-      if (item.itemType === 'flight') {
-        timezone = item.data.originTimezone;
-      } else if (item.itemType === 'hotel') {
-        timezone = item.data.timezone;
-      } else if (item.itemType === 'transportation') {
-        timezone = item.data.originTimezone;
-      } else if (item.itemType === 'carRental') {
-        timezone = item.data.pickupTimezone;
-      } else if (item.itemType === 'event') {
-        timezone = item.data.timezone;
-      }
-    }
-
-    // Format date in item's timezone if available, otherwise UTC
-    if (timezone) {
-      try {
-        const formatter = new Intl.DateTimeFormat('en-CA', {
-          year: 'numeric',
-          month: '2-digit',
-          timeZone: timezone
-        });
-        const parts = formatter.formatToParts(date);
-        const values: Record<string, string> = {};
-        parts.forEach(part => {
-          if (part.type !== 'literal') {
-            values[part.type] = part.value;
-          }
-        });
-        return `${values.year}-${values.month}`;
-      } catch {
-        // Fallback to UTC if timezone invalid
-      }
-    }
-
-    // Fallback: use UTC date
-    const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    return `${year}-${month}`;
-  }
 
   // Reactive statement to regroup whenever filteredItems changes
   $: if (filteredItems.length > 0) {
@@ -226,27 +183,6 @@
     };
   });
 
-  function parseLocalDate(dateString: string): Date {
-    if (!dateString) return new Date(0);
-    const [year, month, day] = dateString.split('-').map(Number);
-    return new Date(year, month - 1, day, 0, 0, 0, 0);
-  }
-
-  function getTripEndDate(trip: any): Date {
-    if (trip.returnDate) {
-      return parseLocalDate(trip.returnDate);
-    }
-    return trip.departureDate ? parseLocalDate(trip.departureDate) : new Date(0);
-  }
-
-  function getItemDate(item: any, itemType: string): Date {
-    if (itemType === 'flight') return new Date(item.departureDateTime);
-    if (itemType === 'hotel') return new Date(item.checkInDateTime);
-    if (itemType === 'transportation') return new Date(item.departureDateTime);
-    if (itemType === 'carRental') return new Date(item.pickupDateTime);
-    if (itemType === 'event') return new Date(item.startDateTime);
-    return new Date(0);
-  }
 
   function filterTrips() {
     const now = new Date();
@@ -473,534 +409,6 @@
     tertiarySidebarContent = null;
   }
 
-  function formatDate(dateStr: string): string {
-    if (!dateStr) return '';
-    const date = parseLocalDate(dateStr);
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = months[date.getMonth()];
-    const year = date.getFullYear();
-    return `${day} ${month} ${year}`;
-  }
-
-  function formatMonthHeader(monthKey: string): string {
-    if (!monthKey) return '';
-    // monthKey is in format YYYY-MM
-    const [yearStr, monthStr] = monthKey.split('-');
-    const year = parseInt(yearStr, 10);
-    const month = parseInt(monthStr, 10);
-    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    return `${months[month - 1]} ${year}`;
-  }
-
-  function formatTripDateHeader(dateStr: string): string {
-    if (!dateStr) return '';
-    // dateStr is in format YYYY-MM-DD
-    const [yearStr, monthStr, dayStr] = dateStr.split('-');
-    const year = parseInt(yearStr, 10);
-    const month = parseInt(monthStr, 10) - 1;
-    const day = parseInt(dayStr, 10);
-
-    const date = new Date(year, month, day);
-    const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'short' });
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const monthStr2 = months[month];
-
-    return `${dayOfWeek}, ${day} ${monthStr2}`;
-  }
-
-  // Helper function to extract day key (YYYY-MM-DD) using item's timezone for nested items
-  function getDayKeyForItem(item: any): string {
-    let date: Date;
-    let timezone: string | null = null;
-
-    // For trip items, extract timezone from the item data
-    if (item.type === 'flight') {
-      date = new Date(item.departureDateTime);
-      timezone = item.originTimezone;
-    } else if (item.type === 'hotel') {
-      date = new Date(item.checkInDateTime);
-      timezone = item.timezone;
-    } else if (item.type === 'transportation') {
-      date = new Date(item.departureDateTime);
-      timezone = item.originTimezone;
-    } else if (item.type === 'carRental') {
-      date = new Date(item.pickupDateTime);
-      timezone = item.pickupTimezone;
-    } else if (item.type === 'event') {
-      date = new Date(item.startDateTime);
-      timezone = item.timezone;
-    } else {
-      return '';
-    }
-
-    // Format date in item's timezone if available, otherwise UTC
-    if (timezone) {
-      try {
-        const formatter = new Intl.DateTimeFormat('en-CA', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          timeZone: timezone
-        });
-        const parts = formatter.formatToParts(date);
-        const values: Record<string, string> = {};
-        parts.forEach(part => {
-          if (part.type !== 'literal') {
-            values[part.type] = part.value;
-          }
-        });
-        return `${values.year}-${values.month}-${values.day}`;
-      } catch {
-        // Fallback to UTC if timezone invalid
-      }
-    }
-
-    // Fallback: use UTC date
-    const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
-
-  // Helper function to group trip items by date
-  function groupTripItemsByDate(trip: any): Record<string, Array<any>> {
-    const grouped: Record<string, Array<any>> = {};
-    const dateOrder: string[] = [];
-
-    const allItems: any[] = [];
-
-    // Collect all items from the trip
-    if (trip.flights) {
-      trip.flights.forEach((f: any) => {
-        const item = { type: 'flight', ...f };
-        if (f.itemCompanions && f.itemCompanions.length > 0) {
-          console.log(`[groupTripItemsByDate] Flight ${f.id} had ${f.itemCompanions.length} companions, now has ${item.itemCompanions?.length || 0}`);
-        }
-        allItems.push(item);
-      });
-    }
-    if (trip.hotels) {
-      trip.hotels.forEach((h: any) => {
-        const item = { type: 'hotel', ...h };
-        if (h.itemCompanions && h.itemCompanions.length > 0) {
-          console.log(`[groupTripItemsByDate] Hotel ${h.id} had ${h.itemCompanions.length} companions, now has ${item.itemCompanions?.length || 0}`);
-        }
-        allItems.push(item);
-      });
-    }
-    if (trip.transportation) {
-      trip.transportation.forEach((t: any) => {
-        const item = { type: 'transportation', ...t };
-        allItems.push(item);
-      });
-    }
-    if (trip.carRentals) {
-      trip.carRentals.forEach((c: any) => {
-        const item = { type: 'carRental', ...c };
-        allItems.push(item);
-      });
-    }
-    if (trip.events) {
-      trip.events.forEach((e: any) => {
-        const item = { type: 'event', ...e };
-        if (e.itemCompanions && e.itemCompanions.length > 0) {
-          console.log(`[groupTripItemsByDate] Event ${e.id} had ${e.itemCompanions.length} companions, now has ${item.itemCompanions?.length || 0}`);
-        }
-        allItems.push(item);
-      });
-    }
-
-    // Sort items chronologically
-    allItems.sort((a, b) => {
-      const dateA = a.type === 'flight' ? new Date(a.departureDateTime) :
-                    a.type === 'hotel' ? new Date(a.checkInDateTime) :
-                    a.type === 'transportation' ? new Date(a.departureDateTime) :
-                    a.type === 'carRental' ? new Date(a.pickupDateTime) :
-                    a.type === 'event' ? new Date(a.startDateTime) : new Date(0);
-      const dateB = b.type === 'flight' ? new Date(b.departureDateTime) :
-                    b.type === 'hotel' ? new Date(b.checkInDateTime) :
-                    b.type === 'transportation' ? new Date(b.departureDateTime) :
-                    b.type === 'carRental' ? new Date(b.pickupDateTime) :
-                    b.type === 'event' ? new Date(b.startDateTime) : new Date(0);
-      return dateA.getTime() - dateB.getTime();
-    });
-
-    // Group by date
-    allItems.forEach(item => {
-      const dateKey = getDayKeyForItem(item);
-      if (!grouped[dateKey]) {
-        grouped[dateKey] = [];
-        dateOrder.push(dateKey);
-      }
-      grouped[dateKey].push(item);
-    });
-
-    return grouped;
-  }
-
-  function capitalize(str: string): string {
-    if (!str) return '';
-    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-  }
-
-  function formatTimeOnly(dateStr: string, timezone: string | null = null): string {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-
-    if (!timezone) {
-      const hours = String(date.getUTCHours()).padStart(2, '0');
-      const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-      return `${hours}:${minutes}`;
-    }
-
-    // With timezone conversion
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: timezone,
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
-    return formatter.format(date);
-  }
-
-  function formatDateTime(dateStr: string, timezone: string | null = null): string {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-
-    // If no timezone, use UTC time (for events/hotels that don't have timezone)
-    if (!timezone) {
-      const hours = String(date.getUTCHours()).padStart(2, '0');
-      const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-      const day = String(date.getUTCDate()).padStart(2, '0');
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const month = months[date.getUTCMonth()];
-      const year = date.getUTCFullYear();
-      return `${day} ${month} ${year} ${hours}:${minutes}`;
-    }
-
-    // Use timezone-aware formatting
-    try {
-      const formatter = new Intl.DateTimeFormat('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-        timeZone: timezone
-      });
-
-      // Format and rearrange to "DD Mon YYYY HH:mm"
-      const parts = formatter.formatToParts(date);
-      const values: Record<string, string> = {};
-      parts.forEach(part => {
-        if (part.type !== 'literal') {
-          values[part.type] = part.value;
-        }
-      });
-
-      return `${values.day} ${values.month} ${values.year} ${values.hour}:${values.minute}`;
-    } catch (error) {
-      // Fallback to UTC time if timezone is invalid
-      const hours = String(date.getUTCHours()).padStart(2, '0');
-      const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-      const day = String(date.getUTCDate()).padStart(2, '0');
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const month = months[date.getUTCMonth()];
-      const year = date.getUTCFullYear();
-      return `${day} ${month} ${year} ${hours}:${minutes}`;
-    }
-  }
-
-  function formatDateOnly(dateStr: string, timezone: string | null = null): string {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-
-    // If no timezone, use UTC time (for hotels/events that don't have timezone)
-    if (!timezone) {
-      const day = String(date.getUTCDate()).padStart(2, '0');
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const month = months[date.getUTCMonth()];
-      const year = date.getUTCFullYear();
-      return `${day} ${month} ${year}`;
-    }
-
-    // Use timezone-aware formatting
-    try {
-      const formatter = new Intl.DateTimeFormat('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: '2-digit',
-        timeZone: timezone
-      });
-
-      // Format and rearrange to "DD Mon YYYY"
-      const parts = formatter.formatToParts(date);
-      const values: Record<string, string> = {};
-      parts.forEach(part => {
-        if (part.type !== 'literal') {
-          values[part.type] = part.value;
-        }
-      });
-
-      return `${values.day} ${values.month} ${values.year}`;
-    } catch (error) {
-      // Fallback to UTC time if timezone is invalid
-      const day = String(date.getUTCDate()).padStart(2, '0');
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const month = months[date.getUTCMonth()];
-      const year = date.getUTCFullYear();
-      return `${day} ${month} ${year}`;
-    }
-  }
-
-  function getCityName(location: string): string {
-    if (!location) return '';
-
-    // Handle format: "CODE - City, State, Country"
-    if (location.includes(' - ')) {
-      const parts = location.split(' - ')[1];
-      if (parts && parts.includes(',')) {
-        // Extract just the city name (first part before comma)
-        return parts.split(',')[0].trim();
-      }
-      return parts?.trim() || '';
-    }
-
-    // Handle format: "City, State, Country"
-    if (location.includes(',')) {
-      return location.split(',')[0].trim();
-    }
-
-    // Return as-is if no recognizable format
-    return location.trim();
-  }
-
-  function getTransportIcon(method: string): string {
-    const methodLower = (method || '').toLowerCase().trim();
-    const iconMap: Record<string, string> = {
-      'train': 'train',
-      'bus': 'directions_bus',
-      'ferry': 'directions_boat',
-      'shuttle': 'local_taxi',
-      'taxi': 'local_taxi',
-      'rideshare': 'local_taxi',
-      'subway': 'subway',
-      'metro': 'subway',
-      'tram': 'tram',
-      'other': 'directions_run'
-    };
-    return iconMap[methodLower] || 'train';
-  }
-
-  function getTransportColor(method: string): string {
-    const methodLower = (method || '').toLowerCase().trim();
-    const colorMap: Record<string, string> = {
-      'train': 'blue',
-      'bus': 'amber',
-      'ferry': 'cyan',
-      'shuttle': 'purple',
-      'taxi': 'orange',
-      'rideshare': 'orange',
-      'subway': 'teal',
-      'metro': 'teal',
-      'tram': 'emerald',
-      'other': 'gray'
-    };
-    return colorMap[methodLower] || 'amber';
-  }
-
-  function getTripIcon(purpose: string): string {
-    if (purpose === 'business') return 'badge';
-    if (['leisure', 'family', 'romantic'].includes(purpose)) return 'hotel';
-    return 'flights_and_hotels';
-  }
-
-  function getTripCities(trip: any): string {
-    const cities = new Set<string>();
-
-    if (trip.flights) {
-      trip.flights.forEach((f: any) => {
-        if (f.origin) cities.add(getCityName(f.origin));
-        if (f.destination) cities.add(getCityName(f.destination));
-      });
-    }
-
-    if (trip.transportation) {
-      trip.transportation.forEach((t: any) => {
-        if (t.origin) cities.add(getCityName(t.origin));
-        if (t.destination) cities.add(getCityName(t.destination));
-      });
-    }
-
-    if (trip.carRentals) {
-      trip.carRentals.forEach((c: any) => {
-        if (c.pickupLocation) cities.add(getCityName(c.pickupLocation));
-      });
-    }
-
-    return Array.from(cities).sort().join(', ');
-  }
-
-  function calculateLayover(flight1: any, flight2: any): { duration: string; location: string } | null {
-    // Check if both are flights
-    if (flight1.type !== 'flight' || flight2.type !== 'flight') {
-      return null;
-    }
-
-    // Check if arrival airport matches departure airport
-    const arrivalAirportCode = flight1.destination?.split(' - ')[0]?.trim();
-    const departureAirportCode = flight2.origin?.split(' - ')[0]?.trim();
-
-    if (!arrivalAirportCode || !departureAirportCode || arrivalAirportCode !== departureAirportCode) {
-      return null;
-    }
-
-    // Get arrival time of first flight and departure time of second flight
-    const arrivalTime = new Date(flight1.arrivalDateTime);
-    const departureTime = new Date(flight2.departureDateTime);
-
-    // Calculate difference in milliseconds
-    const durationMs = departureTime.getTime() - arrivalTime.getTime();
-    const durationHours = durationMs / (1000 * 60 * 60);
-
-    // Only show layover if less than 24 hours
-    if (durationHours < 0 || durationHours >= 24) {
-      return null;
-    }
-
-    // Convert to hours and minutes
-    const hours = Math.floor(durationHours);
-    const minutes = Math.round((durationHours - hours) * 60);
-
-    // Format as "Xh Ym in AIRPORT"
-    const durationStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-    const location = arrivalAirportCode;
-
-    return {
-      duration: durationStr,
-      location
-    };
-  }
-
-  function getFlightLayoverInfo(trip: any, flightId: string): { duration: string; location: string } | null {
-    const allItems: any[] = [];
-
-    // Collect all items from the trip and sort chronologically
-    if (trip.flights) {
-      trip.flights.forEach((f: any) => {
-        allItems.push({ type: 'flight', ...f });
-      });
-    }
-    if (trip.hotels) {
-      trip.hotels.forEach((h: any) => {
-        allItems.push({ type: 'hotel', ...h });
-      });
-    }
-    if (trip.transportation) {
-      trip.transportation.forEach((t: any) => {
-        allItems.push({ type: 'transportation', ...t });
-      });
-    }
-    if (trip.carRentals) {
-      trip.carRentals.forEach((c: any) => {
-        allItems.push({ type: 'carRental', ...c });
-      });
-    }
-    if (trip.events) {
-      trip.events.forEach((e: any) => {
-        allItems.push({ type: 'event', ...e });
-      });
-    }
-
-    // Sort items chronologically
-    allItems.sort((a, b) => {
-      const dateA = a.type === 'flight' ? new Date(a.departureDateTime) :
-                    a.type === 'hotel' ? new Date(a.checkInDateTime) :
-                    a.type === 'transportation' ? new Date(a.departureDateTime) :
-                    a.type === 'carRental' ? new Date(a.pickupDateTime) :
-                    a.type === 'event' ? new Date(a.startDateTime) : new Date(0);
-      const dateB = b.type === 'flight' ? new Date(b.departureDateTime) :
-                    b.type === 'hotel' ? new Date(b.checkInDateTime) :
-                    b.type === 'transportation' ? new Date(b.departureDateTime) :
-                    b.type === 'carRental' ? new Date(b.pickupDateTime) :
-                    b.type === 'event' ? new Date(b.startDateTime) : new Date(0);
-      return dateA.getTime() - dateB.getTime();
-    });
-
-    // Find the flight and check the next flight
-    for (let i = 0; i < allItems.length; i++) {
-      if (allItems[i].type === 'flight' && allItems[i].id === flightId) {
-        // Check if there's a next item that's a flight
-        if (i + 1 < allItems.length && allItems[i + 1].type === 'flight') {
-          return calculateLayover(allItems[i], allItems[i + 1]);
-        }
-        break;
-      }
-    }
-
-    return null;
-  }
-
-  function layoverSpansDates(trip: any, flightId: string, currentDayKey: string): boolean {
-    const allItems: any[] = [];
-
-    // Collect all items from the trip and sort chronologically
-    if (trip.flights) {
-      trip.flights.forEach((f: any) => {
-        allItems.push({ type: 'flight', ...f });
-      });
-    }
-    if (trip.hotels) {
-      trip.hotels.forEach((h: any) => {
-        allItems.push({ type: 'hotel', ...h });
-      });
-    }
-    if (trip.transportation) {
-      trip.transportation.forEach((t: any) => {
-        allItems.push({ type: 'transportation', ...t });
-      });
-    }
-    if (trip.carRentals) {
-      trip.carRentals.forEach((c: any) => {
-        allItems.push({ type: 'carRental', ...c });
-      });
-    }
-    if (trip.events) {
-      trip.events.forEach((e: any) => {
-        allItems.push({ type: 'event', ...e });
-      });
-    }
-
-    // Sort items chronologically
-    allItems.sort((a, b) => {
-      const dateA = a.type === 'flight' ? new Date(a.departureDateTime) :
-                    a.type === 'hotel' ? new Date(a.checkInDateTime) :
-                    a.type === 'transportation' ? new Date(a.departureDateTime) :
-                    a.type === 'carRental' ? new Date(a.pickupDateTime) :
-                    a.type === 'event' ? new Date(a.startDateTime) : new Date(0);
-      const dateB = b.type === 'flight' ? new Date(b.departureDateTime) :
-                    b.type === 'hotel' ? new Date(b.checkInDateTime) :
-                    b.type === 'transportation' ? new Date(b.departureDateTime) :
-                    b.type === 'carRental' ? new Date(b.pickupDateTime) :
-                    b.type === 'event' ? new Date(b.startDateTime) : new Date(0);
-      return dateA.getTime() - dateB.getTime();
-    });
-
-    // Find the flight and check if next flight is on a different date
-    for (let i = 0; i < allItems.length; i++) {
-      if (allItems[i].type === 'flight' && allItems[i].id === flightId) {
-        if (i + 1 < allItems.length && allItems[i + 1].type === 'flight') {
-          const nextDayKey = getDayKeyForItem(allItems[i + 1]);
-          return nextDayKey !== currentDayKey;
-        }
-        break;
-      }
-    }
-
-    return false;
-  }
 </script>
 
 <svelte:head>
@@ -1063,59 +471,13 @@
     <div class="trips-content">
       {#if activeView === 'settings'}
         <!-- Settings View -->
-        <div class="settings-main-panel">
-          <div class="settings-main-content">
-            <div class="settings-section">
-              <h3>Account</h3>
-              <button class="settings-item" on:click={() => {
-                secondarySidebarContent = { type: 'settings-profile', data: $authStore.user || {} };
-              }}>
-                <span class="material-symbols-outlined">person</span>
-                <span>Profile</span>
-              </button>
-              <button class="settings-item" on:click={() => {
-                secondarySidebarContent = { type: 'settings-security', data: {} };
-              }}>
-                <span class="material-symbols-outlined">lock</span>
-                <span>Security</span>
-              </button>
-            </div>
-            <div class="settings-section">
-              <h3>Manage Vouchers & Credits</h3>
-              <button class="settings-item" on:click={() => {
-                secondarySidebarContent = { type: 'settings-vouchers', data: {} };
-              }}>
-                <span class="material-symbols-outlined">card_giftcard</span>
-                <span>Vouchers & Credits</span>
-              </button>
-            </div>
-            <div class="settings-section">
-              <h3>Manage Travel Companions</h3>
-              <button class="settings-item" on:click={() => {
-                secondarySidebarContent = { type: 'settings-companions', data: {} };
-              }}>
-                <span class="material-symbols-outlined">people</span>
-                <span>Travel Companions</span>
-              </button>
-            </div>
-            <div class="settings-section">
-              <h3>Data</h3>
-              <button class="settings-item" on:click={() => {
-                secondarySidebarContent = { type: 'settings-backup', data: {} };
-              }}>
-                <span class="material-symbols-outlined">cloud_download</span>
-                <span>Backup & Export</span>
-              </button>
-            </div>
-            <div class="settings-section">
-              <h3>Account Actions</h3>
-              <a href="/logout" class="settings-item logout">
-                <span class="material-symbols-outlined">logout</span>
-                <span>Sign Out</span>
-              </a>
-            </div>
-          </div>
-        </div>
+        <DashboardSettingsPanel
+          user={$authStore.user}
+          on:settingClick={(e) => {
+            const { type, data } = e.detail;
+            secondarySidebarContent = { type, data };
+          }}
+        />
       {:else if loading}
         <Loading message="Loading trips..." />
       {:else if filteredItems.length === 0}
@@ -1131,308 +493,55 @@
           </Button>
         </div>
       {:else}
-        <div class="trips-list">
-          {#each dateKeysInOrder as dateKey (dateKey)}
-            <div class="timeline-date-group">
-              <div class="timeline-date-header">
-                <span class="date-badge">{formatMonthHeader(dateKey)}</span>
-              </div>
-              <div class="timeline-items">
-                {#each groupedItems[dateKey] as item (item.type === 'trip' ? item.data.id : `${item.itemType}-${item.data.id}`)}
-                  {#if item.type === 'trip'}
-            <div
-              class="trip-card"
-              class:expanded={expandedTrips.has(item.data.id)}
-              class:highlighted={highlightedTripId === item.data.id}
-              on:mouseenter={() => handleTripHover(item.data.id)}
-              on:mouseleave={() => handleTripLeave()}
-            >
-              <!-- Trip Header -->
-              <div
-                class="trip-header"
-                on:click={() => toggleTripExpanded(item.data.id)}
-                role="button"
-                tabindex="0"
-                on:keydown={(e) => e.key === 'Enter' && toggleTripExpanded(item.data.id)}
-              >
-                <div class="trip-icon-container">
-                  <span class="material-symbols-outlined trip-icon">
-                    {getTripIcon(item.data.purpose)}
-                  </span>
-                </div>
-
-                <div class="trip-info">
-                  <div class="trip-name-row">
-                    <h3 class="trip-name">{item.data.name}</h3>
-                    <button
-                      class="edit-btn"
-                      title="Edit trip details and companions"
-                      on:click={(e) => {
-                        e.stopPropagation();
-                        secondarySidebarContent = { type: 'item', itemType: 'trip', data: item.data };
-                      }}
-                    >
-                      <span class="material-symbols-outlined">edit</span>
-                    </button>
-                  </div>
-                  <p class="trip-dates">
-                    {formatDate(item.data.departureDate)} - {formatDate(item.data.returnDate || item.data.departureDate)}
-                  </p>
-                  {#if getTripCities(item.data)}
-                    <p class="trip-cities">{getTripCities(item.data)}</p>
-                  {/if}
-                </div>
-
-                <button
-                  class="expand-btn"
-                  class:rotated={expandedTrips.has(item.data.id)}
-                  on:click={(e) => {
-                    e.stopPropagation();
-                    toggleTripExpanded(item.data.id);
-                  }}
-                >
-                  <span class="material-symbols-outlined">expand_more</span>
-                </button>
-              </div>
-
-              {#if item.data.tripCompanions && item.data.tripCompanions.length > 0}
-                <div class="trip-companions">
-                  <CompanionIndicators companions={item.data.tripCompanions} />
-                </div>
-              {/if}
-
-              <!-- Trip Items (Accordion Content) - Date-level Timeline -->
-              {#if expandedTrips.has(item.data.id)}
-                <div class="trip-items">
-                  {#each Object.keys(groupTripItemsByDate(item.data)) as dayKey (dayKey)}
-                    <div class="trip-item-date-group">
-                      <div class="trip-item-date-header">
-                        <span class="trip-date-badge">{formatTripDateHeader(dayKey)}</span>
-                        <div class="date-header-layovers">
-                          {#if dayKey === Object.keys(groupTripItemsByDate(item.data))[0]}
-                            <!-- Check first day for layover indicators that span to it -->
-                            {@const dayKeys = Object.keys(groupTripItemsByDate(item.data))}
-                            {#if dayKeys.length > 1}
-                              {@const prevDayKey = dayKeys[dayKeys.indexOf(dayKey) - 1]}
-                              {#if prevDayKey}
-                                {@const prevDayItems = groupTripItemsByDate(item.data)[prevDayKey]}
-                                {#each prevDayItems as prevItem}
-                                  {#if prevItem.type === 'flight'}
-                                    {@const layover = getFlightLayoverInfo(item.data, prevItem.id)}
-                                    {@const spansDate = layoverSpansDates(item.data, prevItem.id, prevDayKey)}
-                                    {#if layover && spansDate}
-                                      <span class="date-header-layover">{layover.duration} in {layover.location}</span>
-                                    {/if}
-                                  {/if}
-                                {/each}
-                              {/if}
-                            {/if}
-                          {:else}
-                            <!-- Check previous day for layover indicators that span to this day -->
-                            {@const dayKeys = Object.keys(groupTripItemsByDate(item.data))}
-                            {@const currentIndex = dayKeys.indexOf(dayKey)}
-                            {#if currentIndex > 0}
-                              {@const prevDayKey = dayKeys[currentIndex - 1]}
-                              {@const prevDayItems = groupTripItemsByDate(item.data)[prevDayKey]}
-                              {#each prevDayItems as prevItem}
-                                {#if prevItem.type === 'flight'}
-                                  {@const layover = getFlightLayoverInfo(item.data, prevItem.id)}
-                                  {@const spansDate = layoverSpansDates(item.data, prevItem.id, prevDayKey)}
-                                  {#if layover && spansDate}
-                                    <span class="date-header-layover">{layover.duration} in {layover.location}</span>
-                                  {/if}
-                                {/if}
-                              {/each}
-                            {/if}
-                          {/if}
-                        </div>
-                      </div>
-                      <div class="trip-item-date-items">
-                        {#each groupTripItemsByDate(item.data)[dayKey] as tripItem (tripItem.id)}
-                          {#if tripItem.type === 'flight'}
-                            <div
-                              class="standalone-item-card"
-                              class:item-highlighted={highlightedItemId === tripItem.id && highlightedItemType === 'flight'}
-                              on:mouseenter={() => handleItemHover('flight', tripItem.id)}
-                              on:mouseleave={handleItemLeave}
-                              on:click={() => handleItemClick('flight', 'flight', tripItem)}
-                              role="button"
-                              tabindex="0"
-                              on:keydown={(e) => e.key === 'Enter' && handleItemClick('flight', 'flight', tripItem)}
-                            >
-                              <div class="flight-icon-wrapper">
-                                <p class="flight-time-label">{formatTimeOnly(tripItem.departureDateTime, tripItem.originTimezone)}</p>
-                                <div class="item-icon blue">
-                                  <span class="material-symbols-outlined" style="font-size: 1.3rem;">flight</span>
-                                </div>
-                              </div>
-                              <div class="item-content">
-                                <p class="item-title">{tripItem.flightNumber}</p>
-                                <p class="item-route">
-                                  {getCityName(tripItem.origin)} → {getCityName(tripItem.destination)}
-                                </p>
-                              </div>
-                              {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
-                                <div class="item-companions">
-                                  <CompanionIndicators companions={tripItem.itemCompanions} />
-                                </div>
-                              {/if}
-                            </div>
-                            {@const layover = getFlightLayoverInfo(item.data, tripItem.id)}
-                            {@const spansDate = layoverSpansDates(item.data, tripItem.id, dayKey)}
-                            {#if layover && !spansDate}
-                              <div class="layover-indicator">
-                                <p class="layover-text">{layover.duration} in {layover.location}</p>
-                              </div>
-                            {/if}
-                          {:else if tripItem.type === 'hotel'}
-                            <div
-                              class="standalone-item-card"
-                              class:item-highlighted={highlightedItemId === tripItem.id && highlightedItemType === 'hotel'}
-                              on:mouseenter={() => handleItemHover('hotel', tripItem.id)}
-                              on:mouseleave={handleItemLeave}
-                              on:click={() => handleItemClick('hotel', 'hotel', tripItem)}
-                              role="button"
-                              tabindex="0"
-                              on:keydown={(e) => e.key === 'Enter' && handleItemClick('hotel', 'hotel', tripItem)}
-                            >
-                              <div class="item-icon green">
-                                <span class="material-symbols-outlined" style="font-size: 1.3rem;">hotel</span>
-                              </div>
-                              <div class="item-content">
-                                <p class="item-title">{tripItem.hotelName || tripItem.name}</p>
-                                <p class="item-dates">{formatDateOnly(tripItem.checkInDateTime, tripItem.timezone)} - {formatDateOnly(tripItem.checkOutDateTime, tripItem.timezone)}</p>
-                                <p class="item-route">{getCityName(tripItem.address) ? getCityName(tripItem.address) : getCityName(tripItem.city)}</p>
-                              </div>
-                              {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
-                                <div class="item-companions">
-                                  <CompanionIndicators companions={tripItem.itemCompanions} />
-                                </div>
-                              {/if}
-                            </div>
-                          {:else if tripItem.type === 'transportation'}
-                            <div class="standalone-item-card" on:click={() => handleItemClick('transportation', 'transportation', tripItem)} role="button" tabindex="0" on:keydown={(e) => e.key === 'Enter' && handleItemClick('transportation', 'transportation', tripItem)}>
-                              <div class="flight-icon-wrapper">
-                                <p class="flight-time-label">{formatTimeOnly(tripItem.departureDateTime, tripItem.originTimezone)}</p>
-                                <div class="item-icon red">
-                                  <span class="material-symbols-outlined" style="font-size: 1.3rem;">{getTransportIcon(tripItem.method)}</span>
-                                </div>
-                              </div>
-                              <div class="item-content">
-                                <p class="item-title">{capitalize(tripItem.method)}</p>
-                                <p class="item-route">
-                                  {getCityName(tripItem.origin)} → {getCityName(tripItem.destination)}
-                                </p>
-                              </div>
-                              {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
-                                <div class="item-companions">
-                                  <CompanionIndicators companions={tripItem.itemCompanions} />
-                                </div>
-                              {/if}
-                            </div>
-                          {:else if tripItem.type === 'carRental'}
-                            <div class="standalone-item-card" on:click={() => handleItemClick('carRental', 'carRental', tripItem)} role="button" tabindex="0" on:keydown={(e) => e.key === 'Enter' && handleItemClick('carRental', 'carRental', tripItem)}>
-                              <div class="item-icon gray">
-                                <span class="material-symbols-outlined" style="font-size: 1.3rem;">directions_car</span>
-                              </div>
-                              <div class="item-content">
-                                <p class="item-title">{tripItem.company}</p>
-                                <p class="item-time">{formatDateTime(tripItem.pickupDateTime, tripItem.pickupTimezone)}</p>
-                                <p class="item-route">{getCityName(tripItem.pickupLocation)}</p>
-                              </div>
-                              {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
-                                <div class="item-companions">
-                                  <CompanionIndicators companions={tripItem.itemCompanions} />
-                                </div>
-                              {/if}
-                            </div>
-                          {:else if tripItem.type === 'event'}
-                            <div class="standalone-item-card" on:click={() => handleItemClick('event', 'event', tripItem)} role="button" tabindex="0" on:keydown={(e) => e.key === 'Enter' && handleItemClick('event', 'event', tripItem)}>
-                              {#if tripItem.isAllDay}
-                                <div class="item-icon purple">
-                                  <span class="material-symbols-outlined" style="font-size: 1.3rem;">event</span>
-                                </div>
-                              {:else}
-                                <div class="flight-icon-wrapper">
-                                  <p class="flight-time-label">{formatTimeOnly(tripItem.startDateTime, tripItem.timezone)}</p>
-                                  <div class="item-icon purple">
-                                    <span class="material-symbols-outlined" style="font-size: 1.3rem;">event</span>
-                                  </div>
-                                </div>
-                              {/if}
-                              <div class="item-content">
-                                <p class="item-title">{tripItem.name}</p>
-                                <p class="item-time">{formatDateTime(tripItem.startDateTime, tripItem.timezone)}</p>
-                                <p class="item-route">{tripItem.location}</p>
-                              </div>
-                              {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
-                                <div class="item-companions">
-                                  <CompanionIndicators companions={tripItem.itemCompanions} />
-                                </div>
-                              {/if}
-                            </div>
-                          {/if}
-                        {/each}
-                      </div>
-                    </div>
-                  {/each}
-                </div>
-              {/if}
-
-            </div>
-            {:else}
-            <!-- Standalone Item Card -->
-            <div class="standalone-item-card" on:click={() => handleItemClick(item.itemType, item.itemType, item.data)} on:mouseenter={() => handleItemHover(item.itemType, item.data.id)} on:mouseleave={handleItemLeave} role="button" tabindex="0" on:keydown={(e) => e.key === 'Enter' && handleItemClick(item.itemType, item.itemType, item.data)}>
-              <div class="item-icon {item.itemType === 'flight' ? 'blue' : item.itemType === 'hotel' ? 'green' : item.itemType === 'carRental' ? 'gray' : item.itemType === 'event' ? 'purple' : 'red'}">
-                <span class="material-symbols-outlined">
-                  {item.itemType === 'flight' ? 'flight' : item.itemType === 'hotel' ? 'hotel' : item.itemType === 'carRental' ? 'directions_car' : item.itemType === 'event' ? 'event' : getTransportIcon(item.data.method)}
-                </span>
-              </div>
-              <div class="item-content">
-                <p class="item-title">
-                  {item.itemType === 'flight' ? item.data.flightNumber : item.itemType === 'hotel' ? (item.data.hotelName || item.data.name) : item.itemType === 'carRental' ? item.data.company : item.itemType === 'event' ? item.data.name : item.data.method}
-                </p>
-                {#if item.itemType === 'hotel'}
-                  <p class="item-dates">{formatDateOnly(item.data.checkInDateTime, item.data.timezone)} - {formatDateOnly(item.data.checkOutDateTime, item.data.timezone)}</p>
-                {:else}
-                  <p class="item-time">
-                    {#if item.itemType === 'flight'}
-                      {formatDateTime(item.data.departureDateTime, item.data.originTimezone)}
-                    {:else if item.itemType === 'transportation'}
-                      {formatDateTime(item.data.departureDateTime, item.data.originTimezone)}
-                    {:else if item.itemType === 'carRental'}
-                      {formatDateTime(item.data.pickupDateTime, item.data.pickupTimezone)}
-                    {:else if item.itemType === 'event'}
-                      {formatDateTime(item.data.startDateTime, item.data.timezone)}
-                    {/if}
-                  </p>
-                {/if}
-                <p class="item-route">
-                  {#if item.itemType === 'flight'}
-                    {getCityName(item.data.origin)} → {getCityName(item.data.destination)}
-                  {:else if item.itemType === 'hotel'}
-                    {getCityName(item.data.address)}
-                  {:else if item.itemType === 'transportation'}
-                    {getCityName(item.data.origin)} → {getCityName(item.data.destination)}
-                  {:else if item.itemType === 'carRental'}
-                    {getCityName(item.data.pickupLocation)}
-                  {:else if item.itemType === 'event'}
-                    {item.data.location}
-                  {/if}
-                </p>
-              </div>
-              {#if item.data.itemCompanions && item.data.itemCompanions.length > 0}
-                <div class="item-companions">
-                  <CompanionIndicators companions={item.data.itemCompanions} />
-                </div>
-              {/if}
-            </div>
-            {/if}
-                {/each}
-              </div>
-            </div>
-          {/each}
-        </div>
+        <DashboardTripsList
+          {trips}
+          {filteredItems}
+          {expandedTrips}
+          {highlightedTripId}
+          {highlightedItemId}
+          {highlightedItemType}
+          on:expandTrip={(e) => {
+            toggleTripExpanded(e.detail.tripId);
+          }}
+          on:hoverTrip={(e) => {
+            highlightedTripId = e.detail.tripId;
+          }}
+          on:leaveTrip={() => {
+            highlightedTripId = null;
+          }}
+          on:editTrip={(e) => {
+            secondarySidebarContent = { type: 'item', itemType: 'trip', data: e.detail.trip };
+          }}
+          on:hoverItem={(e) => {
+            highlightedItemType = e.detail.itemType;
+            highlightedItemId = e.detail.itemId;
+          }}
+          on:leaveItem={() => {
+            highlightedItemId = null;
+            highlightedItemType = null;
+          }}
+          on:itemClick={(e) => {
+            handleItemClick(e.detail.itemType, e.detail.itemType, e.detail.data);
+          }}
+        />
+        <DashboardItemList
+          {filteredItems}
+          {groupedItems}
+          {dateKeysInOrder}
+          {highlightedItemId}
+          {highlightedItemType}
+          on:hoverItem={(e) => {
+            highlightedItemType = e.detail.itemType;
+            highlightedItemId = e.detail.itemId;
+          }}
+          on:leaveItem={() => {
+            highlightedItemId = null;
+            highlightedItemType = null;
+          }}
+          on:itemClick={(e) => {
+            handleItemClick(e.detail.itemType, e.detail.itemType, e.detail.data);
+          }}
+        />
       {/if}
     </div>
   </div>
@@ -1442,180 +551,13 @@
       class="secondary-content"
       class:full-width={secondarySidebarContent?.type === 'calendar' || secondarySidebarContent?.type === 'settings-vouchers' || secondarySidebarContent?.type === 'settings-companions' || secondarySidebarContent?.type === 'settings-backup'}
     >
-      {#if secondarySidebarContent?.type === 'calendar'}
-        <!-- Calendar View - Full Width Sidebar -->
-        <div class="calendar-sidebar-container">
-          <div class="calendar-sidebar-header">
-            <h2>Calendar</h2>
-            <button class="close-btn" on:click={closeSecondarySidebar} title="Close">
-              <span class="material-symbols-outlined">close</span>
-            </button>
-          </div>
-          <DashboardCalendar
-            {trips}
-            {standaloneItems}
-            onItemClick={handleItemClick}
-          />
-        </div>
-      {:else if secondarySidebarContent?.type === 'settings-profile'}
-        <div class="settings-panel">
-          <div class="settings-panel-header">
-            <h2>Profile</h2>
-            <button class="close-btn" on:click={closeSecondarySidebar} title="Close">
-              <span class="material-symbols-outlined">close</span>
-            </button>
-          </div>
-          <div class="settings-panel-content">
-            <SettingsProfile data={secondarySidebarContent?.data} />
-          </div>
-        </div>
-      {:else if secondarySidebarContent?.type === 'settings-security'}
-        <div class="settings-panel">
-          <div class="settings-panel-header">
-            <h2>Security</h2>
-            <button class="close-btn" on:click={closeSecondarySidebar} title="Close">
-              <span class="material-symbols-outlined">close</span>
-            </button>
-          </div>
-          <div class="settings-panel-content">
-            <SettingsSecurity />
-          </div>
-        </div>
-      {:else if secondarySidebarContent?.type === 'settings-vouchers'}
-        <div class="calendar-sidebar-container">
-          <div class="calendar-sidebar-header">
-            <h2>Vouchers & Credits</h2>
-            <button class="close-btn" on:click={closeSecondarySidebar} title="Close">
-              <span class="material-symbols-outlined">close</span>
-            </button>
-          </div>
-          <SettingsVouchers
-            onEditVoucher={(voucher) => openTertiarySidebar('edit-voucher', { voucher })}
-            onAddVoucher={() => openTertiarySidebar('add-voucher', {})}
-          />
-        </div>
-      {:else if secondarySidebarContent?.type === 'settings-companions'}
-        <div class="calendar-sidebar-container">
-          <div class="calendar-sidebar-header">
-            <h2>Travel Companions</h2>
-            <div class="header-actions">
-              <button class="add-companion-btn" on:click={() => openTertiarySidebar('add-companion', {})} title="Add Companion">
-                <span class="material-symbols-outlined">group_add</span>
-              </button>
-              <button class="close-btn" on:click={closeSecondarySidebar} title="Close">
-                <span class="material-symbols-outlined">close</span>
-              </button>
-            </div>
-          </div>
-          <SettingsCompanions />
-        </div>
-      {:else if secondarySidebarContent?.type === 'settings-backup'}
-        <div class="calendar-sidebar-container">
-          <div class="calendar-sidebar-header">
-            <h2>Backup & Export</h2>
-            <button class="close-btn" on:click={closeSecondarySidebar} title="Close">
-              <span class="material-symbols-outlined">close</span>
-            </button>
-          </div>
-          <SettingsBackup />
-        </div>
-      {:else if secondarySidebarContent?.type === 'newItemMenu'}
-      <!-- New Item Menu -->
-      <div class="new-item-menu">
-        <div class="menu-header">
-          <h2 class="menu-title">Add New Item</h2>
-          <button class="close-menu-btn" on:click={closeSecondarySidebar} title="Close">
-            <span class="material-symbols-outlined">close</span>
-          </button>
-        </div>
-
-        <div class="menu-items">
-          <!-- Add Trip Option -->
-          <button class="menu-item" on:click={handleNewTripClick}>
-            <div class="menu-item-icon amber">
-              <span class="material-symbols-outlined">flight</span>
-            </div>
-            <div class="menu-item-content">
-              <h3>Trip</h3>
-              <p>Plan a complete trip with dates</p>
-            </div>
-            <span class="material-symbols-outlined menu-arrow">chevron_right</span>
-          </button>
-
-          <!-- Divider -->
-          <div class="menu-divider">
-            <span>or add a single item</span>
-          </div>
-
-          <!-- Add Flight Option -->
-          <button class="menu-item" on:click={() => handleNewItemClick('flight')}>
-            <div class="menu-item-icon blue">
-              <span class="material-symbols-outlined">flight</span>
-            </div>
-            <div class="menu-item-content">
-              <h3>Flight</h3>
-              <p>Add a flight booking</p>
-            </div>
-            <span class="material-symbols-outlined menu-arrow">chevron_right</span>
-          </button>
-
-          <!-- Add Hotel Option -->
-          <button class="menu-item" on:click={() => handleNewItemClick('hotel')}>
-            <div class="menu-item-icon green">
-              <span class="material-symbols-outlined">hotel</span>
-            </div>
-            <div class="menu-item-content">
-              <h3>Hotel</h3>
-              <p>Add a hotel or accommodation</p>
-            </div>
-            <span class="material-symbols-outlined menu-arrow">chevron_right</span>
-          </button>
-
-          <!-- Add Transportation Option -->
-          <button class="menu-item" on:click={() => handleNewItemClick('transportation')}>
-            <div class="menu-item-icon red">
-              <span class="material-symbols-outlined">train</span>
-            </div>
-            <div class="menu-item-content">
-              <h3>Transportation</h3>
-              <p>Train, bus, taxi, or other transit</p>
-            </div>
-            <span class="material-symbols-outlined menu-arrow">chevron_right</span>
-          </button>
-
-          <!-- Add Car Rental Option -->
-          <button class="menu-item" on:click={() => handleNewItemClick('carRental')}>
-            <div class="menu-item-icon gray">
-              <span class="material-symbols-outlined">directions_car</span>
-            </div>
-            <div class="menu-item-content">
-              <h3>Car Rental</h3>
-              <p>Add a car rental booking</p>
-            </div>
-            <span class="material-symbols-outlined menu-arrow">chevron_right</span>
-          </button>
-
-          <!-- Add Event Option -->
-          <button class="menu-item" on:click={() => handleNewItemClick('event')}>
-            <div class="menu-item-icon purple">
-              <span class="material-symbols-outlined">event</span>
-            </div>
-            <div class="menu-item-content">
-              <h3>Event</h3>
-              <p>Concert, conference, or activity</p>
-            </div>
-            <span class="material-symbols-outlined menu-arrow">chevron_right</span>
-          </button>
-        </div>
-      </div>
-    {:else if secondarySidebarContent}
-      <ItemEditForm
-        itemType={secondarySidebarContent.itemType || secondarySidebarContent.type}
-        data={secondarySidebarContent.data}
-        tripId={secondarySidebarContent.data?.tripId || ''}
-        allTrips={trips}
-        onClose={closeSecondarySidebar}
-        onSave={async (item) => {
+      <DashboardItemEditor
+        {secondarySidebarContent}
+        {trips}
+        {standaloneItems}
+        on:close={closeSecondarySidebar}
+        on:save={async (e) => {
+          const item = e.detail;
           if (!secondarySidebarContent) return;
 
           if (item === null) {
@@ -1717,8 +659,15 @@
           filterTrips();
           updateMapData();
         }}
+        on:newTrip={handleCreateTrip}
+        on:newItem={(e) => handleNewItemClick(e.detail.itemType)}
+        on:tertiarySidebarAction={(e) => {
+          openTertiarySidebar(e.detail.action, e.detail.detail);
+        }}
+        on:itemClick={(e) => {
+          handleItemClick(e.detail.itemType, e.detail.itemType, e.detail.data);
+        }}
       />
-      {/if}
     </div>
 
   <div slot="tertiary" class="tertiary-content">
