@@ -4,6 +4,8 @@
   import { settingsApi } from '$lib/services/settings';
   import '$lib/styles/form-styles.css';
 
+  export let onAddCompanion: (() => void) | undefined = undefined;
+
   let companions: any[] = [];
   let loading = true;
   let error: string | null = null;
@@ -185,6 +187,12 @@
       <p class="empty-description">
         Start adding travel companions to share your trips and collaborate on travel planning.
       </p>
+      {#if onAddCompanion}
+        <button class="add-companion-btn" on:click={onAddCompanion} title="Add Companion">
+          <span class="material-symbols-outlined">group_add</span>
+          <span>Add Companion</span>
+        </button>
+      {/if}
     </div>
   {/if}
 </div>
@@ -395,6 +403,30 @@
   .empty-description {
     font-size: 0.9rem;
     color: #999;
+  }
+
+  .add-companion-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    margin-top: 1rem;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .add-companion-btn:hover {
+    background: #2563eb;
+  }
+
+  .add-companion-btn :global(.material-symbols-outlined) {
+    font-size: 1.25rem;
   }
 
   @media (max-width: 768px) {

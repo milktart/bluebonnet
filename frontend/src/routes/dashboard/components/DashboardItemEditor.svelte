@@ -99,20 +99,13 @@
     <div class="calendar-sidebar-container">
       <div class="calendar-sidebar-header">
         <h2>Travel Companions</h2>
-        <div class="header-buttons">
-          <button
-            class="add-companion-btn"
-            on:click={() => handleTertiarySidebarAction('add-companion', {})}
-            title="Add Companion"
-          >
-            <span class="material-symbols-outlined">group_add</span>
-          </button>
-          <button class="close-btn" on:click={closeSecondarySidebar} title="Close">
-            <span class="material-symbols-outlined">close</span>
-          </button>
-        </div>
+        <button class="close-btn" on:click={closeSecondarySidebar} title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
       </div>
-      <SettingsCompanions />
+      <SettingsCompanions
+        onAddCompanion={() => handleTertiarySidebarAction('add-companion', {})}
+      />
     </div>
   {:else if secondarySidebarContent?.type === 'settings-backup'}
     <div class="calendar-sidebar-container">
@@ -260,29 +253,6 @@
     font-size: 1rem;
     font-weight: 700;
     color: #111827;
-  }
-
-  .header-buttons {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-  }
-
-  .add-companion-btn {
-    padding: 0.5rem;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    color: #2563eb;
-    border-radius: 0.375rem;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .add-companion-btn:hover {
-    background: #dbeafe;
   }
 
   .close-btn {
