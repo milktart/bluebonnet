@@ -190,13 +190,47 @@ class TripService extends BaseService {
       events: standaloneItems.events.map((item) => {
         const json = item.toJSON();
         json.itemCompanions = item.itemCompanions || [];
+        // Determine if event is all-day based on time values
+        if (json.startDateTime && json.endDateTime) {
+          const startDate = new Date(json.startDateTime);
+          const endDate = new Date(json.endDateTime);
+          const startHours = startDate.getHours();
+          const startMinutes = startDate.getMinutes();
+          const endHours = endDate.getHours();
+          const endMinutes = endDate.getMinutes();
+          json.isAllDay =
+            startHours === 0 && startMinutes === 0 && endHours === 23 && endMinutes === 59;
+        } else {
+          json.isAllDay = false;
+        }
         return json;
       }),
     };
 
+    // Helper function to add isAllDay flag to events
+    const addIsAllDayToTrip = (trip) => {
+      if (trip.events && Array.isArray(trip.events)) {
+        trip.events.forEach((event) => {
+          if (event.startDateTime && event.endDateTime) {
+            const startDate = new Date(event.startDateTime);
+            const endDate = new Date(event.endDateTime);
+            const startHours = startDate.getHours();
+            const startMinutes = startDate.getMinutes();
+            const endHours = endDate.getHours();
+            const endMinutes = endDate.getMinutes();
+            event.isAllDay =
+              startHours === 0 && startMinutes === 0 && endHours === 23 && endMinutes === 59;
+          } else {
+            event.isAllDay = false;
+          }
+        });
+      }
+      return trip;
+    };
+
     const result = {
-      ownedTrips: ownedTrips.map((trip) => trip.toJSON()),
-      companionTrips: companionTrips.map((trip) => trip.toJSON()),
+      ownedTrips: ownedTrips.map((trip) => addIsAllDayToTrip(trip.toJSON())),
+      companionTrips: companionTrips.map((trip) => addIsAllDayToTrip(trip.toJSON())),
       standalone: convertedStandalone,
       pagination,
     };
@@ -425,6 +459,24 @@ class TripService extends BaseService {
       loadAndTransformItemCompanions(tripData.carRentals, 'car_rental'),
       loadAndTransformItemCompanions(tripData.events, 'event'),
     ]);
+
+    // Add isAllDay flag to all events
+    if (tripData.events && Array.isArray(tripData.events)) {
+      tripData.events.forEach((event) => {
+        if (event.startDateTime && event.endDateTime) {
+          const startDate = new Date(event.startDateTime);
+          const endDate = new Date(event.endDateTime);
+          const startHours = startDate.getHours();
+          const startMinutes = startDate.getMinutes();
+          const endHours = endDate.getHours();
+          const endMinutes = endDate.getMinutes();
+          event.isAllDay =
+            startHours === 0 && startMinutes === 0 && endHours === 23 && endMinutes === 59;
+        } else {
+          event.isAllDay = false;
+        }
+      });
+    }
 
     // Debug: Log companions attached to items
     logger.debug('getTripWithDetails - Companions loaded', {
