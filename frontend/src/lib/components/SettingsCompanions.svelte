@@ -116,6 +116,12 @@
       <p>Loading companions...</p>
     </div>
   {:else if companions && companions.length > 0}
+    {#if onAddCompanion}
+      <button class="add-companion-btn" on:click={onAddCompanion} title="Add Companion">
+        <span class="material-symbols-outlined">group_add</span>
+        <span>Add Companion</span>
+      </button>
+    {/if}
     <div class="table-wrapper">
       <table class="companions-table">
         <thead>
@@ -410,7 +416,7 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    margin-top: 1rem;
+    margin-bottom: 1rem;
     background: #3b82f6;
     color: white;
     border: none;
