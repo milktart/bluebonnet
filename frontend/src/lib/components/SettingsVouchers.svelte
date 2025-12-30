@@ -402,31 +402,36 @@
   .vouchers-table-container {
     overflow-x: auto;
     border: 1px solid #e0e0e0;
-    border-radius: 8px;
+    border-radius: 0.425rem;
     background: #ffffff90;
   }
 
   .vouchers-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.9rem;
+    background-color: white;
+    font-size: 0.85rem;
   }
 
   .vouchers-table thead {
     background-color: #f5f5f5;
-    border-bottom: 2px solid #e0e0e0;
+    border-bottom: 1px solid #e0e0e0;
   }
 
   .vouchers-table th {
     padding: 0.875rem;
     text-align: left;
     font-weight: 600;
-    color: #1f2937;
+    color: #374151;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    vertical-align: middle;
     white-space: nowrap;
   }
 
   .vouchers-table tbody tr {
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid #f0f0f0;
     transition: background-color 0.2s ease;
   }
 
@@ -438,9 +443,14 @@
     opacity: 0.7;
   }
 
+  .vouchers-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
   .vouchers-table td {
     padding: 0.875rem;
-    color: #666;
+    color: #1f2937;
+    vertical-align: middle;
   }
 
   .vouchers-table td.voucher-number {
