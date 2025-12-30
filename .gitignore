@@ -1,24 +1,33 @@
 # Dependencies
 node_modules/
+package-lock.json
 
 # Environment variables
 .env
 .env.local
 .env.development
 .env.production
-public/dist/manifest.json
+.env.*.local
 
 # Docker Compose overrides (keep base docker-compose.yml in git)
 docker-compose.override.yml
 docker-compose.local.yml
 
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 
 # OS files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
 # IDE files
@@ -27,26 +36,36 @@ Thumbs.db
 *.swp
 *.swo
 *~
-
-# Claude
-.claude
-CLAUDE.md
-CLEANUP_SUMMARY.md
+*.sublime-workspace
+*.sublime-project
+.eclipse/
+.classpath
 
 # Build files
 dist/
 build/
 .svelte-kit/
+frontend/.svelte-kit/
 *.tsbuildinfo
 
 # Test coverage
 coverage/
 .nyc_output/
+*.lcov
 
 # Database
 *.sqlite
+*.sqlite3
 *.db
 
 # Temporary files
 tmp/
 temp/
+.tmp/
+
+# Node version management
+.nvmrc
+
+# macOS Extended Attributes
+.AppleDouble
+.AppleDB
