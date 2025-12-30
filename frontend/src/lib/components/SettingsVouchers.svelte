@@ -232,13 +232,15 @@
                       {voucher.status}
                     </span>
                   </td>
-                  <td class="actions">
-                    <button class="action-btn edit" on:click={() => handleEditVoucher(voucher.id)} title="Edit">
-                      <span class="material-symbols-outlined">edit</span>
-                    </button>
-                    <button class="action-btn delete" on:click={() => handleDeleteVoucher(voucher.id)} title="Delete" disabled={loading}>
-                      <span class="material-symbols-outlined">delete</span>
-                    </button>
+                  <td class="actions-cell">
+                    <div class="actions-group">
+                      <button class="action-btn edit" on:click={() => handleEditVoucher(voucher.id)} title="Edit">
+                        <span class="material-symbols-outlined">edit</span>
+                      </button>
+                      <button class="action-btn delete" on:click={() => handleDeleteVoucher(voucher.id)} title="Delete" disabled={loading}>
+                        <span class="material-symbols-outlined">delete</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               {/each}
@@ -477,10 +479,15 @@
     color: #721c24;
   }
 
-  .actions {
+  .actions-cell {
+    text-align: center;
+    padding: 0.875rem 0.5rem;
+  }
+
+  .actions-group {
     display: flex;
     gap: 0.5rem;
-    justify-content: center;
+    justify-content: end;
   }
 
   .action-btn {
