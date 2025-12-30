@@ -1531,8 +1531,8 @@
   .tertiary-header h3 {
     margin: 0;
     font-size: 1rem;
-    font-weight: 600;
-    color: #1f2937;
+    font-weight: 700;
+    color: #111827;
   }
 
   .tertiary-form-container {
