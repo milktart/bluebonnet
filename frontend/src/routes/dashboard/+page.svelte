@@ -93,16 +93,6 @@
       const tripsData = response?.trips || [];
       standaloneItems = response?.standalone || { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
 
-      // Debug: Log standalone items with companions
-      console.log('[Dashboard] Loaded standalone items:', {
-        flights: standaloneItems.flights?.length || 0,
-        hotels: standaloneItems.hotels?.length || 0,
-        transportation: standaloneItems.transportation?.length || 0,
-        carRentals: standaloneItems.carRentals?.length || 0,
-        events: standaloneItems.events?.length || 0,
-        fullStandalone: standaloneItems
-      });
-
       // Fetch detailed data for each trip
       const detailedTrips = await Promise.all(
         tripsData.map(async (trip) => {
@@ -114,29 +104,6 @@
           }
         })
       );
-
-      // Debug: Log trip items to see if companions are loaded
-      detailedTrips.forEach(trip => {
-        console.log(`[Dashboard] Trip ${trip.id} (${trip.name}):`, {
-          flightCount: trip.flights?.length || 0,
-          hotelCount: trip.hotels?.length || 0,
-          eventCount: trip.events?.length || 0,
-          travelCompanions: trip.travelCompanions,
-          travelCompanionCount: trip.travelCompanions?.length || 0,
-        });
-        if (trip.flights && trip.flights.length > 0) {
-          trip.flights.forEach(f => {
-            const companionCount = f.itemCompanions?.length || 0;
-            console.log(`  - Flight ${f.id}: ${companionCount} companions`);
-          });
-        }
-        if (trip.events && trip.events.length > 0) {
-          trip.events.forEach(e => {
-            const companionCount = e.itemCompanions?.length || 0;
-            console.log(`  - Event ${e.id}: ${companionCount} companions`);
-          });
-        }
-      });
 
       tripStoreActions.setTrips(detailedTrips);
       trips = detailedTrips;
@@ -211,9 +178,6 @@
 
       if (standaloneItems[key]) {
         standaloneItems[key].forEach((item: any) => {
-          if (item.itemCompanions) {
-            console.log(`[Dashboard] Standalone ${itemTypeMap[key]} ${item.id} has ${item.itemCompanions.length} companions:`, item.itemCompanions);
-          }
           allItems.push({
             type: 'standalone',
             itemType: itemTypeMap[key],
@@ -265,27 +229,12 @@
         const trip = item.data;
         // Ensure each item has tripId attached so map highlighting can filter by trip
         if (trip.flights) {
-          trip.flights.forEach((f: any) => {
-            if (f.itemCompanions) {
-              console.log(`[Dashboard] Trip flight ${f.id} has ${f.itemCompanions.length} companions:`, f.itemCompanions);
-            }
-          });
           combined.flights.push(...trip.flights.map((f: any) => ({ ...f, tripId: trip.id })));
         }
         if (trip.hotels) {
-          trip.hotels.forEach((h: any) => {
-            if (h.itemCompanions) {
-              console.log(`[Dashboard] Trip hotel ${h.id} has ${h.itemCompanions.length} companions:`, h.itemCompanions);
-            }
-          });
           combined.hotels.push(...trip.hotels.map((h: any) => ({ ...h, tripId: trip.id })));
         }
         if (trip.events) {
-          trip.events.forEach((e: any) => {
-            if (e.itemCompanions) {
-              console.log(`[Dashboard] Trip event ${e.id} has ${e.itemCompanions.length} companions:`, e.itemCompanions);
-            }
-          });
           combined.events.push(...trip.events.map((e: any) => ({ ...e, tripId: trip.id })));
         }
         if (trip.transportation) combined.transportation.push(...trip.transportation.map((t: any) => ({ ...t, tripId: trip.id })));
@@ -385,14 +334,6 @@
   }
 
   function handleItemClick(type: string, itemType: string | null, data: any) {
-    console.log('[Dashboard] handleItemClick:', {
-      type,
-      itemType,
-      itemId: data?.id,
-      hasItemCompanions: !!data?.itemCompanions,
-      companionCount: data?.itemCompanions?.length || 0,
-      itemCompanions: data?.itemCompanions
-    });
     secondarySidebarContent = { type, itemType: itemType || undefined, data };
   }
 
