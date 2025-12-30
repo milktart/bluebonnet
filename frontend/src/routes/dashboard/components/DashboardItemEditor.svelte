@@ -99,13 +99,20 @@
     <div class="calendar-sidebar-container">
       <div class="calendar-sidebar-header">
         <h2>Travel Companions</h2>
-        <button class="close-btn" on:click={closeSecondarySidebar} title="Close">
-          <span class="material-symbols-outlined">close</span>
-        </button>
+        <div class="header-actions">
+          <button
+            class="icon-btn"
+            on:click={() => handleTertiarySidebarAction('add-companion', {})}
+            title="Add Companion"
+          >
+            <span class="material-symbols-outlined">group_add</span>
+          </button>
+          <button class="close-btn" on:click={closeSecondarySidebar} title="Close">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
       </div>
-      <SettingsCompanions
-        onAddCompanion={() => handleTertiarySidebarAction('add-companion', {})}
-      />
+      <SettingsCompanions />
     </div>
   {:else if secondarySidebarContent?.type === 'settings-backup'}
     <div class="calendar-sidebar-container">
@@ -252,6 +259,30 @@
     margin: 0;
     font-size: 1rem;
     font-weight: 700;
+    color: #111827;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+  }
+
+  .icon-btn {
+    padding: 0.25rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #6b7280;
+    border-radius: 0.375rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .icon-btn:hover {
+    background: #f3f4f6;
     color: #111827;
   }
 
