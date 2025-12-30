@@ -786,7 +786,15 @@
                             {:else if item.itemType === 'carRental'}
                               {formatDateTime(item.data.pickupDateTime, item.data.pickupTimezone)}
                             {:else if item.itemType === 'event'}
-                              {formatDateTime(item.data.startDateTime, item.data.timezone)}
+                              {#if item.data.isAllDay}
+                                {#if item.data.startDateTime && item.data.endDateTime && item.data.startDateTime !== item.data.endDateTime}
+                                  {formatDateOnly(item.data.startDateTime, item.data.timezone)} - {formatDateOnly(item.data.endDateTime, item.data.timezone)}
+                                {:else}
+                                  {formatDateOnly(item.data.startDateTime, item.data.timezone)}
+                                {/if}
+                              {:else}
+                                {formatDateTime(item.data.startDateTime, item.data.timezone)}
+                              {/if}
                             {/if}
                           </p>
                         {/if}
