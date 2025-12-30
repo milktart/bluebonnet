@@ -99,7 +99,7 @@
     <div class="calendar-sidebar-container">
       <div class="calendar-sidebar-header">
         <h2>Travel Companions</h2>
-        <div class="header-actions">
+        <div class="header-buttons">
           <button
             class="add-companion-btn"
             on:click={() => handleTertiarySidebarAction('add-companion', {})}
@@ -262,7 +262,7 @@
     color: #111827;
   }
 
-  .header-actions {
+  .header-buttons {
     display: flex;
     gap: 0.5rem;
     align-items: center;
