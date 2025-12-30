@@ -71,10 +71,10 @@
   .settings-main-content {
     flex: 1;
     overflow-y: auto;
-    padding: 1.5rem 0;
+    padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1rem;
   }
 
   .settings-section {
@@ -85,12 +85,12 @@
   }
 
   .settings-section h3 {
-    margin: 0 0 0.75rem;
-    font-size: 0.875rem;
+    margin: 0.75rem 0 0.5rem;
+    font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #111827;
+    color: #6b7280;
   }
 
   .settings-item {
@@ -98,8 +98,8 @@
     align-items: center;
     gap: 1rem;
     padding: 0.75rem 1rem;
-    background: transparent;
-    border: 1px solid transparent;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
     cursor: pointer;
     border-radius: 0.375rem;
     font-size: 0.875rem;
@@ -109,8 +109,8 @@
   }
 
   .settings-item:hover {
-    background: #f3f4f6;
-    border-color: #e5e7eb;
+    background: #f9fafb;
+    border-color: #d1d5db;
   }
 
   .settings-item.logout:hover {
