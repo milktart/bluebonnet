@@ -36,9 +36,12 @@ CLEANUP_SUMMARY.md
 # Build files
 dist/
 build/
+.svelte-kit/
+*.tsbuildinfo
 
 # Test coverage
 coverage/
+.nyc_output/
 
 # Database
 *.sqlite
