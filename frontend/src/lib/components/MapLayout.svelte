@@ -125,6 +125,7 @@
     left: calc(2.5vh + 340px + 2.5vh);
     z-index: 21;
     padding: 0;
+    transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   /* Secondary sidebar full-width: takes remaining space */
