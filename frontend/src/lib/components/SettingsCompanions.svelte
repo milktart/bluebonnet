@@ -226,7 +226,7 @@
     width: 100%;
     border-collapse: collapse;
     background-color: white;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
   }
 
   .companions-table thead {
@@ -235,11 +235,11 @@
   }
 
   .companions-table th {
-    padding: 0.875rem;
+    padding: 0.75rem;
     text-align: left;
     font-weight: 600;
     color: #374151;
-    font-size: 0.85rem;
+    font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     vertical-align: middle;
