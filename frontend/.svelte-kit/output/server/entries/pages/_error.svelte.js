@@ -1,23 +1,6 @@
-import { a1 as fallback, a2 as attr, a3 as attr_class, a4 as stringify, $ as slot, a5 as bind_props, a6 as sanitize_slots, a7 as escape_html, _ as head, Z as store_get, a0 as unsubscribe_stores } from "../../chunks/index.js";
+import { $ as sanitize_slots, a0 as fallback, a1 as attr_class, a2 as escape_html, Z as slot, a3 as bind_props, Y as head, a4 as stringify, X as store_get, _ as unsubscribe_stores } from "../../chunks/index2.js";
 import { p as page } from "../../chunks/stores.js";
-/* empty css                                                */
-function Button($$renderer, $$props) {
-  let type = fallback($$props["type"], "button");
-  let variant = fallback($$props["variant"], "primary");
-  let disabled = fallback($$props["disabled"], false);
-  let loading = fallback($$props["loading"], false);
-  $$renderer.push(`<button${attr("type", type)}${attr_class(`btn btn-${stringify(variant)}`, "svelte-18sv61c")}${attr("disabled", disabled, true)}>`);
-  if (loading) {
-    $$renderer.push("<!--[-->");
-    $$renderer.push(`<span class="spinner svelte-18sv61c"></span>`);
-  } else {
-    $$renderer.push("<!--[!-->");
-  }
-  $$renderer.push(`<!--]--> <!--[-->`);
-  slot($$renderer, $$props, "default", {});
-  $$renderer.push(`<!--]--></button>`);
-  bind_props($$props, { type, variant, disabled, loading });
-}
+import { B as Button } from "../../chunks/Button.js";
 function Card($$renderer, $$props) {
   const $$slots = sanitize_slots($$props);
   let title = fallback($$props["title"], "");

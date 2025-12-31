@@ -1,15 +1,20 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { dashboardStore, dashboardStoreActions } from '$lib/stores/dashboardStore';
   import DashboardCalendar from '$lib/components/DashboardCalendar.svelte';
 
-  export let tertiarySidebarContent: { type: string; data: any } | null = null;
-  export let trips: any[] = [];
-  export let activeTab: 'upcoming' | 'past' = 'upcoming';
+  let tertiarySidebarContent: { type: string; data: any } | null = null;
+  let trips: any[] = [];
+  let activeTab: 'upcoming' | 'past' = 'upcoming';
 
-  const dispatch = createEventDispatcher();
+  // Subscribe to store
+  const unsubscribe = dashboardStore.subscribe(($store) => {
+    tertiarySidebarContent = $store.tertiarySidebarContent;
+    trips = $store.trips;
+    activeTab = $store.activeTab;
+  });
 
   const handleClose = () => {
-    dispatch('close');
+    dashboardStoreActions.closeTertiarySidebar();
   };
 </script>
 

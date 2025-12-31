@@ -3,7 +3,7 @@ import type { RequestHandler } from '@sveltejs/kit';
 
 function getBackendUrl(): string {
   // Use Express backend at localhost:3000 in development
-  return 'http://localhost:3000';
+  return "" // Use relative URL (same-origin since SvelteKit is integrated);
 }
 
 async function proxyToBackend(

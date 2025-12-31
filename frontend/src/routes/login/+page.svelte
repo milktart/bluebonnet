@@ -23,18 +23,11 @@
     success = '';
 
     try {
-      // Determine API base URL
-      const protocol = typeof window !== 'undefined' ? window.location.protocol : 'http:';
-      const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-      let apiBase;
+      // Use relative URL for auth - works with proxies
+      const loginUrl = '/auth/login';
+      console.log('[Login DEBUG] Attempting login at:', loginUrl);
 
-      if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        apiBase = `${protocol}//localhost:3000`;
-      } else {
-        apiBase = `${protocol}//${hostname}:3501`;
-      }
-
-      const response = await fetch(`${apiBase}/auth/login`, {
+      const response = await fetch(loginUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

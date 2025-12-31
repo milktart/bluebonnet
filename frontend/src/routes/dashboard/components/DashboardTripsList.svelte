@@ -1,46 +1,54 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { dashboardStore, dashboardStoreActions } from '$lib/stores/dashboardStore';
   import CompanionIndicators from '$lib/components/CompanionIndicators.svelte';
   import { getTripIcon, getTripCities } from '$lib/utils/dashboardItem';
   import { formatDate, formatTripDateHeader } from '$lib/utils/dashboardFormatters';
   import { groupTripItemsByDate, getDayKeyForItem } from '$lib/utils/dashboardGrouping';
 
-  export let trips: any[] = [];
-  export let filteredItems: any[] = [];
-  export let expandedTrips = new Set<string>();
-  export let highlightedTripId: string | null = null;
-  export let highlightedItemId: string | null = null;
-  export let highlightedItemType: string | null = null;
+  let trips: any[] = [];
+  let filteredItems: any[] = [];
+  let expandedTrips = new Set<string>();
+  let highlightedTripId: string | null = null;
+  let highlightedItemId: string | null = null;
+  let highlightedItemType: string | null = null;
 
-  const dispatch = createEventDispatcher();
+  // Subscribe to store
+  const unsubscribe = dashboardStore.subscribe(($store) => {
+    trips = $store.trips;
+    filteredItems = $store.filteredItems;
+    expandedTrips = $store.expandedTrips;
+    highlightedTripId = $store.highlightedTripId;
+    highlightedItemId = $store.highlightedItemId;
+    highlightedItemType = $store.highlightedItemType;
+  });
 
   const handleTripExpand = (tripId: string) => {
-    dispatch('expandTrip', { tripId });
+    dashboardStoreActions.toggleTripExpanded(tripId);
   };
 
   const handleTripHover = (tripId: string) => {
-    dispatch('hoverTrip', { tripId });
+    dashboardStoreActions.setHighlightedTrip(tripId);
   };
 
   const handleTripLeave = () => {
-    dispatch('leaveTrip');
+    dashboardStoreActions.setHighlightedTrip(null);
   };
 
   const handleEditTrip = (trip: any, event: Event) => {
     event.stopPropagation();
-    dispatch('editTrip', { trip });
+    dashboardStoreActions.openSecondarySidebar({ type: 'trip', itemType: 'trip', data: trip });
   };
 
   const handleItemHover = (itemType: string, itemId: string) => {
-    dispatch('hoverItem', { itemType, itemId });
+    dashboardStoreActions.setHighlightedItem(itemId, itemType);
   };
 
   const handleItemLeave = () => {
-    dispatch('leaveItem');
+    dashboardStoreActions.setHighlightedItem(null, null);
   };
 
   const handleItemClick = (itemType: string, data: any) => {
-    dispatch('itemClick', { itemType, data });
+    dashboardStoreActions.openSecondarySidebar({ type: itemType, itemType, data });
   };
 
   // Helper function to get icon color for item type

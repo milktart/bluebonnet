@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from '@sveltejs/kit';
 
 function getBackendUrl(): string {
-  return 'http://localhost:3000';
+  return "" // Use relative URL (same-origin since SvelteKit is integrated);
 }
 
 async function proxyToBackend(method: string, path: string, request?: Request): Promise<Response> {

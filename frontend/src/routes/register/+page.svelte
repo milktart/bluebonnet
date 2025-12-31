@@ -47,35 +47,37 @@
     success = '';
 
     try {
-      // Determine API base URL
-      const protocol = typeof window !== 'undefined' ? window.location.protocol : 'http:';
-      const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-      let apiBase;
+      // Use relative URL for auth - works with proxies
+      const registerUrl = '/auth/register';
+      console.log('[Register DEBUG] Attempting register at:', registerUrl);
+      console.log('[Register DEBUG] Form data:', { firstName, lastName, email });
 
-      if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        apiBase = `${protocol}//localhost:3000`;
-      } else {
-        apiBase = `${protocol}//${hostname}:3501`;
-      }
-
-      const response = await fetch(`${apiBase}/auth/register`, {
+      const response = await fetch(registerUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           firstName,
           lastName,
           email,
-          password
+          password,
+          confirmPassword
         }),
         credentials: 'include'
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Registration failed');
-      }
+      console.log('[Register DEBUG] Response status:', response.status);
+      console.log('[Register DEBUG] Response headers:', {
+        contentType: response.headers.get('content-type'),
+        ok: response.ok
+      });
 
       const data = await response.json();
+      console.log('[Register DEBUG] Full response data:', data);
+
+      if (!response.ok) {
+        console.log('[Register ERROR] Response not OK');
+        throw new Error(data.message || 'Registration failed');
+      }
 
       if (data.success) {
         success = 'Account created successfully! Redirecting to login...';
@@ -90,8 +92,12 @@
         setTimeout(() => {
           window.location.href = '/login';
         }, 1500);
+      } else {
+        console.log('[Register ERROR] Response success flag is false:', data);
+        error = data.message || 'Registration failed';
       }
     } catch (err) {
+      console.log('[Register CATCH] Error caught:', err);
       error = err instanceof Error ? err.message : 'Registration failed';
     } finally {
       loading = false;

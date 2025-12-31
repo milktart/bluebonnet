@@ -1,6 +1,6 @@
 import { json } from "@sveltejs/kit";
 function getBackendUrl() {
-  return "http://localhost:3000";
+  return "";
 }
 async function proxyToBackend(method, path, request) {
   const backendUrl = `${getBackendUrl()}${path}`;

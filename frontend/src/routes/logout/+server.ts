@@ -8,20 +8,11 @@ import type { RequestHandler } from '@sveltejs/kit';
  */
 export const GET: RequestHandler = async ({ request, cookies }) => {
   try {
-    // Get the host from the request to determine backend URL
-    const host = request.headers.get('host');
-    let apiBase = 'http://localhost:3000'; // Default for local dev
+    // Since SvelteKit is now integrated with Express on same port,
+    // use relative URL for logout (works in all environments)
+    const logoutUrl = '/auth/logout';
 
-    if (host && !host.startsWith('localhost')) {
-      // In Docker or remote environment, use port 3501
-      const protocol = request.url.startsWith('https') ? 'https:' : 'http:';
-      const hostname = host.split(':')[0];
-      apiBase = `${protocol}//${hostname}:3501`;
-    }
-
-    // Call backend logout endpoint to destroy session
-    // This will clear the server-side session and invalidate the cookie
-    await fetch(`${apiBase}/auth/logout`, {
+    await fetch(logoutUrl, {
       method: 'GET',
       credentials: 'include',
       headers: {

@@ -71,25 +71,6 @@ services:
     networks:
       - bluebonnet_network
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    container_name: ${NODE_ENV}_travel_planner_frontend
-    ports:
-      - "${FRONTEND_PORT:-5173}:5173"
-    environment:
-      NODE_ENV: ${NODE_ENV:-development}
-      VITE_API_BASE: http://app:3000
-    depends_on:
-      - app
-    restart: unless-stopped
-    volumes:
-      - ./frontend/src:/app/src
-      - ./frontend:/app
-      - /app/node_modules
-    networks:
-      - bluebonnet_network
 
 volumes:
   postgres_data:

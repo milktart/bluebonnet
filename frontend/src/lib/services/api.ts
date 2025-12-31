@@ -11,20 +11,29 @@ function getApiBase(): string {
     const protocol = window.location.protocol;
     const port = window.location.port;
 
+    console.log('[API DEBUG] getApiBase called:', { hostname, protocol, port });
+
     // Check if we're accessing from a Docker port (5173 is the SvelteKit dev server in Docker)
     // If so, use the same hostname with port 3501 (external port for backend)
     if (port === '5173') {
       // Accessing from Docker dev server
       // Use the same hostname (IP or domain) with external backend port 3501
-      return `${protocol}//${hostname}:3501/api`;
+      const url = `${protocol}//${hostname}:3501/api`;
+      console.log('[API DEBUG] Using Docker dev port 5173, URL:', url);
+      return url;
     } else if (hostname === 'localhost' || hostname === '127.0.0.1') {
       // Local development - use localhost:3000 (local node server)
-      return `${protocol}//localhost:3000/api`;
+      const url = `${protocol}//localhost:3000/api`;
+      console.log('[API DEBUG] Using localhost, URL:', url);
+      return url;
     } else {
-      // Remote access (IP address, domain, etc.) - use external port 3501
-      return `${protocol}//${hostname}:3501/api`;
+      // Remote access (proxied domain, etc.) - use relative URL
+      // The proxy handles port mapping, so don't include port in URL
+      console.log('[API DEBUG] Using relative URL for remote access');
+      return '/api';
     }
   }
+  console.log('[API DEBUG] SSR fallback URL');
   return 'http://localhost:3000/api'; // Fallback for SSR
 }
 

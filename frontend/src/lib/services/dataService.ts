@@ -29,8 +29,8 @@
  * dataService.broadcastDataChange('trip:created', { id: '123', name: 'Paris' });
  */
 
-import { dashboardStore, dashboardStoreActions } from './dashboardStore.js';
-import { tripsApi } from './api.js';
+import { dashboardStore, dashboardStoreActions } from '$lib/stores/dashboardStore.js';
+import { tripsApi } from '$lib/services/api.js';
 import type { Trip, Flight, Hotel, Event, CarRental, Transportation } from '../../../types/index.js';
 
 /**

@@ -9,6 +9,7 @@ const compression = require('compression');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const swaggerUi = require('swagger-ui-express');
 const db = require('./models');
 const dateFormatter = require('./utils/dateFormatter');
 const logger = require('./utils/logger');
@@ -260,6 +261,24 @@ app.get('/health', async (req, res) => {
 // Rate limiting middleware disabled for development
 // const { authLimiter, apiLimiter, formLimiter } = require('./middleware/rateLimiter');
 
+// Swagger/OpenAPI Documentation Setup (Phase 2B)
+try {
+  const { specs } = require('./config/swagger.ts');
+  app.use('/api-docs', swaggerUi.serve);
+  app.get('/api-docs', swaggerUi.setup(specs, {
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+    customCss: '.swagger-ui { margin: 0; padding: 20px; }',
+    customSiteTitle: 'Bluebonnet API Docs',
+  }));
+  logger.info('Swagger documentation available at /api-docs');
+} catch (error) {
+  logger.warn('Swagger setup skipped (may need TypeScript compilation)', {
+    error: error.message,
+  });
+}
+
 // Routes
 app.use('/', require('./routes/index'));
 app.use('/auth', require('./routes/auth')); // Rate limiting disabled
@@ -275,6 +294,47 @@ app.use('/transportation', require('./routes/transportation'));
 app.use('/car-rentals', require('./routes/carRentals'));
 app.use('/events', require('./routes/events'));
 app.use('/vouchers', require('./routes/vouchers'));
+
+// Mount SvelteKit frontend handler for all non-API routes
+// This must come after all API/auth routes so they take precedence
+// SvelteKit adapter-node outputs ES modules, so we use a lazy-loading wrapper
+let svelteKitHandler = null;
+let svelteKitLoadError = null;
+
+app.use(async (req, res, next) => {
+  // Skip SvelteKit for API routes (already handled above)
+  if (req.path.startsWith('/api') || req.path.startsWith('/auth') || req.path.startsWith('/account') ||
+      req.path.startsWith('/companions') || req.path.startsWith('/trips') || req.path.startsWith('/flights') ||
+      req.path.startsWith('/hotels') || req.path.startsWith('/transportation') || req.path.startsWith('/car-rentals') ||
+      req.path.startsWith('/events') || req.path.startsWith('/vouchers') || req.path.startsWith('/companion-relationships') ||
+      req.path.startsWith('/trip-invitations')) {
+    return next();
+  }
+
+  // Load SvelteKit handler on first non-API request
+  if (svelteKitHandler === null && svelteKitLoadError === null) {
+    try {
+      const svelteKitModule = await import('./build_frontend/handler');
+      svelteKitHandler = svelteKitModule.handler;
+      logger.info('SvelteKit frontend handler loaded successfully on first request');
+    } catch (error) {
+      svelteKitLoadError = error;
+      logger.warn('Failed to load SvelteKit frontend handler', {
+        error: error.message,
+        hint: 'Make sure to build the frontend: npm run build in frontend/ directory',
+      });
+      return res.status(500).json({ error: 'Frontend handler not available' });
+    }
+  }
+
+  // Return error if handler failed to load
+  if (svelteKitLoadError) {
+    return res.status(500).json({ error: 'Frontend handler not available' });
+  }
+
+  // Serve with SvelteKit handler
+  svelteKitHandler(req, res, next);
+});
 
 // Error handling middleware (Phase 3)
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');

@@ -1,4 +1,4 @@
-import { n as noop, a8 as getContext } from "./index.js";
+import { a5 as noop, a6 as getContext } from "./index2.js";
 import "clsx";
 import "@sveltejs/kit/internal";
 import "./exports.js";

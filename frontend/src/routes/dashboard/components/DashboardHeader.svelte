@@ -1,27 +1,33 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { dashboardStore, dashboardStoreActions } from '$lib/stores/dashboardStore';
   import Alert from '$lib/components/Alert.svelte';
 
-  export let activeView: 'trips' | 'settings' = 'trips';
-  export let activeTab: 'upcoming' | 'past' = 'upcoming';
-  export let error: string | null = null;
+  let activeView: 'trips' | 'settings' = 'trips';
+  let activeTab: 'upcoming' | 'past' = 'upcoming';
+  let error: string | null = null;
 
-  const dispatch = createEventDispatcher();
+  // Subscribe to store
+  const unsubscribe = dashboardStore.subscribe(($store) => {
+    activeView = $store.activeView;
+    activeTab = $store.activeTab;
+    error = $store.error;
+  });
 
   const handleCalendarClick = () => {
-    dispatch('calendarClick');
+    dashboardStoreActions.openSecondarySidebar({ type: 'calendar', data: {} });
   };
 
   const handleCreateTrip = () => {
-    dispatch('createTrip');
+    dashboardStoreActions.setShowNewItemMenu(true);
+    dashboardStoreActions.openSecondarySidebar({ type: 'newItemMenu', data: {} });
   };
 
   const handleTabChange = (tab: 'upcoming' | 'past') => {
-    dispatch('tabChange', tab);
+    dashboardStoreActions.setActiveTab(tab);
   };
 
   const handleViewChange = (view: 'trips' | 'settings') => {
-    dispatch('viewChange', view);
+    dashboardStoreActions.setActiveView(view);
   };
 </script>
 

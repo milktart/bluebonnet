@@ -44,6 +44,7 @@ Thumbs.db
 # Build files
 dist/
 build/
+build_frontend/
 .svelte-kit/
 frontend/.svelte-kit/
 *.tsbuildinfo

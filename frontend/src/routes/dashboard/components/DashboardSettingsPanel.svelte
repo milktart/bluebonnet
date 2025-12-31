@@ -1,12 +1,16 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { dashboardStoreActions } from '$lib/stores/dashboardStore';
+  import { authStore } from '$lib/stores/authStore';
 
-  export let user: any = null;
+  let user: any = null;
 
-  const dispatch = createEventDispatcher();
+  // Subscribe to auth store to get user data
+  const unsubscribe = authStore.subscribe(($auth) => {
+    user = $auth.user;
+  });
 
   const handleSettingClick = (type: string, data: any = {}) => {
-    dispatch('settingClick', { type, data });
+    dashboardStoreActions.openSecondarySidebar({ type, data });
   };
 </script>
 

@@ -1,8 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { tripStore, tripStoreActions } from '$lib/stores/tripStore';
   import { authStore } from '$lib/stores/authStore';
   import { tripsApi } from '$lib/services/api';
+  import { dataService, setupDataSyncListener } from '$lib/services/dataService';
+  import { dashboardStore, dashboardStoreActions } from '$lib/stores/dashboardStore';
   import { formatTimeInTimezone, formatDateTimeInTimezone } from '$lib/utils/timezoneUtils';
   import MapLayout from '$lib/components/MapLayout.svelte';
   import Button from '$lib/components/Button.svelte';
@@ -44,6 +45,31 @@
   let showNewItemMenu = false;
   let groupedItems: Record<string, Array<any>> = {};
   let dateKeysInOrder: string[] = [];
+
+  // Store subscriptions - sync local state with centralized dashboardStore
+  let unsubscribe: (() => void) | null = null;
+
+  function syncStoreState() {
+    unsubscribe = dashboardStore.subscribe(($store) => {
+      trips = $store.trips;
+      standaloneItems = $store.standaloneItems;
+      filteredItems = $store.filteredItems;
+      activeTab = $store.activeTab;
+      activeView = $store.activeView;
+      loading = $store.loading;
+      error = $store.error;
+      expandedTrips = $store.expandedTrips;
+      mapData = $store.mapData;
+      highlightedTripId = $store.highlightedTripId;
+      highlightedItemId = $store.highlightedItemId;
+      highlightedItemType = $store.highlightedItemType;
+      secondarySidebarContent = $store.secondarySidebarContent;
+      tertiarySidebarContent = $store.tertiarySidebarContent;
+      showNewItemMenu = $store.showNewItemMenu;
+      groupedItems = $store.groupedItems;
+      dateKeysInOrder = $store.dateKeysInOrder;
+    });
+  }
 
   // Reactive statement to regroup whenever filteredItems changes
   $: if (filteredItems.length > 0) {
@@ -88,32 +114,18 @@
   }
 
   async function loadTripData() {
+    dashboardStoreActions.setLoading(true);
     try {
-      const response = await tripsApi.getAll('all');
-      const tripsData = response?.trips || [];
-      standaloneItems = response?.standalone || { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
-
-      // Fetch detailed data for each trip
-      const detailedTrips = await Promise.all(
-        tripsData.map(async (trip) => {
-          try {
-            return await tripsApi.getOne(trip.id);
-          } catch (err) {
-            console.error('Error fetching trip details:', err);
-            return trip;
-          }
-        })
-      );
-
-      tripStoreActions.setTrips(detailedTrips);
-      trips = detailedTrips;
+      // Use dataService for smart caching and batch fetching
+      await dataService.loadAllTrips();
+      await dataService.loadStandaloneItems('all');
       filterTrips();
       updateMapData();
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to load trips';
-      error = errorMsg;
+      dashboardStoreActions.setError(errorMsg);
     } finally {
-      loading = false;
+      dashboardStoreActions.setLoading(false);
     }
   }
 
@@ -134,6 +146,25 @@
   }
 
   onMount(async () => {
+    // Initialize store synchronization
+    syncStoreState();
+
+    // Setup cross-tab data synchronization
+    setupDataSyncListener();
+
+    // Listen for data changes from other tabs
+    window.addEventListener('dataChanged', async (e: any) => {
+      const { type } = e.detail;
+      if (type.includes('trip')) {
+        dataService.invalidateCache('trip');
+        await loadTripData();
+      } else if (type.includes('item')) {
+        dataService.invalidateCache('item');
+        await loadTripData();
+      }
+    });
+
+    // Load initial data
     await loadTripData();
 
     // Listen for data import events
@@ -144,9 +175,13 @@
     window.addEventListener('edit-companion', handleEditCompanion);
 
     return () => {
+      // Cleanup subscriptions
+      if (unsubscribe) unsubscribe();
+
       window.removeEventListener('dataImported', handleDataImported);
       window.removeEventListener('add-companion', handleAddCompanion);
       window.removeEventListener('edit-companion', handleEditCompanion);
+      window.removeEventListener('dataChanged', () => {});
     };
   });
 
@@ -157,8 +192,8 @@
 
     const allItems: any[] = [];
 
-    // Add trips as items
-    trips.forEach((trip) => {
+    // Add trips as items (use store data)
+    $dashboardStore.trips.forEach((trip) => {
       allItems.push({
         type: 'trip',
         data: trip,
@@ -166,7 +201,7 @@
       });
     });
 
-    // Add standalone items
+    // Add standalone items (use store data)
     ['flights', 'hotels', 'transportation', 'carRentals', 'events'].forEach((key) => {
       const itemTypeMap: Record<string, string> = {
         flights: 'flight',
@@ -176,8 +211,8 @@
         events: 'event'
       };
 
-      if (standaloneItems[key]) {
-        standaloneItems[key].forEach((item: any) => {
+      if ($dashboardStore.standaloneItems[key]) {
+        $dashboardStore.standaloneItems[key].forEach((item: any) => {
           allItems.push({
             type: 'standalone',
             itemType: itemTypeMap[key],
@@ -188,9 +223,10 @@
       }
     });
 
-    // Filter by upcoming/past
-    if (activeTab === 'upcoming') {
-      filteredItems = allItems.filter((item) => {
+    // Filter by upcoming/past (use store activeTab)
+    let filtered: any[] = [];
+    if ($dashboardStore.activeTab === 'upcoming') {
+      filtered = allItems.filter((item) => {
         if (item.type === 'trip') {
           const tripDate = item.data.departureDate ? parseLocalDate(item.data.departureDate) : null;
           return tripDate && tripDate >= now;
@@ -199,9 +235,9 @@
         }
       });
       // Sort chronologically (oldest first)
-      filteredItems.sort((a, b) => a.sortDate.getTime() - b.sortDate.getTime());
-    } else if (activeTab === 'past') {
-      filteredItems = allItems.filter((item) => {
+      filtered.sort((a, b) => a.sortDate.getTime() - b.sortDate.getTime());
+    } else if ($dashboardStore.activeTab === 'past') {
+      filtered = allItems.filter((item) => {
         if (item.type === 'trip') {
           const endDate = getTripEndDate(item.data);
           return endDate < now;
@@ -210,8 +246,11 @@
         }
       });
       // Sort reverse chronologically (most recent first)
-      filteredItems.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
+      filtered.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
     }
+
+    // Update store with filtered items
+    dashboardStoreActions.setFilteredItems(filtered);
   }
 
   function updateMapData() {
@@ -223,8 +262,8 @@
       carRentals: []
     };
 
-    // Add items from trips
-    filteredItems.forEach(item => {
+    // Add items from trips (use store data)
+    $dashboardStore.filteredItems.forEach(item => {
       if (item.type === 'trip') {
         const trip = item.data;
         // Ensure each item has tripId attached so map highlighting can filter by trip
@@ -249,13 +288,14 @@
       }
     });
 
-    mapData = combined;
+    // Update store with map data
+    dashboardStoreActions.setMapData(combined);
   }
 
 
   function handleTabChange(tab: 'upcoming' | 'past') {
-    activeTab = tab;
-    closeSecondarySidebar();
+    dashboardStoreActions.setActiveTab(tab);
+    dashboardStoreActions.closeSecondarySidebar();
     filterTrips();
     updateMapData();
   }
@@ -264,22 +304,23 @@
     event.stopPropagation();
     try {
       await tripsApi.delete(tripId);
-      tripStoreActions.deleteTrip(tripId);
-      trips = trips.filter((t) => t.id !== tripId);
+      dashboardStoreActions.deleteTrip(tripId);
+      dataService.invalidateCache('trip');
       filterTrips();
       updateMapData();
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Failed to delete trip';
+      const errorMsg = err instanceof Error ? err.message : 'Failed to delete trip';
+      dashboardStoreActions.setError(errorMsg);
     }
   }
 
   function handleCreateTrip() {
-    showNewItemMenu = true;
-    secondarySidebarContent = { type: 'newItemMenu', data: {} };
+    dashboardStoreActions.setShowNewItemMenu(true);
+    dashboardStoreActions.openSecondarySidebar({ type: 'newItemMenu', data: {} });
   }
 
   function handleCalendarClick() {
-    secondarySidebarContent = { type: 'calendar', data: {} };
+    dashboardStoreActions.openSecondarySidebar({ type: 'calendar', data: {} });
     updateSecondarySidebarClass();
   }
 
@@ -297,57 +338,50 @@
   }
 
   function handleNewTripClick() {
-    showNewItemMenu = false;
-    secondarySidebarContent = { type: 'trip', itemType: 'trip', data: {} };
+    dashboardStoreActions.setShowNewItemMenu(false);
+    dashboardStoreActions.openSecondarySidebar({ type: 'trip', itemType: 'trip', data: {} });
   }
 
   function handleNewItemClick(itemType: string) {
-    showNewItemMenu = false;
-    secondarySidebarContent = { type: itemType, itemType, data: {} };
+    dashboardStoreActions.setShowNewItemMenu(false);
+    dashboardStoreActions.openSecondarySidebar({ type: itemType, itemType, data: {} });
   }
 
   function toggleTripExpanded(tripId: string) {
-    if (expandedTrips.has(tripId)) {
-      expandedTrips.delete(tripId);
-    } else {
-      expandedTrips.add(tripId);
-    }
-    expandedTrips = expandedTrips;
+    dashboardStoreActions.toggleTripExpanded(tripId);
   }
 
   function handleTripHover(tripId: string) {
-    highlightedTripId = tripId;
+    dashboardStoreActions.setHighlightedTrip(tripId);
   }
 
   function handleTripLeave() {
-    highlightedTripId = null;
+    dashboardStoreActions.setHighlightedTrip(null);
   }
 
   function handleItemHover(itemType: string, itemId: string) {
-    highlightedItemType = itemType;
-    highlightedItemId = itemId;
+    dashboardStoreActions.setHighlightedItem(itemId, itemType);
   }
 
   function handleItemLeave() {
-    highlightedItemId = null;
-    highlightedItemType = null;
+    dashboardStoreActions.setHighlightedItem(null, null);
   }
 
   function handleItemClick(type: string, itemType: string | null, data: any) {
-    secondarySidebarContent = { type, itemType: itemType || undefined, data };
+    dashboardStoreActions.openSecondarySidebar({ type, itemType: itemType || undefined, data });
   }
 
   function closeSecondarySidebar() {
-    secondarySidebarContent = null;
+    dashboardStoreActions.closeSecondarySidebar();
     updateSecondarySidebarClass();
   }
 
   function openTertiarySidebar(type: string, data: any = {}) {
-    tertiarySidebarContent = { type, data };
+    dashboardStoreActions.openTertiarySidebar({ type, data });
   }
 
   function closeTertiarySidebar() {
-    tertiarySidebarContent = null;
+    dashboardStoreActions.closeTertiarySidebar();
   }
 
 </script>
@@ -381,7 +415,7 @@
             class="tab-btn"
             class:active={activeView === 'trips' && activeTab === 'upcoming'}
             on:click={() => {
-              activeView = 'trips';
+              dashboardStoreActions.setActiveView('trips');
               handleTabChange('upcoming');
             }}
           >
@@ -391,7 +425,7 @@
             class="tab-btn"
             class:active={activeView === 'trips' && activeTab === 'past'}
             on:click={() => {
-              activeView = 'trips';
+              dashboardStoreActions.setActiveView('trips');
               handleTabChange('past');
             }}
           >
@@ -402,7 +436,7 @@
           class="tab-btn settings-btn"
           class:active={activeView === 'settings'}
           title="Settings"
-          on:click={() => activeView = 'settings'}
+          on:click={() => dashboardStoreActions.setActiveView('settings')}
         >
           <span class="material-symbols-outlined" style="font-size: 1.1rem;">settings</span>
         </button>
@@ -412,13 +446,7 @@
     <div class="trips-content">
       {#if activeView === 'settings'}
         <!-- Settings View -->
-        <DashboardSettingsPanel
-          user={$authStore.user}
-          on:settingClick={(e) => {
-            const { type, data } = e.detail;
-            secondarySidebarContent = { type, data };
-          }}
-        />
+        <DashboardSettingsPanel />
       {:else if loading}
         <Loading message="Loading trips..." />
       {:else if filteredItems.length === 0}

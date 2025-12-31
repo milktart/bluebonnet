@@ -1,4 +1,4 @@
-import { Z as store_get, _ as head, $ as slot, a0 as unsubscribe_stores } from "../../chunks/index.js";
+import { X as store_get, Y as head, Z as slot, _ as unsubscribe_stores } from "../../chunks/index2.js";
 import { p as page } from "../../chunks/stores.js";
 import "clsx";
 /* empty css                                                   */

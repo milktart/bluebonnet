@@ -12,11 +12,14 @@ function getAccountBase(): string {
     const port = window.location.port;
 
     if (port === '5173') {
+      // SvelteKit dev server accessing Docker backend
       return `${protocol}//${hostname}:3501`;
     } else if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      // Local development
       return `${protocol}//localhost:3000`;
     } else {
-      return `${protocol}//${hostname}:3501`;
+      // Remote access (proxied domain, etc.) - use relative URL
+      return '';
     }
   }
   return 'http://localhost:3000';

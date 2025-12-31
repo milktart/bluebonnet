@@ -1,4 +1,4 @@
-import { _ as head, a2 as attr, a7 as escape_html } from "../../../chunks/index.js";
+import { Y as head, a7 as attr, a2 as escape_html } from "../../../chunks/index2.js";
 function _page($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let email = "";

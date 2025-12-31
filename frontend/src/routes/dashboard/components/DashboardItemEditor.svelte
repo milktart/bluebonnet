@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { dashboardStore, dashboardStoreActions } from '$lib/stores/dashboardStore';
   import ItemEditForm from '$lib/components/ItemEditForm.svelte';
   import DashboardCalendar from '$lib/components/DashboardCalendar.svelte';
   import SettingsProfile from '$lib/components/SettingsProfile.svelte';
@@ -8,30 +8,35 @@
   import SettingsCompanions from '$lib/components/SettingsCompanions.svelte';
   import SettingsBackup from '$lib/components/SettingsBackup.svelte';
 
-  export let secondarySidebarContent: { type: string; itemType?: string; data: any } | null = null;
-  export let trips: any[] = [];
-  export let standaloneItems: any = {};
+  let secondarySidebarContent: { type: string; itemType?: string; data: any } | null = null;
+  let trips: any[] = [];
+  let standaloneItems: any = {};
 
-  const dispatch = createEventDispatcher();
+  // Subscribe to store
+  const unsubscribe = dashboardStore.subscribe(($store) => {
+    secondarySidebarContent = $store.secondarySidebarContent;
+    trips = $store.trips;
+    standaloneItems = $store.standaloneItems;
+  });
 
   const closeSecondarySidebar = () => {
-    dispatch('close');
+    dashboardStoreActions.closeSecondarySidebar();
   };
 
   const handleItemSave = async (item: any) => {
-    dispatch('save', item);
+    // Will be handled by parent component after data mutation
   };
 
   const handleNewTripClick = () => {
-    dispatch('newTrip');
+    dashboardStoreActions.openSecondarySidebar({ type: 'trip', itemType: 'trip', data: {} });
   };
 
   const handleNewItemClick = (itemType: string) => {
-    dispatch('newItem', { itemType });
+    dashboardStoreActions.openSecondarySidebar({ type: itemType, itemType, data: {} });
   };
 
   const handleTertiarySidebarAction = (action: string, detail: any) => {
-    dispatch('tertiarySidebarAction', { action, detail });
+    // Will be handled by parent component
   };
 
   function shouldBeFullWidth() {

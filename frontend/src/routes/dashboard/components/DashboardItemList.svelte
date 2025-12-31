@@ -1,27 +1,34 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { dashboardStore, dashboardStoreActions } from '$lib/stores/dashboardStore';
   import CompanionIndicators from '$lib/components/CompanionIndicators.svelte';
   import { getCityName, getTransportIcon } from '$lib/utils/dashboardItem';
   import { formatMonthHeader, formatDateTime, formatDateOnly, formatTimeOnly } from '$lib/utils/dashboardFormatters';
 
-  export let filteredItems: any[] = [];
-  export let groupedItems: Record<string, Array<any>> = {};
-  export let dateKeysInOrder: string[] = [];
-  export let highlightedItemId: string | null = null;
-  export let highlightedItemType: string | null = null;
+  let filteredItems: any[] = [];
+  let groupedItems: Record<string, Array<any>> = {};
+  let dateKeysInOrder: string[] = [];
+  let highlightedItemId: string | null = null;
+  let highlightedItemType: string | null = null;
 
-  const dispatch = createEventDispatcher();
+  // Subscribe to store
+  const unsubscribe = dashboardStore.subscribe(($store) => {
+    filteredItems = $store.filteredItems;
+    groupedItems = $store.groupedItems;
+    dateKeysInOrder = $store.dateKeysInOrder;
+    highlightedItemId = $store.highlightedItemId;
+    highlightedItemType = $store.highlightedItemType;
+  });
 
   const handleItemHover = (itemType: string, itemId: string) => {
-    dispatch('hoverItem', { itemType, itemId });
+    dashboardStoreActions.setHighlightedItem(itemId, itemType);
   };
 
   const handleItemLeave = () => {
-    dispatch('leaveItem');
+    dashboardStoreActions.setHighlightedItem(null, null);
   };
 
   const handleItemClick = (itemType: string, data: any) => {
-    dispatch('itemClick', { itemType, data });
+    dashboardStoreActions.openSecondarySidebar({ type: itemType, itemType, data });
   };
 </script>
 
