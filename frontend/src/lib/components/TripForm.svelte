@@ -26,6 +26,19 @@
     status: trip?.status || 'planning'
   };
 
+  // Update formData when trip prop changes
+  $: if (trip) {
+    formData = {
+      name: trip.name || '',
+      destination: trip.destination || '',
+      description: trip.description || '',
+      departureDate: trip.departureDate || trip.startDate || '',
+      returnDate: trip.returnDate || trip.endDate || '',
+      budget: trip.budget || '',
+      status: trip.status || 'planning'
+    };
+  }
+
   const statusOptions = [
     { value: 'planning', label: 'Planning' },
     { value: 'confirmed', label: 'Confirmed' },

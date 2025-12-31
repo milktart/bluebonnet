@@ -18,28 +18,32 @@
   }
 
   onMount(() => {
-    // Monitor sidebar content changes and hide/show accordingly
+    // Monitor sidebar content changes and hide/show accordingly using opacity instead of display
     const observer = new MutationObserver(() => {
       if (secondarySidebarEl) {
         const secondaryHasContent = secondarySidebarEl.textContent?.trim().length > 0;
-        secondarySidebarEl.style.display = secondaryHasContent ? 'flex' : 'none';
+        secondarySidebarEl.style.opacity = secondaryHasContent ? '1' : '0';
+        secondarySidebarEl.style.pointerEvents = secondaryHasContent ? 'auto' : 'none';
       }
       if (tertiarySidebarEl) {
         const tertiaryHasContent = tertiarySidebarEl.textContent?.trim().length > 0;
-        tertiarySidebarEl.style.display = tertiaryHasContent ? 'flex' : 'none';
+        tertiarySidebarEl.style.opacity = tertiaryHasContent ? '1' : '0';
+        tertiarySidebarEl.style.pointerEvents = tertiaryHasContent ? 'auto' : 'none';
       }
     });
 
     if (secondarySidebarEl) {
       observer.observe(secondarySidebarEl, { childList: true, subtree: true, characterData: true });
       const secondaryHasContent = secondarySidebarEl.textContent?.trim().length > 0;
-      secondarySidebarEl.style.display = secondaryHasContent ? 'flex' : 'none';
+      secondarySidebarEl.style.opacity = secondaryHasContent ? '1' : '0';
+      secondarySidebarEl.style.pointerEvents = secondaryHasContent ? 'auto' : 'none';
     }
 
     if (tertiarySidebarEl) {
       observer.observe(tertiarySidebarEl, { childList: true, subtree: true, characterData: true });
       const tertiaryHasContent = tertiarySidebarEl.textContent?.trim().length > 0;
-      tertiarySidebarEl.style.display = tertiaryHasContent ? 'flex' : 'none';
+      tertiarySidebarEl.style.opacity = tertiaryHasContent ? '1' : '0';
+      tertiarySidebarEl.style.pointerEvents = tertiaryHasContent ? 'auto' : 'none';
     }
 
     return () => observer.disconnect();
@@ -122,23 +126,23 @@
   /* Secondary sidebar - default: same width as primary, no padding for forms */
   :global(.secondary-sidebar) {
     width: 340px;
-    left: calc(2.5vh + 340px + 2.5vh);
+    left: calc(2.5vh + 340px + 2.5vh) !important;
     z-index: 21;
     padding: 0;
-    transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1), right 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   /* Secondary sidebar full-width: takes remaining space */
   :global(.secondary-sidebar.full-width) {
     width: auto;
     right: calc(2.5vh + 340px + 2.5vh + 2.5vh);
-    left: calc(2.5vh + 340px + 2.5vh);
+    left: calc(2.5vh + 340px + 2.5vh) !important;
   }
 
   /* When tertiary sidebar is open, secondary shrinks to fit middle space */
   :global(.secondary-sidebar.full-width.with-tertiary) {
     left: calc(2.5vh + 340px + 2.5vh) !important;
-    right: calc(2.5vh + 340px + 2.5vh + 2.5vh) !important;
+    right: calc(2.5vh + 340px + 2.5vh) !important;
     width: auto !important;
   }
 
@@ -149,6 +153,7 @@
     left: auto;
     z-index: 22;
     flex-shrink: 0;
+    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   /* Responsive adjustments */
@@ -168,6 +173,7 @@
     :global(.secondary-sidebar) {
       width: 340px;
       left: calc(2vh + 340px + 2vh);
+      transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1), right 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     :global(.secondary-sidebar.full-width) {
@@ -186,6 +192,7 @@
       width: 340px;
       right: 2vh;
       flex-shrink: 0;
+      transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
   }
 

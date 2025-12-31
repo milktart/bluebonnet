@@ -8,16 +8,9 @@
   import SettingsCompanions from '$lib/components/SettingsCompanions.svelte';
   import SettingsBackup from '$lib/components/SettingsBackup.svelte';
 
-  let secondarySidebarContent: { type: string; itemType?: string; data: any } | null = null;
-  let trips: any[] = [];
-  let standaloneItems: any = {};
-
-  // Subscribe to store
-  const unsubscribe = dashboardStore.subscribe(($store) => {
-    secondarySidebarContent = $store.secondarySidebarContent;
-    trips = $store.trips;
-    standaloneItems = $store.standaloneItems;
-  });
+  export let secondarySidebarContent: { type: string; itemType?: string; data: any } | null = null;
+  export let trips: any[] = [];
+  export let standaloneItems: any = {};
 
   const closeSecondarySidebar = () => {
     dashboardStoreActions.closeSecondarySidebar();
@@ -36,7 +29,15 @@
   };
 
   const handleTertiarySidebarAction = (action: string, detail: any) => {
-    // Will be handled by parent component
+    if (action === 'add-companion') {
+      dashboardStoreActions.openTertiarySidebar({ type: 'add-companion', data: {} });
+    } else if (action === 'edit-companion') {
+      dashboardStoreActions.openTertiarySidebar({ type: 'edit-companion', data: detail.companion });
+    } else if (action === 'add-voucher') {
+      dashboardStoreActions.openTertiarySidebar({ type: 'add-voucher', data: {} });
+    } else if (action === 'edit-voucher') {
+      dashboardStoreActions.openTertiarySidebar({ type: 'edit-voucher', data: { voucher: detail.voucher } });
+    }
   };
 
   function shouldBeFullWidth() {

@@ -4,12 +4,10 @@ const router = express.Router();
 const { ensureAuthenticated } = require('../middleware/auth');
 const tripController = require('../controllers/tripController');
 
-// Home page - redirects to trips if authenticated, otherwise falls through to SvelteKit
+// Home page - let SvelteKit handle the landing page for all users
+// Authenticated users should see the landing page, not be redirected to trips
 router.get('/', (req, res, next) => {
-  if (req.isAuthenticated()) {
-    return tripController.listTrips(req, res);
-  }
-  // Let SvelteKit handle the landing page
+  // Always let SvelteKit handle the root path
   next();
 });
 
@@ -96,6 +94,7 @@ router.get('/dashboard/primary-sidebar', ensureAuthenticated, async (req, res) =
 
 // Calendar routes
 const calendarRouter = require('./calendar');
+
 router.use('/calendar', calendarRouter);
 
 // GET dashboard API data (returns all standalone items for map refresh)
