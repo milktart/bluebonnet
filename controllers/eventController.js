@@ -7,9 +7,7 @@ const {
   redirectAfterSuccess,
   redirectAfterError,
   verifyResourceOwnership,
-  convertToUTC,
 } = require('./helpers/resourceController');
-const { utcToLocal } = require('../utils/timezoneHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 const { formatDate, formatTime } = require('../utils/dateFormatter');
 const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
@@ -20,7 +18,6 @@ exports.createEvent = async (req, res) => {
     const {
       name,
       location,
-      timezone,
       contactPhone,
       contactEmail,
       // Support for separate date/time fields from dashboard form
@@ -61,25 +58,8 @@ exports.createEvent = async (req, res) => {
     // Geocode location if provided
     const coords = location ? await geocodeIfChanged(location) : null;
 
-    // Infer timezone from location if not provided
-    let finalTimezone = timezone;
-    if (!finalTimezone && coords?.lat && coords?.lng) {
-      try {
-        finalTimezone = await require('../services/geocodingService').inferTimezone(
-          coords.lat,
-          coords.lng
-        );
-      } catch (error) {
-        logger.error('Error inferring timezone:', error);
-        finalTimezone = 'UTC';
-      }
-    }
-    finalTimezone = finalTimezone || 'UTC';
-
     // If no endDateTime provided, default to startDateTime (for instant/point-in-time events)
-    const finalEndDateTime = endDateTime
-      ? convertToUTC(endDateTime, finalTimezone)
-      : convertToUTC(startDateTime, finalTimezone);
+    const finalEndDateTime = endDateTime || startDateTime;
 
     // Sanitize optional fields - convert empty strings to null to avoid validation errors
     const sanitizedContactEmail = contactEmail && contactEmail.trim() !== '' ? contactEmail : null;
@@ -90,10 +70,9 @@ exports.createEvent = async (req, res) => {
       userId: req.user.id,
       tripId: tripId || null,
       name,
-      startDateTime: convertToUTC(startDateTime, finalTimezone),
-      endDateTime: finalEndDateTime,
+      startDateTime: new Date(startDateTime),
+      endDateTime: new Date(finalEndDateTime),
       location,
-      timezone: finalTimezone,
       lat: coords?.lat,
       lng: coords?.lng,
       contactPhone: sanitizedContactPhone,
@@ -140,7 +119,7 @@ exports.createEvent = async (req, res) => {
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
-      return res.json({ success: true, message: 'Event added successfully' });
+      return res.json({ success: true, data: event, message: 'Event added successfully' });
     }
 
     redirectAfterSuccess(res, req, tripId, 'events', 'Event added successfully');
@@ -163,7 +142,6 @@ exports.updateEvent = async (req, res) => {
       startDateTime,
       endDateTime,
       location,
-      timezone,
       contactPhone,
       contactEmail,
       description,
@@ -233,25 +211,8 @@ exports.updateEvent = async (req, res) => {
       location ? { lat: event.lat, lng: event.lng } : null
     );
 
-    // Infer timezone from location if not provided
-    let finalTimezone = timezone;
-    if (!finalTimezone && coords?.lat && coords?.lng) {
-      try {
-        finalTimezone = await require('../services/geocodingService').inferTimezone(
-          coords.lat,
-          coords.lng
-        );
-      } catch (error) {
-        logger.error('Error inferring timezone:', error);
-        finalTimezone = event.timezone || 'UTC';
-      }
-    }
-    finalTimezone = finalTimezone || event.timezone || 'UTC';
-
     // If no endDateTime provided, default to startDateTime (for instant/point-in-time events)
-    const finalEndDateTime = endDateTime
-      ? convertToUTC(endDateTime, finalTimezone)
-      : convertToUTC(startDateTime, finalTimezone);
+    const finalEndDateTime = endDateTime || startDateTime;
 
     // Sanitize optional fields - convert empty strings to null to avoid validation errors
     const sanitizedContactEmail = contactEmail && contactEmail.trim() !== '' ? contactEmail : null;
@@ -260,10 +221,9 @@ exports.updateEvent = async (req, res) => {
 
     await event.update({
       name,
-      startDateTime: convertToUTC(startDateTime, finalTimezone),
-      endDateTime: finalEndDateTime,
+      startDateTime: new Date(startDateTime),
+      endDateTime: new Date(finalEndDateTime),
       location,
-      timezone: finalTimezone,
       lat: coords?.lat,
       lng: coords?.lng,
       contactPhone: sanitizedContactPhone,
@@ -277,7 +237,7 @@ exports.updateEvent = async (req, res) => {
     const isAsync =
       req.headers['x-async-request'] === 'true' || req.get('content-type') === 'application/json';
     if (isAsync) {
-      return res.json({ success: true, message: 'Event updated successfully' });
+      return res.json({ success: true, data: event, message: 'Event updated successfully' });
     }
 
     redirectAfterSuccess(res, req, event.tripId, 'events', 'Event updated successfully');
@@ -349,15 +309,42 @@ exports.getEventSidebar = async (req, res) => {
       return res.status(404).send('<p class="text-red-600">Event not found</p>');
     }
 
-    // Use the event's timezone for formatting (or UTC if not set)
-    const eventTimezone = event.timezone || 'UTC';
+    // Format dates/times directly from the stored datetime values (use UTC methods to avoid timezone conversion)
+    const formatDateForDisplay = (date) => {
+      if (!date) return '';
+      const d = new Date(date);
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const day = d.getUTCDate();
+      const month = months[d.getUTCMonth()];
+      const year = d.getUTCFullYear();
+      return `${day} ${month} ${year}`;
+    };
 
-    // Format times in the event's timezone to correctly detect all-day events
-    const { formatInTimezone } = require('../utils/dateFormatter');
-    const startTime = formatInTimezone(event.startDateTime, eventTimezone, 'HH:mm');
-    const endTime = formatInTimezone(event.endDateTime, eventTimezone, 'HH:mm');
-    const startDate = formatInTimezone(event.startDateTime, eventTimezone, 'DD MMM YYYY');
-    const endDate = formatInTimezone(event.endDateTime, eventTimezone, 'DD MMM YYYY');
+    const formatTimeForDisplay = (date) => {
+      if (!date) return '';
+      const d = new Date(date);
+      const hours = String(d.getUTCHours()).padStart(2, '0');
+      const minutes = String(d.getUTCMinutes()).padStart(2, '0');
+      return `${hours}:${minutes}`;
+    };
+
+    const startTime = formatTimeForDisplay(event.startDateTime);
+    const endTime = formatTimeForDisplay(event.endDateTime);
+    const startDate = formatDateForDisplay(event.startDateTime);
+    const endDate = formatDateForDisplay(event.endDateTime);
+
+    // DEBUG: Log to console
+    const d = new Date(event.startDateTime);
+    console.log(`[Event Sidebar] Event ${event.id}:`, {
+      rawDateTime: event.startDateTime,
+      dateObj: d,
+      utcHours: d.getUTCHours(),
+      utcMinutes: d.getUTCMinutes(),
+      localHours: d.getHours(),
+      localMinutes: d.getMinutes(),
+      formattedTime: startTime,
+      formattedDate: startDate
+    });
 
     // Check if this is an all-day event (times are 00:00 and 23:59)
     const isAllDay = startTime === '00:00' && endTime === '23:59';
@@ -404,21 +391,21 @@ exports.getEventEditForm = async (req, res) => {
       return res.status(404).send('<p class="text-red-600">Event not found</p>');
     }
 
-    // Format dates for input fields (YYYY-MM-DD format)
+    // Format dates for input fields (YYYY-MM-DD format, use UTC methods to avoid timezone conversion)
     const formatDateForInput = (date) => {
       if (!date) return '';
       const d = new Date(date);
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
+      const year = d.getUTCFullYear();
+      const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(d.getUTCDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
     };
 
     const formatTimeForInput = (date) => {
       if (!date) return '';
       const d = new Date(date);
-      const hours = String(d.getHours()).padStart(2, '0');
-      const minutes = String(d.getMinutes()).padStart(2, '0');
+      const hours = String(d.getUTCHours()).padStart(2, '0');
+      const minutes = String(d.getUTCMinutes()).padStart(2, '0');
       return `${hours}:${minutes}`;
     };
 
@@ -484,21 +471,46 @@ exports.getEditForm = async (req, res) => {
       return res.status(403).send('Event not found');
     }
 
-    // Format data for display
-    const eventTimezone = event.timezone || 'UTC';
+    // Format dates for input fields (YYYY-MM-DD format, use UTC methods to avoid timezone conversion)
+    const formatDateForInput = (date) => {
+      if (!date) return '';
+      const d = new Date(date);
+      const year = d.getUTCFullYear();
+      const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(d.getUTCDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
 
-    // Convert UTC times to local timezone for display
-    const startDateTimeLocal = utcToLocal(event.startDateTime, eventTimezone);
-    const [startDate, startTime] = startDateTimeLocal.split('T');
+    const formatTimeForInput = (date) => {
+      if (!date) return '';
+      const d = new Date(date);
+      const hours = String(d.getUTCHours()).padStart(2, '0');
+      const minutes = String(d.getUTCMinutes()).padStart(2, '0');
+      return `${hours}:${minutes}`;
+    };
 
-    const endDateTimeLocal = utcToLocal(event.endDateTime, eventTimezone);
-    const [endDate, endTime] = endDateTimeLocal.split('T');
+    const startDate = formatDateForInput(event.startDateTime);
+    const startTime = formatTimeForInput(event.startDateTime);
+    const endDate = formatDateForInput(event.endDateTime);
+    const endTime = formatTimeForInput(event.endDateTime);
+
+    // DEBUG: Log to console
+    const d = new Date(event.startDateTime);
+    console.log(`[Event Edit Form] Event ${event.id}:`, {
+      rawDateTime: event.startDateTime,
+      dateObj: d,
+      utcHours: d.getUTCHours(),
+      utcMinutes: d.getUTCMinutes(),
+      localHours: d.getHours(),
+      localMinutes: d.getMinutes(),
+      formattedDate: startDate,
+      formattedTime: startTime
+    });
 
     const formattedData = {
       id: event.id,
       name: event.name,
       location: event.location,
-      timezone: eventTimezone,
       startDate,
       startTime,
       endDate,

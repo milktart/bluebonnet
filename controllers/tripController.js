@@ -733,6 +733,25 @@ exports.listTrips = async (req, res, options = {}) => {
       formatInTimezone,
     };
 
+    // Return JSON for API requests (Svelte frontend), render EJS view for traditional requests
+    const isApiRequest = req.get('Content-Type')?.includes('application/json') ||
+                        req.get('X-Requested-With') === 'XMLHttpRequest' ||
+                        req.accepts('json') === 'json';
+
+    logger.info('LIST_TRIPS_RESPONSE', {
+      isApiRequest,
+      contentType: req.get('Content-Type'),
+      xRequestedWith: req.get('X-Requested-With'),
+      accepts: req.accepts()
+    });
+
+    if (isApiRequest) {
+      return res.json({
+        success: true,
+        data: renderData
+      });
+    }
+
     res.render('trips/dashboard', renderData);
   } catch (error) {
     logger.error(error);

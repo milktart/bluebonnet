@@ -25,7 +25,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       airline: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true, // Nullable until flight number to airline lookup is implemented
       },
       flightNumber: {
         type: DataTypes.STRING,

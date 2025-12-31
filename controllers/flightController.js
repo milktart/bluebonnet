@@ -221,7 +221,7 @@ exports.createFlight = async (req, res) => {
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
-      return res.json({ success: true, message: 'Flight added successfully' });
+      return res.json({ success: true, data: flight, message: 'Flight added successfully' });
     }
 
     redirectAfterSuccess(res, req, tripId, 'flights', 'Flight added successfully');
@@ -443,7 +443,7 @@ exports.updateFlight = async (req, res) => {
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
-      return res.json({ success: true, message: 'Flight updated successfully' });
+      return res.json({ success: true, data: flight, message: 'Flight updated successfully' });
     }
 
     redirectAfterSuccess(res, req, flight.tripId, 'flights', 'Flight updated successfully');

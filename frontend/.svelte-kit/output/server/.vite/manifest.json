@@ -1,0 +1,243 @@
+{
+  ".svelte-kit/generated/server/internal.js": {
+    "file": "internal.js",
+    "name": "internal",
+    "src": ".svelte-kit/generated/server/internal.js",
+    "isEntry": true,
+    "imports": [
+      "_internal.js",
+      "_environment.js"
+    ]
+  },
+  "_Button.js": {
+    "file": "chunks/Button.js",
+    "name": "Button",
+    "imports": [
+      "_index2.js"
+    ],
+    "css": [
+      "_app/immutable/assets/Button.zPaaOB86.css"
+    ]
+  },
+  "_Button.zPaaOB86.css": {
+    "file": "_app/immutable/assets/Button.zPaaOB86.css",
+    "src": "_Button.zPaaOB86.css"
+  },
+  "_MapLayout.DUfXPC8J.css": {
+    "file": "_app/immutable/assets/MapLayout.DUfXPC8J.css",
+    "src": "_MapLayout.DUfXPC8J.css"
+  },
+  "_environment.js": {
+    "file": "chunks/environment.js",
+    "name": "environment"
+  },
+  "_exports.js": {
+    "file": "chunks/exports.js",
+    "name": "exports"
+  },
+  "_false.js": {
+    "file": "chunks/false.js",
+    "name": "false"
+  },
+  "_index.js": {
+    "file": "chunks/index.js",
+    "name": "index",
+    "imports": [
+      "_index2.js"
+    ]
+  },
+  "_index2.js": {
+    "file": "chunks/index2.js",
+    "name": "index",
+    "imports": [
+      "_false.js"
+    ]
+  },
+  "_internal.js": {
+    "file": "chunks/internal.js",
+    "name": "internal",
+    "imports": [
+      "_index2.js",
+      "_environment.js"
+    ],
+    "dynamicImports": [
+      "src/hooks.server.ts"
+    ]
+  },
+  "_shared.js": {
+    "file": "chunks/shared.js",
+    "name": "shared",
+    "imports": [
+      "_utils.js"
+    ]
+  },
+  "_stores.js": {
+    "file": "chunks/stores.js",
+    "name": "stores",
+    "imports": [
+      "_index2.js",
+      "_exports.js",
+      "_utils.js"
+    ]
+  },
+  "_utils.js": {
+    "file": "chunks/utils.js",
+    "name": "utils"
+  },
+  "node_modules/@sveltejs/kit/src/runtime/app/server/remote/index.js": {
+    "file": "remote-entry.js",
+    "name": "remote-entry",
+    "src": "node_modules/@sveltejs/kit/src/runtime/app/server/remote/index.js",
+    "isEntry": true,
+    "imports": [
+      "_shared.js",
+      "_false.js",
+      "_environment.js"
+    ]
+  },
+  "node_modules/@sveltejs/kit/src/runtime/components/svelte-5/layout.svelte": {
+    "file": "entries/fallbacks/layout.svelte.js",
+    "name": "entries/fallbacks/layout.svelte",
+    "src": "node_modules/@sveltejs/kit/src/runtime/components/svelte-5/layout.svelte",
+    "isEntry": true
+  },
+  "node_modules/@sveltejs/kit/src/runtime/server/index.js": {
+    "file": "index.js",
+    "name": "index",
+    "src": "node_modules/@sveltejs/kit/src/runtime/server/index.js",
+    "isEntry": true,
+    "imports": [
+      "_false.js",
+      "_environment.js",
+      "_shared.js",
+      "_exports.js",
+      "_utils.js",
+      "_index.js",
+      "_internal.js"
+    ]
+  },
+  "src/hooks.server.ts": {
+    "file": "chunks/hooks.server.js",
+    "name": "hooks.server",
+    "src": "src/hooks.server.ts",
+    "isDynamicEntry": true
+  },
+  "src/routes/+error.svelte": {
+    "file": "entries/pages/_error.svelte.js",
+    "name": "entries/pages/_error.svelte",
+    "src": "src/routes/+error.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_stores.js",
+      "_Button.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_error.CfnxiZWo.css"
+    ]
+  },
+  "src/routes/+layout.svelte": {
+    "file": "entries/pages/_layout.svelte.js",
+    "name": "entries/pages/_layout.svelte",
+    "src": "src/routes/+layout.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_stores.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_layout.BBZusvpV.css",
+      "_app/immutable/assets/MapLayout.DUfXPC8J.css"
+    ]
+  },
+  "src/routes/+page.svelte": {
+    "file": "entries/pages/_page.svelte.js",
+    "name": "entries/pages/_page.svelte",
+    "src": "src/routes/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js"
+    ]
+  },
+  "src/routes/api/v1/car-rentals/[id]/+server.ts": {
+    "file": "entries/endpoints/api/v1/car-rentals/_id_/_server.ts.js",
+    "name": "entries/endpoints/api/v1/car-rentals/_id_/_server.ts",
+    "src": "src/routes/api/v1/car-rentals/[id]/+server.ts",
+    "isEntry": true
+  },
+  "src/routes/api/v1/events/[id]/+server.ts": {
+    "file": "entries/endpoints/api/v1/events/_id_/_server.ts.js",
+    "name": "entries/endpoints/api/v1/events/_id_/_server.ts",
+    "src": "src/routes/api/v1/events/[id]/+server.ts",
+    "isEntry": true
+  },
+  "src/routes/api/v1/flights/[id]/+server.ts": {
+    "file": "entries/endpoints/api/v1/flights/_id_/_server.ts.js",
+    "name": "entries/endpoints/api/v1/flights/_id_/_server.ts",
+    "src": "src/routes/api/v1/flights/[id]/+server.ts",
+    "isEntry": true
+  },
+  "src/routes/api/v1/hotels/[id]/+server.ts": {
+    "file": "entries/endpoints/api/v1/hotels/_id_/_server.ts.js",
+    "name": "entries/endpoints/api/v1/hotels/_id_/_server.ts",
+    "src": "src/routes/api/v1/hotels/[id]/+server.ts",
+    "isEntry": true
+  },
+  "src/routes/api/v1/transportation/[id]/+server.ts": {
+    "file": "entries/endpoints/api/v1/transportation/_id_/_server.ts.js",
+    "name": "entries/endpoints/api/v1/transportation/_id_/_server.ts",
+    "src": "src/routes/api/v1/transportation/[id]/+server.ts",
+    "isEntry": true
+  },
+  "src/routes/dashboard/+layout.server.ts": {
+    "file": "entries/pages/dashboard/_layout.server.ts.js",
+    "name": "entries/pages/dashboard/_layout.server.ts",
+    "src": "src/routes/dashboard/+layout.server.ts",
+    "isEntry": true
+  },
+  "src/routes/dashboard/+page.server.ts": {
+    "file": "entries/pages/dashboard/_page.server.ts.js",
+    "name": "entries/pages/dashboard/_page.server.ts",
+    "src": "src/routes/dashboard/+page.server.ts",
+    "isEntry": true
+  },
+  "src/routes/dashboard/+page.svelte": {
+    "file": "entries/pages/dashboard/_page.svelte.js",
+    "name": "entries/pages/dashboard/_page.svelte",
+    "src": "src/routes/dashboard/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js",
+      "_index.js",
+      "_Button.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.DONlxAM2.css",
+      "_app/immutable/assets/MapLayout.DUfXPC8J.css"
+    ]
+  },
+  "src/routes/login/+page.svelte": {
+    "file": "entries/pages/login/_page.svelte.js",
+    "name": "entries/pages/login/_page.svelte",
+    "src": "src/routes/login/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js"
+    ]
+  },
+  "src/routes/logout/+server.ts": {
+    "file": "entries/endpoints/logout/_server.ts.js",
+    "name": "entries/endpoints/logout/_server.ts",
+    "src": "src/routes/logout/+server.ts",
+    "isEntry": true
+  },
+  "src/routes/register/+page.svelte": {
+    "file": "entries/pages/register/_page.svelte.js",
+    "name": "entries/pages/register/_page.svelte",
+    "src": "src/routes/register/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index2.js"
+    ]
+  }
+}

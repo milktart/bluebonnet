@@ -1,0 +1,210 @@
+<script lang="ts">
+  import { settingsApi } from '$lib/services/settings';
+  import '$lib/styles/form-styles.css';
+
+  // Props for edit mode
+  export let companion: {
+    id?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  } | null = null;
+
+  export let onSuccess: ((companion: any) => void) | null = null;
+  export let onCancel: (() => void) | null = null;
+
+  let loading = false;
+  let error: string | null = null;
+
+  let formData = {
+    firstName: '',
+    lastName: '',
+    email: '',
+    canEdit: false
+  };
+
+  // Initialize form data if in edit mode
+  $: if (companion) {
+    formData = {
+      firstName: companion.firstName || '',
+      lastName: companion.lastName || '',
+      email: companion.email || '',
+      canEdit: companion.canBeAddedByOthers || false
+    };
+  }
+
+  const isEditMode = !!companion?.id;
+
+  async function handleSubmit() {
+    try {
+      // Validation
+      error = null;
+
+      if (!formData.email.trim()) {
+        error = 'Email is required';
+        return;
+      }
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        error = 'Please enter a valid email address';
+        return;
+      }
+
+      // In edit mode, both firstName and lastName should be provided together, or neither
+      if (isEditMode && (formData.firstName || formData.lastName)) {
+        if (!formData.firstName || !formData.lastName) {
+          error = 'Please provide both first name and last name, or neither';
+          return;
+        }
+      }
+
+      loading = true;
+
+      const submitData = {
+        firstName: formData.firstName || undefined,
+        lastName: formData.lastName || undefined,
+        email: formData.email,
+        canBeAddedByOthers: formData.canEdit
+      };
+
+      let response;
+      if (isEditMode) {
+        response = await settingsApi.updateCompanion(companion!.id!, submitData);
+      } else {
+        response = await settingsApi.createCompanion(submitData);
+      }
+
+      const resultCompanion = response.data || response.companion || response;
+
+      if (onSuccess) {
+        onSuccess(resultCompanion);
+      }
+    } catch (err) {
+      error = err instanceof Error ? err.message : (isEditMode ? 'Failed to update companion' : 'Failed to add companion');
+    } finally {
+      loading = false;
+    }
+  }
+
+  function handleCancel() {
+    if (onCancel) {
+      onCancel();
+    }
+  }
+</script>
+
+<div class="edit-content">
+  {#if error}
+    <div class="error-message">{error}</div>
+  {/if}
+
+  <form on:submit|preventDefault={handleSubmit}>
+    <div class="form-fields">
+      <div class="form-row cols-2-1">
+        <div class="form-group">
+          <label for="firstName">First Name</label>
+          <input
+            id="firstName"
+            type="text"
+            bind:value={formData.firstName}
+            placeholder="John"
+            disabled={loading}
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="lastName">Last Initial</label>
+          <input
+            id="lastName"
+            type="text"
+            bind:value={formData.lastName}
+            placeholder="D"
+            maxlength="1"
+            disabled={loading}
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email Address *</label>
+        <input
+          id="email"
+          type="email"
+          bind:value={formData.email}
+          placeholder="companion@example.com"
+          required
+          disabled={loading || isEditMode}
+        />
+        {#if isEditMode}
+          <p class="help-text">Email cannot be changed</p>
+        {/if}
+      </div>
+
+      <div class="checkbox-wrapper">
+        <label for="can-edit" class="checkbox-label">
+          <input
+            id="can-edit"
+            type="checkbox"
+            bind:checked={formData.canEdit}
+            disabled={loading}
+          />
+          Allow editing of trip items
+        </label>
+        <p class="checkbox-help-text">
+          If unchecked, companion can only view your trips
+        </p>
+      </div>
+    </div>
+
+    <div class="form-buttons">
+      <button class="submit-btn" type="submit" disabled={loading}>
+        {isEditMode ? 'Update' : 'Add Companion'}
+      </button>
+      <button class="cancel-btn" type="button" on:click={handleCancel} disabled={loading}>
+        Cancel
+      </button>
+    </div>
+  </form>
+</div>
+
+<style>
+  .help-text {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #6b7280;
+  }
+
+  .checkbox-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0;
+  }
+
+  .checkbox-label input[type='checkbox'] {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  .checkbox-label input[type='checkbox']:disabled {
+    cursor: not-allowed;
+  }
+
+  .checkbox-help-text {
+    margin: 0;
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
+</style>

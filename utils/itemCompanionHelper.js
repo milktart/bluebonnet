@@ -290,3 +290,58 @@ exports.addCompanionToAllItems = async (companionId, tripId, addedBy) => {
     });
   }
 };
+
+/**
+ * Remove a companion from all items in a trip
+ * Used when removing a companion from a trip - they should be removed from all items
+ * Only removes companions that were inherited from the trip (inheritedFromTrip: true)
+ */
+exports.removeCompanionFromAllItems = async (companionId, tripId) => {
+  const { Flight, Hotel, Transportation, CarRental, Event, ItemCompanion } = db;
+
+  // Find all items in the trip
+  const [flights, hotels, transportation, carRentals, events] = await Promise.all([
+    Flight.findAll({ where: { tripId } }),
+    Hotel.findAll({ where: { tripId } }),
+    Transportation.findAll({ where: { tripId } }),
+    CarRental.findAll({ where: { tripId } }),
+    Event.findAll({ where: { tripId } }),
+  ]);
+
+  // Build array of item references
+  const itemReferences = [];
+
+  flights.forEach((f) => {
+    itemReferences.push({ itemType: 'flight', itemId: f.id });
+  });
+
+  hotels.forEach((h) => {
+    itemReferences.push({ itemType: 'hotel', itemId: h.id });
+  });
+
+  transportation.forEach((t) => {
+    itemReferences.push({ itemType: 'transportation', itemId: t.id });
+  });
+
+  carRentals.forEach((cr) => {
+    itemReferences.push({ itemType: 'car_rental', itemId: cr.id });
+  });
+
+  events.forEach((e) => {
+    itemReferences.push({ itemType: 'event', itemId: e.id });
+  });
+
+  // Remove companion from all items (only those inherited from trip)
+  if (itemReferences.length > 0) {
+    for (const { itemType, itemId } of itemReferences) {
+      await ItemCompanion.destroy({
+        where: {
+          itemType,
+          itemId,
+          companionId,
+          inheritedFromTrip: true,
+        },
+      });
+    }
+  }
+};

@@ -69,6 +69,15 @@ RUN node scripts/capture-build-info.js > /tmp/build-info.txt && cat /tmp/build-i
 # Build all assets (CSS and JavaScript)
 RUN npm run build
 
+# Build SvelteKit frontend (SSR with adapter-node)
+WORKDIR /app/frontend
+RUN npm ci
+RUN npm run build
+
+# Copy built frontend to parent directory for mounting
+WORKDIR /app
+RUN cp -r frontend/build ./build_frontend
+
 # ============================================================================
 # Stage 5: Development - Full development environment
 # ============================================================================
@@ -87,6 +96,9 @@ COPY --from=development-deps /app/node_modules ./node_modules
 
 # Copy source code
 COPY . .
+
+# Copy built frontend from builder
+COPY --from=builder /app/build_frontend ./build_frontend
 
 # Build JavaScript bundles (lighter than full build)
 RUN npm run build-js
@@ -118,6 +130,9 @@ COPY --from=development-deps /app/node_modules ./node_modules
 
 # Copy source code
 COPY . .
+
+# Copy built frontend from builder
+COPY --from=builder /app/build_frontend ./build_frontend
 
 # Build JavaScript bundles
 RUN npm run build-js
@@ -154,6 +169,7 @@ COPY --from=production-deps --chown=nodejs:nodejs /app/node_modules ./node_modul
 # Copy built assets from builder
 COPY --from=builder --chown=nodejs:nodejs /app/public/dist ./public/dist
 COPY --from=builder --chown=nodejs:nodejs /app/public/css/style.css ./public/css/style.css
+COPY --from=builder --chown=nodejs:nodejs /app/build_frontend ./build_frontend
 
 # Copy build info file for version tracking
 COPY --from=builder --chown=nodejs:nodejs /app/.build-info ./.build-info
@@ -203,6 +219,7 @@ COPY --from=production-deps --chown=nodejs:nodejs /app/node_modules ./node_modul
 # Copy built assets from builder
 COPY --from=builder --chown=nodejs:nodejs /app/public/dist ./public/dist
 COPY --from=builder --chown=nodejs:nodejs /app/public/css/style.css ./public/css/style.css
+COPY --from=builder --chown=nodejs:nodejs /app/build_frontend ./build_frontend
 
 # Copy build info file for version tracking
 COPY --from=builder --chown=nodejs:nodejs /app/.build-info ./.build-info

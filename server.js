@@ -9,6 +9,7 @@ const compression = require('compression');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const swaggerUi = require('swagger-ui-express');
 const db = require('./models');
 const dateFormatter = require('./utils/dateFormatter');
 const logger = require('./utils/logger');
@@ -51,7 +52,7 @@ app.use(
     },
     credentials: true, // Allow cookies and authentication headers
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
   })
 );
 
@@ -96,8 +97,10 @@ const sessionConfig = {
   cookie: {
     maxAge: parseInt(process.env.SESSION_MAX_AGE, 10) || MS_PER_DAY, // 24 hours default
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // Use secure cookies in production (HTTPS)
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Allow cross-site in production
+    // In development, allow cross-site cookies without requiring secure
+    // In production, use secure + sameSite: none for cross-site access
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : false, // false = no sameSite restriction (allows cookies to be sent in development)
   },
 };
 
@@ -255,24 +258,83 @@ app.get('/health', async (req, res) => {
   res.status(statusCode).json(health);
 });
 
-// Rate limiting middleware (Phase 3)
-const { authLimiter, apiLimiter, formLimiter } = require('./middleware/rateLimiter');
+// Rate limiting middleware disabled for development
+// const { authLimiter, apiLimiter, formLimiter } = require('./middleware/rateLimiter');
+
+// Swagger/OpenAPI Documentation Setup (Phase 2B)
+try {
+  const { specs } = require('./config/swagger.ts');
+  app.use('/api-docs', swaggerUi.serve);
+  app.get('/api-docs', swaggerUi.setup(specs, {
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+    customCss: '.swagger-ui { margin: 0; padding: 20px; }',
+    customSiteTitle: 'Bluebonnet API Docs',
+  }));
+  logger.info('Swagger documentation available at /api-docs');
+} catch (error) {
+  logger.warn('Swagger setup skipped (may need TypeScript compilation)', {
+    error: error.message,
+  });
+}
 
 // Routes
 app.use('/', require('./routes/index'));
-app.use('/auth', authLimiter, require('./routes/auth')); // Rate limit auth routes
+app.use('/auth', require('./routes/auth')); // Rate limiting disabled
 app.use('/account', require('./routes/account'));
 app.use('/companions', require('./routes/companions'));
 app.use('/companion-relationships', require('./routes/companionRelationships'));
-app.use('/api', apiLimiter, require('./routes/api')); // Rate limit API routes
+app.use('/api', require('./routes/api')); // Rate limiting disabled
 app.use('/trips', require('./routes/trips'));
 app.use('/trip-invitations', require('./routes/tripInvitations'));
-app.use('/flights', formLimiter, require('./routes/flights')); // Rate limit form submissions
-app.use('/hotels', formLimiter, require('./routes/hotels'));
-app.use('/transportation', formLimiter, require('./routes/transportation'));
-app.use('/car-rentals', formLimiter, require('./routes/carRentals'));
-app.use('/events', formLimiter, require('./routes/events'));
+app.use('/flights', require('./routes/flights')); // Rate limiting disabled
+app.use('/hotels', require('./routes/hotels'));
+app.use('/transportation', require('./routes/transportation'));
+app.use('/car-rentals', require('./routes/carRentals'));
+app.use('/events', require('./routes/events'));
 app.use('/vouchers', require('./routes/vouchers'));
+
+// Mount SvelteKit frontend handler for all non-API routes
+// This must come after all API/auth routes so they take precedence
+// SvelteKit adapter-node outputs ES modules, so we use a lazy-loading wrapper
+let svelteKitHandler = null;
+let svelteKitLoadError = null;
+
+app.use(async (req, res, next) => {
+  // Skip SvelteKit for API routes (already handled above)
+  if (req.path.startsWith('/api') || req.path.startsWith('/auth') || req.path.startsWith('/account') ||
+      req.path.startsWith('/companions') || req.path.startsWith('/trips') || req.path.startsWith('/flights') ||
+      req.path.startsWith('/hotels') || req.path.startsWith('/transportation') || req.path.startsWith('/car-rentals') ||
+      req.path.startsWith('/events') || req.path.startsWith('/vouchers') || req.path.startsWith('/companion-relationships') ||
+      req.path.startsWith('/trip-invitations')) {
+    return next();
+  }
+
+  // Load SvelteKit handler on first non-API request
+  if (svelteKitHandler === null && svelteKitLoadError === null) {
+    try {
+      const svelteKitModule = await import('./build_frontend/handler');
+      svelteKitHandler = svelteKitModule.handler;
+      logger.info('SvelteKit frontend handler loaded successfully on first request');
+    } catch (error) {
+      svelteKitLoadError = error;
+      logger.warn('Failed to load SvelteKit frontend handler', {
+        error: error.message,
+        hint: 'Make sure to build the frontend: npm run build in frontend/ directory',
+      });
+      return res.status(500).json({ error: 'Frontend handler not available' });
+    }
+  }
+
+  // Return error if handler failed to load
+  if (svelteKitLoadError) {
+    return res.status(500).json({ error: 'Frontend handler not available' });
+  }
+
+  // Serve with SvelteKit handler
+  svelteKitHandler(req, res, next);
+});
 
 // Error handling middleware (Phase 3)
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');

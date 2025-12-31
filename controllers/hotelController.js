@@ -1,6 +1,5 @@
 const { Hotel, Trip } = require('../models');
 const logger = require('../utils/logger');
-const { utcToLocal } = require('../utils/timezoneHelper');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
 const {
   verifyTripOwnership,
@@ -8,7 +7,6 @@ const {
   redirectAfterSuccess,
   redirectAfterError,
   verifyResourceOwnershipViaTrip,
-  convertToUTC,
 } = require('./helpers/resourceController');
 const {
   getTripSelectorData,
@@ -29,7 +27,6 @@ exports.createHotel = async (req, res) => {
       checkOutTime,
       checkInDateTime: checkInDateTimeCombined,
       checkOutDateTime: checkOutDateTimeCombined,
-      timezone,
       confirmationNumber,
       roomNumber,
       companions,
@@ -80,30 +77,13 @@ exports.createHotel = async (req, res) => {
     // Geocode address
     const coords = await geocodeIfChanged(address);
 
-    // Infer timezone from location if not provided
-    let finalTimezone = timezone;
-    if (!finalTimezone && coords?.lat && coords?.lng) {
-      const { geocodingService } = require('../services/geocodingService');
-      try {
-        finalTimezone = await require('../services/geocodingService').inferTimezone(
-          coords.lat,
-          coords.lng
-        );
-      } catch (error) {
-        logger.error('Error inferring timezone:', error);
-        finalTimezone = 'UTC';
-      }
-    }
-    finalTimezone = finalTimezone || 'UTC';
-
     const hotel = await Hotel.create({
       tripId,
       hotelName,
       address,
       phone,
-      checkInDateTime: convertToUTC(checkInDateTime, finalTimezone),
-      checkOutDateTime: convertToUTC(checkOutDateTime, finalTimezone),
-      timezone: finalTimezone,
+      checkInDateTime: new Date(checkInDateTime),
+      checkOutDateTime: new Date(checkOutDateTime),
       lat: coords?.lat,
       lng: coords?.lng,
       confirmationNumber,
@@ -149,7 +129,7 @@ exports.createHotel = async (req, res) => {
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
-      return res.json({ success: true, message: 'Hotel added successfully' });
+      return res.json({ success: true, data: hotel, message: 'Hotel added successfully' });
     }
 
     redirectAfterSuccess(res, req, tripId, 'hotels', 'Hotel added successfully');
@@ -175,7 +155,6 @@ exports.updateHotel = async (req, res) => {
       checkOutTime,
       checkInDateTime: checkInDateTimeCombined,
       checkOutDateTime: checkOutDateTimeCombined,
-      timezone,
       confirmationNumber,
       roomNumber,
       tripId: newTripId,
@@ -247,48 +226,12 @@ exports.updateHotel = async (req, res) => {
       lng: hotel.lng,
     });
 
-    // Infer timezone from location if not provided
-    let finalTimezone = timezone;
-    logger.info('[Hotel Update] ========== TIMEZONE DEBUG ==========');
-    logger.info('[Hotel Update] Received timezone from form:', timezone);
-    logger.info('[Hotel Update] Hotel ID:', hotel.id);
-    logger.info('[Hotel Update] Hotel existing timezone:', hotel.timezone);
-    logger.info('[Hotel Update] checkInDateTime (before UTC conversion):', checkInDateTime);
-    logger.info('[Hotel Update] checkOutDateTime (before UTC conversion):', checkOutDateTime);
-
-    if (!finalTimezone && coords?.lat && coords?.lng) {
-      try {
-        finalTimezone = await require('../services/geocodingService').inferTimezone(
-          coords.lat,
-          coords.lng
-        );
-        logger.info('[Hotel Update] Inferred timezone from coordinates:', finalTimezone);
-      } catch (error) {
-        logger.error('Error inferring timezone:', error);
-        finalTimezone = hotel.timezone || 'UTC';
-      }
-    }
-    finalTimezone = finalTimezone || hotel.timezone || 'UTC';
-    logger.info('[Hotel Update] Final timezone will be:', finalTimezone);
-
-    // Also log as error to make sure it appears in output
-    logger.error('[HOTEL TIMEZONE UPDATE] Received: ' + timezone + ' | Existing: ' + hotel.timezone + ' | Final: ' + finalTimezone);
-
-    const checkInUTC = convertToUTC(checkInDateTime, finalTimezone);
-    const checkOutUTC = convertToUTC(checkOutDateTime, finalTimezone);
-
-    logger.info('[Hotel Update] Converted to UTC:');
-    logger.info('[Hotel Update]   checkInDateTime:', checkInDateTime, '(', finalTimezone, ') -> UTC:', checkInUTC);
-    logger.info('[Hotel Update]   checkOutDateTime:', checkOutDateTime, '(', finalTimezone, ') -> UTC:', checkOutUTC);
-    logger.error('[HOTEL CONVERSION] Local ' + checkInDateTime + ' (' + finalTimezone + ') -> UTC ' + checkInUTC);
-
     await hotel.update({
       hotelName,
       address,
       phone,
-      checkInDateTime: checkInUTC,
-      checkOutDateTime: checkOutUTC,
-      timezone: finalTimezone,
+      checkInDateTime: new Date(checkInDateTime),
+      checkOutDateTime: new Date(checkOutDateTime),
       lat: coords?.lat,
       lng: coords?.lng,
       confirmationNumber,
@@ -296,14 +239,10 @@ exports.updateHotel = async (req, res) => {
       tripId: newTripId || null,
     });
 
-    logger.info('[Hotel Update] After update - Hotel timezone stored:', hotel.timezone);
-    logger.error('[HOTEL STORED] Hotel ID: ' + hotel.id + ' | Timezone: ' + finalTimezone + ' | CheckIn UTC: ' + checkInUTC);
-    logger.info('[Hotel Update] ========== END DEBUG ==========');
-
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
-      return res.json({ success: true, message: 'Hotel updated successfully' });
+      return res.json({ success: true, data: hotel, message: 'Hotel updated successfully' });
     }
 
     redirectAfterSuccess(res, req, hotel.tripId, 'hotels', 'Hotel updated successfully');
@@ -411,7 +350,7 @@ exports.restoreHotel = async (req, res) => {
 exports.getAddForm = async (req, res) => {
   try {
     const { tripId } = req.params;
-    const { checkInDateTime, checkOutDateTime, destinationTimezone } = req.query;
+    const { checkInDateTime, checkOutDateTime } = req.query;
 
     // Verify trip ownership if tripId provided (for trip-associated items)
     // If no tripId, this is a standalone form (allowed without trip)
@@ -427,26 +366,20 @@ exports.getAddForm = async (req, res) => {
     // If layover dates are provided, pre-populate the form
     if (checkInDateTime && checkOutDateTime) {
       // These arrive as ISO strings (e.g., "2025-10-15T10:30:00.000Z")
-      // Convert them to the destination timezone for accurate hotel booking dates
-      // (hotel check-in/out should be in the destination city's local time)
-      const timezone = destinationTimezone || 'UTC';
-      const checkInDateTimeLocal = utcToLocal(checkInDateTime, timezone);
-      const checkOutDateTimeLocal = utcToLocal(checkOutDateTime, timezone);
-
-      // Split into date and time
+      // Extract date portion directly
       let checkInDate = '';
       let checkOutDate = '';
 
-      if (checkInDateTimeLocal) {
-        const parts = checkInDateTimeLocal.split('T');
-        if (parts.length === 2) {
+      if (checkInDateTime) {
+        const parts = checkInDateTime.split('T');
+        if (parts.length >= 1) {
           checkInDate = parts[0];
         }
       }
 
-      if (checkOutDateTimeLocal) {
-        const parts = checkOutDateTimeLocal.split('T');
-        if (parts.length === 2) {
+      if (checkOutDateTime) {
+        const parts = checkOutDateTime.split('T');
+        if (parts.length >= 1) {
           checkOutDate = parts[0];
         }
       }
@@ -508,34 +441,30 @@ exports.getEditForm = async (req, res) => {
       }
     }
 
-    // Convert UTC times to local timezone for display
-    // utcToLocal returns "YYYY-MM-DDTHH:mm" format, so we split it into date and time
-    // If no timezone is stored, display in UTC
-    const checkInDateTimeLocal = utcToLocal(hotel.checkInDateTime, hotel.timezone || 'UTC');
-    const checkOutDateTimeLocal = utcToLocal(hotel.checkOutDateTime, hotel.timezone || 'UTC');
+    // Format dates/times for display from stored datetime values (use UTC methods to avoid timezone conversion)
+    const formatDateForInput = (date) => {
+      if (!date) return '';
+      const d = new Date(date);
+      const year = d.getUTCFullYear();
+      const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(d.getUTCDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    const formatTimeForInput = (date) => {
+      if (!date) return '';
+      const d = new Date(date);
+      const hours = String(d.getUTCHours()).padStart(2, '0');
+      const minutes = String(d.getUTCMinutes()).padStart(2, '0');
+      return `${hours}:${minutes}`;
+    };
 
     // Split the combined datetime into separate date and time fields for form input
     // Handle empty strings by providing defaults
-    let checkInDate = '';
-    let checkInTime = '14:00';
-    let checkOutDate = '';
-    let checkOutTime = '11:00';
-
-    if (checkInDateTimeLocal) {
-      const parts = checkInDateTimeLocal.split('T');
-      if (parts.length === 2) {
-        checkInDate = parts[0];
-        checkInTime = parts[1];
-      }
-    }
-
-    if (checkOutDateTimeLocal) {
-      const parts = checkOutDateTimeLocal.split('T');
-      if (parts.length === 2) {
-        checkOutDate = parts[0];
-        checkOutTime = parts[1];
-      }
-    }
+    let checkInDate = formatDateForInput(hotel.checkInDateTime);
+    let checkInTime = formatTimeForInput(hotel.checkInDateTime) || '14:00';
+    let checkOutDate = formatDateForInput(hotel.checkOutDateTime);
+    let checkOutTime = formatTimeForInput(hotel.checkOutDateTime) || '11:00';
 
     // Get available trips for trip selector
     const tripSelectorData = await getTripSelectorData(hotel, req.user.id);

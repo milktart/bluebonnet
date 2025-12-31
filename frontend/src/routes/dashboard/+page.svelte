@@ -1,0 +1,2114 @@
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import { authStore } from '$lib/stores/authStore';
+  import { tripsApi } from '$lib/services/api';
+  import { dataService, setupDataSyncListener } from '$lib/services/dataService';
+  import { dashboardStore, dashboardStoreActions } from '$lib/stores/dashboardStore';
+  import { formatTimeInTimezone, formatDateTimeInTimezone } from '$lib/utils/timezoneUtils';
+  import MapLayout from '$lib/components/MapLayout.svelte';
+  import Button from '$lib/components/Button.svelte';
+  import Loading from '$lib/components/Loading.svelte';
+  import Alert from '$lib/components/Alert.svelte';
+  import ItemEditForm from '$lib/components/ItemEditForm.svelte';
+  import DashboardCalendar from '$lib/components/DashboardCalendar.svelte';
+  import SettingsProfile from '$lib/components/SettingsProfile.svelte';
+  import SettingsSecurity from '$lib/components/SettingsSecurity.svelte';
+  import SettingsVouchers from '$lib/components/SettingsVouchers.svelte';
+  import SettingsCompanions from '$lib/components/SettingsCompanions.svelte';
+  import SettingsBackup from '$lib/components/SettingsBackup.svelte';
+  import VoucherForm from '$lib/components/VoucherForm.svelte';
+  import CompanionForm from '$lib/components/CompanionForm.svelte';
+  import CompanionIndicators from '$lib/components/CompanionIndicators.svelte';
+  import DashboardHeader from './components/DashboardHeader.svelte';
+  import DashboardTripsList from './components/DashboardTripsList.svelte';
+  import DashboardItemList from './components/DashboardItemList.svelte';
+  import DashboardSettingsPanel from './components/DashboardSettingsPanel.svelte';
+  import DashboardItemEditor from './components/DashboardItemEditor.svelte';
+  import { parseLocalDate, getTripEndDate, getItemDate, getDateKeyForItem, getDayKeyForItem, groupTripItemsByDate } from '$lib/utils/dashboardGrouping';
+  import { formatDate, formatMonthHeader, formatTripDateHeader, formatTimeOnly, formatDateTime, formatDateOnly, capitalize } from '$lib/utils/dashboardFormatters';
+  import { getCityName, getTransportIcon, getTransportColor, getTripIcon, getTripCities, calculateLayover, getFlightLayoverInfo, layoverSpansDates } from '$lib/utils/dashboardItem';
+
+  let trips: any[] = [];
+  let standaloneItems: any = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
+  let filteredItems: any[] = []; // Mixed trips and standalone items
+  let activeTab: 'upcoming' | 'past' = 'upcoming';
+  let activeView: 'trips' | 'settings' = 'trips';
+  let loading = true;
+  let error: string | null = null;
+  let expandedTrips = new Set<string>();
+  let mapData: any = { flights: [], hotels: [], events: [], transportation: [], carRentals: [] };
+  let highlightedTripId: string | null = null;
+  let highlightedItemId: string | null = null;
+  let highlightedItemType: string | null = null;
+  let secondarySidebarContent: { type: string; itemType?: string; data: any } | null = null;
+  let tertiarySidebarContent: { type: string; data: any } | null = null;
+  let showNewItemMenu = false;
+  let groupedItems: Record<string, Array<any>> = {};
+  let dateKeysInOrder: string[] = [];
+
+  // Store subscriptions - sync local state with centralized dashboardStore
+  let unsubscribe: (() => void) | null = null;
+
+  function syncStoreState() {
+    unsubscribe = dashboardStore.subscribe(($store) => {
+      trips = $store.trips;
+      standaloneItems = $store.standaloneItems;
+      filteredItems = $store.filteredItems;
+      activeTab = $store.activeTab;
+      activeView = $store.activeView;
+      loading = $store.loading;
+      error = $store.error;
+      expandedTrips = $store.expandedTrips;
+      mapData = $store.mapData;
+      highlightedTripId = $store.highlightedTripId;
+      highlightedItemId = $store.highlightedItemId;
+      highlightedItemType = $store.highlightedItemType;
+      secondarySidebarContent = $store.secondarySidebarContent;
+      tertiarySidebarContent = $store.tertiarySidebarContent;
+      showNewItemMenu = $store.showNewItemMenu;
+      groupedItems = $store.groupedItems;
+      dateKeysInOrder = $store.dateKeysInOrder;
+    });
+  }
+
+  // Reactive statement to regroup whenever filteredItems changes
+  $: if (filteredItems.length > 0) {
+    groupedItems = {};
+    dateKeysInOrder = [];
+
+    filteredItems.forEach(item => {
+      const dateKey = getDateKeyForItem(item);
+      if (!groupedItems[dateKey]) {
+        groupedItems[dateKey] = [];
+        dateKeysInOrder.push(dateKey);
+      }
+      groupedItems[dateKey].push(item);
+    });
+  } else {
+    groupedItems = {};
+    dateKeysInOrder = [];
+  }
+
+  // Manage secondary sidebar full-width class and tertiary presence
+  $: if (typeof window !== 'undefined' && secondarySidebarContent) {
+    const sidebarEl = document.getElementById('secondary-sidebar');
+    if (sidebarEl) {
+      // Apply full-width to certain content types
+      const shouldBeFullWidth = ['calendar', 'settings-vouchers', 'settings-companions', 'settings-backup'].includes(
+        secondarySidebarContent.type
+      );
+
+      if (shouldBeFullWidth) {
+        sidebarEl.classList.add('full-width');
+      } else {
+        sidebarEl.classList.remove('full-width');
+      }
+
+      // Add with-tertiary class if tertiary sidebar is open (even in full-width mode)
+      if (tertiarySidebarContent) {
+        sidebarEl.classList.add('with-tertiary');
+      } else {
+        sidebarEl.classList.remove('with-tertiary');
+      }
+    }
+  }
+
+  async function loadTripData() {
+    dashboardStoreActions.setLoading(true);
+    try {
+      // Use dataService for smart caching and batch fetching
+      await dataService.loadAllTrips();
+      await dataService.loadStandaloneItems('all');
+      filterTrips();
+      updateMapData();
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to load trips';
+      dashboardStoreActions.setError(errorMsg);
+    } finally {
+      dashboardStoreActions.setLoading(false);
+    }
+  }
+
+  function handleDataImported() {
+    // Reload trip data after import without full page refresh
+    loadTripData();
+  }
+
+  function handleAddCompanion() {
+    openTertiarySidebar('add-companion', {});
+  }
+
+  function handleEditCompanion(event: any) {
+    const companion = event.detail?.companion;
+    if (companion) {
+      openTertiarySidebar('edit-companion', { companion });
+    }
+  }
+
+  onMount(async () => {
+    // Initialize store synchronization
+    syncStoreState();
+
+    // Setup cross-tab data synchronization
+    setupDataSyncListener();
+
+    // Listen for data changes from other tabs
+    window.addEventListener('dataChanged', async (e: any) => {
+      const { type } = e.detail;
+      if (type.includes('trip')) {
+        dataService.invalidateCache('trip');
+        await loadTripData();
+      } else if (type.includes('item')) {
+        dataService.invalidateCache('item');
+        await loadTripData();
+      }
+    });
+
+    // Load initial data
+    await loadTripData();
+
+    // Listen for data import events
+    window.addEventListener('dataImported', handleDataImported);
+
+    // Listen for companion add/edit events from SettingsCompanions
+    window.addEventListener('add-companion', handleAddCompanion);
+    window.addEventListener('edit-companion', handleEditCompanion);
+
+    return () => {
+      // Cleanup subscriptions
+      if (unsubscribe) unsubscribe();
+
+      window.removeEventListener('dataImported', handleDataImported);
+      window.removeEventListener('add-companion', handleAddCompanion);
+      window.removeEventListener('edit-companion', handleEditCompanion);
+      window.removeEventListener('dataChanged', () => {});
+    };
+  });
+
+
+  function filterTrips() {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const allItems: any[] = [];
+
+    // Add trips as items (use store data)
+    $dashboardStore.trips.forEach((trip) => {
+      allItems.push({
+        type: 'trip',
+        data: trip,
+        sortDate: trip.departureDate ? parseLocalDate(trip.departureDate) : new Date(0)
+      });
+    });
+
+    // Add standalone items (use store data)
+    ['flights', 'hotels', 'transportation', 'carRentals', 'events'].forEach((key) => {
+      const itemTypeMap: Record<string, string> = {
+        flights: 'flight',
+        hotels: 'hotel',
+        transportation: 'transportation',
+        carRentals: 'carRental',
+        events: 'event'
+      };
+
+      if ($dashboardStore.standaloneItems[key]) {
+        $dashboardStore.standaloneItems[key].forEach((item: any) => {
+          allItems.push({
+            type: 'standalone',
+            itemType: itemTypeMap[key],
+            data: item,
+            sortDate: getItemDate(item, itemTypeMap[key])
+          });
+        });
+      }
+    });
+
+    // Filter by upcoming/past (use store activeTab)
+    let filtered: any[] = [];
+    if ($dashboardStore.activeTab === 'upcoming') {
+      filtered = allItems.filter((item) => {
+        if (item.type === 'trip') {
+          const tripDate = item.data.departureDate ? parseLocalDate(item.data.departureDate) : null;
+          return tripDate && tripDate >= now;
+        } else {
+          return item.sortDate >= now;
+        }
+      });
+      // Sort chronologically (oldest first)
+      filtered.sort((a, b) => a.sortDate.getTime() - b.sortDate.getTime());
+    } else if ($dashboardStore.activeTab === 'past') {
+      filtered = allItems.filter((item) => {
+        if (item.type === 'trip') {
+          const endDate = getTripEndDate(item.data);
+          return endDate < now;
+        } else {
+          return item.sortDate < now;
+        }
+      });
+      // Sort reverse chronologically (most recent first)
+      filtered.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
+    }
+
+    // Update store with filtered items
+    dashboardStoreActions.setFilteredItems(filtered);
+  }
+
+  function updateMapData() {
+    const combined = {
+      flights: [],
+      hotels: [],
+      events: [],
+      transportation: [],
+      carRentals: []
+    };
+
+    // Add items from trips (use store data)
+    $dashboardStore.filteredItems.forEach(item => {
+      if (item.type === 'trip') {
+        const trip = item.data;
+        // Ensure each item has tripId attached so map highlighting can filter by trip
+        if (trip.flights) {
+          combined.flights.push(...trip.flights.map((f: any) => ({ ...f, tripId: trip.id })));
+        }
+        if (trip.hotels) {
+          combined.hotels.push(...trip.hotels.map((h: any) => ({ ...h, tripId: trip.id })));
+        }
+        if (trip.events) {
+          combined.events.push(...trip.events.map((e: any) => ({ ...e, tripId: trip.id })));
+        }
+        if (trip.transportation) combined.transportation.push(...trip.transportation.map((t: any) => ({ ...t, tripId: trip.id })));
+        if (trip.carRentals) combined.carRentals.push(...trip.carRentals.map((c: any) => ({ ...c, tripId: trip.id })));
+      } else if (item.type === 'standalone') {
+        // Standalone items have no tripId (null)
+        if (item.itemType === 'flight') combined.flights.push(item.data);
+        else if (item.itemType === 'hotel') combined.hotels.push(item.data);
+        else if (item.itemType === 'event') combined.events.push(item.data);
+        else if (item.itemType === 'transportation') combined.transportation.push(item.data);
+        else if (item.itemType === 'carRental') combined.carRentals.push(item.data);
+      }
+    });
+
+    // Update store with map data
+    dashboardStoreActions.setMapData(combined);
+  }
+
+
+  function handleTabChange(tab: 'upcoming' | 'past') {
+    dashboardStoreActions.setActiveTab(tab);
+    dashboardStoreActions.closeSecondarySidebar();
+    filterTrips();
+    updateMapData();
+  }
+
+  async function handleDeleteTrip(tripId: string, event: Event) {
+    event.stopPropagation();
+    try {
+      await tripsApi.delete(tripId);
+      dashboardStoreActions.deleteTrip(tripId);
+      dataService.invalidateCache('trip');
+      filterTrips();
+      updateMapData();
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to delete trip';
+      dashboardStoreActions.setError(errorMsg);
+    }
+  }
+
+  function handleCreateTrip() {
+    dashboardStoreActions.setShowNewItemMenu(true);
+    dashboardStoreActions.openSecondarySidebar({ type: 'newItemMenu', data: {} });
+  }
+
+  function handleCalendarClick() {
+    dashboardStoreActions.openSecondarySidebar({ type: 'calendar', data: {} });
+    updateSecondarySidebarClass();
+  }
+
+  function updateSecondarySidebarClass() {
+    setTimeout(() => {
+      const secondarySidebar = document.getElementById('secondary-sidebar');
+      if (secondarySidebar) {
+        if (secondarySidebarContent?.type === 'calendar') {
+          secondarySidebar.classList.add('full-width');
+        } else {
+          secondarySidebar.classList.remove('full-width');
+        }
+      }
+    }, 0);
+  }
+
+  function handleNewTripClick() {
+    dashboardStoreActions.setShowNewItemMenu(false);
+    dashboardStoreActions.openSecondarySidebar({ type: 'trip', itemType: 'trip', data: {} });
+  }
+
+  function handleNewItemClick(itemType: string) {
+    dashboardStoreActions.setShowNewItemMenu(false);
+    dashboardStoreActions.openSecondarySidebar({ type: itemType, itemType, data: {} });
+  }
+
+  function toggleTripExpanded(tripId: string) {
+    dashboardStoreActions.toggleTripExpanded(tripId);
+  }
+
+  function handleTripHover(tripId: string) {
+    dashboardStoreActions.setHighlightedTrip(tripId);
+  }
+
+  function handleTripLeave() {
+    dashboardStoreActions.setHighlightedTrip(null);
+  }
+
+  function handleItemHover(itemType: string, itemId: string) {
+    dashboardStoreActions.setHighlightedItem(itemId, itemType);
+  }
+
+  function handleItemLeave() {
+    dashboardStoreActions.setHighlightedItem(null, null);
+  }
+
+  function handleItemClick(type: string, itemType: string | null, data: any) {
+    dashboardStoreActions.openSecondarySidebar({ type, itemType: itemType || undefined, data });
+  }
+
+  function closeSecondarySidebar() {
+    dashboardStoreActions.closeSecondarySidebar();
+    updateSecondarySidebarClass();
+  }
+
+  function openTertiarySidebar(type: string, data: any = {}) {
+    dashboardStoreActions.openTertiarySidebar({ type, data });
+  }
+
+  function closeTertiarySidebar() {
+    dashboardStoreActions.closeTertiarySidebar();
+  }
+
+</script>
+
+<svelte:head>
+  <title>Dashboard - Bluebonnet</title>
+</svelte:head>
+
+<MapLayout tripData={mapData} isPast={activeTab === 'past'} {highlightedTripId} highlightedItemType={highlightedItemType} highlightedItemId={highlightedItemId}>
+  <div slot="primary" class="primary-content">
+    <div class="header-section">
+      <div class="header-top">
+        <h1>My Trips</h1>
+        <div class="header-buttons">
+          <button class="icon-btn" title="View calendar" on:click={handleCalendarClick}>
+            <span class="material-symbols-outlined">calendar_month</span>
+          </button>
+          <button class="add-btn" title="Add new trip" on:click={handleCreateTrip}>
+            <span class="material-symbols-outlined">add</span>
+          </button>
+        </div>
+      </div>
+
+      {#if error}
+        <Alert type="error" message={error} dismissible />
+      {/if}
+
+      <nav class="tabs">
+        <div class="tabs-left">
+          <button
+            class="tab-btn"
+            class:active={activeView === 'trips' && activeTab === 'upcoming'}
+            on:click={() => {
+              dashboardStoreActions.setActiveView('trips');
+              handleTabChange('upcoming');
+            }}
+          >
+            Upcoming
+          </button>
+          <button
+            class="tab-btn"
+            class:active={activeView === 'trips' && activeTab === 'past'}
+            on:click={() => {
+              dashboardStoreActions.setActiveView('trips');
+              handleTabChange('past');
+            }}
+          >
+            Past
+          </button>
+        </div>
+        <button
+          class="tab-btn settings-btn"
+          class:active={activeView === 'settings'}
+          title="Settings"
+          on:click={() => dashboardStoreActions.setActiveView('settings')}
+        >
+          <span class="material-symbols-outlined" style="font-size: 1.1rem;">settings</span>
+        </button>
+      </nav>
+    </div>
+
+    <div class="trips-content">
+      {#if activeView === 'settings'}
+        <!-- Settings View -->
+        <DashboardSettingsPanel />
+      {:else if loading}
+        <Loading message="Loading trips..." />
+      {:else if filteredItems.length === 0}
+        <div class="empty-state">
+          <span class="material-symbols-outlined empty-icon">calendar_month</span>
+          <p>
+            {activeTab === 'upcoming'
+              ? 'No upcoming trips'
+              : 'No past trips'}
+          </p>
+          <Button variant="primary" size="small" on:click={handleCreateTrip}>
+            Create Trip
+          </Button>
+        </div>
+      {:else}
+        <!-- Chronological Timeline: Trips and standalone items interleaved by date -->
+        <div class="trips-list">
+          {#each dateKeysInOrder as dateKey (dateKey)}
+            <div class="timeline-date-group">
+              <div class="timeline-date-header">
+                <span class="date-badge">{formatMonthHeader(dateKey)}</span>
+              </div>
+              <div class="timeline-items">
+                {#each groupedItems[dateKey] as item (item.type === 'trip' ? item.data.id : `${item.itemType}-${item.data.id}`)}
+                  {#if item.type === 'trip'}
+                    <!-- Trip Card -->
+                    <div
+                      class="trip-card"
+                      class:expanded={expandedTrips.has(item.data.id)}
+                      class:highlighted={highlightedTripId === item.data.id}
+                      on:mouseenter={() => highlightedTripId = item.data.id}
+                      on:mouseleave={() => highlightedTripId = null}
+                    >
+                      <!-- Trip Header -->
+                      <div
+                        class="trip-header"
+                        on:click={() => toggleTripExpanded(item.data.id)}
+                        role="button"
+                        tabindex="0"
+                        on:keydown={(e) => e.key === 'Enter' && toggleTripExpanded(item.data.id)}
+                      >
+                        <div class="trip-icon-container">
+                          <span class="material-symbols-outlined trip-icon">
+                            {getTripIcon(item.data.purpose)}
+                          </span>
+                        </div>
+
+                        <div class="trip-info">
+                          <div class="trip-name-row">
+                            <h3 class="trip-name">{item.data.name}</h3>
+                            <button
+                              class="edit-btn"
+                              title="Edit trip details and companions"
+                              on:click={(e) => {
+                                e.stopPropagation();
+                                secondarySidebarContent = { type: 'item', itemType: 'trip', data: item.data };
+                              }}
+                            >
+                              <span class="material-symbols-outlined">edit</span>
+                            </button>
+                          </div>
+                          <p class="trip-dates">
+                            {formatDate(item.data.departureDate)} - {formatDate(item.data.returnDate || item.data.departureDate)}
+                          </p>
+                          {#if getTripCities(item.data)}
+                            <p class="trip-cities">{getTripCities(item.data)}</p>
+                          {/if}
+                        </div>
+
+                        <button
+                          class="expand-btn"
+                          class:rotated={expandedTrips.has(item.data.id)}
+                          on:click={(e) => {
+                            e.stopPropagation();
+                            toggleTripExpanded(item.data.id);
+                          }}
+                        >
+                          <span class="material-symbols-outlined">expand_more</span>
+                        </button>
+                      </div>
+
+                      {#if item.data.tripCompanions && item.data.tripCompanions.length > 0}
+                        <div class="trip-companions">
+                          <CompanionIndicators companions={item.data.tripCompanions} />
+                        </div>
+                      {/if}
+
+                      <!-- Trip Items (Accordion Content) - Date-level Timeline -->
+                      {#if expandedTrips.has(item.data.id)}
+                        <div class="trip-items">
+                          {#each Object.keys(groupTripItemsByDate(item.data)) as dayKey (dayKey)}
+                            <div class="trip-item-date-group">
+                              <div class="trip-item-date-header">
+                                <span class="trip-date-badge">{formatTripDateHeader(dayKey)}</span>
+                              </div>
+                              <div class="trip-item-date-items">
+                                {#each groupTripItemsByDate(item.data)[dayKey] as tripItem (tripItem.id)}
+                                  {#if tripItem.type === 'flight'}
+                                    <div
+                                      class="standalone-item-card"
+                                      class:item-highlighted={highlightedItemId === tripItem.id && highlightedItemType === 'flight'}
+                                      on:mouseenter={() => { highlightedItemType = 'flight'; highlightedItemId = tripItem.id; }}
+                                      on:mouseleave={() => { highlightedItemId = null; highlightedItemType = null; }}
+                                      on:click={() => handleItemClick('flight', 'flight', tripItem)}
+                                      role="button"
+                                      tabindex="0"
+                                      on:keydown={(e) => e.key === 'Enter' && handleItemClick('flight', 'flight', tripItem)}
+                                    >
+                                      <div class="flight-icon-wrapper">
+                                        <p class="flight-time-label">{formatTimeOnly(tripItem.departureDateTime, tripItem.originTimezone)}</p>
+                                        <div class="item-icon blue">
+                                          <span class="material-symbols-outlined" style="font-size: 1.3rem;">flight</span>
+                                        </div>
+                                      </div>
+                                      <div class="item-content">
+                                        <p class="item-title">{tripItem.flightNumber}</p>
+                                        <p class="item-route">
+                                          {getCityName(tripItem.origin)} → {getCityName(tripItem.destination)}
+                                        </p>
+                                      </div>
+                                      {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
+                                        <div class="item-companions">
+                                          <CompanionIndicators companions={tripItem.itemCompanions} />
+                                        </div>
+                                      {/if}
+                                    </div>
+                                  {:else if tripItem.type === 'hotel'}
+                                    <div
+                                      class="standalone-item-card"
+                                      class:item-highlighted={highlightedItemId === tripItem.id && highlightedItemType === 'hotel'}
+                                      on:mouseenter={() => { highlightedItemType = 'hotel'; highlightedItemId = tripItem.id; }}
+                                      on:mouseleave={() => { highlightedItemId = null; highlightedItemType = null; }}
+                                      on:click={() => handleItemClick('hotel', 'hotel', tripItem)}
+                                      role="button"
+                                      tabindex="0"
+                                      on:keydown={(e) => e.key === 'Enter' && handleItemClick('hotel', 'hotel', tripItem)}
+                                    >
+                                      <div class="item-icon green">
+                                        <span class="material-symbols-outlined" style="font-size: 1.3rem;">hotel</span>
+                                      </div>
+                                      <div class="item-content">
+                                        <p class="item-title">{tripItem.hotelName || tripItem.name}</p>
+                                        <p class="item-dates">{formatDateOnly(tripItem.checkInDateTime, tripItem.timezone)} - {formatDateOnly(tripItem.checkOutDateTime, tripItem.timezone)}</p>
+                                        <p class="item-route">{getCityName(tripItem.address) || getCityName(tripItem.city)}</p>
+                                      </div>
+                                      {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
+                                        <div class="item-companions">
+                                          <CompanionIndicators companions={tripItem.itemCompanions} />
+                                        </div>
+                                      {/if}
+                                    </div>
+                                  {:else if tripItem.type === 'transportation'}
+                                    <div
+                                      class="standalone-item-card"
+                                      on:mouseenter={() => { highlightedItemType = 'transportation'; highlightedItemId = tripItem.id; }}
+                                      on:mouseleave={() => { highlightedItemId = null; highlightedItemType = null; }}
+                                      on:click={() => handleItemClick('transportation', 'transportation', tripItem)}
+                                      role="button"
+                                      tabindex="0"
+                                      on:keydown={(e) => e.key === 'Enter' && handleItemClick('transportation', 'transportation', tripItem)}
+                                    >
+                                      <div class="flight-icon-wrapper">
+                                        <p class="flight-time-label">{formatTimeOnly(tripItem.departureDateTime, tripItem.originTimezone)}</p>
+                                        <div class="item-icon red">
+                                          <span class="material-symbols-outlined" style="font-size: 1.3rem;">{getTransportIcon(tripItem.method)}</span>
+                                        </div>
+                                      </div>
+                                      <div class="item-content">
+                                        <p class="item-title">{capitalize(tripItem.method)}</p>
+                                        <p class="item-route">
+                                          {getCityName(tripItem.origin)} → {getCityName(tripItem.destination)}
+                                        </p>
+                                      </div>
+                                      {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
+                                        <div class="item-companions">
+                                          <CompanionIndicators companions={tripItem.itemCompanions} />
+                                        </div>
+                                      {/if}
+                                    </div>
+                                  {:else if tripItem.type === 'carRental'}
+                                    <div
+                                      class="standalone-item-card"
+                                      on:mouseenter={() => { highlightedItemType = 'carRental'; highlightedItemId = tripItem.id; }}
+                                      on:mouseleave={() => { highlightedItemId = null; highlightedItemType = null; }}
+                                      on:click={() => handleItemClick('carRental', 'carRental', tripItem)}
+                                      role="button"
+                                      tabindex="0"
+                                      on:keydown={(e) => e.key === 'Enter' && handleItemClick('carRental', 'carRental', tripItem)}
+                                    >
+                                      <div class="item-icon gray">
+                                        <span class="material-symbols-outlined" style="font-size: 1.3rem;">directions_car</span>
+                                      </div>
+                                      <div class="item-content">
+                                        <p class="item-title">{tripItem.company}</p>
+                                        <p class="item-time">{formatDateTime(tripItem.pickupDateTime, tripItem.pickupTimezone)}</p>
+                                        <p class="item-route">{getCityName(tripItem.pickupLocation)}</p>
+                                      </div>
+                                      {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
+                                        <div class="item-companions">
+                                          <CompanionIndicators companions={tripItem.itemCompanions} />
+                                        </div>
+                                      {/if}
+                                    </div>
+                                  {:else if tripItem.type === 'event'}
+                                    <div
+                                      class="standalone-item-card"
+                                      on:mouseenter={() => { highlightedItemType = 'event'; highlightedItemId = tripItem.id; }}
+                                      on:mouseleave={() => { highlightedItemId = null; highlightedItemType = null; }}
+                                      on:click={() => handleItemClick('event', 'event', tripItem)}
+                                      role="button"
+                                      tabindex="0"
+                                      on:keydown={(e) => e.key === 'Enter' && handleItemClick('event', 'event', tripItem)}
+                                    >
+                                      {#if tripItem.isAllDay}
+                                        <div class="item-icon purple">
+                                          <span class="material-symbols-outlined" style="font-size: 1.3rem;">event</span>
+                                        </div>
+                                      {:else}
+                                        <div class="flight-icon-wrapper">
+                                          <p class="flight-time-label">{formatTimeOnly(tripItem.startDateTime, tripItem.timezone)}</p>
+                                          <div class="item-icon purple">
+                                            <span class="material-symbols-outlined" style="font-size: 1.3rem;">event</span>
+                                          </div>
+                                        </div>
+                                      {/if}
+                                      <div class="item-content">
+                                        <p class="item-title">{tripItem.name}</p>
+                                        <p class="item-time">{formatDateTime(tripItem.startDateTime, tripItem.timezone)}</p>
+                                        <p class="item-route">{tripItem.location}</p>
+                                      </div>
+                                      {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
+                                        <div class="item-companions">
+                                          <CompanionIndicators companions={tripItem.itemCompanions} />
+                                        </div>
+                                      {/if}
+                                    </div>
+                                  {/if}
+                                {/each}
+                              </div>
+                            </div>
+                          {/each}
+                        </div>
+                      {/if}
+                    </div>
+                  {:else}
+                    <!-- Standalone Item Card -->
+                    <div
+                      class="standalone-item-card"
+                      class:item-highlighted={highlightedItemId === item.data.id && highlightedItemType === item.itemType}
+                      on:mouseenter={() => { highlightedItemType = item.itemType; highlightedItemId = item.data.id; }}
+                      on:mouseleave={() => { highlightedItemId = null; highlightedItemType = null; }}
+                      on:click={() => handleItemClick(item.itemType, item.itemType, item.data)}
+                      role="button"
+                      tabindex="0"
+                      on:keydown={(e) => e.key === 'Enter' && handleItemClick(item.itemType, item.itemType, item.data)}
+                    >
+                      {#if item.itemType === 'flight'}
+                        <div class="flight-icon-wrapper">
+                          <p class="flight-time-label">{formatTimeOnly(item.data.departureDateTime, item.data.originTimezone)}</p>
+                          <div class="item-icon blue">
+                            <span class="material-symbols-outlined" style="font-size: 1.3rem;">flight</span>
+                          </div>
+                        </div>
+                      {:else if item.itemType === 'hotel'}
+                        <div class="item-icon green">
+                          <span class="material-symbols-outlined" style="font-size: 1.3rem;">hotel</span>
+                        </div>
+                      {:else if item.itemType === 'transportation'}
+                        <div class="flight-icon-wrapper">
+                          <p class="flight-time-label">{formatTimeOnly(item.data.departureDateTime, item.data.originTimezone)}</p>
+                          <div class="item-icon red">
+                            <span class="material-symbols-outlined" style="font-size: 1.3rem;">{getTransportIcon(item.data.method)}</span>
+                          </div>
+                        </div>
+                      {:else if item.itemType === 'carRental'}
+                        <div class="item-icon gray">
+                          <span class="material-symbols-outlined" style="font-size: 1.3rem;">directions_car</span>
+                        </div>
+                      {:else if item.itemType === 'event'}
+                        {#if item.data.isAllDay}
+                          <div class="item-icon purple">
+                            <span class="material-symbols-outlined" style="font-size: 1.3rem;">event</span>
+                          </div>
+                        {:else}
+                          <div class="flight-icon-wrapper">
+                            <p class="flight-time-label">{formatTimeOnly(item.data.startDateTime, item.data.timezone)}</p>
+                            <div class="item-icon purple">
+                              <span class="material-symbols-outlined" style="font-size: 1.3rem;">event</span>
+                            </div>
+                          </div>
+                        {/if}
+                      {/if}
+
+                      <div class="item-content">
+                        <p class="item-title">
+                          {item.itemType === 'flight' ? item.data.flightNumber : item.itemType === 'hotel' ? (item.data.hotelName || item.data.name) : item.itemType === 'carRental' ? item.data.company : item.itemType === 'event' ? item.data.name : capitalize(item.data.method)}
+                        </p>
+                        {#if item.itemType === 'hotel'}
+                          <p class="item-dates">{formatDateOnly(item.data.checkInDateTime, item.data.timezone)} - {formatDateOnly(item.data.checkOutDateTime, item.data.timezone)}</p>
+                        {:else}
+                          <p class="item-time">
+                            {#if item.itemType === 'flight'}
+                              {formatDateTime(item.data.departureDateTime, item.data.originTimezone)}
+                            {:else if item.itemType === 'transportation'}
+                              {formatDateTime(item.data.departureDateTime, item.data.originTimezone)}
+                            {:else if item.itemType === 'carRental'}
+                              {formatDateTime(item.data.pickupDateTime, item.data.pickupTimezone)}
+                            {:else if item.itemType === 'event'}
+                              {#if item.data.isAllDay}
+                                {#if item.data.startDateTime && item.data.endDateTime && item.data.startDateTime !== item.data.endDateTime}
+                                  {formatDateOnly(item.data.startDateTime, item.data.timezone)} - {formatDateOnly(item.data.endDateTime, item.data.timezone)}
+                                {:else}
+                                  {formatDateOnly(item.data.startDateTime, item.data.timezone)}
+                                {/if}
+                              {:else}
+                                {formatDateTime(item.data.startDateTime, item.data.timezone)}
+                              {/if}
+                            {/if}
+                          </p>
+                        {/if}
+                        <p class="item-route">
+                          {#if item.itemType === 'flight'}
+                            {getCityName(item.data.origin)} → {getCityName(item.data.destination)}
+                          {:else if item.itemType === 'hotel'}
+                            {getCityName(item.data.address)}
+                          {:else if item.itemType === 'transportation'}
+                            {getCityName(item.data.origin)} → {getCityName(item.data.destination)}
+                          {:else if item.itemType === 'carRental'}
+                            {getCityName(item.data.pickupLocation)}
+                          {:else if item.itemType === 'event'}
+                            {item.data.location}
+                          {/if}
+                        </p>
+                      </div>
+
+                      {#if item.data.itemCompanions && item.data.itemCompanions.length > 0}
+                        <div class="item-companions">
+                          <CompanionIndicators companions={item.data.itemCompanions} />
+                        </div>
+                      {/if}
+                    </div>
+                  {/if}
+                {/each}
+              </div>
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
+  </div>
+
+    <div
+      slot="secondary"
+      class="secondary-content"
+      class:full-width={secondarySidebarContent?.type === 'calendar' || secondarySidebarContent?.type === 'settings-vouchers' || secondarySidebarContent?.type === 'settings-companions' || secondarySidebarContent?.type === 'settings-backup'}
+    >
+      <DashboardItemEditor
+        {secondarySidebarContent}
+        {trips}
+        {standaloneItems}
+        on:close={closeSecondarySidebar}
+        on:save={async (e) => {
+          const item = e.detail;
+          if (!secondarySidebarContent) return;
+
+          if (item === null) {
+            // Item was deleted - remove from list
+            if (secondarySidebarContent.type === 'trip') {
+              trips = trips.filter(t => t.id !== secondarySidebarContent.data.id);
+            } else {
+              const key = secondarySidebarContent.itemType + 's';
+              if (standaloneItems[key]) {
+                standaloneItems[key] = standaloneItems[key].filter(i => i.id !== secondarySidebarContent.data.id);
+              }
+            }
+          } else {
+            // Item was saved - add or update in list
+            if (secondarySidebarContent.type === 'trip') {
+              const idx = trips.findIndex(t => t.id === item.id);
+              if (idx >= 0) {
+                trips[idx] = item;
+                trips = trips;  // Trigger reactivity
+              } else {
+                // New trip - add to list
+                trips = [...trips, item];
+              }
+            } else {
+              // For non-trip items, check if trip assignment changed
+              const oldTripId = secondarySidebarContent.data?.tripId;
+              const newTripId = item.tripId;
+              const itemKey = secondarySidebarContent.itemType + 's';
+
+              if (oldTripId !== newTripId) {
+                // Trip assignment changed - need to refetch affected trips
+                const tripIds = new Set<string>();
+                if (oldTripId) tripIds.add(oldTripId);
+                if (newTripId) tripIds.add(newTripId);
+
+                // Refetch the affected trips
+                for (const tripId of tripIds) {
+                  try {
+                    const updatedTrip = await tripsApi.getOne(tripId);
+                    const tripIdx = trips.findIndex(t => t.id === tripId);
+                    if (tripIdx >= 0) {
+                      trips[tripIdx] = updatedTrip;
+                    }
+                  } catch (err) {
+                    console.error('Error refetching trip:', err);
+                  }
+                }
+                // Trigger reactivity after all updates
+                trips = trips;
+
+                // If item moved from standalone to trip, remove from standaloneItems
+                if (!oldTripId && newTripId && standaloneItems[itemKey]) {
+                  standaloneItems[itemKey] = standaloneItems[itemKey].filter(i => i.id !== item.id);
+                }
+                // If item moved from trip to standalone, add to standaloneItems
+                if (oldTripId && !newTripId) {
+                  if (standaloneItems[itemKey]) {
+                    standaloneItems[itemKey] = [...standaloneItems[itemKey], item];
+                  } else {
+                    standaloneItems[itemKey] = [item];
+                  }
+                }
+              } else {
+                // Trip assignment didn't change - just update locally
+                if (newTripId) {
+                  // Item is part of a trip - update the trip's items array
+                  const tripIdx = trips.findIndex(t => t.id === newTripId);
+                  if (tripIdx >= 0) {
+                    const trip = trips[tripIdx];
+                    if (trip[itemKey]) {
+                      const itemIdx = trip[itemKey].findIndex((i: any) => i.id === item.id);
+                      if (itemIdx >= 0) {
+                        trip[itemKey][itemIdx] = item;
+                      }
+                    }
+                    // Trigger reactivity
+                    trips[tripIdx] = trip;
+                    trips = trips;
+                  }
+                } else {
+                  // Item is standalone - update standaloneItems
+                  if (standaloneItems[itemKey]) {
+                    const idx = standaloneItems[itemKey].findIndex((i: any) => i.id === item.id);
+                    if (idx >= 0) {
+                      standaloneItems[itemKey][idx] = item;
+                      standaloneItems[itemKey] = standaloneItems[itemKey];  // Trigger reactivity
+                    } else {
+                      // New standalone item - add to list
+                      standaloneItems[itemKey] = [...standaloneItems[itemKey], item];
+                    }
+                  } else {
+                    // Initialize the array if it doesn't exist
+                    standaloneItems[itemKey] = [item];
+                  }
+                }
+              }
+            }
+          }
+          filterTrips();
+          updateMapData();
+        }}
+        on:newTrip={handleCreateTrip}
+        on:newItem={(e) => handleNewItemClick(e.detail.itemType)}
+        on:tertiarySidebarAction={(e) => {
+          openTertiarySidebar(e.detail.action, e.detail.detail);
+        }}
+        on:itemClick={(e) => {
+          handleItemClick(e.detail.itemType, e.detail.itemType, e.detail.data);
+        }}
+      />
+    </div>
+
+  <div slot="tertiary" class="tertiary-content">
+    {#if tertiarySidebarContent?.type === 'edit-voucher'}
+      <div class="tertiary-header">
+        <h3>Edit Voucher</h3>
+        <button class="close-btn" on:click={closeTertiarySidebar} title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="tertiary-form-container">
+        <VoucherForm
+          tripId=""
+          voucherId={tertiarySidebarContent.data?.voucher?.id}
+          voucher={tertiarySidebarContent.data?.voucher}
+          onSuccess={(voucher) => {
+            closeTertiarySidebar();
+          }}
+          onCancel={closeTertiarySidebar}
+        />
+      </div>
+    {:else if tertiarySidebarContent?.type === 'add-voucher'}
+      <div class="tertiary-header">
+        <h3>Add Voucher</h3>
+        <button class="close-btn" on:click={closeTertiarySidebar} title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="tertiary-form-container">
+        <VoucherForm
+          tripId=""
+          voucherId={null}
+          voucher={null}
+          onSuccess={(voucher) => {
+            closeTertiarySidebar();
+          }}
+          onCancel={closeTertiarySidebar}
+        />
+      </div>
+    {:else if tertiarySidebarContent?.type === 'add-companion'}
+      <div class="tertiary-header">
+        <h3>Add Companion</h3>
+        <button class="close-btn" on:click={closeTertiarySidebar} title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="tertiary-form-container">
+        <CompanionForm
+          companion={null}
+          onSuccess={(companion) => {
+            closeTertiarySidebar();
+            // Dispatch event to refresh companions list
+            window.dispatchEvent(new CustomEvent('companions-updated', { detail: { companion } }));
+          }}
+          onCancel={closeTertiarySidebar}
+        />
+      </div>
+    {:else if tertiarySidebarContent?.type === 'edit-companion'}
+      <div class="tertiary-header">
+        <h3>Edit Companion</h3>
+        <button class="close-btn" on:click={closeTertiarySidebar} title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="tertiary-form-container">
+        <CompanionForm
+          companion={tertiarySidebarContent.data?.companion}
+          onSuccess={(companion) => {
+            closeTertiarySidebar();
+            // Dispatch event to refresh companions list
+            window.dispatchEvent(new CustomEvent('companions-updated', { detail: { companion } }));
+          }}
+          onCancel={closeTertiarySidebar}
+        />
+      </div>
+    {/if}
+  </div>
+</MapLayout>
+
+<style>
+  .primary-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding-bottom: 0;
+  }
+
+  .header-section {
+    padding: 0;
+    border-bottom: 1px solid #e0e0e0;
+    flex-shrink: 0;
+  }
+
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .header-top h1 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #333;
+  }
+
+  .header-buttons {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .add-btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.425rem;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .add-btn:hover {
+    background: #0056b3;
+  }
+
+  .add-btn :global(.material-symbols-outlined) {
+    font-size: 1.25rem !important;
+  }
+
+  .icon-btn {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    padding: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.425rem;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .icon-btn:hover {
+    background: #e5e7eb;
+    border-color: #9ca3af;
+  }
+
+  .icon-btn :global(.material-symbols-outlined) {
+    font-size: 1.25rem !important;
+  }
+
+  .tabs {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 0 0;
+  }
+
+  .tabs-left {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: #666;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.425rem 0.425rem 0 0;
+  }
+
+  .tab-btn:hover {
+    color: #333;
+    background-color: #e0e0e0;
+  }
+
+  .tab-btn.active {
+    color: #007bff;
+    border-bottom-color: #007bff;
+    background-color: rgba(255, 255, 255, 0.9);
+  }
+
+  .tab-btn.settings-btn {
+    padding: 0.4rem 0.8rem;
+  }
+
+  .tab-btn.settings-btn.active {
+    border-bottom-color: #007bff;
+  }
+
+  .tab-btn.settings-btn :global(.material-symbols-outlined) {
+    font-size: 1.1rem !important;
+    line-height: 1.1em !important;
+  }
+
+  .trips-content {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .trips-content::-webkit-scrollbar {
+    display: none;
+  }
+
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+    color: #666;
+  }
+
+  .empty-icon {
+    font-size: 3rem !important;
+    color: #ccc;
+    margin-bottom: 1rem;
+  }
+
+  .trips-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 1rem 0;
+  }
+
+  .timeline-date-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-left: 0;
+    margin-bottom: 1rem;
+    border-left: none;
+  }
+
+  .timeline-date-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0;
+  }
+
+  .date-badge {
+    display: inline-block;
+    padding: 0.4rem 0;
+    background: transparent;
+    color: #007bff;
+    border: none;
+    border-radius: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.1rem;
+    font-style: oblique;
+  }
+
+  .timeline-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .trip-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 0.425rem;
+    background: #ffffff90;
+    overflow: hidden;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .trip-card:hover,
+  .trip-card.highlighted {
+    background: #f3f4f6;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  }
+
+  .trip-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+  }
+
+  .trip-header:hover {
+    background: #f9f9f9;
+  }
+
+  .trip-icon-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.425rem;
+    background: #f0f0f0;
+    flex-shrink: 0;
+  }
+
+  .trip-icon {
+    font-size: 0.875rem !important;
+    color: #28536b;
+  }
+
+  .trip-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .trip-name-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: -2px;
+  }
+
+  .trip-name {
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1;
+    text-align: left;
+  }
+
+  .trip-dates {
+    margin: 0;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #4b5563;
+    line-height: 1;
+    text-align: left;
+  }
+
+  .trip-cities {
+    margin: 0;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #6b7280;
+    font-style: italic;
+    line-height: 1;
+    text-align: left;
+  }
+
+  .edit-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #9ca3af;
+    opacity: 0;
+    transition: opacity 0.2s, color 0.2s;
+    font-size: 0.75rem;
+    width: 1rem;
+    height: 1rem;
+    margin-top: -2px;
+  }
+
+  .trip-card:hover .edit-btn {
+    opacity: 1;
+  }
+
+  .edit-btn:hover {
+    color: #3b82f6;
+  }
+
+  .edit-btn :global(.material-symbols-outlined) {
+    font-size: 0.9rem !important;
+  }
+
+  .expand-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: transform 0.3s;
+  }
+
+  .expand-btn.rotated :global(.material-symbols-outlined) {
+    transform: rotate(180deg);
+  }
+
+  .trip-companions {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .trip-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0 0.5rem 0.5rem;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .trip-card.expanded .trip-items {
+    border-top: none;
+  }
+
+  .trip-item-date-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding-left: 0;
+    margin: 0.75rem 0 0 0;
+    border-left: none;
+  }
+
+  .trip-card.expanded .trip-item-date-group {
+    padding-left: 0.5rem;
+    border-left: 1px solid #007bff;
+  }
+
+  .trip-item-date-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.15rem 0px;
+  }
+
+  .date-header-layovers {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .trip-date-badge {
+    display: inline-block;
+    padding: 0.2rem 0;
+    background: transparent;
+    color: #007bff;
+    border: none;
+    border-radius: 0;
+    font-size: 0.65rem;
+    font-weight: 700;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.08rem;
+    font-style: oblique;
+  }
+
+  .trip-item-date-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+
+  .item-time {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #4b5563;
+    text-align: center;
+    line-height: 1;
+    margin: 0;
+  }
+
+  .item-dates {
+    font-size: 0.75rem;
+    color: #666;
+    margin: 0;
+    line-height: 1.2;
+  }
+
+
+  .item-icon {
+    line-height: 1;
+    height: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .item-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .item-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+    line-height: 1;
+    text-align: left;
+  }
+
+  .item-route {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1;
+    text-align: left;
+  }
+
+  .secondary-content {
+    padding: 0;
+    color: #666;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  :global(#secondary-sidebar) {
+    transition: width 0.3s ease;
+  }
+
+  :global(#secondary-sidebar.full-width) {
+    width: calc(100% - 340px - 7.5vh) !important;
+  }
+
+  :global(#secondary-sidebar.full-width.with-tertiary) {
+    width: auto !important;
+    left: calc(2.5vh + 340px + 2.5vh) !important;
+    right: calc(2.5vh + 340px + 2.5vh) !important;
+  }
+
+  .tertiary-content {
+    padding: 0;
+    color: #666;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+  }
+
+  .tertiary-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+    margin: 0 0 0.75rem;
+  }
+
+  .tertiary-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .tertiary-form-container {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .calendar-sidebar-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+  }
+
+  .calendar-sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+    margin: 0 0 0.75rem;
+  }
+
+  .calendar-sidebar-header h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .add-companion-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .add-companion-btn:hover {
+    background-color: #0056b3;
+  }
+
+  .add-companion-btn :global(.material-symbols-outlined) {
+    font-size: 1.1rem;
+  }
+
+  .standalone-item-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem;
+    background: #ffffff90;
+    border: 1px solid #e0e0e0;
+    border-radius: 0.425rem;
+    transition: all 0.2s;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .standalone-item-card:hover {
+    background-color: #f3f4f6;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  }
+
+  .standalone-item-card .item-companions {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+    z-index: 5;
+  }
+
+  .standalone-item-card .item-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.425rem;
+    flex-shrink: 0;
+    font-size: 0.875rem !important;
+  }
+
+  .trip-items .item-icon,
+  .trip-items .standalone-item-card .item-icon,
+  .trip-items .flight-icon-wrapper .item-icon {
+    font-size: 1.1rem !important;
+  }
+
+  .standalone-item-card .item-icon.blue {
+    background-color: #fef9e6;
+    color: #d4a823;
+  }
+
+  .standalone-item-card .item-icon.green {
+    background-color: #f3e8ff;
+    color: #9b6db3;
+  }
+
+  .standalone-item-card .item-icon.purple {
+    background-color: #ffe6f0;
+    color: #d6389f;
+  }
+
+  .standalone-item-card .item-icon.gray {
+    background-color: #ffe6d6;
+    color: #d97a2f;
+  }
+
+  .standalone-item-card .item-icon.red {
+    background-color: #cce5ff;
+    color: #2b7ab6;
+  }
+
+  .standalone-item-card .item-icon.amber {
+    background-color: #e8e0d5;
+    color: #28536b;
+  }
+
+  .standalone-item-card .item-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .standalone-item-card .item-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+    line-height: 1;
+    text-align: left;
+  }
+
+  .standalone-item-card .item-route {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1;
+    font-style: italic;
+    text-align: left;
+  }
+
+  .standalone-item-card .item-time {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #4b5563;
+    margin: 0;
+    line-height: 1;
+    text-align: left;
+  }
+
+  .standalone-item-card .item-dates {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #666;
+    margin: 0;
+    line-height: 1.2;
+    text-align: left;
+  }
+
+  /* Flight icon wrapper with time above */
+  .flight-icon-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .flight-icon-wrapper .item-icon {
+    padding-top: 0.15rem;
+  }
+
+  .flight-time-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #4b5563;
+    margin: 0;
+    line-height: 1;
+  }
+
+  /* Inverted colors for trip items when trip is expanded */
+  .trip-items .standalone-item-card .item-icon.blue {
+    background-color: transparent;
+    color: #d4a823;
+  }
+
+  .trip-items .standalone-item-card .item-icon.green {
+    background-color: transparent;
+    color: #9b6db3;
+  }
+
+  .trip-items .standalone-item-card .item-icon.purple {
+    background-color: transparent;
+    color: #d6389f;
+  }
+
+  .trip-items .standalone-item-card .item-icon.gray {
+    background-color: transparent;
+    color: #d97a2f;
+  }
+
+  .trip-items .standalone-item-card .item-icon.red {
+    background-color: transparent;
+    color: #2b7ab6;
+  }
+
+  .trip-items .standalone-item-card .item-icon.amber {
+    background-color: transparent;
+    color: #28536b;
+  }
+
+  .edit-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .edit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 0 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+    margin: 0 0 0.75rem;
+  }
+
+  .edit-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    transition: all 0.2s;
+    border-radius: 0.425rem;
+  }
+
+  .close-btn:hover {
+    color: #374151;
+    background-color: #f3f4f6;
+  }
+
+  .edit-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+  }
+
+  .edit-content pre {
+    background: #f5f5f5;
+    padding: 1rem;
+    border-radius: 0.425rem;
+    font-size: 0.75rem;
+    overflow-x: auto;
+  }
+
+  /* New Item Menu Styles */
+  .new-item-menu {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 0;
+  }
+
+  .menu-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    margin: 0 0 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .menu-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .close-menu-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    transition: all 0.15s;
+  }
+
+  .close-menu-btn:hover {
+    color: #374151;
+    background-color: #f3f4f6;
+    border-radius: 0.425rem;
+  }
+
+  .menu-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    width: 100%;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.425rem;
+    background: #ffffff90;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+  }
+
+  .menu-item:hover {
+    border-color: #d1d5db;
+    background-color: #f9fafb;
+  }
+
+  .menu-item-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.425rem;
+    flex-shrink: 0;
+    font-size: 1.25rem !important;
+  }
+
+  .menu-item-icon.blue {
+    background-color: #fef9e6;
+    color: #d4a823;
+  }
+
+  .menu-item-icon.green {
+    background-color: #f3e8ff;
+    color: #9b6db3;
+  }
+
+  .menu-item-icon.purple {
+    background-color: #ffe6f0;
+    color: #d6389f;
+  }
+
+  .menu-item-icon.gray {
+    background-color: #ffe6d6;
+    color: #d97a2f;
+  }
+
+  .menu-item-icon.red {
+    background-color: #cce5ff;
+    color: #2b7ab6;
+  }
+
+  .menu-item-icon.amber {
+    background-color: #e8e0d5;
+    color: #28536b;
+  }
+
+  .menu-item-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .menu-item-content h3 {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .menu-item-content p {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.75rem;
+    color: #6b7280;
+    line-height: 1.2;
+  }
+
+  .menu-arrow {
+    font-size: 1rem !important;
+    color: #9ca3af;
+    flex-shrink: 0;
+  }
+
+  .menu-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 0.5rem 0;
+  }
+
+  .menu-divider::before,
+  .menu-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e5e7eb;
+  }
+
+  .menu-divider span {
+    font-size: 0.75rem;
+    color: #6b7280;
+    flex-shrink: 0;
+  }
+
+  .settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .settings-section h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.75px;
+  }
+
+  .settings-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    background: #ffffff90;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.425rem;
+    color: #374151;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .settings-item:hover {
+    border-color: #007bff;
+    background-color: #eff6ff;
+    color: #007bff;
+  }
+
+  .settings-item.logout {
+    color: #dc2626;
+  }
+
+  .settings-item.logout:hover {
+    background-color: #fef2f2;
+    border-color: #dc2626;
+  }
+
+  .settings-item :global(.material-symbols-outlined) {
+    font-size: 1.25rem !important;
+    flex-shrink: 0;
+  }
+
+  .settings-item span:last-child {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  /* Settings Main Panel (replaces trips in primary sidebar) */
+  .settings-main-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+  }
+
+  .settings-main-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  /* Settings Panel in Secondary Sidebar */
+  .settings-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 0;
+  }
+
+  .settings-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+    margin: 0 0 0.75rem;
+  }
+
+  .settings-panel-header h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .settings-panel-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .settings-panel-content p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  .settings-logout-btn {
+    display: inline-block;
+    padding: 0.75rem 1rem;
+    background: #dc2626;
+    color: white;
+    text-decoration: none;
+    border-radius: 0.425rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-align: center;
+    transition: all 0.2s;
+    cursor: pointer;
+    margin-top: 1rem;
+  }
+
+  .settings-logout-btn:hover {
+    background: #b91c1c;
+  }
+
+  .layover-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.2rem 0;
+    margin: 0.1rem 0;
+  }
+
+  .layover-text {
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1;
+    text-align: center;
+  }
+
+  .date-header-layover {
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: #6b7280;
+    line-height: 1;
+    white-space: nowrap;
+    padding-right: 0.25rem;
+  }
+</style>

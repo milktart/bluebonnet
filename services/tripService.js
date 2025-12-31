@@ -150,11 +150,9 @@ class TripService extends BaseService {
       order: [['departureDate', orderDirection]],
     });
 
-    // Get standalone items (for upcoming/past filters)
+    // Get standalone items (always fetch them, filter determines which ones)
     let standaloneItems = {};
-    if (filter !== 'all') {
-      standaloneItems = await this.getStandaloneItems(userId, dateFilter);
-    }
+    standaloneItems = await this.getStandaloneItems(userId, dateFilter);
 
     // Calculate pagination metadata
     const pagination = {
@@ -165,10 +163,75 @@ class TripService extends BaseService {
       hasPrevPage: filter === 'past' && page > 1,
     };
 
+    // Convert trips to plain JSON objects to ensure associated items are serialized
+    // Also convert standalone items to JSON to include itemCompanions
+    // Must manually include itemCompanions since it's a custom property not in the model schema
+    const convertedStandalone = {
+      flights: standaloneItems.flights.map((item) => {
+        const json = item.toJSON();
+        json.itemCompanions = item.itemCompanions || [];
+        return json;
+      }),
+      hotels: standaloneItems.hotels.map((item) => {
+        const json = item.toJSON();
+        json.itemCompanions = item.itemCompanions || [];
+        return json;
+      }),
+      transportation: standaloneItems.transportation.map((item) => {
+        const json = item.toJSON();
+        json.itemCompanions = item.itemCompanions || [];
+        return json;
+      }),
+      carRentals: standaloneItems.carRentals.map((item) => {
+        const json = item.toJSON();
+        json.itemCompanions = item.itemCompanions || [];
+        return json;
+      }),
+      events: standaloneItems.events.map((item) => {
+        const json = item.toJSON();
+        json.itemCompanions = item.itemCompanions || [];
+        // Determine if event is all-day based on time values (use UTC since dates are ISO strings)
+        if (json.startDateTime && json.endDateTime) {
+          const startDate = new Date(json.startDateTime);
+          const endDate = new Date(json.endDateTime);
+          const startHours = startDate.getUTCHours();
+          const startMinutes = startDate.getUTCMinutes();
+          const endHours = endDate.getUTCHours();
+          const endMinutes = endDate.getUTCMinutes();
+          json.isAllDay =
+            startHours === 0 && startMinutes === 0 && endHours === 23 && endMinutes === 59;
+        } else {
+          json.isAllDay = false;
+        }
+        return json;
+      }),
+    };
+
+    // Helper function to add isAllDay flag to events
+    const addIsAllDayToTrip = (trip) => {
+      if (trip.events && Array.isArray(trip.events)) {
+        trip.events.forEach((event) => {
+          if (event.startDateTime && event.endDateTime) {
+            const startDate = new Date(event.startDateTime);
+            const endDate = new Date(event.endDateTime);
+            const startHours = startDate.getUTCHours();
+            const startMinutes = startDate.getUTCMinutes();
+            const endHours = endDate.getUTCHours();
+            const endMinutes = endDate.getUTCMinutes();
+            event.isAllDay =
+              startHours === 0 && startMinutes === 0 && endHours === 23 && endMinutes === 59;
+          } else {
+            event.isAllDay = false;
+          }
+        });
+      }
+      return trip;
+    };
+
     const result = {
-      ownedTrips,
-      companionTrips,
-      standalone: standaloneItems,
+      ownedTrips: ownedTrips.map((trip) => addIsAllDayToTrip(trip.toJSON())),
+      companionTrips: companionTrips.map((trip) => addIsAllDayToTrip(trip.toJSON())),
+      standalone: convertedStandalone,
       pagination,
     };
 
@@ -182,7 +245,7 @@ class TripService extends BaseService {
    * Get standalone items (not associated with trips)
    * @param {string} userId - User ID
    * @param {Object} dateFilter - Sequelize date filter
-   * @returns {Promise<Object>} { flights, events }
+   * @returns {Promise<Object>} { flights, hotels, transportation, carRentals, events }
    */
   async getStandaloneItems(userId, dateFilter = {}) {
     logger.debug(`${this.modelName}: Getting standalone items for user ${userId}`);
@@ -196,6 +259,33 @@ class TripService extends BaseService {
       order: [['departureDateTime', 'ASC']],
     });
 
+    const hotels = await Hotel.findAll({
+      where: {
+        userId,
+        tripId: null,
+        ...(dateFilter.departureDate && { checkOutDateTime: dateFilter.departureDate }),
+      },
+      order: [['checkInDateTime', 'ASC']],
+    });
+
+    const transportation = await Transportation.findAll({
+      where: {
+        userId,
+        tripId: null,
+        ...(dateFilter.departureDate && { departureDateTime: dateFilter.departureDate }),
+      },
+      order: [['departureDateTime', 'ASC']],
+    });
+
+    const carRentals = await CarRental.findAll({
+      where: {
+        userId,
+        tripId: null,
+        ...(dateFilter.departureDate && { dropoffDateTime: dateFilter.departureDate }),
+      },
+      order: [['pickupDateTime', 'ASC']],
+    });
+
     const events = await Event.findAll({
       where: {
         userId,
@@ -205,7 +295,77 @@ class TripService extends BaseService {
       order: [['startDateTime', 'ASC']],
     });
 
-    return { flights, events };
+    // Load item companions for standalone items (same pattern as getTripWithDetails)
+    const loadAndTransformItemCompanions = async (items, itemType) => {
+      if (!Array.isArray(items) || items.length === 0) {
+        return;
+      }
+
+      try {
+        const itemIds = items.map((item) => item.id);
+
+        // Fetch all companions for these items
+        const companions = await ItemCompanion.findAll({
+          where: {
+            itemType,
+            itemId: itemIds,
+          },
+          include: [
+            {
+              model: TravelCompanion,
+              as: 'companion',
+              attributes: ['id', 'email', 'firstName', 'lastName', 'name'],
+            },
+          ],
+        });
+
+        // Handle case where companions might be undefined (e.g., in tests)
+        if (!Array.isArray(companions)) {
+          return;
+        }
+
+        // Create a map of itemId -> companions for quick lookup
+        const companionsByItemId = {};
+        companions.forEach((ic) => {
+          if (!companionsByItemId[ic.itemId]) {
+            companionsByItemId[ic.itemId] = [];
+          }
+          companionsByItemId[ic.itemId].push({
+            id: ic.companion?.id,
+            email: ic.companion?.email,
+            firstName: ic.companion?.firstName,
+            lastName: ic.companion?.lastName,
+            name: ic.companion?.name,
+            inheritedFromTrip: ic.inheritedFromTrip,
+          });
+        });
+
+        // Attach companions to each item
+        items.forEach((item) => {
+          item.itemCompanions = companionsByItemId[item.id] || [];
+        });
+      } catch (error) {
+        // Log error but don't fail - companions loading is not critical
+        logger.debug(`Error loading item companions for type ${itemType}:`, error);
+        // Ensure items have empty companions array
+        items.forEach((item) => {
+          if (!item.itemCompanions) {
+            item.itemCompanions = [];
+          }
+        });
+      }
+    };
+
+    // Load companions for all standalone item types in parallel
+    await Promise.all([
+      loadAndTransformItemCompanions(flights, 'flight'),
+      loadAndTransformItemCompanions(hotels, 'hotel'),
+      loadAndTransformItemCompanions(transportation, 'transportation'),
+      loadAndTransformItemCompanions(carRentals, 'car_rental'),
+      loadAndTransformItemCompanions(events, 'event'),
+    ]);
+
+    return { flights, hotels, transportation, carRentals, events };
   }
 
   /**
@@ -215,6 +375,7 @@ class TripService extends BaseService {
    * @returns {Promise<Object|null>}
    */
   async getTripWithDetails(tripId, userId) {
+    logger.debug('getTripWithDetails - Starting', { tripId, userId });
     const trip = await Trip.findByPk(tripId, {
       include: this.getTripIncludes(),
     });
@@ -233,7 +394,103 @@ class TripService extends BaseService {
       return null;
     }
 
-    return trip;
+    logger.debug('getTripWithDetails - Trip found, converting to JSON', {
+      tripId,
+      tripName: trip.name,
+      flightCount: trip.flights?.length || 0,
+      hotelCount: trip.hotels?.length || 0,
+      eventCount: trip.events?.length || 0,
+    });
+
+    // Convert to plain JSON object to ensure associated items are serialized
+    const tripData = trip.toJSON();
+
+    // Load item companions for all items in the trip (polymorphic relationship)
+    // Note: ItemCompanion uses itemType and itemId fields, not Sequelize associations
+    const loadAndTransformItemCompanions = async (items, itemType) => {
+      if (!Array.isArray(items) || items.length === 0) {
+        return;
+      }
+
+      const itemIds = items.map((item) => item.id);
+
+      // Fetch all companions for these items
+      const companions = await ItemCompanion.findAll({
+        where: {
+          itemType,
+          itemId: itemIds,
+        },
+        include: [
+          {
+            model: TravelCompanion,
+            as: 'companion',
+            attributes: ['id', 'email', 'firstName', 'lastName', 'name'],
+          },
+        ],
+      });
+
+      // Create a map of itemId -> companions for quick lookup
+      const companionsByItemId = {};
+      companions.forEach((ic) => {
+        if (!companionsByItemId[ic.itemId]) {
+          companionsByItemId[ic.itemId] = [];
+        }
+        companionsByItemId[ic.itemId].push({
+          id: ic.companion?.id,
+          email: ic.companion?.email,
+          firstName: ic.companion?.firstName,
+          lastName: ic.companion?.lastName,
+          name: ic.companion?.name,
+          inheritedFromTrip: ic.inheritedFromTrip,
+        });
+      });
+
+      // Attach companions to each item
+      items.forEach((item) => {
+        item.itemCompanions = companionsByItemId[item.id] || [];
+      });
+    };
+
+    // Load companions for all item types in parallel
+    await Promise.all([
+      loadAndTransformItemCompanions(tripData.flights, 'flight'),
+      loadAndTransformItemCompanions(tripData.hotels, 'hotel'),
+      loadAndTransformItemCompanions(tripData.transportation, 'transportation'),
+      loadAndTransformItemCompanions(tripData.carRentals, 'car_rental'),
+      loadAndTransformItemCompanions(tripData.events, 'event'),
+    ]);
+
+    // Add isAllDay flag to all events (use UTC since dates are ISO strings)
+    if (tripData.events && Array.isArray(tripData.events)) {
+      tripData.events.forEach((event) => {
+        if (event.startDateTime && event.endDateTime) {
+          const startDate = new Date(event.startDateTime);
+          const endDate = new Date(event.endDateTime);
+          const startHours = startDate.getUTCHours();
+          const startMinutes = startDate.getUTCMinutes();
+          const endHours = endDate.getUTCHours();
+          const endMinutes = endDate.getUTCMinutes();
+          event.isAllDay =
+            startHours === 0 && startMinutes === 0 && endHours === 23 && endMinutes === 59;
+        } else {
+          event.isAllDay = false;
+        }
+      });
+    }
+
+    // Debug: Log companions attached to items
+    logger.debug('getTripWithDetails - Companions loaded', {
+      tripId,
+      tripName: tripData.name,
+      flightsWithCompanions:
+        tripData.flights?.filter((f) => f.itemCompanions?.length > 0).length || 0,
+      hotelsWithCompanions:
+        tripData.hotels?.filter((h) => h.itemCompanions?.length > 0).length || 0,
+      eventsWithCompanions:
+        tripData.events?.filter((e) => e.itemCompanions?.length > 0).length || 0,
+    });
+
+    return tripData;
   }
 
   /**

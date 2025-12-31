@@ -13,7 +13,6 @@ const {
 } = require('../models');
 const logger = require('../utils/logger');
 const airportService = require('../services/airportService');
-const { formatInTimezone } = require('../utils/timezoneHelper');
 
 /**
  * Get calendar sidebar content
@@ -24,10 +23,10 @@ exports.getCalendarSidebar = async (req, res) => {
     // Simplified includes - only fetch what we need for calendar display
     const minimalTripIncludes = [
       { model: Flight, as: 'flights', attributes: ['id', 'tripId', 'departureDateTime', 'arrivalDateTime', 'origin', 'destination', 'originTimezone', 'destinationTimezone'] },
-      { model: Hotel, as: 'hotels', attributes: ['id', 'tripId', 'checkInDateTime', 'checkOutDateTime', 'hotelName', 'address', 'phone', 'timezone'] },
+      { model: Hotel, as: 'hotels', attributes: ['id', 'tripId', 'checkInDateTime', 'checkOutDateTime', 'hotelName', 'address', 'phone'] },
       { model: Transportation, as: 'transportation', attributes: ['id', 'tripId', 'departureDateTime', 'arrivalDateTime', 'origin', 'destination', 'method', 'originTimezone', 'destinationTimezone'] },
       { model: CarRental, as: 'carRentals', attributes: ['id', 'tripId', 'pickupDateTime', 'dropoffDateTime', 'company'] },
-      { model: Event, as: 'events', attributes: ['id', 'tripId', 'startDateTime', 'endDateTime', 'name', 'isConfirmed', 'timezone'] },
+      { model: Event, as: 'events', attributes: ['id', 'tripId', 'startDateTime', 'endDateTime', 'name', 'isConfirmed'] },
     ];
 
     // Get trips the user owns - simpler query without companion details
@@ -84,7 +83,7 @@ exports.getCalendarSidebar = async (req, res) => {
       }).catch(() => []),
       Hotel.findAll({
         where: { userId: req.user.id, tripId: null },
-        attributes: ['id', 'checkInDateTime', 'checkOutDateTime', 'hotelName', 'address', 'phone', 'timezone'],
+        attributes: ['id', 'checkInDateTime', 'checkOutDateTime', 'hotelName', 'address', 'phone'],
         order: [['checkInDateTime', 'ASC']],
       }).catch(() => []),
       Transportation.findAll({
@@ -99,7 +98,7 @@ exports.getCalendarSidebar = async (req, res) => {
       }).catch(() => []),
       Event.findAll({
         where: { userId: req.user.id, tripId: null },
-        attributes: ['id', 'startDateTime', 'endDateTime', 'name', 'isConfirmed', 'timezone'],
+        attributes: ['id', 'startDateTime', 'endDateTime', 'name', 'isConfirmed'],
         order: [['startDateTime', 'ASC']],
       }).catch(() => []),
     ]);
@@ -167,10 +166,9 @@ exports.getCalendarSidebar = async (req, res) => {
       standaloneTransportation: enrichedStandaloneTransportation || [],
       standaloneCarRentals: standaloneCarRentals || [],
       standaloneEvents: standaloneEvents || [],
-      formatInTimezone,
     };
 
-    // DEBUG: Log events with their timezone info
+    // DEBUG: Log events
     logger.debug('=== EVENTS DEBUG ===');
     logger.debug('Number of trips:', uniqueTrips.length);
     uniqueTrips.forEach((trip, idx) => {
@@ -185,8 +183,6 @@ exports.getCalendarSidebar = async (req, res) => {
             id: event.id,
             name: event.name,
             startDateTime: event.startDateTime,
-            timezone: event.timezone,
-            hasTimezone: !!event.timezone
           });
         });
       }
@@ -197,8 +193,6 @@ exports.getCalendarSidebar = async (req, res) => {
         id: event.id,
         name: event.name,
         startDateTime: event.startDateTime,
-        timezone: event.timezone,
-        hasTimezone: !!event.timezone
       });
     });
 

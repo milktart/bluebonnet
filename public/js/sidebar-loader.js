@@ -133,6 +133,7 @@ async function loadSidebarContent(url, options = {}) {
       url.includes('/vouchers/sidebar') ||
       url.includes('/companions') ||
       url.includes('/account/sidebar') ||
+      url.includes('/account/data/sidebar') ||
       options.fullWidth
     ) {
       if (sidebar) {
@@ -158,7 +159,8 @@ async function loadSidebarContent(url, options = {}) {
         options.fullWidth ||
         url.includes('/vouchers/sidebar') ||
         url.includes('/companions') ||
-        url.includes('/account/sidebar'),
+        url.includes('/account/sidebar') ||
+        url.includes('/account/data/sidebar'),
     });
 
     eventBus.emit(EventTypes.SIDEBAR_OPENED, { url });

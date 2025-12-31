@@ -1,0 +1,25 @@
+# Development Dockerfile for Svelte Frontend
+# Supports hot module replacement (HMR) for development
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (including dev)
+RUN npm install
+
+# Copy source code
+COPY . .
+
+# Expose development port for Vite
+EXPOSE 5173
+
+# Expose HMR port for hot module replacement
+EXPOSE 24678
+
+# Start development server with HMR enabled
+# --host 0.0.0.0 allows access from outside container
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
