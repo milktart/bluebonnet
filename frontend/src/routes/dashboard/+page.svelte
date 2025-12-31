@@ -502,7 +502,7 @@
                               title="Edit trip details and companions"
                               on:click={(e) => {
                                 e.stopPropagation();
-                                secondarySidebarContent = { type: 'item', itemType: 'trip', data: item.data };
+                                dashboardStoreActions.openSecondarySidebar({ type: 'trip', itemType: 'trip', data: item.data });
                               }}
                             >
                               <span class="material-symbols-outlined">edit</span>
