@@ -123,6 +123,15 @@ function notFound(res, message = 'Resource not found') {
 }
 
 /**
+ * Send conflict response (e.g., duplicate resource)
+ * @param {Object} res - Express response object
+ * @param {string} message - Error message
+ */
+function conflict(res, message = 'Resource conflict') {
+  return error(res, message, 409);
+}
+
+/**
  * Send internal server error response
  * @param {Object} res - Express response object
  * @param {string} message - Error message
@@ -149,5 +158,6 @@ module.exports = {
   unauthorized,
   forbidden,
   notFound,
+  conflict,
   internalError,
 };

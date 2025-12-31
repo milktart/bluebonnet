@@ -22,9 +22,6 @@ const upload = multer({
 // All account routes require authentication
 router.use(ensureAuthenticated);
 
-// GET account settings page
-router.get('/', accountController.getAccountSettings);
-
 // GET account settings sidebar content (AJAX)
 router.get('/sidebar', accountController.getAccountSettingsSidebar);
 
@@ -49,10 +46,22 @@ router.get('/vouchers/sidebar', accountController.getVouchersSidebar);
 // GET voucher details (AJAX)
 router.get('/vouchers/:voucherId/details', accountController.getVoucherDetails);
 
+// GET account data management page
+router.get('/data', accountController.getDataManagement);
+
+// GET data management sidebar content (AJAX)
+router.get('/data/sidebar', accountController.getDataManagementSidebar);
+
+// POST preview import data (AJAX)
+router.post('/data/preview', upload.single('file'), accountController.previewImportData);
+
+// POST import selected data items (AJAX)
+router.post('/data/import', accountController.importSelectedData);
+
 // GET export account data
 router.get('/export', accountController.exportAccountData);
 
-// POST import account data
+// POST import account data (deprecated, kept for backwards compatibility)
 router.post('/import', upload.single('file'), accountController.importAccountData);
 
 module.exports = router;

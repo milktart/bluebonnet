@@ -113,7 +113,7 @@ exports.createTransportation = async (req, res) => {
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
-      return res.json({ success: true, message: 'Transportation added successfully' });
+      return res.json({ success: true, data: transportation, message: 'Transportation added successfully' });
     }
 
     redirectAfterSuccess(res, req, tripId, 'transportation', 'Transportation added successfully');
@@ -218,7 +218,7 @@ exports.updateTransportation = async (req, res) => {
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
-      return res.json({ success: true, message: 'Transportation updated successfully' });
+      return res.json({ success: true, data: transportation, message: 'Transportation updated successfully' });
     }
 
     redirectAfterSuccess(

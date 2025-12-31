@@ -131,26 +131,22 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // Render error page for traditional requests
+  // For non-API requests, return JSON instead of rendering (EJS views no longer exist)
   if (!err.isOperational && process.env.NODE_ENV === 'production') {
     // Don't leak error details in production for non-operational errors
-    return res.status(500).render('error', {
-      title: 'Error',
-      error: {
-        message: 'Something went wrong. Please try again later.',
-        status: 500,
-      },
+    return res.status(500).json({
+      success: false,
+      error: 'Something went wrong. Please try again later.',
+      status: 500,
     });
   }
 
-  // Show detailed error page in development or for operational errors
-  res.status(err.statusCode).render('error', {
-    title: 'Error',
-    error: {
-      message: err.message,
-      status: err.statusCode,
-      ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
-    },
+  // Return JSON error response (EJS views are deprecated)
+  res.status(err.statusCode).json({
+    success: false,
+    error: err.message,
+    status: err.statusCode,
+    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
   });
 };
 

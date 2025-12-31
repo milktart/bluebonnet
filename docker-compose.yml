@@ -16,6 +16,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - bluebonnet_network
 
   redis:
     image: redis:7-alpine
@@ -31,6 +33,8 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
+    networks:
+      - bluebonnet_network
 
   app:
     build:
@@ -64,9 +68,16 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
+    networks:
+      - bluebonnet_network
+
 
 volumes:
   postgres_data:
     name: ${NODE_ENV}_postgres_data
   redis_data:
     name: ${NODE_ENV}_redis_data
+
+networks:
+  bluebonnet_network:
+    driver: bridge

@@ -12,22 +12,29 @@ exports.getRegister = (req, res) => {
 
 exports.postRegister = async (req, res) => {
   try {
-    const { email, password, firstName, lastName } = req.body;
+    const { email, password, firstName, lastName, name } = req.body;
+    const isJsonRequest = req.get('content-type')?.includes('application/json');
 
     const existingUser = await User.findOne({ where: { email: email.toLowerCase() } });
 
     if (existingUser) {
+      if (isJsonRequest) {
+        return res.status(400).json({ success: false, message: 'Email already registered' });
+      }
       req.flash('error_msg', 'Email already registered');
       return res.redirect('/auth/register');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Support both firstName/lastName and name fields
+    const [first, last] = name ? name.split(' ') : [firstName, lastName];
+
     const newUser = await User.create({
       email: email.toLowerCase(),
       password: hashedPassword,
-      firstName,
-      lastName,
+      firstName: first,
+      lastName: last,
       linkedAt: new Date(),
     });
 
@@ -84,19 +91,28 @@ exports.postRegister = async (req, res) => {
         relationship.permissionLevel = 'view_travel';
         await relationship.save();
       }
-
-      const companionCount = companionsToLink.length;
-      req.flash(
-        'success_msg',
-        `Registration successful! ${companionCount} travel companion${companionCount > 1 ? 's' : ''} automatically linked to your account. Please log in.`
-      );
-    } else {
-      req.flash('success_msg', 'Registration successful! Please log in.');
     }
 
+    if (isJsonRequest) {
+      return res.json({
+        success: true,
+        message: 'Registration successful! Please log in.',
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
+        }
+      });
+    }
+
+    req.flash('success_msg', 'Registration successful! Please log in.');
     res.redirect('/auth/login');
   } catch (error) {
     logger.error(error);
+    if (req.get('content-type')?.includes('application/json')) {
+      return res.status(500).json({ success: false, message: 'An error occurred during registration' });
+    }
     req.flash('error_msg', 'An error occurred during registration');
     res.redirect('/auth/register');
   }

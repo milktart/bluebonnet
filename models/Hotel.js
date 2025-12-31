@@ -43,10 +43,6 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DATE,
         allowNull: false,
       },
-      timezone: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
       lat: {
         type: DataTypes.DECIMAL(10, 7),
         allowNull: true,

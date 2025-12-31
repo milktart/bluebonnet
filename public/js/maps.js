@@ -50,8 +50,8 @@ async function initializeMap(tripData, isPast = false, currentTripId = null) {
     // Initialize map
     const map = L.map('map', {
       center: [25, 0],
-      zoom: 1,
-      minZoom: 1,
+      zoom: 0.5,
+      minZoom: 0.5,
       zoomSnap: 0.5,
       zoomControl: false, // Disable default zoom control
       scrollWheelZoom: true,
@@ -375,25 +375,25 @@ async function initializeMap(tripData, isPast = false, currentTripId = null) {
       let maxZoom;
       if (maxSpan > 300) {
         // World-wide trips - keep zoomed out for full visibility
-        maxZoom = 2;
+        maxZoom = 1.5;
       } else if (maxSpan > 150) {
         // Spanning half the world (e.g., LA to Seoul)
-        maxZoom = 2.25;
+        maxZoom = 1.75;
       } else if (maxSpan > 100) {
         // Very spread out
-        maxZoom = 2.5;
+        maxZoom = 2;
       } else if (maxSpan > 50) {
         // Continental level spread
-        maxZoom = 3;
+        maxZoom = 2.5;
       } else if (maxSpan > 20) {
         // Regional spread
-        maxZoom = 3.5;
+        maxZoom = 3;
       } else if (maxSpan > 10) {
         // Local spread
-        maxZoom = 4;
+        maxZoom = 3.5;
       } else {
         // Very local (same city or nearby)
-        maxZoom = 5;
+        maxZoom = 4;
       }
 
       // Fit bounds accounting for primary sidebar on left
