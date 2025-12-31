@@ -314,7 +314,7 @@ app.use(async (req, res, next) => {
   // Load SvelteKit handler on first non-API request
   if (svelteKitHandler === null && svelteKitLoadError === null) {
     try {
-      const svelteKitModule = await import('./build_frontend/handler');
+      const svelteKitModule = await import('./build_frontend/handler.js');
       svelteKitHandler = svelteKitModule.handler;
       logger.info('SvelteKit frontend handler loaded successfully on first request');
     } catch (error) {
