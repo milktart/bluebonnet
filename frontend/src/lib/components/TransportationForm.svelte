@@ -1,6 +1,7 @@
 <script lang="ts">
   import { transportationApi } from '$lib/services/api';
   import { tripStoreActions } from '$lib/stores/tripStore';
+  import { dataService } from '$lib/services/dataService';
   import TextInput from './TextInput.svelte';
   import Textarea from './Textarea.svelte';
   import DateTimePicker from './DateTimePicker.svelte';
@@ -68,10 +69,14 @@
         // Update existing transportation
         savedTransportation = await transportationApi.update(transportationId, formData);
         tripStoreActions.updateTransportation(transportationId, savedTransportation);
+        // Invalidate cache after update
+        dataService.invalidateCache('trip');
       } else {
         // Create new transportation - pass tripId and formData
         savedTransportation = await transportationApi.create(tripId, formData);
         tripStoreActions.addTransportation(savedTransportation);
+        // Invalidate cache after create
+        dataService.invalidateCache('all');
       }
 
       if (onSuccess) {

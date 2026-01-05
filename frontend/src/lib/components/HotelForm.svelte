@@ -1,6 +1,7 @@
 <script lang="ts">
   import { hotelsApi } from '$lib/services/api';
   import { tripStoreActions } from '$lib/stores/tripStore';
+  import { dataService } from '$lib/services/dataService';
   import TextInput from './TextInput.svelte';
   import Textarea from './Textarea.svelte';
   import DateTimePicker from './DateTimePicker.svelte';
@@ -56,10 +57,14 @@
         // Update existing hotel
         savedHotel = await hotelsApi.update(hotelId, formData);
         tripStoreActions.updateHotel(hotelId, savedHotel);
+        // Invalidate cache after update
+        dataService.invalidateCache('trip');
       } else {
         // Create new hotel - pass tripId and formData
         savedHotel = await hotelsApi.create(tripId, formData);
         tripStoreActions.addHotel(savedHotel);
+        // Invalidate cache after create
+        dataService.invalidateCache('all');
       }
 
       if (onSuccess) {

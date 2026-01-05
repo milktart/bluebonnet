@@ -1,6 +1,7 @@
 <script lang="ts">
   import { flightsApi } from '$lib/services/api';
   import { tripStoreActions } from '$lib/stores/tripStore';
+  import { dataService } from '$lib/services/dataService';
   import TextInput from './TextInput.svelte';
   import Textarea from './Textarea.svelte';
   import DateTimePicker from './DateTimePicker.svelte';
@@ -66,10 +67,14 @@
         // Update existing flight
         savedFlight = await flightsApi.update(flightId, formData);
         tripStoreActions.updateFlight(flightId, savedFlight);
+        // Invalidate cache after update
+        dataService.invalidateCache('trip');
       } else {
         // Create new flight - pass tripId and formData
         savedFlight = await flightsApi.create(tripId, formData);
         tripStoreActions.addFlight(savedFlight);
+        // Invalidate cache after create
+        dataService.invalidateCache('all');
       }
 
       if (onSuccess) {

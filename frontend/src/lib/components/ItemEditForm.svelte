@@ -1,6 +1,7 @@
 <script lang="ts">
   import { tripsApi, flightsApi, hotelsApi, eventsApi, transportationApi, carRentalsApi, itemCompanionsApi } from '$lib/services/api';
   import { tripStore } from '$lib/stores/tripStore';
+  import { dataService } from '$lib/services/dataService';
   import { utcToLocalTimeString } from '$lib/utils/timezoneUtils';
   import AirportAutocomplete from './AirportAutocomplete.svelte';
   import ItemCompanionsForm from './ItemCompanionsForm.svelte';
@@ -409,6 +410,16 @@
       }
 
       onSave(result || submitData);
+
+      // Invalidate cache after successful mutation
+      if (isEditing) {
+        // For updates, invalidate trip cache
+        dataService.invalidateCache('trip');
+      } else {
+        // For creates, could be new trip or new item
+        dataService.invalidateCache('all');
+      }
+
       onClose();
     } catch (err) {
       error = err instanceof Error ? err.message : 'An error occurred';

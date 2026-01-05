@@ -1,6 +1,7 @@
 <script lang="ts">
   import { carRentalsApi } from '$lib/services/api';
   import { tripStoreActions } from '$lib/stores/tripStore';
+  import { dataService } from '$lib/services/dataService';
   import TextInput from './TextInput.svelte';
   import Textarea from './Textarea.svelte';
   import DateTimePicker from './DateTimePicker.svelte';
@@ -66,10 +67,14 @@
         // Update existing car rental
         savedCarRental = await carRentalsApi.update(carRentalId, formData);
         tripStoreActions.updateCarRental(carRentalId, savedCarRental);
+        // Invalidate cache after update
+        dataService.invalidateCache('trip');
       } else {
         // Create new car rental - pass tripId and formData
         savedCarRental = await carRentalsApi.create(tripId, formData);
         tripStoreActions.addCarRental(savedCarRental);
+        // Invalidate cache after create
+        dataService.invalidateCache('all');
       }
 
       if (onSuccess) {
