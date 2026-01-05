@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { createEventDispatcher } from 'svelte';
   import { dashboardStore, dashboardStoreActions } from '$lib/stores/dashboardStore';
   import ItemEditForm from '$lib/components/ItemEditForm.svelte';
   import DashboardCalendar from '$lib/components/DashboardCalendar.svelte';
@@ -7,6 +8,8 @@
   import SettingsVouchers from '$lib/components/SettingsVouchers.svelte';
   import SettingsCompanions from '$lib/components/SettingsCompanions.svelte';
   import SettingsBackup from '$lib/components/SettingsBackup.svelte';
+
+  const dispatch = createEventDispatcher();
 
   export let secondarySidebarContent: { type: string; itemType?: string; data: any } | null = null;
   export let trips: any[] = [];
@@ -17,7 +20,8 @@
   };
 
   const handleItemSave = async (item: any) => {
-    // Will be handled by parent component after data mutation
+    // Dispatch save event to parent component with the updated item data
+    dispatch('save', item);
   };
 
   const handleNewTripClick = () => {
