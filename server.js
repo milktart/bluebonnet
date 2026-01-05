@@ -9,7 +9,6 @@ const compression = require('compression');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const swaggerUi = require('swagger-ui-express');
 const db = require('./models');
 const dateFormatter = require('./utils/dateFormatter');
 const logger = require('./utils/logger');
@@ -185,7 +184,13 @@ app.use((req, res, next) => {
   res.locals.getLayoverText = dateFormatter.getLayoverText;
 
   // Make item color utilities available to all EJS templates
-  const { getItemHexColor, getItemColorStyle, getActionColor, getApproveColor, getDeclineColor } = require('./config/itemColors');
+  const {
+    getItemHexColor,
+    getItemColorStyle,
+    getActionColor,
+    getApproveColor,
+    getDeclineColor,
+  } = require('./config/itemColors');
   res.locals.getItemHexColor = getItemHexColor;
   res.locals.getItemColorStyle = getItemColorStyle;
   res.locals.getActionColor = getActionColor;
@@ -240,9 +245,9 @@ app.get('/health', async (req, res) => {
 
   // Check Redis connection
   try {
-    const redisClient = redis.getClient();
-    if (redisClient && redis.isAvailable()) {
-      await redisClient.ping();
+    const healthCheckRedisClient = redis.getClient();
+    if (healthCheckRedisClient && redis.isAvailable()) {
+      await healthCheckRedisClient.ping();
       health.redis = 'connected';
     } else {
       health.redis = 'disabled';
@@ -260,24 +265,6 @@ app.get('/health', async (req, res) => {
 
 // Rate limiting middleware disabled for development
 // const { authLimiter, apiLimiter, formLimiter } = require('./middleware/rateLimiter');
-
-// Swagger/OpenAPI Documentation Setup (Phase 2B)
-try {
-  const { specs } = require('./config/swagger.ts');
-  app.use('/api-docs', swaggerUi.serve);
-  app.get('/api-docs', swaggerUi.setup(specs, {
-    swaggerOptions: {
-      persistAuthorization: true,
-    },
-    customCss: '.swagger-ui { margin: 0; padding: 20px; }',
-    customSiteTitle: 'Bluebonnet API Docs',
-  }));
-  logger.info('Swagger documentation available at /api-docs');
-} catch (error) {
-  logger.warn('Swagger setup skipped (may need TypeScript compilation)', {
-    error: error.message,
-  });
-}
 
 // Routes
 app.use('/', require('./routes/index'));
@@ -303,11 +290,21 @@ let svelteKitLoadError = null;
 
 app.use(async (req, res, next) => {
   // Skip SvelteKit for API routes (already handled above)
-  if (req.path.startsWith('/api') || req.path.startsWith('/auth') || req.path.startsWith('/account') ||
-      req.path.startsWith('/companions') || req.path.startsWith('/trips') || req.path.startsWith('/flights') ||
-      req.path.startsWith('/hotels') || req.path.startsWith('/transportation') || req.path.startsWith('/car-rentals') ||
-      req.path.startsWith('/events') || req.path.startsWith('/vouchers') || req.path.startsWith('/companion-relationships') ||
-      req.path.startsWith('/trip-invitations')) {
+  if (
+    req.path.startsWith('/api') ||
+    req.path.startsWith('/auth') ||
+    req.path.startsWith('/account') ||
+    req.path.startsWith('/companions') ||
+    req.path.startsWith('/trips') ||
+    req.path.startsWith('/flights') ||
+    req.path.startsWith('/hotels') ||
+    req.path.startsWith('/transportation') ||
+    req.path.startsWith('/car-rentals') ||
+    req.path.startsWith('/events') ||
+    req.path.startsWith('/vouchers') ||
+    req.path.startsWith('/companion-relationships') ||
+    req.path.startsWith('/trip-invitations')
+  ) {
     return next();
   }
 
@@ -315,7 +312,7 @@ app.use(async (req, res, next) => {
   if (svelteKitHandler === null && svelteKitLoadError === null) {
     try {
       // eslint-disable-next-line import/no-unresolved, import/extensions
-      const svelteKitModule = await import('./frontend/build/handler.js');
+      const svelteKitModule = await import('bluebonnet-svelte/build/handler.js');
       svelteKitHandler = svelteKitModule.handler;
       logger.info('SvelteKit frontend handler loaded successfully on first request');
     } catch (error) {

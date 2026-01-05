@@ -1,8 +1,18 @@
 const bcrypt = require('bcrypt');
 const { Sequelize, Op } = require('sequelize');
 const logger = require('../utils/logger');
-const { User, TravelCompanion, Voucher, Trip, Flight, Hotel, Transportation, CarRental, Event, sequelize } = require('../models');
-const versionInfo = require('../utils/version');
+const {
+  User,
+  TravelCompanion,
+  Voucher,
+  Trip,
+  Flight,
+  Hotel,
+  Transportation,
+  CarRental,
+  Event,
+  sequelize,
+} = require('../models');
 const importPreviewProcessor = require('../utils/importPreviewProcessor');
 
 exports.updateProfile = async (req, res) => {
@@ -662,9 +672,7 @@ exports.previewImportData = async (req, res) => {
 
     // Validate version
     if (importData.version !== '1.0') {
-      return res
-        .status(400)
-        .json({ success: false, error: 'Incompatible export file version' });
+      return res.status(400).json({ success: false, error: 'Incompatible export file version' });
     }
 
     // Fetch all user's current data for duplicate detection
@@ -718,9 +726,7 @@ exports.importSelectedData = async (req, res) => {
     const { importData, selectedItemIds } = req.body;
 
     if (!importData || !selectedItemIds || !Array.isArray(selectedItemIds)) {
-      return res
-        .status(400)
-        .json({ success: false, error: 'Invalid request parameters' });
+      return res.status(400).json({ success: false, error: 'Invalid request parameters' });
     }
 
     logger.info('Import request received:', {
@@ -763,7 +769,7 @@ exports.importSelectedData = async (req, res) => {
           { transaction }
         );
 
-        stats.trips++;
+        stats.trips += 1;
 
         // Import all children of this trip (frontend already filtered to selected items)
         if (tripData.flights && Array.isArray(tripData.flights)) {
@@ -777,7 +783,7 @@ exports.importSelectedData = async (req, res) => {
               },
               { transaction }
             );
-            stats.flights++;
+            stats.flights += 1;
           }
         }
 
@@ -792,7 +798,7 @@ exports.importSelectedData = async (req, res) => {
               },
               { transaction }
             );
-            stats.hotels++;
+            stats.hotels += 1;
           }
         }
 
@@ -807,7 +813,7 @@ exports.importSelectedData = async (req, res) => {
               },
               { transaction }
             );
-            stats.transportation++;
+            stats.transportation += 1;
           }
         }
 
@@ -822,7 +828,7 @@ exports.importSelectedData = async (req, res) => {
               },
               { transaction }
             );
-            stats.carRentals++;
+            stats.carRentals += 1;
           }
         }
 
@@ -837,7 +843,7 @@ exports.importSelectedData = async (req, res) => {
               },
               { transaction }
             );
-            stats.events++;
+            stats.events += 1;
           }
         }
       }
@@ -855,7 +861,7 @@ exports.importSelectedData = async (req, res) => {
           },
           { transaction }
         );
-        stats.flights++;
+        stats.flights += 1;
       }
     }
 
@@ -870,14 +876,11 @@ exports.importSelectedData = async (req, res) => {
           },
           { transaction }
         );
-        stats.hotels++;
+        stats.hotels += 1;
       }
     }
 
-    if (
-      importData.standaloneTransportation &&
-      Array.isArray(importData.standaloneTransportation)
-    ) {
+    if (importData.standaloneTransportation && Array.isArray(importData.standaloneTransportation)) {
       for (const trans of importData.standaloneTransportation) {
         await Transportation.create(
           {
@@ -888,14 +891,11 @@ exports.importSelectedData = async (req, res) => {
           },
           { transaction }
         );
-        stats.transportation++;
+        stats.transportation += 1;
       }
     }
 
-    if (
-      importData.standaloneCarRentals &&
-      Array.isArray(importData.standaloneCarRentals)
-    ) {
+    if (importData.standaloneCarRentals && Array.isArray(importData.standaloneCarRentals)) {
       for (const carRental of importData.standaloneCarRentals) {
         await CarRental.create(
           {
@@ -906,7 +906,7 @@ exports.importSelectedData = async (req, res) => {
           },
           { transaction }
         );
-        stats.carRentals++;
+        stats.carRentals += 1;
       }
     }
 
@@ -921,7 +921,7 @@ exports.importSelectedData = async (req, res) => {
           },
           { transaction }
         );
-        stats.events++;
+        stats.events += 1;
       }
     }
 
@@ -929,7 +929,7 @@ exports.importSelectedData = async (req, res) => {
     if (importData.vouchers && Array.isArray(importData.vouchers)) {
       for (const voucher of importData.vouchers) {
         // Don't include parentVoucherId since parent vouchers won't exist in new database
-        const { parentVoucherId, ...voucherData } = voucher;
+        const { parentVoucherId: _parentVoucherId, ...voucherData } = voucher;
 
         await Voucher.create(
           {
@@ -940,7 +940,7 @@ exports.importSelectedData = async (req, res) => {
           },
           { transaction }
         );
-        stats.vouchers++;
+        stats.vouchers += 1;
       }
     }
 
@@ -948,7 +948,7 @@ exports.importSelectedData = async (req, res) => {
     if (importData.companions && Array.isArray(importData.companions)) {
       for (const companion of importData.companions) {
         // Don't include userId from imported companion (it references old database)
-        const { userId: importedUserId, ...companionData } = companion;
+        const { userId: _importedUserId, ...companionData } = companion;
 
         await TravelCompanion.create(
           {
@@ -959,7 +959,7 @@ exports.importSelectedData = async (req, res) => {
           },
           { transaction }
         );
-        stats.companions++;
+        stats.companions += 1;
       }
     }
 
