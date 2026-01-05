@@ -23,8 +23,10 @@
     name: event?.name || '',
     description: event?.description || '',
     location: event?.location || '',
-    date: event?.date || '',
-    time: event?.time || '',
+    startDate: event?.startDate || '',
+    startTime: event?.startTime || '',
+    endDate: event?.endDate || '',
+    endTime: event?.endTime || '',
     category: event?.category || 'activity',
     ticketNumber: event?.ticketNumber || '',
     cost: event?.cost || '',
@@ -51,7 +53,7 @@
         return;
       }
 
-      if (!formData.date) {
+      if (!formData.startDate) {
         error = 'Event date is required';
         return;
       }
@@ -122,7 +124,7 @@
       <label class="input-label">Event Date</label>
       <input
         type="date"
-        bind:value={formData.date}
+        bind:value={formData.startDate}
         required={true}
         class="form-input"
       />
@@ -132,7 +134,7 @@
       <label class="input-label">Event Time</label>
       <input
         type="time"
-        bind:value={formData.time}
+        bind:value={formData.startTime}
         class="form-input"
       />
     </div>

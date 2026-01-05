@@ -100,15 +100,6 @@ export class TripService extends BaseService<Trip> {
   async getUserTrips(userId: string, options: TripQueryOptions = {}): Promise<UserTripsResult> {
     const { filter = 'upcoming', page = 1, limit = 20 } = options;
 
-    // Try to get from cache first
-    const cached = await cacheService.getCachedUserTrips(userId, filter, page);
-    if (cached) {
-      logger.debug('Cache HIT: User trips', { userId, filter, page });
-      return cached;
-    }
-
-    logger.debug('Cache MISS: User trips', { userId, filter, page });
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -254,9 +245,6 @@ export class TripService extends BaseService<Trip> {
       standalone: convertedStandalone,
       pagination,
     };
-
-    // Cache the result
-    await cacheService.cacheUserTrips(userId, filter, page, result);
 
     return result;
   }

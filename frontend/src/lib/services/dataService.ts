@@ -1,29 +1,17 @@
 /**
- * Data Service - Smart caching and synchronization
+ * Data Service - Live data loading (no caching)
  *
  * Manages:
- * - TTL-based caching (5 minutes default)
+ * - Always fetch fresh data from database
  * - Batch fetching with concurrency limits
- * - Cache invalidation after mutations
  * - Cross-tab data synchronization
  * - Broadcast of data changes
- *
- * Benefits:
- * - 70% reduction in API calls
- * - Faster perceived performance
- * - Proper cache invalidation
- * - Multi-tab synchronization
- * - No N+1 queries
  *
  * Usage:
  * import { dataService } from '$lib/services/dataService';
  *
- * // Load with caching
+ * // Always fetches fresh data
  * const trips = await dataService.loadAllTrips();
- *
- * // Invalidate after mutation
- * await api.createTrip(tripData);
- * dataService.invalidateCache('trip');
  *
  * // Broadcast change
  * dataService.broadcastDataChange('trip:created', { id: '123', name: 'Paris' });
@@ -48,39 +36,24 @@ interface CacheEntry<T> {
  */
 class DataService {
   private cache: Map<string, CacheEntry<any>> = new Map();
-  private readonly DEFAULT_CACHE_TTL = 0; // Disabled - fetch fresh data on every request
-  private readonly AIRPORT_CACHE_TTL = 60 * 60 * 24 * 1000; // 24 hours for airport codes only
   private readonly MAX_CONCURRENT_REQUESTS = 5;
 
   /**
-   * Load all trips with smart caching
+   * Load all trips with fresh data from database
    *
-   * - First load: fetches all trips + details in parallel
-   * - Cached load: returns cached data if < TTL old
-   * - Forced load: ignores cache and refetches
+   * - Always fetches fresh data for all trips + details in parallel
+   * - Updates the dashboard store with current data
    *
-   * @param force - If true, ignore cache and refetch
    * @returns Array of trips with full details
    * @throws Error if fetch fails
    *
    * @example
    * const trips = await dataService.loadAllTrips();
-   * const freshTrips = await dataService.loadAllTrips(true); // Force refresh
    */
-  async loadAllTrips(force: boolean = false): Promise<Trip[]> {
-    const cacheKey = 'trips:all';
-
-    // Check cache first (unless forced)
-    if (!force) {
-      const cached = this.getFromCache<Trip[]>(cacheKey);
-      if (cached) {
-        return cached;
-      }
-    }
-
+  async loadAllTrips(): Promise<Trip[]> {
     dashboardStoreActions.setLoading(true);
     try {
-      // Fetch trip list with summary data
+      // Always fetch fresh data from database (no caching)
       const response = await tripsApi.getAll('all');
       const trips = response?.trips || [];
 
@@ -90,9 +63,6 @@ class DataService {
         (trip) => tripsApi.getOne(trip.id),
         this.MAX_CONCURRENT_REQUESTS
       );
-
-      // Cache the result
-      this.setInCache(cacheKey, detailed, this.DEFAULT_CACHE_TTL);
 
       // Update dashboard store
       dashboardStoreActions.setTrips(detailed);
@@ -126,15 +96,7 @@ class DataService {
     carRentals: CarRental[];
     transportation: Transportation[];
   }> {
-    const cacheKey = `items:standalone:${filter}`;
-
-    // Check cache
-    const cached = this.getFromCache(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
-    // Fetch
+    // Always fetch fresh data from database (no caching)
     const response = await tripsApi.getAll(filter);
     const items = response?.standalone || {
       flights: [],
@@ -143,9 +105,6 @@ class DataService {
       carRentals: [],
       transportation: [],
     };
-
-    // Cache
-    this.setInCache(cacheKey, items, this.DEFAULT_CACHE_TTL);
 
     // Update store
     dashboardStoreActions.setStandaloneItems(items);
@@ -163,61 +122,18 @@ class DataService {
    * const trip = await dataService.loadTripDetails('trip-123');
    */
   async loadTripDetails(tripId: string): Promise<Trip> {
-    const cacheKey = `trip:${tripId}`;
-
-    // Check cache
-    const cached = this.getFromCache<Trip>(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
-    // Fetch
+    // Always fetch fresh data from database (no caching)
     const trip = await tripsApi.getOne(tripId);
-
-    // Cache
-    this.setInCache(cacheKey, trip, this.DEFAULT_CACHE_TTL);
-
     return trip;
   }
 
   /**
-   * Invalidate cache for specific data types
+   * No-op: Cache invalidation not needed since no caching is used
    *
-   * Called after create/update/delete operations to ensure fresh data
-   *
-   * @param itemType - Type of data to invalidate: 'trip', 'item', or 'all'
-   *
-   * @example
-   * // After creating a trip
-   * await api.createTrip(data);
-   * dataService.invalidateCache('trip');
-   *
-   * // After editing a flight
-   * await api.updateFlight(id, data);
-   * dataService.invalidateCache('item');
-   *
-   * // Nuclear option: invalidate everything
-   * dataService.invalidateCache('all');
+   * @deprecated Cache is disabled - data is always fetched fresh from the database
    */
   invalidateCache(itemType: 'trip' | 'item' | 'all' = 'all') {
-    if (itemType === 'all') {
-      // Clear all cache
-      this.cache.clear();
-    } else if (itemType === 'trip') {
-      // Clear trip-related cache
-      this.cache.delete('trips:all');
-      // Also clear all individual trip caches
-      for (const key of this.cache.keys()) {
-        if (key.startsWith('trip:')) {
-          this.cache.delete(key);
-        }
-      }
-    } else if (itemType === 'item') {
-      // Clear standalone items cache
-      this.cache.delete('items:standalone:upcoming');
-      this.cache.delete('items:standalone:past');
-      this.cache.delete('items:standalone:all');
-    }
+    // No-op: no caching is used, so invalidation is not needed
   }
 
   /**
@@ -314,68 +230,7 @@ class DataService {
   }
 
   /**
-   * Get value from cache if not expired
-   *
-   * @param key - Cache key
-   * @returns Cached value or null if not found/expired
-   */
-  private getFromCache<T>(key: string): T | null {
-    const entry = this.cache.get(key);
-
-    if (!entry) {
-      return null;
-    }
-
-    // Check if expired
-    if (Date.now() - entry.timestamp > entry.ttl) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    return entry.data as T;
-  }
-
-  /**
-   * Set value in cache with TTL
-   *
-   * @param key - Cache key
-   * @param data - Value to cache
-   * @param ttl - Time to live in milliseconds
-   */
-  private setInCache<T>(key: string, data: T, ttl: number) {
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now(),
-      ttl,
-    });
-  }
-
-  /**
-   * Get cache stats (for debugging)
-   *
-   * @returns Object with cache size and entry info
-   *
-   * @example
-   * const stats = dataService.getCacheStats();
-   * console.log(`Cache has ${stats.size} entries`);
-   */
-  getCacheStats() {
-    const entries = Array.from(this.cache.entries()).map(([key, entry]) => ({
-      key,
-      ageMs: Date.now() - entry.timestamp,
-      ttlMs: entry.ttl,
-      expired: Date.now() - entry.timestamp > entry.ttl,
-    }));
-
-    return {
-      size: this.cache.size,
-      entries,
-      totalSize: JSON.stringify(this.cache).length,
-    };
-  }
-
-  /**
-   * Clear all cache (useful for logout)
+   * Clear any remaining cache (for logout)
    */
   clearCache() {
     this.cache.clear();

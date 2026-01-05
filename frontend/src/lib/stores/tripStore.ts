@@ -166,6 +166,111 @@ export const tripStoreActions = {
     }));
   },
 
+  setEvents(events: any[]) {
+    tripStore.update(state => ({
+      ...state,
+      events,
+    }));
+  },
+
+  addEvent(event: any) {
+    tripStore.update(state => ({
+      ...state,
+      events: [...state.events, event],
+    }));
+  },
+
+  updateEvent(id: string, data: any) {
+    tripStore.update(state => ({
+      ...state,
+      events: state.events.map(e => e.id === id ? { ...e, ...data } : e),
+    }));
+  },
+
+  deleteEvent(id: string) {
+    tripStore.update(state => ({
+      ...state,
+      events: state.events.filter(e => e.id !== id),
+    }));
+  },
+
+  setCarRentals(carRentals: any[]) {
+    tripStore.update(state => ({
+      ...state,
+      carRentals,
+    }));
+  },
+
+  addCarRental(carRental: any) {
+    tripStore.update(state => ({
+      ...state,
+      carRentals: [...state.carRentals, carRental],
+    }));
+  },
+
+  updateCarRental(id: string, data: any) {
+    tripStore.update(state => ({
+      ...state,
+      carRentals: state.carRentals.map(c => c.id === id ? { ...c, ...data } : c),
+    }));
+  },
+
+  deleteCarRental(id: string) {
+    tripStore.update(state => ({
+      ...state,
+      carRentals: state.carRentals.filter(c => c.id !== id),
+    }));
+  },
+
+  setTransportation(transportation: any[]) {
+    tripStore.update(state => ({
+      ...state,
+      transportation,
+    }));
+  },
+
+  addTransportation(item: any) {
+    tripStore.update(state => ({
+      ...state,
+      transportation: [...state.transportation, item],
+    }));
+  },
+
+  updateTransportation(id: string, data: any) {
+    tripStore.update(state => ({
+      ...state,
+      transportation: state.transportation.map(t => t.id === id ? { ...t, ...data } : t),
+    }));
+  },
+
+  deleteTransportation(id: string) {
+    tripStore.update(state => ({
+      ...state,
+      transportation: state.transportation.filter(t => t.id !== id),
+    }));
+  },
+
+  setVouchers(vouchers: any[]) {
+    tripStore.update(state => ({
+      ...state,
+      vouchers,
+    }));
+  },
+
+  addVoucher(voucher: any) {
+    tripStore.update(state => ({
+      ...state,
+      vouchers: [...state.vouchers, voucher],
+    }));
+  },
+
+  deleteVoucher(id: string) {
+    tripStore.update(state => ({
+      ...state,
+      vouchers: state.vouchers.filter(v => v.id !== id),
+    }));
+  },
+
   setLoading(loading: boolean) {
     tripStore.update(state => ({
       ...state,

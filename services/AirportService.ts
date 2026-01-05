@@ -6,7 +6,6 @@
 import { Op } from 'sequelize';
 import { Airport } from '../models';
 import logger from '../utils/logger';
-import cacheService from './CacheService';
 
 // Load airlines data
 const airlines = require('../data/airlines.json') as any;
@@ -46,13 +45,7 @@ export class AirportService {
 
       const code = iataCode.toUpperCase().trim();
 
-      // Try to get from cache first
-      const cached = await cacheService.getCachedAirportByCode(code);
-      if (cached) {
-        return cached;
-      }
-
-      // Cache miss - fetch from database
+      // Fetch from database
       const airport = await Airport.findOne({ where: { iata: code } });
 
       if (!airport) return null;
@@ -73,9 +66,6 @@ export class AirportService {
         timezone: (airport as any).timezone,
       };
 
-      // Cache the result
-      await cacheService.cacheAirportByCode(code, result);
-
       return result;
     } catch (error) {
       logger.error('Error fetching airport by code:', error);
@@ -92,13 +82,7 @@ export class AirportService {
 
       const searchTerm = query.toLowerCase().trim();
 
-      // Try to get from cache first
-      const cached = await cacheService.getCachedAirportSearch(searchTerm, limit);
-      if (cached) {
-        return cached;
-      }
-
-      // Cache miss - fetch from database
+      // Fetch from database
       const airports = await Airport.findAll({
         where: {
           [Op.or]: [
@@ -132,9 +116,6 @@ export class AirportService {
         country_name: airport.country,
         timezone: airport.timezone,
       }));
-
-      // Cache the results
-      await cacheService.cacheAirportSearch(searchTerm, limit, results);
 
       return results;
     } catch (error) {
