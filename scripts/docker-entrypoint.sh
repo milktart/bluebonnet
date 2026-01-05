@@ -53,7 +53,7 @@ else
   echo "⚠️  Bundle build had warnings, but continuing..."
 fi
 
-# Build SvelteKit frontend
+# Always build the SvelteKit frontend (development or production)
 echo "📦 Building SvelteKit frontend..."
 cd /app/frontend
 npm run build

@@ -42,6 +42,11 @@
     box-sizing: border-box;
   }
 
+  :global(html) {
+    height: 100%;
+    overflow-y: scroll;
+  }
+
   :global(body) {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
       'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
@@ -82,7 +87,7 @@
   .app-wrapper {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    min-height: 100%;
   }
 
   .main-content {

@@ -6,7 +6,7 @@
 </svelte:head>
 
 <!-- Navigation Bar -->
-<nav class="bg-white border-b border-gray-200">
+<nav class="bg-transparent relative z-50">
   <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
     <div class="flex h-16 items-center justify-between">
       <div class="flex items-center space-x-2">
@@ -24,7 +24,7 @@
   </div>
 </nav>
 
-<main>
+<main class="w-full">
   <!-- Hero Section -->
   <div class="relative isolate px-6 pt-14 lg:px-8">
     <div class="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80" aria-hidden="true">

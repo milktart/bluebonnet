@@ -115,21 +115,49 @@
   <title>Register</title>
 </svelte:head>
 
-<main class="flex flex-col justify-center flex-1 py-6 sm:px-6 lg:px-8 bg-gray-50 min-h-screen">
-  <div class="sm:mx-auto sm:w-full sm:max-w-md">
-    <div class="flex justify-center">
-      <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
-        </svg>
+<!-- Navigation Bar -->
+<nav class="bg-transparent relative z-50">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="flex h-16 items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <div class="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center">
+          <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+          </svg>
+        </div>
+        <span class="text-lg font-semibold text-gray-900">Travel Planner</span>
       </div>
+      <a href="/login" class="inline-flex items-center px-4 py-2 rounded-md bg-blue-600 text-sm font-semibold text-white hover:bg-blue-500 transition-colors duration-200">
+        Log In
+      </a>
     </div>
-    <h2 class="mt-4 text-center text-3xl font-bold tracking-tight text-gray-900">
-      Create your account
-    </h2>
-    <p class="mt-2 text-center text-sm text-gray-600">
-      Join Travel Planner and start organizing your adventures
-    </p>
+  </div>
+</nav>
+
+<main class="relative isolate px-6 lg:px-8 min-h-[calc(100vh-4rem)] flex flex-col justify-center">
+  <!-- Blurred Background Elements -->
+  <div class="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80" aria-hidden="true">
+    <div class="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-blue-200 to-blue-400 opacity-30 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]" style="clip-path: polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)"></div>
+  </div>
+
+  <div class="sm:mx-auto sm:w-full sm:max-w-md">
+    <div class="text-center">
+      <div class="flex justify-center">
+        <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+          </svg>
+        </div>
+      </div>
+
+      <h2 class="text-3xl font-bold tracking-tight text-gray-900">
+        Create your account
+      </h2>
+
+      <p class="mt-2 text-center text-sm text-gray-600">
+        Join Travel Planner and start organizing your adventures
+      </p>
+    </div>
   </div>
 
   <div class="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
