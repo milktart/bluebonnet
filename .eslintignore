@@ -19,3 +19,5 @@ scripts/archive/
 # Exclude specific public JS files that may cause issues
 public/js/lib/
 public/js/preline.js
+# Exclude frontend directory (has its own eslint config)
+frontend/
