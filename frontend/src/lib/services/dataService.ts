@@ -48,7 +48,8 @@ interface CacheEntry<T> {
  */
 class DataService {
   private cache: Map<string, CacheEntry<any>> = new Map();
-  private readonly DEFAULT_CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+  private readonly DEFAULT_CACHE_TTL = 0; // Disabled - fetch fresh data on every request
+  private readonly AIRPORT_CACHE_TTL = 60 * 60 * 24 * 1000; // 24 hours for airport codes only
   private readonly MAX_CONCURRENT_REQUESTS = 5;
 
   /**
