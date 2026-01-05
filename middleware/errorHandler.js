@@ -160,11 +160,32 @@ const notFoundHandler = (req, res, next) => {
 };
 
 /**
- * Async handler wrapper
+ * Async handler wrapper with context logging
  * Wraps async route handlers to catch errors automatically
+ * Logs errors with method, path, and user context
  */
 const asyncHandler = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
+  Promise.resolve(fn(req, res, next)).catch((error) => {
+    // Log with full context
+    logger.error(`${req.method} ${req.path} - ${error.message}`, {
+      path: req.path,
+      method: req.method,
+      userId: req.user?.id,
+      stack: error.stack,
+    });
+
+    // Handle async request responses
+    const isAsync = req.headers['x-async-request'] === 'true';
+    if (isAsync) {
+      return res.status(500).json({
+        success: false,
+        error: error.message || 'Internal server error',
+      });
+    }
+
+    // Pass to error handler middleware
+    next(error);
+  });
 };
 
 module.exports = {

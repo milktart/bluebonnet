@@ -110,8 +110,20 @@ function formatInTimezone(utcDate, timezone, format = 'DD MMM YYYY HH:mm') {
   }
 }
 
+/**
+ * Sanitize timezone input from form (handles "undefined" string)
+ * Eliminates 4-6 duplicate timezone checks across controllers
+ */
+function sanitizeTimezone(tz) {
+  if (!tz || tz === 'undefined' || (typeof tz === 'string' && tz.trim() === '')) {
+    return null;
+  }
+  return tz;
+}
+
 module.exports = {
   localToUTC,
   utcToLocal,
   formatInTimezone,
+  sanitizeTimezone,
 };
