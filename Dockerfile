@@ -159,32 +159,37 @@ RUN addgroup -g 1001 -S nodejs && \
 
 WORKDIR /app
 
-# Copy only production dependencies
-COPY --from=production-deps --chown=nodejs:nodejs /app/node_modules ./node_modules
+# Copy all dependencies (including dev for build process) - keep as root for build phase
+COPY --from=development-deps /app/node_modules ./node_modules
 
-# Copy built assets from builder
-COPY --from=builder --chown=nodejs:nodejs /app/public/dist ./public/dist
-COPY --from=builder --chown=nodejs:nodejs /app/public/css/style.css ./public/css/style.css
+# Copy application code (exclude dev files via .dockerignore) - keep as root for build phase
+COPY . .
 
-# Copy build info file for version tracking
-COPY --from=builder --chown=nodejs:nodejs /app/.build-info ./.build-info
+# Build JavaScript bundles
+RUN npm run build-js
 
-# Copy application code (exclude dev files via .dockerignore)
-COPY --chown=nodejs:nodejs . .
+# Build SvelteKit frontend
+WORKDIR /app/frontend
+RUN npm ci
+RUN npm run build
+WORKDIR /app
 
 # Create logs directory with proper permissions
-RUN mkdir -p /app/logs && chown -R nodejs:nodejs /app/logs && chmod -R 777 /app/logs
+RUN mkdir -p /app/logs && chmod -R 777 /app/logs
+
+# Clean up dev dependencies to reduce image size
+RUN npm prune --omit=dev --include-workspace-root
+
+# After build is complete, set proper ownership for the nodejs user
+RUN chown -R nodejs:nodejs /app
 
 # Set production environment
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Copy and set entrypoint script with proper permissions (before switching user)
-COPY --chown=nodejs:nodejs scripts/docker-entrypoint.sh /usr/local/bin/
+# Copy and set entrypoint script with proper permissions
+COPY scripts/docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
-# Use non-root user
-USER nodejs
 
 # Expose port
 EXPOSE 3000
@@ -193,9 +198,9 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start application
-ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["node", "server.js"]
+# Entrypoint and command (runs as root to allow npm builds, server.js runs as nodejs)
+ENTRYPOINT ["sh", "-c", "docker-entrypoint.sh && exec su -s /bin/sh nodejs -c 'node server.js'"]
+CMD []
 
 # ============================================================================
 # Stage 8: Prod - Alias for production (uses NODE_ENV=prod for database naming)
@@ -208,32 +213,37 @@ RUN addgroup -g 1001 -S nodejs && \
 
 WORKDIR /app
 
-# Copy only production dependencies
-COPY --from=production-deps --chown=nodejs:nodejs /app/node_modules ./node_modules
+# Copy all dependencies (including dev for build process) - keep as root for build phase
+COPY --from=development-deps /app/node_modules ./node_modules
 
-# Copy built assets from builder
-COPY --from=builder --chown=nodejs:nodejs /app/public/dist ./public/dist
-COPY --from=builder --chown=nodejs:nodejs /app/public/css/style.css ./public/css/style.css
+# Copy application code (exclude dev files via .dockerignore) - keep as root for build phase
+COPY . .
 
-# Copy build info file for version tracking
-COPY --from=builder --chown=nodejs:nodejs /app/.build-info ./.build-info
+# Build JavaScript bundles
+RUN npm run build-js
 
-# Copy application code (exclude dev files via .dockerignore)
-COPY --chown=nodejs:nodejs . .
+# Build SvelteKit frontend
+WORKDIR /app/frontend
+RUN npm ci
+RUN npm run build
+WORKDIR /app
 
 # Create logs directory with proper permissions
-RUN mkdir -p /app/logs && chown -R nodejs:nodejs /app/logs && chmod -R 777 /app/logs
+RUN mkdir -p /app/logs && chmod -R 777 /app/logs
+
+# Clean up dev dependencies to reduce image size
+RUN npm prune --omit=dev --include-workspace-root
+
+# After build is complete, set proper ownership for the nodejs user
+RUN chown -R nodejs:nodejs /app
 
 # Set prod environment (will be overridden by NODE_ENV env var at runtime)
 ENV NODE_ENV=prod
 ENV PORT=3000
 
-# Copy and set entrypoint script with proper permissions (before switching user)
-COPY --chown=nodejs:nodejs scripts/docker-entrypoint.sh /usr/local/bin/
+# Copy and set entrypoint script with proper permissions
+COPY scripts/docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
-# Use non-root user
-USER nodejs
 
 # Expose port
 EXPOSE 3000
@@ -242,6 +252,6 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start application
-ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["node", "server.js"]
+# Entrypoint and command (runs as root to allow npm builds, server.js runs as nodejs)
+ENTRYPOINT ["sh", "-c", "docker-entrypoint.sh && exec su -s /bin/sh nodejs -c 'node server.js'"]
+CMD []

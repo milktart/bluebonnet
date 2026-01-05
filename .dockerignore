@@ -51,6 +51,8 @@ yarn-error.log*
 # Build artifacts (will be built in container)
 public/dist/*
 !public/dist/.gitkeep
+frontend/build/*
+!frontend/build/.gitkeep
 
 # Temporary files
 tmp
