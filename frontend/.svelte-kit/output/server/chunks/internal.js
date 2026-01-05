@@ -1,21 +1,13 @@
-import { H as HYDRATION_ERROR, C as COMMENT_NODE, a as HYDRATION_END, g as get_next_sibling, b as HYDRATION_START, c as HYDRATION_START_ELSE, e as effect_tracking, d as get, s as source, r as render_effect, u as untrack, i as increment, q as queue_micro_task, f as active_effect, h as block, j as branch, B as Batch, p as pause_effect, k as create_text, l as set_active_effect, m as set_active_reaction, n as set_component_context, o as handle_error, t as active_reaction, v as component_context, w as move_effect, x as internal_set, y as destroy_effect, z as invoke_error_boundary, A as svelte_boundary_reset_onerror, E as EFFECT_TRANSPARENT, D as EFFECT_PRESERVED, F as BOUNDARY_EFFECT, G as define_property, I as init_operations, J as get_first_child, K as hydration_failed, L as clear_text_content, M as array_from, N as component_root, O as is_passive_event, P as push, Q as pop, R as set, S as LEGACY_PROPS, T as flushSync, U as mutable_source, V as render, W as setContext } from "./index2.js";
+import { h as hydration_mismatch, C as COMMENT_NODE, g as get_next_sibling, t as tag, s as source, e as effect_tracking, a as get, r as render_effect, u as untrack, i as increment, q as queue_micro_task, b as active_effect, c as block, d as branch, B as Batch, p as pause_effect, f as create_text, j as set_active_effect, k as set_active_reaction, l as set_component_context, m as handle_error, n as active_reaction, o as component_context, v as move_effect, w as internal_set, x as destroy_effect, y as invoke_error_boundary, z as svelte_boundary_reset_noop, E as EFFECT_TRANSPARENT, A as EFFECT_PRESERVED, D as BOUNDARY_EFFECT, F as define_property, G as init_operations, H as get_first_child, I as clear_text_content, S as STATE_SYMBOL, J as state_proxy_unmount, K as lifecycle_double_unmount, L as array_from, M as component_root, N as is_passive_event, O as push, P as pop, Q as set, R as LEGACY_PROPS, T as flushSync, U as mutable_source, V as render, W as setContext, X as prevent_snippet_stringification } from "./index2.js";
+import { H as HYDRATION_ERROR, a as HYDRATION_END, b as HYDRATION_START, c as HYDRATION_START_ELSE, s as svelte_boundary_reset_onerror, h as hydration_failed, F as FILENAME } from "./index-client.js";
 import "clsx";
 import "./environment.js";
 let public_env = {};
+let fix_stack_trace = (error) => error?.stack;
 function set_private_env(environment) {
 }
 function set_public_env(environment) {
   public_env = environment;
-}
-function hydration_mismatch(location) {
-  {
-    console.warn(`https://svelte.dev/e/hydration_mismatch`);
-  }
-}
-function svelte_boundary_reset_noop() {
-  {
-    console.warn(`https://svelte.dev/e/svelte_boundary_reset_noop`);
-  }
 }
 let hydrating = false;
 function set_hydrating(value) {
@@ -71,6 +63,9 @@ function createSubscriber(start) {
   let subscribers = 0;
   let version = source(0);
   let stop;
+  {
+    tag(version, "createSubscriber version");
+  }
   return () => {
     if (effect_tracking()) {
       get(version);
@@ -134,6 +129,9 @@ class Boundary {
   #effect_pending = null;
   #effect_pending_subscriber = createSubscriber(() => {
     this.#effect_pending = source(this.#local_pending_count);
+    {
+      tag(this.#effect_pending, "$effect.pending()");
+    }
     return () => {
       this.#effect_pending = null;
     };
@@ -657,6 +655,13 @@ function unmount(component, options2) {
     mounted_components.delete(component);
     return fn(options2);
   }
+  {
+    if (STATE_SYMBOL in component) {
+      state_proxy_unmount();
+    } else {
+      lifecycle_double_unmount();
+    }
+  }
   return Promise.resolve();
 }
 function asClassComponent$1(component) {
@@ -811,76 +816,83 @@ function asClassComponent(component) {
   component_constructor.render = _render;
   return component_constructor;
 }
+Root[FILENAME] = ".svelte-kit/generated/root.svelte";
 function Root($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let {
-      stores,
-      page,
-      constructors,
-      components = [],
-      form,
-      data_0 = null,
-      data_1 = null,
-      data_2 = null
-    } = $$props;
-    {
-      setContext("__svelte__", stores);
-    }
-    {
-      stores.page.set(page);
-    }
-    const Pyramid_2 = constructors[2];
-    if (constructors[1]) {
-      $$renderer2.push("<!--[-->");
-      const Pyramid_0 = constructors[0];
-      $$renderer2.push(`<!---->`);
-      Pyramid_0($$renderer2, {
-        data: data_0,
+  $$renderer.component(
+    ($$renderer2) => {
+      let {
+        stores,
+        page,
+        constructors,
+        components = [],
         form,
-        params: page.params,
-        children: ($$renderer3) => {
-          if (constructors[2]) {
-            $$renderer3.push("<!--[-->");
-            const Pyramid_1 = constructors[1];
-            $$renderer3.push(`<!---->`);
-            Pyramid_1($$renderer3, {
-              data: data_1,
-              form,
-              params: page.params,
-              children: ($$renderer4) => {
-                $$renderer4.push(`<!---->`);
-                Pyramid_2($$renderer4, { data: data_2, form, params: page.params });
-                $$renderer4.push(`<!---->`);
-              },
-              $$slots: { default: true }
-            });
-            $$renderer3.push(`<!---->`);
-          } else {
-            $$renderer3.push("<!--[!-->");
-            const Pyramid_1 = constructors[1];
-            $$renderer3.push(`<!---->`);
-            Pyramid_1($$renderer3, { data: data_1, form, params: page.params });
-            $$renderer3.push(`<!---->`);
-          }
-          $$renderer3.push(`<!--]-->`);
-        },
-        $$slots: { default: true }
-      });
-      $$renderer2.push(`<!---->`);
-    } else {
-      $$renderer2.push("<!--[!-->");
-      const Pyramid_0 = constructors[0];
-      $$renderer2.push(`<!---->`);
-      Pyramid_0($$renderer2, { data: data_0, form, params: page.params });
-      $$renderer2.push(`<!---->`);
-    }
-    $$renderer2.push(`<!--]--> `);
-    {
-      $$renderer2.push("<!--[!-->");
-    }
-    $$renderer2.push(`<!--]-->`);
-  });
+        data_0 = null,
+        data_1 = null,
+        data_2 = null
+      } = $$props;
+      {
+        setContext("__svelte__", stores);
+      }
+      {
+        stores.page.set(page);
+      }
+      const Pyramid_2 = constructors[2];
+      if (constructors[1]) {
+        $$renderer2.push("<!--[-->");
+        const Pyramid_0 = constructors[0];
+        $$renderer2.push(`<!---->`);
+        Pyramid_0($$renderer2, {
+          data: data_0,
+          form,
+          params: page.params,
+          children: prevent_snippet_stringification(($$renderer3) => {
+            if (constructors[2]) {
+              $$renderer3.push("<!--[-->");
+              const Pyramid_1 = constructors[1];
+              $$renderer3.push(`<!---->`);
+              Pyramid_1($$renderer3, {
+                data: data_1,
+                form,
+                params: page.params,
+                children: prevent_snippet_stringification(($$renderer4) => {
+                  $$renderer4.push(`<!---->`);
+                  Pyramid_2($$renderer4, { data: data_2, form, params: page.params });
+                  $$renderer4.push(`<!---->`);
+                }),
+                $$slots: { default: true }
+              });
+              $$renderer3.push(`<!---->`);
+            } else {
+              $$renderer3.push("<!--[!-->");
+              const Pyramid_1 = constructors[1];
+              $$renderer3.push(`<!---->`);
+              Pyramid_1($$renderer3, { data: data_1, form, params: page.params });
+              $$renderer3.push(`<!---->`);
+            }
+            $$renderer3.push(`<!--]-->`);
+          }),
+          $$slots: { default: true }
+        });
+        $$renderer2.push(`<!---->`);
+      } else {
+        $$renderer2.push("<!--[!-->");
+        const Pyramid_0 = constructors[0];
+        $$renderer2.push(`<!---->`);
+        Pyramid_0($$renderer2, { data: data_0, form, params: page.params });
+        $$renderer2.push(`<!---->`);
+      }
+      $$renderer2.push(`<!--]--> `);
+      {
+        $$renderer2.push("<!--[!-->");
+      }
+      $$renderer2.push(`<!--]-->`);
+    },
+    Root
+  );
 }
+Root.render = function() {
+  throw new Error("Component.render(...) is no longer valid in Svelte 5. See https://svelte.dev/docs/svelte/v5-migration-guide#Components-are-no-longer-classes for more information");
+};
 const root = asClassComponent(Root);
 const options = {
   app_template_contains_nonce: false,
@@ -971,7 +983,7 @@ const options = {
 		<div class="error">
 			<span class="status">` + status + '</span>\n			<div class="message">\n				<h1>' + message + "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n"
   },
-  version_hash: "1jjwwm4"
+  version_hash: "gx64ep"
 };
 async function get_hooks() {
   let handle;
@@ -996,6 +1008,7 @@ export {
   set_public_env as a,
   set_read_implementation as b,
   set_manifest as c,
+  fix_stack_trace as f,
   get_hooks as g,
   options as o,
   public_env as p,

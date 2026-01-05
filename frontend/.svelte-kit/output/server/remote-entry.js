@@ -1,9 +1,8 @@
 import { get_request_store, with_request_store } from "@sveltejs/kit/internal/server";
-import { parse } from "devalue";
 import { error, json } from "@sveltejs/kit";
-import { a as stringify_remote_arg, f as flatten_issues, b as create_field_proxy, n as normalize_issue, e as set_nested_value, g as deep_set, s as stringify, c as create_remote_key } from "./chunks/shared.js";
+import { b as stringify_remote_arg, f as flatten_issues, e as create_field_proxy, t as throw_on_old_property_access, n as normalize_issue, g as set_nested_value, h as deep_set, s as stringify, c as create_remote_key } from "./chunks/shared.js";
 import { ValidationError } from "@sveltejs/kit/internal";
-import { B as BROWSER } from "./chunks/false.js";
+import { D as DEV } from "./chunks/true.js";
 import { b as base, c as app_dir, p as prerendering } from "./chunks/environment.js";
 function create_validator(validate_or_fn, maybe_fn) {
   if (!maybe_fn) {
@@ -40,13 +39,6 @@ async function get_response(info, arg, state, get_result) {
   await 0;
   const cache = get_cache(info, state);
   return cache[stringify_remote_arg(arg, state.transport)] ??= get_result();
-}
-function parse_remote_response(data, transport) {
-  const revivers = {};
-  for (const key in transport) {
-    revivers[key] = transport[key].decode;
-  }
-  return parse(data, revivers);
 }
 async function run_remote_function(event, state, allow_cookies, arg, validate, fn) {
   const store = {
@@ -161,6 +153,28 @@ function form(validate_or_fn, maybe_fn) {
       name: "",
       id: "",
       fn: async (data, meta, form_data) => {
+        if (!data) {
+          const error2 = () => {
+            throw new Error(
+              "Remote form functions no longer get passed a FormData object. `form` now has the same signature as `query` or `command`, i.e. it expects to be invoked like `form(schema, callback)` or `form('unchecked', callback)`. The payload of the callback function is now a POJO instead of a FormData object. See https://kit.svelte.dev/docs/remote-functions#form for details."
+            );
+          };
+          data = {};
+          for (const key2 of [
+            "append",
+            "delete",
+            "entries",
+            "forEach",
+            "get",
+            "getAll",
+            "has",
+            "keys",
+            "set",
+            "values"
+          ]) {
+            Object.defineProperty(data, key2, { get: error2 });
+          }
+        }
         const output = {};
         output.submission = true;
         const { event, state } = get_request_store();
@@ -226,6 +240,9 @@ function form(validate_or_fn, maybe_fn) {
         );
       }
     });
+    {
+      throw_on_old_property_access(instance);
+    }
     Object.defineProperty(instance, "result", {
       get() {
         try {
@@ -356,28 +373,7 @@ function prerender(validate_or_fn, fn_or_options, maybe_options) {
       const payload = stringify_remote_arg(arg, state.transport);
       const id = __.id;
       const url = `${base}/${app_dir}/remote/${id}${payload ? `/${payload}` : ""}`;
-      if (!state.prerendering && !BROWSER && !event.isRemoteRequest) {
-        try {
-          return await get_response(__, arg, state, async () => {
-            const key = stringify_remote_arg(arg, state.transport);
-            const cache = get_cache(__, state);
-            const promise3 = cache[key] ??= fetch(new URL(url, event.url.origin).href).then(
-              async (response) => {
-                if (!response.ok) {
-                  throw new Error("Prerendered response not found");
-                }
-                const prerendered = await response.json();
-                if (prerendered.type === "error") {
-                  error(prerendered.status, prerendered.error);
-                }
-                return prerendered.result;
-              }
-            );
-            return parse_remote_response(await promise3, state.transport);
-          });
-        } catch {
-        }
-      }
+      if (!state.prerendering && !DEV) ;
       if (state.prerendering?.remote_responses.has(url)) {
         return (
           /** @type {Promise<any>} */

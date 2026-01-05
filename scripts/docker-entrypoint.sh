@@ -53,6 +53,12 @@ else
   echo "⚠️  Bundle build had warnings, but continuing..."
 fi
 
+# Build SvelteKit frontend
+echo "📦 Building SvelteKit frontend..."
+cd /app/frontend
+npm run build
+cd /app
+
 # Start the application
 echo "🎉 Starting application server..."
 # Run with unbuffered output so logs appear in docker compose logs

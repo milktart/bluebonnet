@@ -67,6 +67,22 @@
     return specialDates.has(dateKey);
   }
 
+  let calendarContainer: HTMLElement;
+
+  onMount(() => {
+    // Scroll to today's month after DOM is ready
+    setTimeout(() => {
+      const todayMonth = document.querySelector('.month-row:has(.today)');
+      if (todayMonth && calendarContainer) {
+        const containerHeight = calendarContainer.clientHeight;
+        const monthTop = (todayMonth as HTMLElement).offsetTop;
+        const monthHeight = (todayMonth as HTMLElement).clientHeight;
+        const scrollPosition = monthTop - (containerHeight - monthHeight) / 2;
+        calendarContainer.scrollTo({ top: scrollPosition, behavior: 'smooth' });
+      }
+    }, 0);
+  });
+
   $: {
     buildCalendarData();
   }
@@ -357,7 +373,7 @@
 
       const days: DayData[] = [];
       for (let day = 1; day <= daysInMonth; day++) {
-        const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day, 0, 0, 0, 0);
+        const dateObj = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth(), day, 0, 0, 0, 0));
         const key = getDateKey(dateObj);
         days.push({
           day,
@@ -422,7 +438,7 @@
   }
 </script>
 
-<div class="calendar-container">
+<div class="calendar-container" bind:this={calendarContainer}>
   <div class="calendar-grid">
     {#each months as monthData (monthData.year * 12 + monthData.month)}
       {@const maxRowInMonth = monthData.days.flatMap(d => d.items).reduce((max, item) => {
@@ -489,7 +505,7 @@
               class="day-cell"
               class:today={day.isToday}
               class:blank={day.isBlank}
-              class:weekend={!day.isBlank && day.dateKey && new Date(day.dateKey).getDay() % 6 === 0}
+              class:weekend={!day.isBlank && day.dateKey && (new Date(day.dateKey).getUTCDay() === 0 || new Date(day.dateKey).getUTCDay() === 6)}
               class:special={day.dateKey && isSpecialDate(day.dateKey)}
             >
               {#if !day.isBlank && day.day}

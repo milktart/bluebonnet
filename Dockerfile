@@ -96,6 +96,12 @@ COPY . .
 # Build JavaScript bundles (lighter than full build)
 RUN npm run build-js
 
+# Build SvelteKit frontend
+WORKDIR /app/frontend
+RUN npm ci
+RUN npm run build
+WORKDIR /app
+
 # Set environment
 ENV NODE_ENV=development
 ENV PORT=3000
