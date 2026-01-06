@@ -4,17 +4,18 @@
   import { dataService } from '$lib/services/dataService';
   import { utcToLocalTimeString } from '$lib/utils/timezoneUtils';
   import { getFormConfigs } from '$lib/utils/formConfigs';
+  import type { ItemType, Trip, TravelItem, FormData } from '$lib/types';
   import AirportAutocomplete from './AirportAutocomplete.svelte';
   import ItemCompanionsForm from './ItemCompanionsForm.svelte';
   import TripCompanionsForm from './TripCompanionsForm.svelte';
   import '$lib/styles/form-styles.css';
 
-  export let itemType: string; // 'flight', 'hotel', 'transportation', 'carRental', 'event', 'trip'
-  export let data: any = null; // null for create mode, item data for edit mode
+  export let itemType: ItemType;
+  export let data: TravelItem | Trip | null = null;
   export let tripId: string = '';
-  export let allTrips: any[] = []; // Passed from parent component
+  export let allTrips: Trip[] = [];
   export let onClose: () => void = () => {};
-  export let onSave: (updatedItem: any) => void = () => {};
+  export let onSave: (updatedItem: TravelItem | Trip) => void = () => {};
 
   let loading = false;
   let error: string | null = null;
@@ -160,10 +161,10 @@
     return formData;
   }
 
-  let formData: any = initializeFormData(data);
+  let formData: FormData = initializeFormData(data);
   let airlineLookupLoading = false;
   let selectedTripId: string = '';
-  let selectedCompanions: any[] = [];
+  let selectedCompanions: Array<{ id: string; name: string }> = [];
 
   // Re-initialize formData and selectedTripId when data or itemType changes
   $: if (data) {
