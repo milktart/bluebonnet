@@ -92,6 +92,13 @@ fi
 echo "   ✅ SvelteKit frontend built successfully!"
 cd /app
 
+# Clean up dev dependencies in production to reduce runtime image size
+if [ "$NODE_ENV" = "production" ] || [ "$NODE_ENV" = "prod" ]; then
+  echo "🧹 Cleaning up dev dependencies for production..."
+  npm prune --omit=dev --include-workspace-root 2>&1 | tail -3
+  echo "   ✅ Dev dependencies cleaned!"
+fi
+
 # Start the application with retry logic
 echo "🎉 Starting application server..."
 

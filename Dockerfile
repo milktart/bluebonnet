@@ -128,8 +128,8 @@ USER root
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Run as nodejs user (same as production)
-USER nodejs
+# Run entrypoint as root (needed for permission fixes on volume mounts)
+# Entrypoint will handle dropping to nodejs user for app startup
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["npm", "run", "dev"]
 
@@ -247,23 +247,13 @@ COPY --chown=nodejs:nodejs . .
 USER nodejs
 RUN npm run build-js
 
-# Build SvelteKit frontend (production needs it pre-built)
-WORKDIR /app/frontend
-RUN npm ci && npm run build
-WORKDIR /app
-
-# Clean up all Vite caches to avoid permission issues
-RUN rm -rf /app/node_modules/.vite /app/node_modules/.vite-temp \
-           /app/frontend/node_modules/.vite /app/frontend/node_modules/.vite-temp \
-           /app/.svelte-kit /app/frontend/.svelte-kit
+# Don't build frontend in Docker - let it be handled at runtime
+# This ensures consistent behavior across all environments and avoids permission issues
+# Production will still benefit from pre-built frontend in the entrypoint
 
 # Create logs directory with proper permissions
 USER root
 RUN mkdir -p /app/logs && chmod -R 777 /app/logs
-
-# Clean up dev dependencies to reduce image size
-USER nodejs
-RUN npm prune --omit=dev --include-workspace-root
 
 # Set prod environment (will be overridden by NODE_ENV env var at runtime)
 ENV NODE_ENV=prod
