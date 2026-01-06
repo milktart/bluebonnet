@@ -1,5 +1,7 @@
 const { Hotel, Trip } = require('../models');
 const logger = require('../utils/logger');
+const { parseCompanions } = require('../utils/parseHelper');
+const { sendAsyncResponse } = require('../utils/asyncResponseHelper');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
 const {
   verifyTripOwnership,
@@ -37,11 +39,7 @@ exports.createHotel = async (req, res) => {
     if (tripId) {
       const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
       if (!trip) {
-        const isAsync = req.headers['x-async-request'] === 'true';
-        if (isAsync) {
-          return res.status(403).json({ success: false, error: 'Trip not found' });
-        }
-        return redirectAfterError(res, req, null, 'Trip not found');
+        return sendAsyncResponse(res, false, null, 'Trip not found', null, req);
       }
     }
 
@@ -63,11 +61,7 @@ exports.createHotel = async (req, res) => {
           checkOutDate,
           checkOutTime,
         });
-        const isAsync = req.headers['x-async-request'] === 'true';
-        if (isAsync) {
-          return res.status(400).json({ success: false, error: 'All date and time fields are required' });
-        }
-        return redirectAfterError(res, req, tripId, 'All date and time fields are required');
+        return sendAsyncResponse(res, false, null, 'All date and time fields are required', tripId, req);
       }
       // Combine date and time fields
       checkInDateTime = `${checkInDate}T${checkInTime}`;
@@ -94,18 +88,8 @@ exports.createHotel = async (req, res) => {
     // Add companions to this hotel
     try {
       if (tripId) {
-        let companionIds = [];
-
-        // Try to parse companions if provided
-        if (companions) {
-          try {
-            companionIds = typeof companions === 'string' ? JSON.parse(companions) : companions;
-            companionIds = Array.isArray(companionIds) ? companionIds : [];
-          } catch (e) {
-            logger.error('Error parsing companions:', e);
-            companionIds = [];
-          }
-        }
+        // Parse and validate companions
+        const companionIds = parseCompanions(companions);
 
         // If companions were provided and not empty, use them; otherwise use fallback
         if (companionIds.length > 0) {
@@ -126,20 +110,11 @@ exports.createHotel = async (req, res) => {
       // Don't fail the hotel creation due to companion errors
     }
 
-    // Check if this is an async request
-    const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.json({ success: true, data: hotel, message: 'Hotel added successfully' });
-    }
-
-    redirectAfterSuccess(res, req, tripId, 'hotels', 'Hotel added successfully');
+    // Send response (handles both async and traditional form submission)
+    return sendAsyncResponse(res, true, hotel, 'Hotel added successfully', tripId, req, 'hotels');
   } catch (error) {
     logger.error(error);
-    const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.status(500).json({ success: false, error: 'Error adding hotel' });
-    }
-    redirectAfterError(res, req, req.params.tripId, 'Error adding hotel');
+    return sendAsyncResponse(res, false, null, 'Error adding hotel', req.params.tripId, req);
   }
 };
 

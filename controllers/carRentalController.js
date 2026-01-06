@@ -1,5 +1,7 @@
 const { CarRental, Trip } = require('../models');
 const logger = require('../utils/logger');
+const { parseCompanions } = require('../utils/parseHelper');
+const { sendAsyncResponse } = require('../utils/asyncResponseHelper');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
 const {
   verifyTripOwnership,
@@ -33,11 +35,7 @@ exports.createCarRental = async (req, res) => {
     if (tripId) {
       const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
       if (!trip) {
-        const isAsync = req.headers['x-async-request'] === 'true';
-        if (isAsync) {
-          return res.status(403).json({ success: false, error: 'Trip not found' });
-        }
-        return redirectAfterError(res, req, null, 'Trip not found');
+        return sendAsyncResponse(res, false, null, 'Trip not found', null, req);
       }
     }
 
@@ -68,18 +66,7 @@ exports.createCarRental = async (req, res) => {
     // Add companions to this car rental
     try {
       if (tripId) {
-        let companionIds = [];
-
-        // Try to parse companions if provided
-        if (companions) {
-          try {
-            companionIds = typeof companions === 'string' ? JSON.parse(companions) : companions;
-            companionIds = Array.isArray(companionIds) ? companionIds : [];
-          } catch (e) {
-            logger.error('Error parsing companions:', e);
-            companionIds = [];
-          }
-        }
+        const companionIds = parseCompanions(companions);
 
         // If companions were provided and not empty, use them; otherwise use fallback
         if (companionIds.length > 0) {
@@ -105,20 +92,11 @@ exports.createCarRental = async (req, res) => {
       // Don't fail the car rental creation due to companion errors
     }
 
-    // Check if this is an async request
-    const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.json({ success: true, data: carRental, message: 'Car rental added successfully' });
-    }
-
-    redirectAfterSuccess(res, req, tripId, 'carRentals', 'Car rental added successfully');
+    // Send response (handles both async and traditional form submission)
+    return sendAsyncResponse(res, true, carRental, 'Car rental added successfully', tripId, req, 'carRentals');
   } catch (error) {
     logger.error(error);
-    const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.status(500).json({ success: false, error: 'Error adding car rental' });
-    }
-    redirectAfterError(res, req, req.params.tripId, 'Error adding car rental');
+    return sendAsyncResponse(res, false, null, 'Error adding car rental', req.params.tripId, req);
   }
 };
 

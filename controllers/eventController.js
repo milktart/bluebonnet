@@ -1,5 +1,7 @@
 const { Event, Trip } = require('../models');
 const logger = require('../utils/logger');
+const { parseCompanions } = require('../utils/parseHelper');
+const { sendAsyncResponse } = require('../utils/asyncResponseHelper');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
 const {
   verifyTripOwnership,
@@ -47,11 +49,7 @@ exports.createEvent = async (req, res) => {
     if (tripId) {
       const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
       if (!trip) {
-        const isAsync = req.headers['x-async-request'] === 'true';
-        if (isAsync) {
-          return res.status(403).json({ success: false, error: 'Trip not found' });
-        }
-        return redirectAfterError(res, req, null, 'Trip not found');
+        return sendAsyncResponse(res, false, null, 'Trip not found', null, req);
       }
     }
 
@@ -84,18 +82,7 @@ exports.createEvent = async (req, res) => {
     // Add companions to this event
     try {
       if (tripId) {
-        let companionIds = [];
-
-        // Try to parse companions if provided
-        if (companions) {
-          try {
-            companionIds = typeof companions === 'string' ? JSON.parse(companions) : companions;
-            companionIds = Array.isArray(companionIds) ? companionIds : [];
-          } catch (e) {
-            logger.error('Error parsing companions:', e);
-            companionIds = [];
-          }
-        }
+        const companionIds = parseCompanions(companions);
 
         // If companions were provided and not empty, use them; otherwise use fallback
         if (companionIds.length > 0) {
@@ -116,22 +103,13 @@ exports.createEvent = async (req, res) => {
       // Don't fail the event creation due to companion errors
     }
 
-    // Check if this is an async request
-    const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.json({ success: true, data: event, message: 'Event added successfully' });
-    }
-
-    redirectAfterSuccess(res, req, tripId, 'events', 'Event added successfully');
+    // Send response (handles both async and traditional form submission)
+    return sendAsyncResponse(res, true, event, 'Event added successfully', tripId, req, 'events');
   } catch (error) {
     logger.error('ERROR in createEvent:', error);
     logger.error('Request body:', req.body);
     logger.error('Request params:', req.params);
-    const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.status(500).json({ success: false, error: error.message || 'Error adding event' });
-    }
-    redirectAfterError(res, req, req.params.tripId, 'Error adding event');
+    return sendAsyncResponse(res, false, null, error.message || 'Error adding event', req.params.tripId, req);
   }
 };
 
