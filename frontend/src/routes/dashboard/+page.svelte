@@ -496,6 +496,7 @@
                       class="trip-card"
                       class:expanded={expandedTrips.has(item.data.id)}
                       class:highlighted={highlightedTripId === item.data.id}
+                      class:unconfirmed={item.data.isConfirmed === false}
                       on:mouseenter={() => highlightedTripId = item.data.id}
                       on:mouseleave={() => highlightedTripId = null}
                     >
@@ -573,6 +574,7 @@
                                     <div
                                       class="standalone-item-card"
                                       class:item-highlighted={highlightedItemId === tripItem.id && highlightedItemType === 'flight'}
+                                      class:unconfirmed={tripItem.isConfirmed === false}
                                       on:mouseenter={() => { highlightedItemType = 'flight'; highlightedItemId = tripItem.id; }}
                                       on:mouseleave={() => { highlightedItemId = null; highlightedItemType = null; }}
                                       on:click={() => handleItemClick('flight', 'flight', tripItem)}
@@ -602,6 +604,7 @@
                                     <div
                                       class="standalone-item-card"
                                       class:item-highlighted={highlightedItemId === tripItem.id && highlightedItemType === 'hotel'}
+                                      class:unconfirmed={tripItem.isConfirmed === false}
                                       on:mouseenter={() => { highlightedItemType = 'hotel'; highlightedItemId = tripItem.id; }}
                                       on:mouseleave={() => { highlightedItemId = null; highlightedItemType = null; }}
                                       on:click={() => handleItemClick('hotel', 'hotel', tripItem)}
@@ -626,6 +629,7 @@
                                   {:else if tripItem.type === 'transportation'}
                                     <div
                                       class="standalone-item-card"
+                                      class:unconfirmed={tripItem.isConfirmed === false}
                                       on:mouseenter={() => { highlightedItemType = 'transportation'; highlightedItemId = tripItem.id; }}
                                       on:mouseleave={() => { highlightedItemId = null; highlightedItemType = null; }}
                                       on:click={() => handleItemClick('transportation', 'transportation', tripItem)}
@@ -654,6 +658,7 @@
                                   {:else if tripItem.type === 'carRental'}
                                     <div
                                       class="standalone-item-card"
+                                      class:unconfirmed={tripItem.isConfirmed === false}
                                       on:mouseenter={() => { highlightedItemType = 'carRental'; highlightedItemId = tripItem.id; }}
                                       on:mouseleave={() => { highlightedItemId = null; highlightedItemType = null; }}
                                       on:click={() => handleItemClick('carRental', 'carRental', tripItem)}
@@ -678,6 +683,7 @@
                                   {:else if tripItem.type === 'event'}
                                     <div
                                       class="standalone-item-card"
+                                      class:unconfirmed={tripItem.isConfirmed === false}
                                       on:mouseenter={() => { highlightedItemType = 'event'; highlightedItemId = tripItem.id; }}
                                       on:mouseleave={() => { highlightedItemId = null; highlightedItemType = null; }}
                                       on:click={() => handleItemClick('event', 'event', tripItem)}
@@ -721,6 +727,7 @@
                     <div
                       class="standalone-item-card"
                       class:item-highlighted={highlightedItemId === item.data.id && highlightedItemType === item.itemType}
+                      class:unconfirmed={item.data.isConfirmed === false}
                       on:mouseenter={() => { highlightedItemType = item.itemType; highlightedItemId = item.data.id; }}
                       on:mouseleave={() => { highlightedItemId = null; highlightedItemType = null; }}
                       on:click={() => handleItemClick(item.itemType, item.itemType, item.data)}
@@ -1792,6 +1799,43 @@
     overflow-x: auto;
   }
 
+  /* Unconfirmed item styling with diagonal hash pattern */
+  .unconfirmed-pattern {
+    background:
+      repeating-linear-gradient(
+        45deg,
+        rgba(200, 200, 200, 0.1),
+        rgba(200, 200, 200, 0.1) 3px,
+        rgba(220, 220, 220, 0.1) 3px,
+        rgba(220, 220, 220, 0.1) 6px
+      );
+  }
+
+  .trip-card.unconfirmed,
+  .standalone-item-card.unconfirmed {
+    background-blend-mode: multiply;
+  }
+
+  .trip-card.unconfirmed::before,
+  .standalone-item-card.unconfirmed::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+      repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 3px,
+        rgba(150, 150, 150, 0.08) 3px,
+        rgba(150, 150, 150, 0.08) 6px
+      );
+    pointer-events: none;
+    border-radius: inherit;
+    z-index: 1;
+  }
 
   .settings-section {
     display: flex;

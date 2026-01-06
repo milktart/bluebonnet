@@ -470,6 +470,7 @@
                   <div
                     class="item-bar"
                     class:flight-item={item.type === 'flight'}
+                    class:unconfirmed={item.data.isConfirmed === false}
                     style="
                       --day-idx: {displayStartIdx};
                       --span: {daysSpanned};
@@ -627,6 +628,34 @@
   .item-bar:hover {
     opacity: 0.85;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .item-bar.unconfirmed {
+    opacity: 0.65;
+  }
+
+  .item-bar.unconfirmed::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+      repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 3px,
+        rgba(100, 100, 100, 0.18) 3px,
+        rgba(100, 100, 100, 0.18) 6px
+      );
+    pointer-events: none;
+    border-radius: inherit;
+    z-index: 0;
+  }
+
+  .item-bar.unconfirmed:hover {
+    opacity: 0.78;
   }
 
   .item-bar :global(.material-symbols-outlined) {

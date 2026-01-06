@@ -6,6 +6,7 @@ export interface Trip {
   purpose: string;
   departureDate: string;
   returnDate: string;
+  isConfirmed?: boolean;
   notes?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -29,6 +30,7 @@ export interface Flight {
   arrivalDateTime: string;
   pnr?: string;
   seat?: string;
+  isConfirmed?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -47,6 +49,7 @@ export interface Hotel {
   lng?: number;
   confirmationNumber?: string;
   roomNumber?: string;
+  isConfirmed?: boolean;
   notes?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -89,6 +92,7 @@ export interface Transportation {
   bookingReference?: string;
   seat?: string;
   confirmationNumber?: string;
+  isConfirmed?: boolean;
   notes?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -110,6 +114,7 @@ export interface CarRental {
   pickupDateTime: string;
   dropoffDateTime: string;
   confirmationNumber?: string;
+  isConfirmed?: boolean;
   notes?: string;
   createdAt?: string;
   updatedAt?: string;
