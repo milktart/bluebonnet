@@ -53,7 +53,7 @@ else
   echo "⚠️  Bundle build had warnings, but continuing..."
 fi
 
-# Always build the SvelteKit frontend (development or production)
+# Build SvelteKit frontend
 echo "📦 Building SvelteKit frontend..."
 
 # Debug: Check current user and directory permissions
@@ -61,40 +61,71 @@ echo "   DEBUG: Current user: $(whoami) (UID: $(id -u))"
 echo "   DEBUG: /app ownership: $(ls -ld /app | awk '{print $3":"$4}')"
 echo "   DEBUG: /app/frontend ownership: $(ls -ld /app/frontend | awk '{print $3":"$4}')"
 
-# Fix permissions on /app and /app/frontend to ensure nodejs user can write
-echo "   Fixing permissions for nodejs user..."
-chmod -R u+w /app
-chmod -R u+w /app/frontend || true
+# Fix permissions on volume-mounted directories so nodejs user can write
+echo "   Fixing permissions on volume-mounted directories..."
+chmod -R 755 /app 2>/dev/null || true
+chmod -R 755 /app/frontend 2>/dev/null || true
+chown -R nodejs:nodejs /app/frontend 2>/dev/null || true
 
 # Clean all caches and node_modules to avoid permission issues
-echo "   Cleaning Vite caches..."
+echo "   Cleaning Vite caches and node_modules..."
 rm -rf /app/node_modules/.vite /app/node_modules/.vite-temp 2>/dev/null || true
 rm -rf /app/frontend/node_modules/.vite /app/frontend/node_modules/.vite-temp /app/frontend/node_modules 2>/dev/null || true
 rm -rf /app/.svelte-kit /app/frontend/.svelte-kit 2>/dev/null || true
 
-# Ensure frontend dependencies are fully installed
-echo "   Installing frontend dependencies with npm ci..."
+# Build frontend (as root, will be optimized later)
+echo "   Installing frontend dependencies..."
 cd /app/frontend
-npm ci 2>&1 | head -20
+npm ci 2>&1 | grep -E "(added|up to date)" | head -3
+
+echo "   Clearing Vite cache..."
+rm -rf node_modules/.vite node_modules/.vite-temp /app/node_modules/.vite /app/node_modules/.vite-temp 2>/dev/null || true
+
+echo "   Running npm run build..."
+npm run build
+
 if [ $? -ne 0 ]; then
-  echo "   ERROR: npm ci failed!"
-  echo "   DEBUG: /app/frontend contents:"
-  ls -la /app/frontend | head -10
-  echo "   DEBUG: /app/frontend permissions: $(ls -ld /app/frontend)"
+  echo "   ❌ Frontend build failed!"
   exit 1
 fi
 
-# Clear cache again after install
-echo "   Clearing Vite cache after npm ci..."
-rm -rf node_modules/.vite node_modules/.vite-temp /app/node_modules/.vite /app/node_modules/.vite-temp 2>/dev/null || true
-
-# Use npm run build to use the package.json script
-echo "   Running npm run build..."
-npm run build
-cd /app
 echo "   ✅ SvelteKit frontend built successfully!"
+cd /app
 
-# Start the application
+# Start the application with retry logic
 echo "🎉 Starting application server..."
-# Run with unbuffered output so logs appear in docker compose logs
-exec node --unhandled-rejections=strict server.js
+
+# Retry logic for application startup (up to 10 attempts, 3 seconds apart)
+MAX_RETRIES=10
+RETRY_COUNT=0
+RETRY_DELAY=3
+
+until [ $RETRY_COUNT -ge $MAX_RETRIES ]; do
+  echo "   Attempt $((RETRY_COUNT + 1))/$MAX_RETRIES to start application server..."
+
+  # Run node server with a timeout to detect early failures
+  timeout 5 node --unhandled-rejections=strict server.js &
+  SERVER_PID=$!
+
+  # Wait for the process to either succeed or fail
+  if wait $SERVER_PID 2>/dev/null; then
+    # Server exited successfully (should not happen, but if it does, server is running)
+    exec node --unhandled-rejections=strict server.js
+  else
+    EXIT_CODE=$?
+    if [ $EXIT_CODE -eq 124 ]; then
+      # Timeout exit code - server is running, exec it
+      exec node --unhandled-rejections=strict server.js
+    fi
+  fi
+
+  # Server failed to start, retry
+  RETRY_COUNT=$((RETRY_COUNT + 1))
+  if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+    echo "   Application server startup failed, retrying in ${RETRY_DELAY}s..."
+    sleep $RETRY_DELAY
+  fi
+done
+
+echo "❌ Failed to start application server after $MAX_RETRIES attempts"
+exit 1
