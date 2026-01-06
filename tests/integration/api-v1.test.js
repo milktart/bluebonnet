@@ -76,10 +76,12 @@ describe('API v1 Integration Tests', () => {
 
         const response = await request(app).get('/api/v1/airports/search?q=LA').expect(200);
 
-        expect(airportService.searchAirports).toHaveBeenCalledWith('LA');
+        expect(airportService.searchAirports).toHaveBeenCalledWith('LA', 10);
         expect(response.body).toEqual({
           success: true,
-          data: mockAirports,
+          query: 'LA',
+          count: 2,
+          airports: mockAirports,
         });
       });
 
@@ -110,7 +112,9 @@ describe('API v1 Integration Tests', () => {
 
         expect(response.body).toEqual({
           success: true,
-          data: [],
+          query: 'ZZZZZ',
+          count: 0,
+          airports: [],
         });
       });
 
@@ -145,7 +149,7 @@ describe('API v1 Integration Tests', () => {
         expect(airportService.getAirportByCode).toHaveBeenCalledWith('JFK');
         expect(response.body).toEqual({
           success: true,
-          data: mockAirport,
+          airport: mockAirport,
         });
       });
 
@@ -172,8 +176,11 @@ describe('API v1 Integration Tests', () => {
 
         const response = await request(app).get('/api/v1/airports/sfo').expect(200);
 
-        expect(airportService.getAirportByCode).toHaveBeenCalledWith('SFO');
-        expect(response.body.data).toEqual(mockAirport);
+        expect(airportService.getAirportByCode).toHaveBeenCalledWith('sfo');
+        expect(response.body).toEqual({
+          success: true,
+          airport: mockAirport,
+        });
       });
 
       it('should handle service errors gracefully', async () => {
@@ -192,7 +199,7 @@ describe('API v1 Integration Tests', () => {
 
         expect(response.body).toMatchObject({
           success: false,
-          error: expect.stringMatching(/3-letter/i),
+          error: expect.stringMatching(/3 letters/i),
         });
         expect(airportService.getAirportByCode).not.toHaveBeenCalled();
       });
@@ -252,9 +259,7 @@ describe('API v1 Integration Tests', () => {
     });
 
     it('should handle malformed requests gracefully', async () => {
-      const response = await request(app)
-        .get('/api/v1/airports/search?q=')
-        .expect(400);
+      const response = await request(app).get('/api/v1/airports/search?q=').expect(400);
 
       expect(response.body).toMatchObject({
         success: false,

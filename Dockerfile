@@ -30,15 +30,23 @@ WORKDIR /app
 # Install build dependencies (needed for some npm packages) and git for version info
 RUN apk add --no-cache python3 make g++ git
 
+# Create non-root user for all build and runtime operations
+# This ensures consistent file ownership across all environments (dev, test, prod)
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    mkdir -p /app && \
+    chown -R nodejs:nodejs /app
+
 # Copy package files
-COPY package*.json ./
+COPY --chown=nodejs:nodejs package*.json ./
 
 # ============================================================================
 # Stage 2: Development Dependencies
 # ============================================================================
 FROM base AS development-deps
 
-# Install all dependencies (including devDependencies)
+# Install all dependencies as nodejs user to ensure proper ownership
+USER nodejs
 RUN npm install
 
 # ============================================================================
@@ -46,8 +54,9 @@ RUN npm install
 # ============================================================================
 FROM base AS production-deps
 
-# Install only production dependencies
+# Install only production dependencies as nodejs user
 # Skip prepare script (husky) since git is not available in Docker
+USER nodejs
 RUN npm ci --omit=dev --ignore-scripts && npm rebuild bcrypt 2>/dev/null || true
 
 # ============================================================================
@@ -55,11 +64,12 @@ RUN npm ci --omit=dev --ignore-scripts && npm rebuild bcrypt 2>/dev/null || true
 # ============================================================================
 FROM base AS builder
 
-# Install all dependencies for building
+# Install all dependencies for building as nodejs user
+USER nodejs
 RUN npm ci
 
-# Copy source code
-COPY . .
+# Copy source code with proper ownership
+COPY --chown=nodejs:nodejs . .
 
 # Capture build information (git commit, timestamp) and save to .build-info file
 # This allows production builds to know the exact commit they were built from
@@ -84,16 +94,22 @@ WORKDIR /app
 # Install git for version info
 RUN apk add --no-cache git
 
+# Create non-root user (same as base stage) for consistent file ownership
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /app
+
 # Configure git to trust the /app directory (for volume mounts)
 RUN git config --global --add safe.directory /app
 
-# Copy all dependencies (including dev)
-COPY --from=development-deps /app/node_modules ./node_modules
+# Copy all dependencies (including dev) with proper ownership
+COPY --from=development-deps --chown=nodejs:nodejs /app/node_modules ./node_modules
 
-# Copy source code
-COPY . .
+# Copy source code with proper ownership
+COPY --chown=nodejs:nodejs . .
 
-# Build JavaScript bundles (lighter than full build)
+# Build JavaScript bundles as nodejs user (consistent with production)
+USER nodejs
 RUN npm run build-js
 
 # Build SvelteKit frontend
@@ -109,11 +125,13 @@ ENV PORT=3000
 # Expose port
 EXPOSE 3000
 
-# Copy and set entrypoint script
+# Copy and set entrypoint script (as root for permissions)
+USER root
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Run as root in development for flexibility (volume mounts, etc.)
+# Run as nodejs user (same as production)
+USER nodejs
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["npm", "run", "dev"]
 
@@ -124,13 +142,19 @@ FROM node:20-alpine AS test
 
 WORKDIR /app
 
-# Copy all dependencies (including dev for testing tools)
-COPY --from=development-deps /app/node_modules ./node_modules
+# Create non-root user (same as base stage) for consistent file ownership
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /app
 
-# Copy source code
-COPY . .
+# Copy all dependencies (including dev for testing tools) with proper ownership
+COPY --from=development-deps --chown=nodejs:nodejs /app/node_modules ./node_modules
 
-# Build JavaScript bundles
+# Copy source code with proper ownership
+COPY --chown=nodejs:nodejs . .
+
+# Build JavaScript bundles as nodejs user (consistent with dev/prod)
+USER nodejs
 RUN npm run build-js
 
 # Set environment
@@ -140,11 +164,13 @@ ENV PORT=3000
 # Expose port
 EXPOSE 3000
 
-# Copy and set entrypoint script
+# Copy and set entrypoint script (as root for permissions)
+USER root
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Run dev server by default (run tests with: docker-compose run app npm test)
+# Run as nodejs user (same as production/development)
+USER nodejs
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["npm", "run", "dev"]
 
@@ -153,19 +179,21 @@ CMD ["npm", "run", "dev"]
 # ============================================================================
 FROM node:20-alpine AS production
 
-# Add non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
-
 WORKDIR /app
 
-# Copy all dependencies (including dev for build process) - keep as root for build phase
-COPY --from=development-deps /app/node_modules ./node_modules
+# Create non-root user (same as base stage) for consistent behavior
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /app
 
-# Copy application code (exclude dev files via .dockerignore) - keep as root for build phase
-COPY . .
+# Copy all dependencies with proper ownership
+COPY --from=development-deps --chown=nodejs:nodejs /app/node_modules ./node_modules
 
-# Build JavaScript bundles
+# Copy application code with proper ownership (exclude dev files via .dockerignore)
+COPY --chown=nodejs:nodejs . .
+
+# Build JavaScript bundles as nodejs user (consistent with dev/test)
+USER nodejs
 RUN npm run build-js
 
 # Build SvelteKit frontend
@@ -175,19 +203,19 @@ RUN npm run build
 WORKDIR /app
 
 # Create logs directory with proper permissions
+USER root
 RUN mkdir -p /app/logs && chmod -R 777 /app/logs
 
 # Clean up dev dependencies to reduce image size
+USER nodejs
 RUN npm prune --omit=dev --include-workspace-root
-
-# After build is complete, set proper ownership for the nodejs user
-RUN chown -R nodejs:nodejs /app
 
 # Set production environment
 ENV NODE_ENV=production
 ENV PORT=3000
 
 # Copy and set entrypoint script with proper permissions
+USER root
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
@@ -198,28 +226,31 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Entrypoint and command (runs as root to allow npm builds, server.js runs as nodejs)
-ENTRYPOINT ["sh", "-c", "docker-entrypoint.sh && exec su -s /bin/sh nodejs -c 'node server.js'"]
-CMD []
+# Run as nodejs user (consistent with dev/test)
+USER nodejs
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["node", "server.js"]
 
 # ============================================================================
 # Stage 8: Prod - Alias for production (uses NODE_ENV=prod for database naming)
 # ============================================================================
 FROM node:20-alpine AS prod
 
-# Add non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
-
 WORKDIR /app
 
-# Copy all dependencies (including dev for build process) - keep as root for build phase
-COPY --from=development-deps /app/node_modules ./node_modules
+# Create non-root user (same as base stage) for consistent behavior
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /app
 
-# Copy application code (exclude dev files via .dockerignore) - keep as root for build phase
-COPY . .
+# Copy all dependencies with proper ownership
+COPY --from=development-deps --chown=nodejs:nodejs /app/node_modules ./node_modules
 
-# Build JavaScript bundles
+# Copy application code with proper ownership (exclude dev files via .dockerignore)
+COPY --chown=nodejs:nodejs . .
+
+# Build JavaScript bundles as nodejs user (consistent with dev/test)
+USER nodejs
 RUN npm run build-js
 
 # Build SvelteKit frontend
@@ -229,19 +260,19 @@ RUN npm run build
 WORKDIR /app
 
 # Create logs directory with proper permissions
+USER root
 RUN mkdir -p /app/logs && chmod -R 777 /app/logs
 
 # Clean up dev dependencies to reduce image size
+USER nodejs
 RUN npm prune --omit=dev --include-workspace-root
-
-# After build is complete, set proper ownership for the nodejs user
-RUN chown -R nodejs:nodejs /app
 
 # Set prod environment (will be overridden by NODE_ENV env var at runtime)
 ENV NODE_ENV=prod
 ENV PORT=3000
 
 # Copy and set entrypoint script with proper permissions
+USER root
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
@@ -252,6 +283,7 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Entrypoint and command (runs as root to allow npm builds, server.js runs as nodejs)
-ENTRYPOINT ["sh", "-c", "docker-entrypoint.sh && exec su -s /bin/sh nodejs -c 'node server.js'"]
-CMD []
+# Run as nodejs user (consistent with dev/test)
+USER nodejs
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["node", "server.js"]
