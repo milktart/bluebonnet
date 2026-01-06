@@ -220,8 +220,8 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Run as nodejs user (consistent with dev/test)
-USER nodejs
+# Run entrypoint as root (needed for permission fixes on volume mounts)
+# Entrypoint will handle dropping to nodejs user for app startup
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "server.js"]
 
@@ -271,7 +271,7 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Run as nodejs user (consistent with dev/test)
-USER nodejs
+# Run entrypoint as root (needed for permission fixes on volume mounts)
+# Entrypoint will handle dropping to nodejs user for app startup
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "server.js"]
