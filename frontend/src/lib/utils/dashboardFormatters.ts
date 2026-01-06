@@ -196,3 +196,18 @@ export function capitalize(str: string): string {
   if (!str) return '';
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
+
+/**
+ * Calculate the number of nights between departure and return dates
+ */
+export function calculateNights(departureDate: string, returnDate?: string): number {
+  if (!departureDate) return 0;
+
+  const departure = parseLocalDate(departureDate);
+  const returnDay = returnDate ? parseLocalDate(returnDate) : departure;
+
+  const diffTime = returnDay.getTime() - departure.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  return Math.max(0, diffDays);
+}

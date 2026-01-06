@@ -27,7 +27,7 @@
   import DashboardSettingsPanel from './components/DashboardSettingsPanel.svelte';
   import DashboardItemEditor from './components/DashboardItemEditor.svelte';
   import { parseLocalDate, getTripEndDate, getItemDate, getDateKeyForItem, getDayKeyForItem, groupTripItemsByDate } from '$lib/utils/dashboardGrouping';
-  import { formatDate, formatMonthHeader, formatTripDateHeader, formatTimeOnly, formatDateTime, formatDateOnly, capitalize } from '$lib/utils/dashboardFormatters';
+  import { formatDate, formatMonthHeader, formatTripDateHeader, formatTimeOnly, formatDateTime, formatDateOnly, capitalize, calculateNights } from '$lib/utils/dashboardFormatters';
   import { getCityName, getTransportIcon, getTransportColor, getTripIcon, getTripCities, calculateLayover, getFlightLayoverInfo, layoverSpansDates } from '$lib/utils/dashboardItem';
 
   let trips: any[] = [];
@@ -507,10 +507,16 @@
                         tabindex="0"
                         on:keydown={(e) => e.key === 'Enter' && toggleTripExpanded(item.data.id)}
                       >
-                        <div class="trip-icon-container">
-                          <span class="material-symbols-outlined trip-icon">
-                            {getTripIcon(item.data.purpose)}
-                          </span>
+                        <div class="trip-icon-column">
+                          <div class="trip-icon-container">
+                            <span class="material-symbols-outlined trip-icon">
+                              {getTripIcon(item.data.purpose)}
+                            </span>
+                          </div>
+                          <div class="trip-nights">
+                            <span class="material-symbols-outlined nights-icon">moon_stars</span>
+                            <span class="nights-number">{calculateNights(item.data.departureDate, item.data.returnDate)}</span>
+                          </div>
                         </div>
 
                         <div class="trip-info">
@@ -1194,6 +1200,15 @@
     background: #f9f9f9;
   }
 
+  .trip-icon-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+  }
+
   .trip-icon-container {
     display: flex;
     align-items: center;
@@ -1208,6 +1223,29 @@
   .trip-icon {
     font-size: 0.875rem !important;
     color: #28536b;
+  }
+
+  .trip-nights {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    font-size: 0.65rem;
+    color: #4b5563;
+    white-space: nowrap;
+    height: 0.8rem;
+  }
+
+  .nights-icon {
+    font-size: 0.65rem !important;
+    color: #6b7280;
+    line-height: 1;
+  }
+
+  .nights-number {
+    font-weight: 600;
+    color: #111827;
+    line-height: 1;
   }
 
   .trip-info {
@@ -1649,13 +1687,15 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0;
+    justify-content: center;
+    gap: 0.15rem;
     flex-shrink: 0;
     line-height: 1;
   }
 
   .flight-icon-wrapper .item-icon {
-    padding-top: 0.15rem;
+    padding-top: 0;
+    line-height: 1;
   }
 
   .flight-time-label {

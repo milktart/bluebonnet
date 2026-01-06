@@ -2,7 +2,7 @@
   import { dashboardStore, dashboardStoreActions } from '$lib/stores/dashboardStore';
   import CompanionIndicators from '$lib/components/CompanionIndicators.svelte';
   import { getTripIcon, getTripCities } from '$lib/utils/dashboardItem';
-  import { formatDate, formatTripDateHeader } from '$lib/utils/dashboardFormatters';
+  import { formatDate, formatTripDateHeader, calculateNights } from '$lib/utils/dashboardFormatters';
   import { groupTripItemsByDate, getDayKeyForItem } from '$lib/utils/dashboardGrouping';
 
   let trips: any[] = [];
@@ -97,10 +97,16 @@
         tabindex="0"
         on:keydown={(e) => e.key === 'Enter' && handleTripExpand(item.data.id)}
       >
-        <div class="trip-icon-container">
-          <span class="material-symbols-outlined trip-icon">
-            {getTripIcon(item.data.purpose)}
-          </span>
+        <div class="trip-icon-column">
+          <div class="trip-icon-container">
+            <span class="material-symbols-outlined trip-icon">
+              {getTripIcon(item.data.purpose)}
+            </span>
+          </div>
+          <div class="trip-nights">
+            <span class="material-symbols-outlined nights-icon">nights</span>
+            <span class="nights-number">{calculateNights(item.data.departureDate, item.data.returnDate)}</span>
+          </div>
         </div>
 
         <div class="trip-info">
@@ -319,6 +325,14 @@
     background: #f9f9f9;
   }
 
+  .trip-icon-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+  }
+
   .trip-icon-container {
     display: flex;
     align-items: center;
@@ -333,6 +347,25 @@
   .trip-icon {
     font-size: 0.875rem !important;
     color: #28536b;
+  }
+
+  .trip-nights {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    font-size: 0.65rem;
+    color: #4b5563;
+    white-space: nowrap;
+  }
+
+  .nights-icon {
+    font-size: 0.7rem !important;
+    color: #6b7280;
+  }
+
+  .nights-number {
+    font-weight: 600;
+    color: #111827;
   }
 
   .trip-info {
