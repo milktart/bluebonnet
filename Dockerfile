@@ -112,11 +112,9 @@ COPY --chown=nodejs:nodejs . .
 USER nodejs
 RUN npm run build-js
 
-# Build SvelteKit frontend
-WORKDIR /app/frontend
-RUN npm ci
-RUN npm run build
-WORKDIR /app
+# Don't install or build frontend in Docker for development
+# Let it be handled at runtime in docker-entrypoint.sh
+# This avoids permission issues with Vite cache when npm runs as non-root
 
 # Set environment
 ENV NODE_ENV=development
@@ -157,6 +155,9 @@ COPY --chown=nodejs:nodejs . .
 USER nodejs
 RUN npm run build-js
 
+# Don't install or build frontend in Docker for test
+# Let it be handled at runtime in docker-entrypoint.sh
+
 # Set environment
 ENV NODE_ENV=test
 ENV PORT=3000
@@ -196,19 +197,12 @@ COPY --chown=nodejs:nodejs . .
 USER nodejs
 RUN npm run build-js
 
-# Build SvelteKit frontend
-WORKDIR /app/frontend
-RUN npm ci
-RUN npm run build
-WORKDIR /app
+# Don't build frontend in Docker - let it be handled at runtime
+# This ensures consistent behavior across all environments and avoids permission issues
 
 # Create logs directory with proper permissions
 USER root
 RUN mkdir -p /app/logs && chmod -R 777 /app/logs
-
-# Clean up dev dependencies to reduce image size
-USER nodejs
-RUN npm prune --omit=dev --include-workspace-root
 
 # Set production environment
 ENV NODE_ENV=production
@@ -253,11 +247,15 @@ COPY --chown=nodejs:nodejs . .
 USER nodejs
 RUN npm run build-js
 
-# Build SvelteKit frontend
+# Build SvelteKit frontend (production needs it pre-built)
 WORKDIR /app/frontend
-RUN npm ci
-RUN npm run build
+RUN npm ci && npm run build
 WORKDIR /app
+
+# Clean up all Vite caches to avoid permission issues
+RUN rm -rf /app/node_modules/.vite /app/node_modules/.vite-temp \
+           /app/frontend/node_modules/.vite /app/frontend/node_modules/.vite-temp \
+           /app/.svelte-kit /app/frontend/.svelte-kit
 
 # Create logs directory with proper permissions
 USER root
