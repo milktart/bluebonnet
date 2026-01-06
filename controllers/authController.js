@@ -30,11 +30,15 @@ exports.postRegister = async (req, res) => {
     // Support both firstName/lastName and name fields
     const [first, last] = name ? name.split(' ') : [firstName, lastName];
 
+    // Check if this email should be made admin via ADMIN_EMAIL env var
+    const isAdminEmail = email.toLowerCase() === process.env.ADMIN_EMAIL?.toLowerCase();
+
     const newUser = await User.create({
       email: email.toLowerCase(),
       password: hashedPassword,
       firstName: first,
       lastName: last,
+      isAdmin: isAdminEmail,
       linkedAt: new Date(),
     });
 
@@ -102,7 +106,7 @@ exports.postRegister = async (req, res) => {
           email: newUser.email,
           firstName: newUser.firstName,
           lastName: newUser.lastName,
-        }
+        },
       });
     }
 
@@ -111,7 +115,9 @@ exports.postRegister = async (req, res) => {
   } catch (error) {
     logger.error(error);
     if (req.get('content-type')?.includes('application/json')) {
-      return res.status(500).json({ success: false, message: 'An error occurred during registration' });
+      return res
+        .status(500)
+        .json({ success: false, message: 'An error occurred during registration' });
     }
     req.flash('error_msg', 'An error occurred during registration');
     res.redirect('/auth/register');

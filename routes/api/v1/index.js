@@ -29,6 +29,7 @@ const carRentalsRoutes = require('./car-rentals');
 const companionsRoutes = require('./companions');
 const itemCompanionsRoutes = require('./item-companions');
 const vouchersRoutes = require('./vouchers');
+const usersRoutes = require('./users');
 
 // Mount route modules
 router.use('/trips', tripsRoutes);
@@ -42,6 +43,7 @@ router.use('/item-companions', itemCompanionsRoutes);
 router.use('/vouchers', vouchersRoutes);
 router.use('/airports', airportsRoutes);
 router.use('/geocode', geocodeRoutes);
+router.use('/users', usersRoutes);
 
 /**
  * GET /api/v1/health

@@ -18,6 +18,7 @@
   import SettingsBackup from '$lib/components/SettingsBackup.svelte';
   import VoucherForm from '$lib/components/VoucherForm.svelte';
   import CompanionForm from '$lib/components/CompanionForm.svelte';
+  import UserForm from '$lib/components/UserForm.svelte';
   import CompanionIndicators from '$lib/components/CompanionIndicators.svelte';
   import DashboardHeader from './components/DashboardHeader.svelte';
   import DashboardTripsList from './components/DashboardTripsList.svelte';
@@ -145,6 +146,17 @@
     }
   }
 
+  function handleAddUser() {
+    openTertiarySidebar('add-user', {});
+  }
+
+  function handleEditUser(event: any) {
+    const user = event.detail?.user;
+    if (user) {
+      openTertiarySidebar('edit-user', { user });
+    }
+  }
+
   onMount(async () => {
     // Initialize store synchronization
     syncStoreState();
@@ -174,6 +186,10 @@
     window.addEventListener('add-companion', handleAddCompanion);
     window.addEventListener('edit-companion', handleEditCompanion);
 
+    // Listen for user add/edit events from SettingsUsers
+    window.addEventListener('add-user', handleAddUser);
+    window.addEventListener('edit-user', handleEditUser);
+
     return () => {
       // Cleanup subscriptions
       if (unsubscribe) unsubscribe();
@@ -181,6 +197,8 @@
       window.removeEventListener('dataImported', handleDataImported);
       window.removeEventListener('add-companion', handleAddCompanion);
       window.removeEventListener('edit-companion', handleEditCompanion);
+      window.removeEventListener('add-user', handleAddUser);
+      window.removeEventListener('edit-user', handleEditUser);
       window.removeEventListener('dataChanged', () => {});
     };
   });
@@ -899,6 +917,26 @@
           }}
           onCancel={closeTertiarySidebar}
         />
+      </div>
+    {:else if tertiarySidebarContent?.type === 'add-user'}
+      <div class="tertiary-header">
+        <h3>Add User</h3>
+        <button class="close-btn" on:click={closeTertiarySidebar} title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="tertiary-form-container">
+        <UserForm user={null} />
+      </div>
+    {:else if tertiarySidebarContent?.type === 'edit-user'}
+      <div class="tertiary-header">
+        <h3>Edit User</h3>
+        <button class="close-btn" on:click={closeTertiarySidebar} title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="tertiary-form-container">
+        <UserForm user={tertiarySidebarContent.data?.user} />
       </div>
     {/if}
   </div>

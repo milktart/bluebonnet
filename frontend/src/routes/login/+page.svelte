@@ -1,4 +1,6 @@
 <script>
+  import { authStoreActions } from '$lib/stores/authStore';
+
   let email = '';
   let password = '';
   let loading = false;
@@ -40,7 +42,15 @@
       }
 
       const data = await response.json();
+      console.log('[Login] Response data:', data);
       if (data.success) {
+        // Use the user data from login response to populate auth store
+        console.log('[Login] User data:', data.user);
+        if (data.user) {
+          console.log('[Login] Calling authStoreActions.login with user:', data.user);
+          authStoreActions.login(data.user, '');
+          console.log('[Login] User saved to auth store');
+        }
         success = 'Login successful, redirecting...';
         setTimeout(() => {
           window.location.href = '/dashboard';

@@ -8,6 +8,7 @@
   import SettingsVouchers from '$lib/components/SettingsVouchers.svelte';
   import SettingsCompanions from '$lib/components/SettingsCompanions.svelte';
   import SettingsBackup from '$lib/components/SettingsBackup.svelte';
+  import SettingsUsers from '$lib/components/SettingsUsers.svelte';
 
   const dispatch = createEventDispatcher();
 
@@ -51,7 +52,8 @@
       type === 'calendar' ||
       type === 'settings-vouchers' ||
       type === 'settings-companions' ||
-      type === 'settings-backup'
+      type === 'settings-backup' ||
+      type === 'settings-users'
     );
   }
 </script>
@@ -141,6 +143,25 @@
         </button>
       </div>
       <SettingsBackup />
+    </div>
+  {:else if secondarySidebarContent?.type === 'settings-users'}
+    <div class="calendar-sidebar-container">
+      <div class="calendar-sidebar-header">
+        <h2>User Admin</h2>
+        <div class="header-actions">
+          <button
+            class="icon-btn"
+            on:click={() => dashboardStoreActions.openTertiarySidebar({ type: 'add-user', data: {} })}
+            title="Add User"
+          >
+            <span class="material-symbols-outlined">add</span>
+          </button>
+          <button class="close-btn" on:click={closeSecondarySidebar} title="Close">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+      </div>
+      <SettingsUsers />
     </div>
   {:else if secondarySidebarContent?.type === 'newItemMenu'}
     <!-- New Item Menu -->

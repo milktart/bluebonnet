@@ -25,6 +25,27 @@ function getAccountBase(): string {
   return 'http://localhost:3000';
 }
 
+// Helper function to get base URL for API routes
+function getApiBase(): string {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol;
+    const port = window.location.port;
+
+    if (port === '5173') {
+      // SvelteKit dev server accessing Docker backend
+      return `${protocol}//${hostname}:3501`;
+    } else if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      // Local development
+      return `${protocol}//localhost:3000`;
+    } else {
+      // Remote access (proxied domain, etc.) - use relative URL
+      return '';
+    }
+  }
+  return 'http://localhost:3000';
+}
+
 export const settingsApi = {
   /**
    * Update user profile (firstName, lastName, email)
@@ -349,6 +370,95 @@ export const settingsApi = {
 
     if (!response.ok) {
       throw new Error(`Failed to import data: ${response.statusText}`);
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Get all users (admin only)
+   */
+  async getAllUsers(): Promise<any> {
+    const base = getApiBase();
+    const response = await fetch(`${base}/api/v1/users`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch users: ${response.statusText}`);
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Create a new user (admin only)
+   */
+  async createUser(data: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    password: string;
+    isAdmin: boolean;
+  }): Promise<any> {
+    const base = getApiBase();
+    const response = await fetch(`${base}/api/v1/users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || `Failed to create user: ${response.statusText}`);
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Update a user (admin only)
+   */
+  async updateUser(userId: string, data: {
+    firstName?: string;
+    lastName?: string;
+    isAdmin?: boolean;
+  }): Promise<any> {
+    const base = getApiBase();
+    const response = await fetch(`${base}/api/v1/users/${userId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || `Failed to update user: ${response.statusText}`);
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Deactivate a user (soft delete) - admin only
+   */
+  async deactivateUser(userId: string): Promise<any> {
+    const base = getApiBase();
+    const response = await fetch(`${base}/api/v1/users/${userId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || `Failed to deactivate user: ${response.statusText}`);
     }
 
     return response.json();

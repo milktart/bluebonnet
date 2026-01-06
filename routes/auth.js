@@ -27,9 +27,29 @@ router.post('/login', validateLogin, (req, res, next) => {
       return res.redirect('/auth/login');
     }
 
-    req.logIn(user, (err) => {
+    // Check if account is active (soft delete check)
+    if (!user.isActive) {
+      if (isJsonRequest) {
+        return res.status(401).json({
+          success: false,
+          message: 'This account has been deactivated. Contact support for assistance.',
+        });
+      }
+      req.flash('error_msg', 'This account has been deactivated. Contact support for assistance.');
+      return res.redirect('/auth/login');
+    }
+
+    req.logIn(user, async (err) => {
       if (err) {
         return next(err);
+      }
+
+      // Update lastLogin timestamp
+      try {
+        await user.update({ lastLogin: new Date() });
+      } catch (updateError) {
+        // Log error but don't fail the login
+        console.error('Error updating lastLogin:', updateError);
       }
 
       if (isJsonRequest) {
@@ -40,7 +60,8 @@ router.post('/login', validateLogin, (req, res, next) => {
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
-          }
+            isAdmin: user.isAdmin,
+          },
         });
       }
 
@@ -69,14 +90,15 @@ router.get('/verify-session', (req, res) => {
         email: req.user.email,
         firstName: req.user.firstName,
         lastName: req.user.lastName,
-      }
+        isAdmin: req.user.isAdmin,
+      },
     });
   }
 
   // Session is not valid (cookie exists but session data is gone, or no cookie)
   res.status(401).json({
     authenticated: false,
-    message: 'Session is not valid or has expired'
+    message: 'Session is not valid or has expired',
   });
 });
 

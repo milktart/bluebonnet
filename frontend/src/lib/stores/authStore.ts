@@ -6,6 +6,7 @@ export interface User {
   firstName?: string;
   lastName?: string;
   name?: string;
+  isAdmin?: boolean;
 }
 
 export interface AuthStoreType {
@@ -91,7 +92,7 @@ export const authStoreActions = {
       const token = localStorage.getItem('auth_token');
       const userStr = localStorage.getItem('auth_user');
 
-      if (token && userStr) {
+      if (userStr) {
         try {
           const user = JSON.parse(userStr);
           authStore.update(state => ({

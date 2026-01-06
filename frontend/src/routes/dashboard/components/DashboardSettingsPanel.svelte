@@ -7,6 +7,10 @@
   // Subscribe to auth store to get user data
   const unsubscribe = authStore.subscribe(($auth) => {
     user = $auth.user;
+    console.log('[SettingsPanel] Auth store updated, user:', user);
+    if (user) {
+      console.log('[SettingsPanel] user.isAdmin:', user.isAdmin);
+    }
   });
 
   const handleSettingClick = (type: string, data: any = {}) => {
@@ -54,6 +58,15 @@
         <span>Backup & Export</span>
       </button>
     </div>
+    {#if user?.isAdmin}
+      <div class="settings-section">
+        <h3>Platform Administration</h3>
+        <button class="settings-item" on:click={() => handleSettingClick('settings-users', {})}>
+          <span class="material-symbols-outlined">admin_panel_settings</span>
+          <span>User Admin</span>
+        </button>
+      </div>
+    {/if}
     <div class="settings-section">
       <h3>Account Actions</h3>
       <a href="/logout" class="settings-item logout">

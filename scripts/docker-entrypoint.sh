@@ -65,7 +65,6 @@ echo "   DEBUG: /app/frontend ownership: $(ls -ld /app/frontend | awk '{print $3
 echo "   Fixing permissions on volume-mounted directories..."
 chmod -R 755 /app 2>/dev/null || true
 chmod -R 755 /app/frontend 2>/dev/null || true
-chown -R nodejs:nodejs /app/frontend 2>/dev/null || true
 
 # Clean all caches and node_modules to avoid permission issues
 echo "   Cleaning Vite caches and node_modules..."
