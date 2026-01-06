@@ -51,10 +51,34 @@
     const charCode = initial.charCodeAt(0);
     return colors[charCode % colors.length];
   }
+
+  function sortCompanions(comps: any[]): any[] {
+    // Sort in reverse alphabetical order by first name, then last name
+    // (since flex-direction: row-reverse will flip the visual order)
+    return [...comps].sort((a, b) => {
+      const compA = getNormalizedCompanion(a);
+      const compB = getNormalizedCompanion(b);
+
+      if (!compA || !compB) return 0;
+
+      const firstNameA = (compA.firstName || '').toLowerCase();
+      const firstNameB = (compB.firstName || '').toLowerCase();
+
+      // If first names are different, sort by first name (reverse)
+      if (firstNameA !== firstNameB) {
+        return firstNameB.localeCompare(firstNameA);
+      }
+
+      // If first names are the same, sort by last name (reverse)
+      const lastNameA = (compA.lastName || '').toLowerCase();
+      const lastNameB = (compB.lastName || '').toLowerCase();
+      return lastNameB.localeCompare(lastNameA);
+    });
+  }
 </script>
 
 <div class="companion-indicators">
-  {#each companions as comp (getNormalizedCompanion(comp)?.id)}
+  {#each sortCompanions(companions) as comp (getNormalizedCompanion(comp)?.id)}
     {@const companion = getNormalizedCompanion(comp)}
     {#if companion}
       {@const initials = getInitials(companion.email, companion.name, companion.firstName, companion.lastName)}
@@ -82,16 +106,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
-    font-size: 0.55rem;
-    font-weight: 500;
-    border: 1px solid;
+    font-size: 0.45rem;
+    font-weight: 700;
+    border: 1.5px solid;
     background-color: transparent;
     cursor: pointer;
     transition: all 0.2s ease;
     flex-shrink: 0;
+    padding: 1px 0 0 0.5px;
   }
 
   .companion-circle:first-child {

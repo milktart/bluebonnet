@@ -90,7 +90,7 @@ exports.createUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { firstName, lastName, isAdmin } = req.body;
+    const { firstName, lastName, isAdmin, password } = req.body;
 
     const user = await User.findByPk(id);
     if (!user) {
@@ -110,6 +110,11 @@ exports.updateUser = async (req, res) => {
       user.lastName = lastName;
     }
     if (isAdmin !== undefined) user.isAdmin = isAdmin === true;
+
+    // Update password if provided
+    if (password) {
+      user.password = await bcrypt.hash(password, 10);
+    }
 
     await user.save();
 

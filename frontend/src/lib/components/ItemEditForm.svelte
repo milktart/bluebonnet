@@ -493,23 +493,23 @@
           </div>
         </div>
 
-        <!-- Departure (2-col) -->
+        <!-- Departure & Arrival Dates (2-col) -->
         <div class="form-row cols-2">
           <div class="form-group">
             <label for="departureDate">Departure Date</label>
             <input type="date" id="departureDate" name="departureDate" bind:value={formData.departureDate} />
           </div>
           <div class="form-group">
-            <label for="departureTime">Departure Time</label>
-            <input type="text" id="departureTime" name="departureTime" bind:value={formData.departureTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
+            <label for="arrivalDate">Arrival Date</label>
+            <input type="date" id="arrivalDate" name="arrivalDate" bind:value={formData.arrivalDate} />
           </div>
         </div>
 
-        <!-- Arrival (2-col) -->
+        <!-- Departure & Arrival Times (2-col) -->
         <div class="form-row cols-2">
           <div class="form-group">
-            <label for="arrivalDate">Arrival Date</label>
-            <input type="date" id="arrivalDate" name="arrivalDate" bind:value={formData.arrivalDate} />
+            <label for="departureTime">Departure Time</label>
+            <input type="text" id="departureTime" name="departureTime" bind:value={formData.departureTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
           </div>
           <div class="form-group">
             <label for="arrivalTime">Arrival Time</label>
@@ -541,23 +541,23 @@
           <textarea id="address" name="address" bind:value={formData.address} placeholder="Full address" />
         </div>
 
-        <!-- Check-in (2-col) -->
+        <!-- Check-in & Check-out Dates (2-col) -->
         <div class="form-row cols-2">
           <div class="form-group">
             <label for="checkInDate">Check-in Date</label>
             <input type="date" id="checkInDate" name="checkInDate" bind:value={formData.checkInDate} required />
           </div>
           <div class="form-group">
-            <label for="checkInTime">Check-in Time</label>
-            <input type="text" id="checkInTime" name="checkInTime" bind:value={formData.checkInTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
+            <label for="checkOutDate">Check-out Date</label>
+            <input type="date" id="checkOutDate" name="checkOutDate" bind:value={formData.checkOutDate} required />
           </div>
         </div>
 
-        <!-- Check-out (2-col) -->
+        <!-- Check-in & Check-out Times (2-col) -->
         <div class="form-row cols-2">
           <div class="form-group">
-            <label for="checkOutDate">Check-out Date</label>
-            <input type="date" id="checkOutDate" name="checkOutDate" bind:value={formData.checkOutDate} required />
+            <label for="checkInTime">Check-in Time</label>
+            <input type="text" id="checkInTime" name="checkInTime" bind:value={formData.checkInTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
           </div>
           <div class="form-group">
             <label for="checkOutTime">Check-out Time</label>
@@ -604,23 +604,23 @@
           </div>
         </div>
 
-        <!-- Departure (2-col) -->
+        <!-- Departure & Arrival Dates (2-col) -->
         <div class="form-row cols-2">
           <div class="form-group">
             <label for="departureDate">Departure Date</label>
             <input type="date" id="departureDate" name="departureDate" bind:value={formData.departureDate} required />
           </div>
           <div class="form-group">
-            <label for="departureTime">Departure Time</label>
-            <input type="text" id="departureTime" name="departureTime" bind:value={formData.departureTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
+            <label for="arrivalDate">Arrival Date</label>
+            <input type="date" id="arrivalDate" name="arrivalDate" bind:value={formData.arrivalDate} required />
           </div>
         </div>
 
-        <!-- Arrival (2-col) -->
+        <!-- Departure & Arrival Times (2-col) -->
         <div class="form-row cols-2">
           <div class="form-group">
-            <label for="arrivalDate">Arrival Date</label>
-            <input type="date" id="arrivalDate" name="arrivalDate" bind:value={formData.arrivalDate} required />
+            <label for="departureTime">Departure Time</label>
+            <input type="text" id="departureTime" name="departureTime" bind:value={formData.departureTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
           </div>
           <div class="form-group">
             <label for="arrivalTime">Arrival Time</label>
@@ -652,15 +652,27 @@
           </div>
         </div>
 
-        <!-- Pickup (2-col) -->
+        <!-- Pickup & Dropoff Dates (2-col) -->
         <div class="form-row cols-2">
           <div class="form-group">
             <label for="pickupDate">Pickup Date</label>
             <input type="date" id="pickupDate" name="pickupDate" bind:value={formData.pickupDate} required />
           </div>
           <div class="form-group">
+            <label for="dropoffDate">Dropoff Date</label>
+            <input type="date" id="dropoffDate" name="dropoffDate" bind:value={formData.dropoffDate} required />
+          </div>
+        </div>
+
+        <!-- Pickup & Dropoff Times (2-col) -->
+        <div class="form-row cols-2">
+          <div class="form-group">
             <label for="pickupTime">Pickup Time</label>
             <input type="text" id="pickupTime" name="pickupTime" bind:value={formData.pickupTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
+          </div>
+          <div class="form-group">
+            <label for="dropoffTime">Dropoff Time</label>
+            <input type="text" id="dropoffTime" name="dropoffTime" bind:value={formData.dropoffTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
           </div>
         </div>
 
@@ -668,18 +680,6 @@
         <div class="form-group">
           <label for="dropoffLocation">Dropoff Location</label>
           <input type="text" id="dropoffLocation" name="dropoffLocation" bind:value={formData.dropoffLocation} required />
-        </div>
-
-        <!-- Dropoff (2-col) -->
-        <div class="form-row cols-2">
-          <div class="form-group">
-            <label for="dropoffDate">Dropoff Date</label>
-            <input type="date" id="dropoffDate" name="dropoffDate" bind:value={formData.dropoffDate} required />
-          </div>
-          <div class="form-group">
-            <label for="dropoffTime">Dropoff Time</label>
-            <input type="text" id="dropoffTime" name="dropoffTime" bind:value={formData.dropoffTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
-          </div>
         </div>
 
         <!-- Confirmation & Notes -->
@@ -726,23 +726,23 @@
             </div>
           </div>
         {:else}
-          <!-- Start Date & Start Time (2-col) -->
+          <!-- Start & End Dates (2-col) -->
           <div class="form-row cols-2">
             <div class="form-group">
               <label for="startDate">Start Date</label>
               <input type="date" id="startDate" name="startDate" bind:value={formData.startDate} required />
             </div>
             <div class="form-group">
-              <label for="startTime">Start Time</label>
-              <input type="text" id="startTime" name="startTime" bind:value={formData.startTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
+              <label for="endDate">End Date</label>
+              <input type="date" id="endDate" name="endDate" bind:value={formData.endDate} />
             </div>
           </div>
 
-          <!-- End Date & End Time (2-col) -->
+          <!-- Start & End Times (2-col) -->
           <div class="form-row cols-2">
             <div class="form-group">
-              <label for="endDate">End Date</label>
-              <input type="date" id="endDate" name="endDate" bind:value={formData.endDate} />
+              <label for="startTime">Start Time</label>
+              <input type="text" id="startTime" name="startTime" bind:value={formData.startTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
             </div>
             <div class="form-group">
               <label for="endTime">End Time</label>
@@ -757,15 +757,10 @@
           <input type="text" id="ticketNumber" name="ticketNumber" bind:value={formData.ticketNumber} />
         </div>
 
-        <!-- Description & Notes -->
+        <!-- Description -->
         <div class="form-group">
           <label for="description">Description</label>
           <textarea id="description" name="description" bind:value={formData.description} placeholder="Event details" />
-        </div>
-
-        <div class="form-group">
-          <label for="notes">Notes</label>
-          <textarea id="notes" name="notes" bind:value={formData.notes} placeholder="Additional information" />
         </div>
 
       {:else}

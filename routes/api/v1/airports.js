@@ -6,8 +6,29 @@
 const express = require('express');
 const airportService = require('../../../services/airportService');
 const logger = require('../../../utils/logger');
+const { requireAdmin } = require('../../../middleware/auth');
+const { Airport } = require('../../../models');
 
 const router = express.Router();
+
+/**
+ * GET /api/v1/airports/admin/all
+ * Get all airports (admin only)
+ * Returns list of all airports in the database
+ */
+router.get('/admin/all', requireAdmin, async (req, res) => {
+  try {
+    const airports = await Airport.findAll({
+      attributes: ['iata', 'icao', 'name', 'city', 'country', 'latitude', 'longitude', 'timezone'],
+      order: [['name', 'ASC']],
+    });
+
+    res.json({ success: true, airports });
+  } catch (error) {
+    logger.error('Error fetching all airports:', error);
+    res.status(500).json({ success: false, message: 'Error fetching airports' });
+  }
+});
 
 /**
  * GET /api/v1/airports/search
@@ -70,6 +91,63 @@ router.get('/search', async (req, res) => {
       success: false,
       error: 'Internal server error',
     });
+  }
+});
+
+/**
+ * PUT /api/v1/airports/:iata
+ * Update an airport (admin only)
+ * Updates airport details by IATA code
+ */
+router.put('/:iata', requireAdmin, async (req, res) => {
+  try {
+    const { iata } = req.params;
+    const { icao, name, city, country, latitude, longitude, timezone } = req.body;
+
+    // Validate IATA code format
+    if (!iata || !/^[A-Z]{3}$/i.test(iata)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid IATA code. Must be 3 letters.',
+      });
+    }
+
+    // Find airport
+    const airport = await Airport.findByPk(iata);
+    if (!airport) {
+      return res.status(404).json({
+        success: false,
+        message: 'Airport not found',
+      });
+    }
+
+    // Update fields
+    if (icao !== undefined) airport.icao = icao;
+    if (name !== undefined) airport.name = name;
+    if (city !== undefined) airport.city = city;
+    if (country !== undefined) airport.country = country;
+    if (latitude !== undefined) airport.latitude = latitude;
+    if (longitude !== undefined) airport.longitude = longitude;
+    if (timezone !== undefined) airport.timezone = timezone;
+
+    await airport.save();
+
+    res.json({
+      success: true,
+      airport: {
+        iata: airport.iata,
+        icao: airport.icao,
+        name: airport.name,
+        city: airport.city,
+        country: airport.country,
+        latitude: airport.latitude,
+        longitude: airport.longitude,
+        timezone: airport.timezone,
+      },
+    });
+  } catch (error) {
+    logger.error('Error updating airport:', error);
+    res.status(500).json({ success: false, message: 'Error updating airport' });
   }
 });
 

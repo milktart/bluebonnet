@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import Alert from './Alert.svelte';
   import { dashboardStoreActions } from '$lib/stores/dashboardStore';
   import { settingsApi } from '$lib/services/settings';
 
@@ -16,6 +17,7 @@
   let users: User[] = [];
   let loading = false;
   let error: string | null = null;
+  let successMessage: string | null = null;
 
   onMount(() => {
     loadUsers();
@@ -79,8 +81,13 @@
 
     try {
       await settingsApi.deactivateUser(user.id);
+      successMessage = 'User deactivated successfully';
       // Dispatch event to refresh table
       window.dispatchEvent(new CustomEvent('users-updated'));
+
+      setTimeout(() => {
+        successMessage = null;
+      }, 3000);
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to deactivate user';
       console.error('Error deactivating user:', err);
@@ -88,59 +95,60 @@
   }
 </script>
 
-<div class="w-full h-full flex flex-col">
+<div class="settings-users-container">
+  {#if error}
+    <Alert type="error" message={error} dismissible />
+  {/if}
+
+  {#if successMessage}
+    <Alert type="success" message={successMessage} dismissible />
+  {/if}
+
   {#if loading}
-    <div class="flex items-center justify-center h-full">
-      <p class="text-gray-500">Loading users...</p>
+    <div class="loading-state">
+      <span class="material-symbols-outlined">hourglass_empty</span>
+      <p>Loading users...</p>
     </div>
-  {:else if error}
-    <div class="p-4 bg-red-50 border border-red-200 rounded text-red-700">
-      {error}
-    </div>
-  {:else if users.length === 0}
-    <div class="flex items-center justify-center h-full">
-      <p class="text-gray-500">No users found</p>
-    </div>
-  {:else}
-    <div class="overflow-x-auto flex-1">
-      <table class="w-full text-left text-xs">
+  {:else if users && users.length > 0}
+    <div class="table-wrapper">
+      <table class="users-table">
         <thead>
-          <tr class="border-b border-gray-200 bg-gray-50">
-            <th class="px-3 py-2 font-semibold text-gray-700 uppercase tracking-wider">Name</th>
-            <th class="px-3 py-2 font-semibold text-gray-700 uppercase tracking-wider">Email</th>
-            <th class="px-3 py-2 font-semibold text-gray-700 uppercase tracking-wider text-center">Admin</th>
-            <th class="px-3 py-2 font-semibold text-gray-700 uppercase tracking-wider">Last Login</th>
-            <th class="px-3 py-2 font-semibold text-gray-700 uppercase tracking-wider text-right">Actions</th>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th class="center-col">Admin</th>
+            <th>Last Login</th>
+            <th class="actions-col"></th>
           </tr>
         </thead>
         <tbody>
           {#each users as user (user.id)}
-            <tr class="border-b border-gray-200 hover:bg-gray-50">
-              <td class="px-3 py-2 text-gray-900">{getDisplayName(user)}</td>
-              <td class="px-3 py-2 text-gray-700">{user.email}</td>
-              <td class="px-3 py-2 text-center">
+            <tr>
+              <td class="name-cell">{getDisplayName(user)}</td>
+              <td class="email-cell">{user.email}</td>
+              <td class="center-col">
                 {#if user.isAdmin}
-                  <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100">
-                    <span class="text-green-700 material-symbols-outlined text-sm">check</span>
-                  </span>
+                  <span class="indicator">✓</span>
                 {/if}
               </td>
-              <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{formatLastLogin(user.lastLogin)}</td>
-              <td class="px-3 py-2 text-right">
-                <div class="flex justify-end gap-1">
+              <td class="login-cell">{formatLastLogin(user.lastLogin)}</td>
+              <td class="actions-cell">
+                <div class="actions-group">
                   <button
-                    class="w-8 h-8 flex items-center justify-center rounded hover:bg-blue-100 text-blue-600"
+                    class="action-btn edit-btn"
                     title="Edit user"
                     on:click={() => handleEditUser(user)}
+                    disabled={loading}
                   >
-                    <span class="material-symbols-outlined text-base">edit</span>
+                    <span class="material-symbols-outlined">edit</span>
                   </button>
                   <button
-                    class="w-8 h-8 flex items-center justify-center rounded hover:bg-red-100 text-red-600"
+                    class="action-btn delete-btn"
                     title="Deactivate user"
                     on:click={() => handleDeleteUser(user)}
+                    disabled={loading}
                   >
-                    <span class="material-symbols-outlined text-base">delete</span>
+                    <span class="material-symbols-outlined">delete</span>
                   </button>
                 </div>
               </td>
@@ -149,11 +157,216 @@
         </tbody>
       </table>
     </div>
+  {:else}
+    <div class="empty-state">
+      <span class="material-symbols-outlined">admin_panel_settings</span>
+      <p>No users found</p>
+      <p class="empty-description">
+        Start adding users to manage platform access and permissions.
+      </p>
+    </div>
   {/if}
 </div>
 
 <style>
-  :global(.material-symbols-outlined) {
-    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  .settings-users-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-width: 0;
+  }
+
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 3rem 1rem;
+    text-align: center;
+    color: #999;
+  }
+
+  .loading-state :global(.material-symbols-outlined) {
+    font-size: 48px;
+    opacity: 0.5;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 0.425rem;
+  }
+
+  .users-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    font-size: 0.75rem;
+  }
+
+  .users-table thead {
+    background-color: #f5f5f5;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .users-table th {
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    vertical-align: middle;
+  }
+
+  .users-table th.center-col {
+    text-align: center;
+  }
+
+  .users-table th.actions-col {
+    text-align: center;
+  }
+
+  .users-table td {
+    padding: 0.875rem;
+    border-bottom: 1px solid #f0f0f0;
+    color: #1f2937;
+    vertical-align: middle;
+  }
+
+  .users-table tbody tr:hover {
+    background-color: #fafafa;
+  }
+
+  .users-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .name-cell {
+    font-weight: 500;
+    color: #1f2937;
+  }
+
+  .email-cell {
+    color: #6b7280;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+  }
+
+  .login-cell {
+    color: #6b7280;
+    white-space: nowrap;
+  }
+
+  .center-col {
+    text-align: center;
+    width: 120px;
+    vertical-align: middle;
+  }
+
+  .indicator {
+    display: inline-flex;
+    width: 24px;
+    height: 24px;
+    background-color: #d4edda;
+    color: #155724;
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+  }
+
+  .actions-col {
+    width: 200px;
+    text-align: center;
+  }
+
+  .actions-cell {
+    text-align: center;
+    padding: 0.875rem 0.5rem;
+  }
+
+  .actions-group {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: end;
+    align-items: center;
+  }
+
+  .action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    margin: 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    line-height: 1;
+    vertical-align: top;
+  }
+
+  .action-btn :global(.material-symbols-outlined) {
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .edit-btn {
+    background-color: #e3f2fd;
+    color: #1976d2;
+  }
+
+  .edit-btn:hover:not(:disabled) {
+    background-color: #bbdefb;
+  }
+
+  .delete-btn {
+    background-color: #ffebee;
+    color: #c62828;
+  }
+
+  .delete-btn:hover:not(:disabled) {
+    background-color: #ffcdd2;
+  }
+
+  .action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 3rem 1rem;
+    text-align: center;
+    color: #999;
+    background: #fafafa;
+    border-radius: 8px;
+  }
+
+  .empty-state :global(.material-symbols-outlined) {
+    font-size: 48px;
+    opacity: 0.5;
+  }
+
+  .empty-description {
+    font-size: 0.85rem;
+    color: #999;
   }
 </style>

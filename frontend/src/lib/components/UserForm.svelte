@@ -1,6 +1,7 @@
 <script lang="ts">
   import { dashboardStoreActions } from '$lib/stores/dashboardStore';
   import { settingsApi } from '$lib/services/settings';
+  import '$lib/styles/form-styles.css';
 
   interface User {
     id?: string;
@@ -22,13 +23,11 @@
 
   let submitting = false;
   let error: string | null = null;
-  let success = false;
 
   const isEdit = !!user?.id;
 
   async function handleSubmit() {
     error = null;
-    success = false;
 
     // Validation
     if (!formData.email) {
@@ -61,11 +60,16 @@
     try {
       if (isEdit && user?.id) {
         // Update existing user
-        await settingsApi.updateUser(user.id, {
+        const updateData: any = {
           firstName: formData.firstName,
           lastName: formData.lastName,
           isAdmin: formData.isAdmin,
-        });
+        };
+        // Only include password if it was provided
+        if (formData.password) {
+          updateData.password = formData.password;
+        }
+        await settingsApi.updateUser(user.id, updateData);
       } else {
         // Create new user
         await settingsApi.createUser({
@@ -77,7 +81,6 @@
         });
       }
 
-      success = true;
       window.dispatchEvent(new CustomEvent('users-updated'));
       dashboardStoreActions.closeTertiarySidebar();
     } catch (err) {
@@ -93,89 +96,129 @@
   }
 </script>
 
-<div class="p-4 space-y-4">
+<div class="edit-content">
   {#if error}
-    <div class="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-      {error}
-    </div>
+    <div class="error-message">{error}</div>
   {/if}
 
-  {#if success}
-    <div class="p-3 bg-green-50 border border-green-200 rounded text-green-700 text-sm">
-      {isEdit ? 'User updated successfully' : 'User created successfully'}
+  <form on:submit|preventDefault={handleSubmit}>
+    <div class="form-fields">
+      <div class="form-row cols-2-1">
+        <div class="form-group">
+          <label for="firstName">First Name</label>
+          <input
+            id="firstName"
+            type="text"
+            bind:value={formData.firstName}
+            placeholder="John"
+            disabled={submitting}
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="lastName">Last Initial</label>
+          <input
+            id="lastName"
+            type="text"
+            bind:value={formData.lastName}
+            placeholder="D"
+            maxlength="1"
+            disabled={submitting}
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email Address {#if !isEdit}*{/if}</label>
+        <input
+          id="email"
+          type="email"
+          bind:value={formData.email}
+          placeholder="user@example.com"
+          required={!isEdit}
+          disabled={submitting || isEdit}
+        />
+        {#if isEdit}
+          <p class="help-text">Email cannot be changed</p>
+        {/if}
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password {#if !isEdit}*{/if}</label>
+        <input
+          id="password"
+          type="password"
+          bind:value={formData.password}
+          placeholder={isEdit ? 'Leave blank to keep current password' : 'Enter password'}
+          required={!isEdit}
+          disabled={submitting}
+        />
+        {#if isEdit}
+          <p class="help-text">Leave blank to keep the current password</p>
+        {/if}
+      </div>
+
+      <div class="checkbox-wrapper">
+        <label for="isAdmin" class="checkbox-label">
+          <input
+            id="isAdmin"
+            type="checkbox"
+            bind:checked={formData.isAdmin}
+            disabled={submitting}
+          />
+          Administrator
+        </label>
+        <p class="checkbox-help-text">
+          Administrators can manage users and platform settings
+        </p>
+      </div>
     </div>
-  {/if}
 
-  <div>
-    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-    <input
-      type="email"
-      disabled={isEdit}
-      bind:value={formData.email}
-      class="w-full px-3 py-2 border border-gray-300 rounded text-sm {isEdit
-        ? 'bg-gray-50 cursor-not-allowed'
-        : ''}"
-      placeholder="user@example.com"
-    />
-  </div>
-
-  <div>
-    <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-    <input
-      type="text"
-      bind:value={formData.firstName}
-      class="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-      placeholder="John"
-    />
-  </div>
-
-  <div>
-    <label class="block text-sm font-medium text-gray-700 mb-1">Last Name (Initial)</label>
-    <input
-      type="text"
-      maxlength="1"
-      bind:value={formData.lastName}
-      class="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-      placeholder="D"
-    />
-  </div>
-
-  {#if !isEdit}
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-      <input
-        type="password"
-        bind:value={formData.password}
-        class="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-        placeholder="Enter password"
-      />
+    <div class="form-buttons">
+      <button class="submit-btn" type="submit" disabled={submitting}>
+        {submitting ? 'Saving...' : isEdit ? 'Update User' : 'Create User'}
+      </button>
+      <button class="cancel-btn" type="button" on:click={handleCancel} disabled={submitting}>
+        Cancel
+      </button>
     </div>
-  {/if}
-
-  <div class="flex items-center">
-    <input
-      type="checkbox"
-      id="isAdmin"
-      bind:checked={formData.isAdmin}
-      class="w-4 h-4 text-blue-600 border-gray-300 rounded"
-    />
-    <label for="isAdmin" class="ml-2 text-sm text-gray-700">Administrator</label>
-  </div>
-
-  <div class="flex gap-2 pt-4 border-t border-gray-200">
-    <button
-      on:click={handleSubmit}
-      disabled={submitting}
-      class="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 text-sm font-medium"
-    >
-      {submitting ? 'Saving...' : isEdit ? 'Update User' : 'Create User'}
-    </button>
-    <button
-      on:click={handleCancel}
-      disabled={submitting}
-      class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 text-sm font-medium"
-    >
-      Cancel
-    </button>
-  </div>
+  </form>
 </div>
+
+<style>
+  .help-text {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #6b7280;
+  }
+
+  .checkbox-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0;
+  }
+
+  .checkbox-label input[type='checkbox'] {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  .checkbox-help-text {
+    margin: 0;
+    font-size: 0.75rem;
+    color: #9ca3af;
+  }
+</style>

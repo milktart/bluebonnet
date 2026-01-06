@@ -33,6 +33,10 @@
         <span class="material-symbols-outlined">lock</span>
         <span>Security</span>
       </button>
+      <button class="settings-item" on:click={() => handleSettingClick('settings-backup', {})}>
+        <span class="material-symbols-outlined">cloud_download</span>
+        <span>Backup & Export</span>
+      </button>
     </div>
     <div class="settings-section">
       <h3>Manage Vouchers & Credits</h3>
@@ -51,19 +55,16 @@
         <span>Travel Companions</span>
       </button>
     </div>
-    <div class="settings-section">
-      <h3>Data</h3>
-      <button class="settings-item" on:click={() => handleSettingClick('settings-backup', {})}>
-        <span class="material-symbols-outlined">cloud_download</span>
-        <span>Backup & Export</span>
-      </button>
-    </div>
     {#if user?.isAdmin}
       <div class="settings-section">
         <h3>Platform Administration</h3>
         <button class="settings-item" on:click={() => handleSettingClick('settings-users', {})}>
           <span class="material-symbols-outlined">admin_panel_settings</span>
           <span>User Admin</span>
+        </button>
+        <button class="settings-item" on:click={() => handleSettingClick('settings-airports', {})}>
+          <span class="material-symbols-outlined">flight_land</span>
+          <span>Manage Airports</span>
         </button>
       </div>
     {/if}

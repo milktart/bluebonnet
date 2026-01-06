@@ -19,6 +19,7 @@
   import VoucherForm from '$lib/components/VoucherForm.svelte';
   import CompanionForm from '$lib/components/CompanionForm.svelte';
   import UserForm from '$lib/components/UserForm.svelte';
+  import AirportForm from '$lib/components/AirportForm.svelte';
   import CompanionIndicators from '$lib/components/CompanionIndicators.svelte';
   import DashboardHeader from './components/DashboardHeader.svelte';
   import DashboardTripsList from './components/DashboardTripsList.svelte';
@@ -95,7 +96,7 @@
     const sidebarEl = document.getElementById('secondary-sidebar');
     if (sidebarEl) {
       // Apply full-width to certain content types
-      const shouldBeFullWidth = ['calendar', 'settings-vouchers', 'settings-companions', 'settings-backup'].includes(
+      const shouldBeFullWidth = ['calendar', 'settings-vouchers', 'settings-companions', 'settings-backup', 'settings-users', 'settings-airports'].includes(
         secondarySidebarContent.type
       );
 
@@ -938,6 +939,16 @@
       <div class="tertiary-form-container">
         <UserForm user={tertiarySidebarContent.data?.user} />
       </div>
+    {:else if tertiarySidebarContent?.type === 'edit-airport'}
+      <div class="tertiary-header">
+        <h3>Edit Airport</h3>
+        <button class="close-btn" on:click={closeTertiarySidebar} title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="tertiary-form-container">
+        <AirportForm airport={tertiarySidebarContent.data?.airport} />
+      </div>
     {/if}
   </div>
 </MapLayout>
@@ -1290,8 +1301,8 @@
 
   .trip-companions {
     position: absolute;
-    top: 0.4rem;
-    right: 0.4rem;
+    top: 0.3rem;
+    right: 0.3rem;
     z-index: 5;
     display: flex;
     align-items: center;
@@ -1741,162 +1752,6 @@
     overflow-x: auto;
   }
 
-  /* New Item Menu Styles */
-  .new-item-menu {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    padding: 0;
-  }
-
-  .menu-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 0 0.75rem;
-    border-bottom: 1px solid #e5e7eb;
-    margin: 0 0 0.75rem;
-    flex-shrink: 0;
-  }
-
-  .menu-title {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 700;
-    color: #111827;
-  }
-
-  .close-menu-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.25rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #9ca3af;
-    transition: all 0.15s;
-  }
-
-  .close-menu-btn:hover {
-    color: #374151;
-    background-color: #f3f4f6;
-    border-radius: 0.425rem;
-  }
-
-  .menu-items {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    overflow-y: auto;
-    flex: 1;
-  }
-
-  .menu-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1rem;
-    width: 100%;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.425rem;
-    background: #ffffff90;
-    cursor: pointer;
-    transition: all 0.15s;
-    text-align: left;
-  }
-
-  .menu-item:hover {
-    border-color: #d1d5db;
-    background-color: #f9fafb;
-  }
-
-  .menu-item-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 0.425rem;
-    flex-shrink: 0;
-    font-size: 1.25rem !important;
-  }
-
-  .menu-item-icon.blue {
-    background-color: #fef9e6;
-    color: #d4a823;
-  }
-
-  .menu-item-icon.green {
-    background-color: #f3e8ff;
-    color: #9b6db3;
-  }
-
-  .menu-item-icon.purple {
-    background-color: #ffe6f0;
-    color: #d6389f;
-  }
-
-  .menu-item-icon.gray {
-    background-color: #ffe6d6;
-    color: #d97a2f;
-  }
-
-  .menu-item-icon.red {
-    background-color: #cce5ff;
-    color: #2b7ab6;
-  }
-
-  .menu-item-icon.amber {
-    background-color: #e8e0d5;
-    color: #28536b;
-  }
-
-  .menu-item-content {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .menu-item-content h3 {
-    margin: 0;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #111827;
-  }
-
-  .menu-item-content p {
-    margin: 0.25rem 0 0 0;
-    font-size: 0.75rem;
-    color: #6b7280;
-    line-height: 1.2;
-  }
-
-  .menu-arrow {
-    font-size: 1rem !important;
-    color: #9ca3af;
-    flex-shrink: 0;
-  }
-
-  .menu-divider {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin: 0.5rem 0;
-  }
-
-  .menu-divider::before,
-  .menu-divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: #e5e7eb;
-  }
-
-  .menu-divider span {
-    font-size: 0.75rem;
-    color: #6b7280;
-    flex-shrink: 0;
-  }
 
   .settings-section {
     display: flex;

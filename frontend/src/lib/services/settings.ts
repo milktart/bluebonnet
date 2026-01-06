@@ -427,6 +427,7 @@ export const settingsApi = {
     firstName?: string;
     lastName?: string;
     isAdmin?: boolean;
+    password?: string;
   }): Promise<any> {
     const base = getApiBase();
     const response = await fetch(`${base}/api/v1/users/${userId}`, {
@@ -459,6 +460,53 @@ export const settingsApi = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || `Failed to deactivate user: ${response.statusText}`);
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Get all airports (admin only)
+   */
+  async getAllAirports(): Promise<any> {
+    const base = getApiBase();
+    const response = await fetch(`${base}/api/v1/airports/admin/all`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch airports: ${response.statusText}`);
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Update an airport (admin only)
+   */
+  async updateAirport(iata: string, data: {
+    icao?: string | null;
+    name?: string;
+    city?: string;
+    country?: string;
+    latitude?: number | null;
+    longitude?: number | null;
+    timezone?: string | null;
+  }): Promise<any> {
+    const base = getApiBase();
+    const response = await fetch(`${base}/api/v1/airports/${iata}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || `Failed to update airport: ${response.statusText}`);
     }
 
     return response.json();

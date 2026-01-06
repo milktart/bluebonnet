@@ -9,6 +9,7 @@
   import SettingsCompanions from '$lib/components/SettingsCompanions.svelte';
   import SettingsBackup from '$lib/components/SettingsBackup.svelte';
   import SettingsUsers from '$lib/components/SettingsUsers.svelte';
+  import SettingsAirports from '$lib/components/SettingsAirports.svelte';
 
   const dispatch = createEventDispatcher();
 
@@ -53,7 +54,8 @@
       type === 'settings-vouchers' ||
       type === 'settings-companions' ||
       type === 'settings-backup' ||
-      type === 'settings-users'
+      type === 'settings-users' ||
+      type === 'settings-airports'
     );
   }
 </script>
@@ -162,6 +164,16 @@
         </div>
       </div>
       <SettingsUsers />
+    </div>
+  {:else if secondarySidebarContent?.type === 'settings-airports'}
+    <div class="calendar-sidebar-container">
+      <div class="calendar-sidebar-header">
+        <h2>Manage Airports</h2>
+        <button class="close-btn" on:click={closeSecondarySidebar} title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <SettingsAirports />
     </div>
   {:else if secondarySidebarContent?.type === 'newItemMenu'}
     <!-- New Item Menu -->
@@ -386,17 +398,18 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    padding: 1rem;
+    padding: 0;
   }
 
   .menu-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 0 1rem 0;
+    padding: 0 0 0.75rem;
     border-bottom: 1px solid #e5e7eb;
     flex-shrink: 0;
-    margin-bottom: 1rem;
+    margin: 0 0 0.75rem 0;
+    gap: 0.75rem;
   }
 
   .menu-title {
@@ -414,6 +427,10 @@
     color: #6b7280;
     border-radius: 0.375rem;
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
 
   .close-menu-btn:hover {
@@ -433,13 +450,13 @@
   .menu-item {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: 1rem;
+    gap: 0.75rem;
+    padding: 0.75rem;
     background: transparent;
     border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
+    border-radius: 0.425rem;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s;
   }
 
   .menu-item:hover {
@@ -448,15 +465,16 @@
   }
 
   .menu-item-icon {
-    width: 3rem;
-    height: 3rem;
-    border-radius: 0.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.425rem;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
     font-weight: 600;
     flex-shrink: 0;
+    font-size: 1.25rem;
   }
 
   .menu-item-icon.blue {
@@ -510,7 +528,7 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin: 1rem 0;
+    margin: 0.75rem 0;
     color: #9ca3af;
     font-size: 0.875rem;
   }
