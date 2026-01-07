@@ -467,20 +467,6 @@
     mobileSelectedItemType = itemType;
   }
 
-  function handleMobileEdit(event: any) {
-    const { item, itemType } = event.detail;
-    dashboardStoreActions.openSecondarySidebar({ type: itemType, itemType, data: item });
-  }
-
-  function handleMobileDelete(event: any) {
-    const { item, itemType } = event.detail;
-    // Show confirmation before deleting
-    if (confirm(`Delete this ${itemType}?`)) {
-      // Call delete API based on item type
-      console.log('Delete:', itemType, item.id);
-    }
-  }
-
 </script>
 
 <svelte:head>
