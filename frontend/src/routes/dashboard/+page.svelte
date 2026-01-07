@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { authStore } from '$lib/stores/authStore';
-  import { tripsApi } from '$lib/services/api';
+  import { tripsApi, flightsApi, hotelsApi, transportationApi, carRentalsApi, eventsApi } from '$lib/services/api';
   import { dataService, setupDataSyncListener } from '$lib/services/dataService';
   import { dashboardStore, dashboardStoreActions } from '$lib/stores/dashboardStore';
   import { formatTimeInTimezone, formatDateTimeInTimezone } from '$lib/utils/timezoneUtils';
@@ -11,6 +11,7 @@
   import Alert from '$lib/components/Alert.svelte';
   import ItemEditForm from '$lib/components/ItemEditForm.svelte';
   import DashboardCalendar from '$lib/components/DashboardCalendar.svelte';
+  import MobileFormModal from '$lib/components/MobileFormModal.svelte';
   import SettingsProfile from '$lib/components/SettingsProfile.svelte';
   import SettingsSecurity from '$lib/components/SettingsSecurity.svelte';
   import SettingsVouchers from '$lib/components/SettingsVouchers.svelte';
@@ -52,6 +53,7 @@
   let mobileActiveTab: 'list' | 'add' | 'calendar' | 'settings' = 'list';
   let mobileSelectedItem: any = null;
   let mobileSelectedItemType: string | null = null;
+  let mobileFormState: null | { type: 'trip' | 'flight' | 'hotel' | 'transportation' | 'carRental' | 'event'; tripId?: string; itemId?: string; data?: any } = null;
 
   // Store subscriptions - sync local state with centralized dashboardStore
   let unsubscribe: (() => void) | null = null;
@@ -163,6 +165,51 @@
     }
   }
 
+  function handleMobileEdit(event: any) {
+    const { item, itemType } = event.detail;
+    if (item && itemType) {
+      mobileFormState = {
+        type: itemType,
+        itemId: item.id,
+        data: item
+      };
+    }
+  }
+
+  function handleMobileDelete(event: any) {
+    const { item, itemType } = event.detail;
+    if (item && itemType) {
+      // Show confirmation
+      if (confirm(`Are you sure you want to delete this ${itemType}?`)) {
+        deleteItem(itemType, item.id);
+      }
+    }
+  }
+
+  async function deleteItem(itemType: string, itemId: string) {
+    try {
+      const apis: Record<string, any> = {
+        'trip': tripsApi,
+        'flight': flightsApi,
+        'hotel': hotelsApi,
+        'transportation': transportationApi,
+        'carRental': carRentalsApi,
+        'event': eventsApi
+      };
+
+      const api = apis[itemType];
+      if (api && api.delete) {
+        await api.delete(itemId);
+        mobileSelectedItem = null;
+        mobileSelectedItemType = null;
+        await loadTripData();
+      }
+    } catch (err) {
+      console.error(`Failed to delete ${itemType}:`, err);
+      error = `Failed to delete ${itemType}. Please try again.`;
+    }
+  }
+
   onMount(async () => {
     // Initialize store synchronization
     syncStoreState();
@@ -196,6 +243,10 @@
     window.addEventListener('add-user', handleAddUser);
     window.addEventListener('edit-user', handleEditUser);
 
+    // Listen for mobile edit/delete events from MobileTripDetailView (via MapLayout)
+    window.addEventListener('mobileEdit', handleMobileEdit);
+    window.addEventListener('mobileDelete', handleMobileDelete);
+
     return () => {
       // Cleanup subscriptions
       if (unsubscribe) unsubscribe();
@@ -205,6 +256,8 @@
       window.removeEventListener('edit-companion', handleEditCompanion);
       window.removeEventListener('add-user', handleAddUser);
       window.removeEventListener('edit-user', handleEditUser);
+      window.removeEventListener('mobileEdit', handleMobileEdit);
+      window.removeEventListener('mobileDelete', handleMobileDelete);
       window.removeEventListener('dataChanged', () => {});
     };
   });
@@ -1074,37 +1127,55 @@
   </div>
 
   <div slot="mobile-add" class="mobile-add-content">
-    <div class="mobile-add-menu">
-      <h3>Create New</h3>
-      <button class="mobile-add-option" on:click={handleCreateTrip}>
-        <span class="material-symbols-outlined">flight</span>
-        <span>Trip</span>
-      </button>
-      <button class="mobile-add-option" on:click={() => handleNewItemClick('flight')}>
-        <span class="material-symbols-outlined">airplanemode_active</span>
-        <span>Flight</span>
-      </button>
-      <button class="mobile-add-option" on:click={() => handleNewItemClick('hotel')}>
-        <span class="material-symbols-outlined">hotel</span>
-        <span>Hotel</span>
-      </button>
-      <button class="mobile-add-option" on:click={() => handleNewItemClick('event')}>
-        <span class="material-symbols-outlined">calendar_today</span>
-        <span>Event</span>
-      </button>
-      <button class="mobile-add-option" on:click={() => handleNewItemClick('transportation')}>
-        <span class="material-symbols-outlined">directions_car</span>
-        <span>Transportation</span>
-      </button>
-      <button class="mobile-add-option" on:click={() => handleNewItemClick('carRental')}>
-        <span class="material-symbols-outlined">directions</span>
-        <span>Car Rental</span>
-      </button>
-    </div>
+    {#if !mobileFormState}
+      <div class="mobile-add-menu">
+        <h3>Create New</h3>
+        <button class="mobile-add-option" on:click={() => mobileFormState = { type: 'trip' }}>
+          <span class="material-symbols-outlined">flight_takeoff</span>
+          <span>Trip</span>
+        </button>
+        <button class="mobile-add-option" on:click={() => mobileFormState = { type: 'flight' }}>
+          <span class="material-symbols-outlined">flight</span>
+          <span>Flight</span>
+        </button>
+        <button class="mobile-add-option" on:click={() => mobileFormState = { type: 'hotel' }}>
+          <span class="material-symbols-outlined">hotel</span>
+          <span>Hotel</span>
+        </button>
+        <button class="mobile-add-option" on:click={() => mobileFormState = { type: 'event' }}>
+          <span class="material-symbols-outlined">event</span>
+          <span>Event</span>
+        </button>
+        <button class="mobile-add-option" on:click={() => mobileFormState = { type: 'transportation' }}>
+          <span class="material-symbols-outlined">train</span>
+          <span>Transportation</span>
+        </button>
+        <button class="mobile-add-option" on:click={() => mobileFormState = { type: 'carRental' }}>
+          <span class="material-symbols-outlined">directions_car</span>
+          <span>Car Rental</span>
+        </button>
+      </div>
+    {/if}
   </div>
 
+  <!-- Mobile Form Modal (Bottom Sheet) -->
+  {#if typeof window !== 'undefined'}
+    <MobileFormModal
+      formType={mobileFormState?.type || null}
+      tripId={mobileFormState?.tripId || null}
+      itemId={mobileFormState?.itemId || null}
+      data={mobileFormState?.data || null}
+      on:close={() => mobileFormState = null}
+      on:success={async (e) => {
+        mobileFormState = null;
+        await loadTripData();
+      }}
+      on:cancel={() => mobileFormState = null}
+    />
+  {/if}
+
   <div slot="mobile-calendar" class="mobile-calendar-content">
-    <DashboardCalendar />
+    <DashboardCalendar {trips} {standaloneItems} onItemClick={handleItemClick} />
   </div>
 
   <div slot="mobile-settings" class="mobile-settings-content">
@@ -2149,7 +2220,7 @@
     height: 100%;
     overflow-y: auto;
     padding: 1rem;
-    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(60px + 1rem + env(safe-area-inset-bottom, 0px));
   }
 
   .mobile-empty-state {

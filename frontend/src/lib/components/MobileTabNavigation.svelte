@@ -7,10 +7,10 @@
   const dispatch = createEventDispatcher();
 
   const tabs = [
-    { id: 'list', label: 'Trips', icon: '📋', title: 'View all trips and items' },
-    { id: 'add', label: 'Add', icon: '➕', title: 'Create new trip or item' },
-    { id: 'calendar', label: 'Calendar', icon: '📅', title: 'Calendar view' },
-    { id: 'settings', label: 'Settings', icon: '⚙️', title: 'Account settings' },
+    { id: 'list', label: 'Trips', icon: 'format_list_bulleted', title: 'View all trips and items' },
+    { id: 'add', label: 'Add', icon: 'add', title: 'Create new trip or item' },
+    { id: 'calendar', label: 'Calendar', icon: 'calendar_month', title: 'Calendar view' },
+    { id: 'settings', label: 'Settings', icon: 'settings', title: 'Account settings' },
   ] as const;
 
   function handleTabClick(tabId: 'list' | 'add' | 'calendar' | 'settings') {
@@ -31,7 +31,7 @@
       on:click={() => handleTabClick(tab.id)}
       title={tab.title}
     >
-      <span class="tab-icon">{tab.icon}</span>
+      <span class="tab-icon material-symbols-outlined">{tab.icon}</span>
       <span class="tab-label">{tab.label}</span>
     </button>
   {/each}
