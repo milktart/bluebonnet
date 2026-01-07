@@ -75,10 +75,10 @@
               <!-- Trip Header -->
               <div
                 class="trip-header"
-                on:click={() => handleTripExpand(item.data.id)}
+                on:click={(e) => onTripEdit(item.data, e)}
                 role="button"
                 tabindex="0"
-                on:keydown={(e) => e.key === 'Enter' && handleTripExpand(item.data.id)}
+                on:keydown={(e) => e.key === 'Enter' && onTripEdit(item.data, e as any)}
               >
                 <div class="trip-icon-column">
                   <div class="trip-icon-container">

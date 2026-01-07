@@ -495,7 +495,12 @@
 
   function handleItemsListTripEdit(trip: any, event: Event) {
     event.stopPropagation();
-    dashboardStoreActions.openSecondarySidebar({ type: 'trip', itemType: 'trip', data: trip });
+    // On mobile: show trip detail view
+    // On desktop: do nothing (edit only via pencil icon)
+    if (typeof window !== 'undefined' && window.innerWidth < 640) {
+      mobileSelectedItem = trip;
+      mobileSelectedItemType = 'trip';
+    }
   }
 
 </script>
