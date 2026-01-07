@@ -1,7 +1,7 @@
 <script lang="ts">
   import ItemCard from './ItemCard.svelte';
   import CompanionIndicators from './CompanionIndicators.svelte';
-  import { formatDate, formatTripDateHeader, calculateNights } from '$lib/utils/dashboardFormatters';
+  import { formatDate, formatMonthHeader, formatTripDateHeader, calculateNights } from '$lib/utils/dashboardFormatters';
   import { getTripIcon, getTripCities } from '$lib/utils/dashboardItem';
   import { groupTripItemsByDate } from '$lib/utils/dashboardGrouping';
 
@@ -40,7 +40,7 @@
     <div class="timeline-date-group">
       <!-- Date Header -->
       <div class="timeline-date-header">
-        <span class="date-badge">{dateKey}</span>
+        <span class="date-badge">{formatMonthHeader(dateKey)}</span>
       </div>
 
       <!-- Items for this date -->
