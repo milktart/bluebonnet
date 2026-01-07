@@ -495,11 +495,13 @@
 
   function handleItemsListTripEdit(trip: any, event: Event) {
     event.stopPropagation();
-    // On mobile: show trip detail view
-    // On desktop: do nothing (edit only via pencil icon)
+    // On mobile: show trip detail view (when card is clicked)
+    // On desktop: open edit form in sidebar (when pencil icon is clicked)
     if (typeof window !== 'undefined' && window.innerWidth < 640) {
       mobileSelectedItem = trip;
       mobileSelectedItemType = 'trip';
+    } else {
+      dashboardStoreActions.openSecondarySidebar({ type: 'trip', itemType: 'trip', data: trip });
     }
   }
 
