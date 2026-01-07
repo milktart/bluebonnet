@@ -284,7 +284,7 @@
   .item-title {
     margin: 0;
     font-size: 0.8rem;
-    font-weight: 600;
+    font-weight: 700;
     color: #111827;
     line-height: 1;
     text-align: left;
@@ -293,7 +293,8 @@
   .item-info {
     margin: 0;
     font-size: 0.65rem;
-    color: #6b7280;
+    font-weight: 600;
+    color: #4b5563;
     line-height: 1;
     text-align: left;
   }
@@ -301,6 +302,7 @@
   .item-route {
     margin: 0;
     font-size: 0.65rem;
+    font-weight: 600;
     color: #6b7280;
     line-height: 1;
     text-align: left;
