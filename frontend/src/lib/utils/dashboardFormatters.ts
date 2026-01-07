@@ -27,12 +27,11 @@ export function formatDate(dateStr: string): string {
 }
 
 /**
- * Format month header from YYYY-MM format to "Month Year" (e.g., "December 2025")
+ * Format month header from YYYY-MM format to month name only (e.g., "December")
  */
 export function formatMonthHeader(monthKey: string): string {
   if (!monthKey) return '';
   const [yearStr, monthStr] = monthKey.split('-');
-  const year = parseInt(yearStr, 10);
   const month = parseInt(monthStr, 10);
   const months = [
     'January',
@@ -48,7 +47,7 @@ export function formatMonthHeader(monthKey: string): string {
     'November',
     'December'
   ];
-  return `${months[month - 1]} ${year}`;
+  return months[month - 1];
 }
 
 /**
