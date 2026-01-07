@@ -134,7 +134,6 @@
       <input
         type="time"
         bind:value={formData.checkInTime}
-        value="14:00"
         class="form-input"
       />
     </div>
@@ -156,7 +155,6 @@
       <input
         type="time"
         bind:value={formData.checkOutTime}
-        value="11:00"
         class="form-input"
       />
     </div>
