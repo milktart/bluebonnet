@@ -40,24 +40,28 @@
     <div class="timeline-date-group">
       <!-- Date Header -->
       <div class="timeline-date-header">
-        <span class="date-badge">
-          {#each items.filter(item => {
-            if (item.type === 'trip') {
-              return item.data.departureDate && item.data.departureDate.startsWith(dateKey.substring(0, 7));
-            } else {
-              return false;
-            }
-          }) as trip (trip.data.id)}
-          {/each}
-          {#each items.filter(item => item.type === 'standalone') as standalonItem (standalonItem.itemType + standalonItem.data.id)}
-          {/each}
-          {dateKey}
-        </span>
+        <span class="date-badge">{dateKey}</span>
       </div>
 
       <!-- Items for this date -->
       <div class="timeline-items">
-        {#each items as item (item.type === 'trip' ? item.data.id : `${item.itemType}-${item.data.id}`)}
+        {#each items.filter(item => {
+          // Filter items to only show those for current dateKey
+          const itemDateKey = item.type === 'trip'
+            ? item.data.departureDate?.substring(0, 7)
+            : item.type === 'standalone' && item.itemType === 'flight'
+            ? new Date(item.data.departureDateTime).toISOString().substring(0, 7)
+            : item.type === 'standalone' && item.itemType === 'hotel'
+            ? new Date(item.data.checkInDateTime).toISOString().substring(0, 7)
+            : item.type === 'standalone' && item.itemType === 'transportation'
+            ? new Date(item.data.departureDateTime).toISOString().substring(0, 7)
+            : item.type === 'standalone' && item.itemType === 'carRental'
+            ? new Date(item.data.pickupDateTime).toISOString().substring(0, 7)
+            : item.type === 'standalone' && item.itemType === 'event'
+            ? new Date(item.data.startDateTime).toISOString().substring(0, 7)
+            : null;
+          return itemDateKey === dateKey.substring(0, 7);
+        }) as item (item.type === 'trip' ? item.data.id : `${item.itemType}-${item.data.id}`)}
           {#if item.type === 'trip'}
             <!-- Trip Card -->
             <div
