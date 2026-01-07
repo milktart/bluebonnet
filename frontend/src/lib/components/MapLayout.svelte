@@ -1,5 +1,7 @@
 <script lang="ts">
   import MapVisualization from './MapVisualization.svelte';
+  import MobileTabNavigation from './MobileTabNavigation.svelte';
+  import MobileTripDetailView from './MobileTripDetailView.svelte';
   import { onMount } from 'svelte';
 
   export let tripData: any = null;
@@ -8,16 +10,64 @@
   export let highlightedItemType: string | null = null;
   export let highlightedItemId: string | null = null;
 
+  // Mobile state
+  export let mobileActiveTab: 'list' | 'add' | 'calendar' | 'settings' = 'list';
+  export let mobileSelectedItem: any = null;
+  export let mobileSelectedItemType: string | null = null;
+  export let viewportWidth: number = typeof window !== 'undefined' ? window.innerWidth : 1024;
+
   let secondarySidebarEl: HTMLElement;
   let tertiarySidebarEl: HTMLElement;
   let mapComponent: MapVisualization;
+  let mobileMapComponent: any = null;
+  let isMobileView: boolean = false;
+
+  // Detect mobile view and sync viewport width
+  $: if (typeof window !== 'undefined') {
+    isMobileView = viewportWidth < 640;
+  }
 
   // Export the map component so parent can access its methods
   export function getMapComponent() {
-    return mapComponent;
+    return isMobileView && mobileMapComponent ? mobileMapComponent : mapComponent;
+  }
+
+  function handleMobileTabChange(event: any) {
+    mobileActiveTab = event.detail.tabId;
+  }
+
+  function handleMobileBack() {
+    mobileSelectedItem = null;
+    mobileSelectedItemType = null;
+  }
+
+  function handleMobileEdit(event: any) {
+    // Dispatch to parent to handle edit
+    const { item, itemType } = event.detail;
+    const customEvent = new CustomEvent('mobileEdit', { detail: { item, itemType } });
+    window.dispatchEvent(customEvent);
+  }
+
+  function handleMobileDelete(event: any) {
+    // Dispatch to parent to handle delete
+    const { item, itemType } = event.detail;
+    const customEvent = new CustomEvent('mobileDelete', { detail: { item, itemType } });
+    window.dispatchEvent(customEvent);
   }
 
   onMount(() => {
+    // Track viewport width changes
+    const handleResize = () => {
+      viewportWidth = window.innerWidth;
+      // If transitioning from mobile to desktop, reset mobile state
+      if (viewportWidth >= 640 && isMobileView) {
+        mobileSelectedItem = null;
+        mobileSelectedItemType = null;
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+
     // Monitor sidebar content changes and hide/show accordingly using opacity instead of display
     const observer = new MutationObserver(() => {
       if (secondarySidebarEl) {
@@ -46,33 +96,84 @@
       tertiarySidebarEl.style.pointerEvents = tertiaryHasContent ? 'auto' : 'none';
     }
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', handleResize);
+    };
   });
 </script>
 
-<div class="map-layout">
-  <!-- Full-screen Leaflet map - Always render container, component handles visibility -->
-  <div id="tripMap" class="map-container">
-    {#key JSON.stringify(tripData)}
-      <MapVisualization bind:this={mapComponent} {tripData} {isPast} {highlightedTripId} {highlightedItemType} {highlightedItemId} />
-    {/key}
+{#if isMobileView}
+  <!-- MOBILE VIEW (< 640px) - Tab-based navigation -->
+  <div class="mobile-layout">
+    <!-- Tab content area - full screen -->
+    <div class="mobile-content-area">
+      {#if mobileActiveTab === 'list'}
+        {#if mobileSelectedItem && mobileSelectedItemType}
+          <!-- Detail view: split map (40%) + details (60%) -->
+          <MobileTripDetailView
+            bind:this={mobileMapComponent}
+            {tripData}
+            selectedItem={mobileSelectedItem}
+            itemType={mobileSelectedItemType}
+            {isPast}
+            on:back={handleMobileBack}
+            on:edit={handleMobileEdit}
+            on:delete={handleMobileDelete}
+          />
+        {:else}
+          <!-- List view: full screen -->
+          <div class="mobile-list-view">
+            <slot name="mobile-list" />
+          </div>
+        {/if}
+      {:else if mobileActiveTab === 'add'}
+        <!-- Add new trip/item form -->
+        <div class="mobile-full-screen-view">
+          <slot name="mobile-add" />
+        </div>
+      {:else if mobileActiveTab === 'calendar'}
+        <!-- Calendar view -->
+        <div class="mobile-full-screen-view">
+          <slot name="mobile-calendar" />
+        </div>
+      {:else if mobileActiveTab === 'settings'}
+        <!-- Settings view -->
+        <div class="mobile-full-screen-view">
+          <slot name="mobile-settings" />
+        </div>
+      {/if}
+    </div>
+
+    <!-- Mobile tab navigation bar -->
+    <MobileTabNavigation activeTab={mobileActiveTab} on:tabChange={handleMobileTabChange} />
   </div>
+{:else}
+  <!-- DESKTOP/TABLET VIEW (640px+) - Original three-sidebar layout -->
+  <div class="map-layout">
+    <!-- Full-screen Leaflet map - Always render container, component handles visibility -->
+    <div id="tripMap" class="map-container">
+      {#key JSON.stringify(tripData)}
+        <MapVisualization bind:this={mapComponent} {tripData} {isPast} {highlightedTripId} {highlightedItemType} {highlightedItemId} />
+      {/key}
+    </div>
 
-  <!-- Primary Sidebar (Left) - Always visible -->
-  <aside class="primary-sidebar sidebar">
-    <slot name="primary" />
-  </aside>
+    <!-- Primary Sidebar (Left) - Always visible -->
+    <aside class="primary-sidebar sidebar">
+      <slot name="primary" />
+    </aside>
 
-  <!-- Secondary Sidebar (Middle) - Only visible when has content -->
-  <aside bind:this={secondarySidebarEl} id="secondary-sidebar" class="secondary-sidebar sidebar">
-    <slot name="secondary" />
-  </aside>
+    <!-- Secondary Sidebar (Middle) - Only visible when has content -->
+    <aside bind:this={secondarySidebarEl} id="secondary-sidebar" class="secondary-sidebar sidebar">
+      <slot name="secondary" />
+    </aside>
 
-  <!-- Tertiary Sidebar (Right) - Only visible when has content -->
-  <aside bind:this={tertiarySidebarEl} id="tertiary-sidebar" class="tertiary-sidebar sidebar">
-    <slot name="tertiary" />
-  </aside>
-</div>
+    <!-- Tertiary Sidebar (Right) - Only visible when has content -->
+    <aside bind:this={tertiarySidebarEl} id="tertiary-sidebar" class="tertiary-sidebar sidebar">
+      <slot name="tertiary" />
+    </aside>
+  </div>
+{/if}
 
 <style>
   :global(body) {
@@ -81,6 +182,39 @@
     padding: 0;
   }
 
+  /* MOBILE LAYOUT (< 640px) */
+  .mobile-layout {
+    position: fixed;
+    width: 100%;
+    height: 100dvh;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    overflow: hidden;
+    z-index: 1;
+  }
+
+  .mobile-content-area {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    padding-bottom: 0;
+  }
+
+  .mobile-list-view,
+  .mobile-full-screen-view {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  /* DESKTOP/TABLET LAYOUT (640px+) */
   .map-layout {
     position: fixed;
     width: 100%;

@@ -48,6 +48,11 @@
   let groupedItems: Record<string, Array<any>> = {};
   let dateKeysInOrder: string[] = [];
 
+  // Mobile-specific state
+  let mobileActiveTab: 'list' | 'add' | 'calendar' | 'settings' = 'list';
+  let mobileSelectedItem: any = null;
+  let mobileSelectedItemType: string | null = null;
+
   // Store subscriptions - sync local state with centralized dashboardStore
   let unsubscribe: (() => void) | null = null;
 
@@ -403,13 +408,44 @@
     dashboardStoreActions.closeTertiarySidebar();
   }
 
+  // Mobile handlers
+  function handleMobileItemClick(item: any, itemType: string | null) {
+    mobileSelectedItem = item;
+    mobileSelectedItemType = itemType;
+  }
+
+  function handleMobileEdit(event: any) {
+    const { item, itemType } = event.detail;
+    dashboardStoreActions.openSecondarySidebar({ type: itemType, itemType, data: item });
+  }
+
+  function handleMobileDelete(event: any) {
+    const { item, itemType } = event.detail;
+    // Show confirmation before deleting
+    if (confirm(`Delete this ${itemType}?`)) {
+      // Call delete API based on item type
+      console.log('Delete:', itemType, item.id);
+    }
+  }
+
 </script>
 
 <svelte:head>
   <title>Dashboard - Bluebonnet</title>
 </svelte:head>
 
-<MapLayout tripData={mapData} isPast={activeTab === 'past'} {highlightedTripId} highlightedItemType={highlightedItemType} highlightedItemId={highlightedItemId}>
+<MapLayout
+  tripData={mapData}
+  isPast={activeTab === 'past'}
+  {highlightedTripId}
+  highlightedItemType={highlightedItemType}
+  highlightedItemId={highlightedItemId}
+  bind:mobileActiveTab
+  bind:mobileSelectedItem
+  bind:mobileSelectedItemType
+  on:mobileEdit={handleMobileEdit}
+  on:mobileDelete={handleMobileDelete}
+>
   <div slot="primary" class="primary-content">
     <div class="header-section">
       <div class="header-top">
@@ -963,6 +999,116 @@
         <AirportForm airport={tertiarySidebarContent.data?.airport} />
       </div>
     {/if}
+  </div>
+
+  <!-- Mobile slots -->
+  <div slot="mobile-list" class="mobile-list-content">
+    {#if loading}
+      <Loading message="Loading trips..." />
+    {:else if filteredItems.length === 0}
+      <div class="mobile-empty-state">
+        <span class="material-symbols-outlined">calendar_month</span>
+        <p>No {activeTab === 'upcoming' ? 'upcoming' : 'past'} trips</p>
+        <Button variant="primary" on:click={() => mobileActiveTab = 'add'}>
+          Create Trip
+        </Button>
+      </div>
+    {:else}
+      <div class="mobile-trips-list">
+        <div class="mobile-tabs-header">
+          <button
+            class="mobile-tab-switch"
+            class:active={activeTab === 'upcoming'}
+            on:click={() => handleTabChange('upcoming')}
+          >
+            Upcoming
+          </button>
+          <button
+            class="mobile-tab-switch"
+            class:active={activeTab === 'past'}
+            on:click={() => handleTabChange('past')}
+          >
+            Past
+          </button>
+        </div>
+        {#each filteredItems as item (item.type === 'trip' ? item.data.id : `${item.itemType}-${item.data.id}`)}
+          {#if item.type === 'trip'}
+            <div
+              class="mobile-trip-item"
+              on:click={() => handleMobileItemClick(item.data, 'trip')}
+              role="button"
+              tabindex="0"
+              on:keydown={(e) => e.key === 'Enter' && handleMobileItemClick(item.data, 'trip')}
+            >
+              <div class="mobile-item-header">
+                <h4>{item.data.name}</h4>
+                <span class="material-symbols-outlined">chevron_right</span>
+              </div>
+              <p class="mobile-item-dates">
+                {formatDate(item.data.departureDate)} - {formatDate(item.data.returnDate || item.data.departureDate)}
+              </p>
+              {#if getTripCities(item.data)}
+                <p class="mobile-item-location">{getTripCities(item.data)}</p>
+              {/if}
+            </div>
+          {:else}
+            <div
+              class="mobile-item-item"
+              on:click={() => handleMobileItemClick(item.data, item.itemType)}
+              role="button"
+              tabindex="0"
+              on:keydown={(e) => e.key === 'Enter' && handleMobileItemClick(item.data, item.itemType)}
+            >
+              <div class="mobile-item-header">
+                <h4>{item.data.name || item.data.title || `${capitalize(item.itemType)}`}</h4>
+                <span class="material-symbols-outlined">chevron_right</span>
+              </div>
+              <p class="mobile-item-dates">
+                {formatDateOnly(getItemDate(item.data, item.itemType))}
+              </p>
+            </div>
+          {/if}
+        {/each}
+      </div>
+    {/if}
+  </div>
+
+  <div slot="mobile-add" class="mobile-add-content">
+    <div class="mobile-add-menu">
+      <h3>Create New</h3>
+      <button class="mobile-add-option" on:click={handleCreateTrip}>
+        <span class="material-symbols-outlined">flight</span>
+        <span>Trip</span>
+      </button>
+      <button class="mobile-add-option" on:click={() => handleNewItemClick('flight')}>
+        <span class="material-symbols-outlined">airplanemode_active</span>
+        <span>Flight</span>
+      </button>
+      <button class="mobile-add-option" on:click={() => handleNewItemClick('hotel')}>
+        <span class="material-symbols-outlined">hotel</span>
+        <span>Hotel</span>
+      </button>
+      <button class="mobile-add-option" on:click={() => handleNewItemClick('event')}>
+        <span class="material-symbols-outlined">calendar_today</span>
+        <span>Event</span>
+      </button>
+      <button class="mobile-add-option" on:click={() => handleNewItemClick('transportation')}>
+        <span class="material-symbols-outlined">directions_car</span>
+        <span>Transportation</span>
+      </button>
+      <button class="mobile-add-option" on:click={() => handleNewItemClick('carRental')}>
+        <span class="material-symbols-outlined">directions</span>
+        <span>Car Rental</span>
+      </button>
+    </div>
+  </div>
+
+  <div slot="mobile-calendar" class="mobile-calendar-content">
+    <DashboardCalendar />
+  </div>
+
+  <div slot="mobile-settings" class="mobile-settings-content">
+    <DashboardSettingsPanel />
   </div>
 </MapLayout>
 
@@ -1992,5 +2138,157 @@
     line-height: 1;
     white-space: nowrap;
     padding-right: 0.25rem;
+  }
+
+  /* Mobile-specific styles */
+  .mobile-list-content,
+  .mobile-add-content,
+  .mobile-calendar-content,
+  .mobile-settings-content {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    padding: 1rem;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mobile-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .mobile-empty-state .material-symbols-outlined {
+    font-size: 3rem;
+    color: #d1d5db;
+  }
+
+  .mobile-empty-state p {
+    color: #6b7280;
+    margin: 0;
+  }
+
+  .mobile-tabs-header {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid #e5e7eb;
+  }
+
+  .mobile-tab-switch {
+    flex: 1;
+    padding: 0.75rem 0.5rem;
+    border: none;
+    background: none;
+    color: #6b7280;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s ease;
+  }
+
+  .mobile-tab-switch.active {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+  }
+
+  .mobile-trips-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .mobile-trip-item,
+  .mobile-item-item {
+    padding: 1rem;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    min-height: 44px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+
+  .mobile-trip-item:active,
+  .mobile-item-item:active {
+    background: #f9fafb;
+  }
+
+  .mobile-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .mobile-item-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+    flex: 1;
+  }
+
+  .mobile-item-header .material-symbols-outlined {
+    color: #d1d5db;
+    flex-shrink: 0;
+  }
+
+  .mobile-item-dates {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
+
+  .mobile-item-location {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.75rem;
+    color: #9ca3af;
+  }
+
+  .mobile-add-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .mobile-add-menu h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #111827;
+  }
+
+  .mobile-add-option {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    min-height: 44px;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #111827;
+  }
+
+  .mobile-add-option:active {
+    background: #f9fafb;
+  }
+
+  .mobile-add-option .material-symbols-outlined {
+    font-size: 1.5rem;
+    color: #2563eb;
   }
 </style>

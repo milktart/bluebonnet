@@ -1,10 +1,19 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    './src/**/*.{html,js,svelte,ts}',
-  ],
+  content: ['./src/**/*.{html,js,svelte,ts}'],
   theme: {
     extend: {
+      screens: {
+        // 4-tier responsive breakpoint system optimized for mobile-first design
+        // mobile: 0-479px (phones)
+        // sm: 480-639px (larger phones/landscape)
+        // md: 640-1023px (tablets)
+        // lg: 1024px+ (desktop)
+        mobile: '0px', // Base (mobile-first)
+        sm: '480px', // Larger phones, landscape
+        md: '640px', // Tablets (iPad mini)
+        lg: '1024px', // Desktop/Laptop (default Tailwind)
+      },
       colors: {
         blue: {
           500: '#3b82f6',
@@ -34,4 +43,4 @@ export default {
     },
   },
   plugins: [],
-}
+};

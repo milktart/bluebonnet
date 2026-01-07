@@ -3,6 +3,14 @@ set -e
 
 echo "🚀 Starting Bluebonnet Travel Planner..."
 
+# Fix /app/node_modules ownership if needed
+if [ -d /app/node_modules ]; then
+  MODULES_OWNER=$(ls -ld /app/node_modules | awk '{print $3}')
+  if [ "$MODULES_OWNER" != "nodejs" ]; then
+    chown -R nodejs:nodejs /app/node_modules
+  fi
+fi
+
 # Wait for postgres to be ready
 echo "⏳ Waiting for PostgreSQL to be ready..."
 until node -e "const { sequelize } = require('./models'); sequelize.authenticate().then(() => process.exit(0)).catch(() => process.exit(1));" 2>/dev/null; do
@@ -12,7 +20,7 @@ done
 
 echo "✅ PostgreSQL is ready!"
 
-# Always sync database schema to ensure models are up to date
+# Sync database schema
 echo "📊 Syncing database schema..."
 npm run db:sync
 
@@ -47,91 +55,54 @@ echo "✅ Database setup complete!"
 
 # Build JavaScript bundles
 echo "📦 Building JavaScript bundles..."
-if npm run build-js 2>&1 | grep -q "Build complete\|Build failed"; then
-  echo "✅ JavaScript bundles built successfully!"
-else
-  echo "⚠️  Bundle build had warnings, but continuing..."
-fi
+npm run build-js
 
 # Build SvelteKit frontend
 echo "📦 Building SvelteKit frontend..."
 
-# Debug: Check current user and directory permissions
-echo "   DEBUG: Current user: $(whoami) (UID: $(id -u))"
-echo "   DEBUG: /app ownership: $(ls -ld /app | awk '{print $3":"$4}')"
-echo "   DEBUG: /app/frontend ownership: $(ls -ld /app/frontend | awk '{print $3":"$4}')"
-
-# Fix permissions on volume-mounted directories so nodejs user can write
-echo "   Fixing permissions on volume-mounted directories..."
-chmod -R 755 /app 2>/dev/null || true
-chmod -R 755 /app/frontend 2>/dev/null || true
-
-# Clean all caches and node_modules to avoid permission issues
-echo "   Cleaning Vite caches and node_modules..."
-rm -rf /app/node_modules/.vite /app/node_modules/.vite-temp 2>/dev/null || true
-rm -rf /app/frontend/node_modules/.vite /app/frontend/node_modules/.vite-temp /app/frontend/node_modules 2>/dev/null || true
-rm -rf /app/.svelte-kit /app/frontend/.svelte-kit 2>/dev/null || true
-
-# Build frontend (as root, will be optimized later)
-echo "   Installing frontend dependencies..."
 cd /app/frontend
-npm ci 2>&1 | grep -E "(added|up to date)" | head -3
 
-echo "   Clearing Vite cache..."
-rm -rf node_modules/.vite node_modules/.vite-temp /app/node_modules/.vite /app/node_modules/.vite-temp 2>/dev/null || true
+# If node_modules exists but has wrong owner, remove it and rebuild
+if [ -d node_modules ]; then
+  NODE_MODULES_OWNER=$(ls -ld node_modules | awk '{print $3}')
+  CURRENT_USER=$(whoami)
+  if [ "$NODE_MODULES_OWNER" != "$CURRENT_USER" ]; then
+    rm -rf node_modules
+  fi
+fi
 
-echo "   Running npm run build..."
+# Use npm install if package-lock.json doesn't exist, otherwise use npm ci
+if [ -f package-lock.json ]; then
+  npm ci
+else
+  npm install
+fi
+
 npm run build
 
 if [ $? -ne 0 ]; then
-  echo "   ❌ Frontend build failed!"
+  echo "❌ Frontend build failed!"
   exit 1
 fi
 
-echo "   ✅ SvelteKit frontend built successfully!"
-cd /app
+echo "✅ SvelteKit frontend built successfully!"
 
-# Clean up dev dependencies in production to reduce runtime image size
-if [ "$NODE_ENV" = "production" ] || [ "$NODE_ENV" = "prod" ]; then
-  echo "🧹 Cleaning up dev dependencies for production..."
-  npm prune --omit=dev --include-workspace-root 2>&1 | tail -3
-  echo "   ✅ Dev dependencies cleaned!"
+# Fix ownership of all frontend build artifacts created by npm/build process
+if [ "$(whoami)" = "root" ]; then
+  chown -R nodejs:nodejs /app/frontend/node_modules 2>/dev/null || true
+  chown -R nodejs:nodejs /app/frontend/build 2>/dev/null || true
+  chown -R nodejs:nodejs /app/frontend/.svelte-kit 2>/dev/null || true
 fi
 
-# Start the application with retry logic
+cd /app
+
+# Clean up dev dependencies in production
+if [ "$NODE_ENV" = "production" ] || [ "$NODE_ENV" = "prod" ]; then
+  echo "🧹 Cleaning up dev dependencies for production..."
+  npm prune --omit=dev --include-workspace-root
+  echo "✅ Dev dependencies cleaned!"
+fi
+
+# Start the application
 echo "🎉 Starting application server..."
-
-# Retry logic for application startup (up to 10 attempts, 3 seconds apart)
-MAX_RETRIES=10
-RETRY_COUNT=0
-RETRY_DELAY=3
-
-until [ $RETRY_COUNT -ge $MAX_RETRIES ]; do
-  echo "   Attempt $((RETRY_COUNT + 1))/$MAX_RETRIES to start application server..."
-
-  # Run node server with a timeout to detect early failures
-  timeout 5 node --unhandled-rejections=strict server.js &
-  SERVER_PID=$!
-
-  # Wait for the process to either succeed or fail
-  if wait $SERVER_PID 2>/dev/null; then
-    # Server exited successfully (should not happen, but if it does, server is running)
-    exec node --unhandled-rejections=strict server.js
-  else
-    EXIT_CODE=$?
-    if [ $EXIT_CODE -eq 124 ]; then
-      # Timeout exit code - server is running, exec it
-      exec node --unhandled-rejections=strict server.js
-    fi
-  fi
-
-  # Server failed to start, retry
-  RETRY_COUNT=$((RETRY_COUNT + 1))
-  if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-    echo "   Application server startup failed, retrying in ${RETRY_DELAY}s..."
-    sleep $RETRY_DELAY
-  fi
-done
-
-echo "❌ Failed to start application server after $MAX_RETRIES attempts"
-exit 1
+exec node --unhandled-rejections=strict /app/server.js

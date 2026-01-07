@@ -75,6 +75,7 @@
     position: sticky;
     top: 0;
     z-index: 100;
+    padding: max(0.5rem, env(safe-area-inset-top, 0.5rem)) max(1rem, env(safe-area-inset-right, 1rem)) 0.5rem max(1rem, env(safe-area-inset-left, 1rem));
   }
 
   .header-content {
@@ -83,33 +84,37 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 2rem;
+    padding: clamp(0.75rem, 2vw, 1.5rem) clamp(1rem, 3vw, 2rem);
   }
 
   .logo-link {
     text-decoration: none;
     color: inherit;
     cursor: pointer;
+    display: flex;
+    align-items: center;
   }
 
   .logo-text {
-    font-size: 1.5rem;
+    font-size: clamp(1.25rem, 4vw, 1.75rem);
     font-weight: 700;
     color: #333;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: clamp(0.25rem, 1vw, 0.5rem);
+    white-space: nowrap;
   }
 
   :global(.logo-icon) {
     font-size: 1.75rem !important;
     color: #e91e63;
+    flex-shrink: 0;
   }
 
   .nav {
     display: flex;
     align-items: center;
-    gap: 2rem;
+    gap: clamp(1rem, 3vw, 2rem);
     list-style: none;
   }
 
@@ -119,6 +124,10 @@
     font-weight: 500;
     transition: color 0.2s ease;
     cursor: pointer;
+    padding: 0.5rem 0;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
   }
 
   .nav-link:hover {
@@ -128,14 +137,15 @@
   .user-info {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: clamp(0.75rem, 2vw, 1rem);
     border-left: 1px solid #e0e0e0;
-    padding-left: 1rem;
+    padding-left: clamp(0.75rem, 2vw, 1rem);
   }
 
   .user-name {
     color: #333;
     font-weight: 500;
+    font-size: clamp(0.875rem, 2vw, 1rem);
   }
 
   .menu-toggle {
@@ -145,6 +155,11 @@
     border: none;
     cursor: pointer;
     gap: 0.4rem;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0.5rem;
+    justify-content: center;
+    align-items: center;
   }
 
   .hamburger {
@@ -155,7 +170,62 @@
     transition: all 0.3s ease;
   }
 
-  @media (max-width: 768px) {
+  /* Mobile (0-479px) - Optimized for small screens */
+  @media (max-width: 479px) {
+    .header-content {
+      padding: 0.75rem 1rem;
+      gap: 1rem;
+    }
+
+    .logo-text {
+      font-size: 1.25rem;
+    }
+
+    :global(.logo-icon) {
+      font-size: 1.5rem !important;
+    }
+
+    .menu-toggle {
+      display: flex;
+    }
+
+    .nav {
+      position: fixed;
+      top: 100%;
+      left: 0;
+      right: 0;
+      flex-direction: column;
+      gap: 0.5rem;
+      background: white;
+      padding: 1rem;
+      border-bottom: 1px solid #e0e0e0;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      z-index: 50;
+    }
+
+    .nav.mobile-open {
+      max-height: calc(100dvh - 100%);
+    }
+
+    .nav-link {
+      padding: 0.75rem;
+      min-height: 44px;
+    }
+
+    .user-info {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+      border-left: none;
+      padding-left: 0;
+      width: 100%;
+    }
+  }
+
+  /* Small mobile (480-639px) - Still responsive */
+  @media (min-width: 480px) and (max-width: 639px) {
     .menu-toggle {
       display: flex;
     }
@@ -168,7 +238,7 @@
       flex-direction: column;
       gap: 0.5rem;
       background: white;
-      padding: 1rem 2rem;
+      padding: 1rem;
       border-bottom: 1px solid #e0e0e0;
       max-height: 0;
       overflow: hidden;
@@ -182,7 +252,7 @@
     .user-info {
       flex-direction: column;
       align-items: flex-start;
-      gap: 0.5rem;
+      gap: 0.75rem;
       border-left: none;
       padding-left: 0;
       width: 100%;
@@ -190,7 +260,53 @@
 
     .nav-link {
       display: block;
-      padding: 0.5rem 0;
+      padding: 0.75rem 0;
+    }
+  }
+
+  /* Tablet (640-1023px) - Side by side still fits */
+  @media (min-width: 640px) and (max-width: 1023px) {
+    .header-content {
+      padding: 1rem;
+    }
+  }
+
+  /* Desktop (1024px+) - Full spacing */
+  @media (min-width: 1024px) {
+    .nav-link {
+      min-height: auto;
+    }
+  }
+
+  /* Landscape mode */
+  @media (max-height: 600px) {
+    .header {
+      padding-top: 0.25rem;
+    }
+
+    .header-content {
+      padding: 0.5rem 1rem;
+    }
+
+    .logo-text {
+      font-size: 1.125rem;
+    }
+
+    .nav-link {
+      min-height: 40px;
+      font-size: 0.875rem;
+    }
+
+    .menu-toggle {
+      min-height: 40px;
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .hamburger,
+    .nav {
+      transition: none;
     }
   }
 </style>
