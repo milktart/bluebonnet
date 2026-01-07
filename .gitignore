@@ -64,6 +64,11 @@ tmp/
 temp/
 .tmp/
 
+# Backups
+backups/
+*.backup
+*.tar.gz
+
 # Node version management
 .nvmrc
 
