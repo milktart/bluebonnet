@@ -15,7 +15,7 @@ npm install
 npm run dev
 ```
 
-The app will be available at `http://localhost:5173` (or next available port)
+The app will be available at `http://localhost:3001` (or next available port)
 
 ### 2. Start the Express Backend
 
@@ -38,7 +38,7 @@ Backend API will be at `http://localhost:3000`
 #### 1.1 Register a New Account
 
 **Steps**:
-1. Go to `http://localhost:5173`
+1. Go to `http://localhost:3001`
 2. Click "Get Started Free" or navigate to `/register`
 3. Fill in the form:
    - Full Name: `Test User`
@@ -664,4 +664,4 @@ What actually happens
 
 ---
 
-**Start testing**: `npm run dev` and navigate to `http://localhost:5173`
+**Start testing**: `npm run dev` and navigate to `http://localhost:3001`

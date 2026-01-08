@@ -1,0 +1,537 @@
+/* ============================================================================
+   RESPONSIVE DESIGN SYSTEM
+   Unified CSS Custom Properties and Breakpoint Framework
+   ============================================================================
+   This file defines all responsive design tokens and breakpoints for the
+   Bluebonnet application. It enables a single responsive design that scales
+   seamlessly across all device sizes from 375px (mobile) to 2560px (ultra-wide).
+   ============================================================================ */
+
+:root {
+  /* =========================================================================
+     BREAKPOINTS - Media query reference values
+     ========================================================================= */
+  --bp-mobile: 640px;       /* Below this: mobile single-column layout */
+  --bp-tablet: 1024px;      /* Below this: tablet with collapsible sidebar */
+  --bp-desktop: 1440px;     /* Below this: desktop 3-column layout */
+  /* Above 1440px: ultra-wide 4-column layout (optional expansion) */
+
+  /* =========================================================================
+     SPACING SCALE - Responsive spacing that scales with viewport
+     Used for gaps, paddings, margins across all components
+     ========================================================================= */
+  --spacing-xs: clamp(0.25rem, 1vw, 0.5rem);     /* Smallest gaps */
+  --spacing-sm: clamp(0.5rem, 1.5vw, 0.75rem);   /* Small gaps */
+  --spacing-md: clamp(0.75rem, 2vw, 1rem);       /* Medium gaps (default) */
+  --spacing-lg: clamp(1rem, 2.5vw, 1.5rem);      /* Large gaps */
+  --spacing-xl: clamp(1.5rem, 3vw, 2rem);        /* Extra large gaps */
+  --spacing-2xl: clamp(2rem, 4vw, 2.5rem);       /* Section spacing */
+
+  /* =========================================================================
+     SIDEBAR WIDTHS - Fixed widths with constraints
+     ========================================================================= */
+  --sidebar-width-primary: 340px;     /* Trip list sidebar */
+  --sidebar-width-secondary: 340px;   /* Details/forms sidebar */
+  --sidebar-width-tertiary: 340px;    /* Additional forms sidebar */
+
+  /* Mobile-optimized sidebar widths (future use) */
+  --sidebar-width-mobile: 80vw;       /* Drawer width on mobile */
+  --sidebar-width-mobile-max: 360px;  /* Max drawer width */
+
+  /* =========================================================================
+     NAVIGATION HEIGHTS - Heights for nav bars at different breakpoints
+     ========================================================================= */
+  --nav-height-mobile: 60px;          /* Bottom tab bar on mobile */
+  --nav-height-tablet: 60px;          /* Top nav bar on tablet+ */
+  --nav-height-landscape: 50px;       /* Reduced height for landscape mode */
+
+  /* =========================================================================
+     Z-INDEX STACK - Layering system for overlapping elements
+     Always reference these for consistent stacking context
+     ========================================================================= */
+  --z-base: 0;
+  --z-map: 1;
+  --z-content: 5;
+  --z-sidebar-primary: 20;            /* Trip list sidebar */
+  --z-sidebar-secondary: 21;          /* Details sidebar */
+  --z-sidebar-tertiary: 22;           /* Additional forms sidebar */
+  --z-drawer: 30;                     /* Navigation drawer */
+  --z-drawer-backdrop: 29;            /* Drawer overlay */
+  --z-modal: 40;                      /* Forms and modals */
+  --z-modal-backdrop: 39;             /* Modal overlay */
+  --z-nav: 50;                        /* Top/bottom navigation */
+
+  /* =========================================================================
+     TRANSITIONS - Animation timing for consistent feel
+     ========================================================================= */
+  --transition-fast: 0.15s ease-in-out;           /* Quick feedback animations */
+  --transition-smooth: 0.35s cubic-bezier(0.4, 0, 0.2, 1); /* Standard transitions */
+  --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);    /* Page transitions */
+
+  /* =========================================================================
+     COLORS - Brand colors and semantic palettes
+     ========================================================================= */
+  --color-primary: #007bff;           /* Primary action color (blue) */
+  --color-primary-dark: #0056b3;      /* Primary hover state */
+  --color-primary-light: #e7f1ff;     /* Primary background */
+
+  --color-text-primary: #111827;      /* Main text color */
+  --color-text-secondary: #6b7280;    /* Secondary text color */
+  --color-text-tertiary: #9ca3af;     /* Tertiary text color */
+
+  --color-border: #e5e7eb;            /* Border color */
+  --color-border-dark: #d1d5db;       /* Darker border */
+
+  --color-bg-primary: #ffffff;        /* Primary background */
+  --color-bg-secondary: #f9fafb;      /* Secondary background */
+  --color-bg-tertiary: #f3f4f6;       /* Tertiary background */
+
+  /* Status colors */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  /* =========================================================================
+     SHADOWS - Depth and layering via shadows
+     ========================================================================= */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  /* =========================================================================
+     BORDER RADIUS - Consistent corner rounding
+     ========================================================================= */
+  --radius-sm: 0.25rem;       /* 4px - tight corners */
+  --radius-md: 0.375rem;      /* 6px - standard input radius */
+  --radius-lg: 0.425rem;      /* 7px - card radius */
+  --radius-xl: 0.5rem;        /* 8px - sidebar radius */
+  --radius-full: 9999px;      /* Fully rounded (circles/pills) */
+
+  /* =========================================================================
+     BACKDROP FILTERS - Glass morphism effects
+     ========================================================================= */
+  --backdrop-blur: blur(10px);
+  --backdrop-opacity: 0.7;
+
+  /* =========================================================================
+     TOUCH TARGETS - Accessibility: minimum interactive element size
+     ========================================================================= */
+  --touch-target-min: 44px;   /* WCAG AA standard */
+  --touch-target-md: 48px;    /* Comfortable touch target */
+  --touch-target-lg: 56px;    /* Large touch target */
+
+  /* =========================================================================
+     BREAKPOINT-SPECIFIC OVERRIDES (Applied via media queries below)
+     ========================================================================= */
+  /* These are set by media queries and cascade down */
+}
+
+/* =====================================================================
+   MOBILE LAYOUT (< 640px)
+   Single column, bottom navigation, full-screen content
+   ===================================================================== */
+@media (max-width: 639px) {
+  :root {
+    /* Reduce spacing on very small screens */
+    --spacing-lg: clamp(0.75rem, 2vw, 1rem);
+    --spacing-xl: clamp(1rem, 2.5vw, 1.5rem);
+
+    /* Mobile-specific nav height */
+    --nav-height: var(--nav-height-mobile);
+
+    /* Sidebar widths for drawer mode */
+    --sidebar-width-drawer: clamp(260px, 80vw, 360px);
+  }
+
+  /* Landscape mode on mobile: compressed layout */
+  @media (max-height: 600px) {
+    :root {
+      --nav-height: var(--nav-height-landscape);
+      --spacing-md: clamp(0.5rem, 1.5vw, 0.75rem);
+      --spacing-lg: clamp(0.75rem, 2vw, 1rem);
+    }
+  }
+}
+
+/* =====================================================================
+   TABLET LAYOUT (640px - 1023px)
+   Collapsible sidebar, top navigation, side drawers
+   ===================================================================== */
+@media (min-width: 640px) and (max-width: 1023px) {
+  :root {
+    /* Tablet spacing - balanced */
+    --spacing-lg: clamp(0.875rem, 2vw, 1.125rem);
+    --spacing-xl: clamp(1.125rem, 2.75vw, 1.5rem);
+
+    /* Tablet nav height */
+    --nav-height: var(--nav-height-tablet);
+
+    /* Sidebar widths adjusted for smaller screens */
+    --sidebar-width-primary: 300px;
+    --sidebar-width-secondary: 300px;
+    --sidebar-width-tertiary: 300px;
+  }
+}
+
+/* =====================================================================
+   DESKTOP LAYOUT (1024px - 1439px)
+   Three sidebars fully visible, desktop-optimized spacing
+   ===================================================================== */
+@media (min-width: 1024px) and (max-width: 1439px) {
+  :root {
+    /* Desktop spacing - standard */
+    --spacing-lg: 1rem;
+    --spacing-xl: 1.5rem;
+
+    /* Desktop nav height */
+    --nav-height: var(--nav-height-desktop);
+
+    /* Standard sidebar widths */
+    --sidebar-width-primary: 340px;
+    --sidebar-width-secondary: 340px;
+    --sidebar-width-tertiary: 340px;
+  }
+}
+
+/* =====================================================================
+   ULTRA-WIDE LAYOUT (1440px+)
+   All content visible with generous spacing
+   ===================================================================== */
+@media (min-width: 1440px) {
+  :root {
+    /* Ultra-wide spacing - generous */
+    --spacing-lg: clamp(1.125rem, 2vw, 1.5rem);
+    --spacing-xl: clamp(1.5rem, 3vw, 2rem);
+
+    /* Desktop nav height */
+    --nav-height: var(--nav-height-desktop);
+
+    /* Standard sidebar widths */
+    --sidebar-width-primary: 340px;
+    --sidebar-width-secondary: 340px;
+    --sidebar-width-tertiary: 340px;
+  }
+}
+
+/* =====================================================================
+   LANDSCAPE ORIENTATION (height-based detection)
+   Applied to both mobile and tablet devices in landscape mode
+   ===================================================================== */
+@media (max-height: 600px) {
+  :root {
+    /* Compressed spacing for landscape */
+    --nav-height: var(--nav-height-landscape);
+    --spacing-sm: clamp(0.375rem, 1vw, 0.5rem);
+    --spacing-md: clamp(0.5rem, 1.5vw, 0.75rem);
+  }
+}
+
+/* =====================================================================
+   ACCESSIBILITY & PREFERENCES
+   Respect user's system preferences
+   ===================================================================== */
+
+/* Reduced motion: disable smooth transitions */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0s;
+    --transition-smooth: 0s;
+    --transition-slow: 0s;
+  }
+}
+
+/* High contrast mode: increase border widths and shadows */
+@media (prefers-contrast: more) {
+  :root {
+    --border-width-emphasis: 2px;
+  }
+}
+
+/* Dark mode support (placeholder for future implementation) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Dark mode colors would go here */
+  }
+}
+
+/* =====================================================================
+   CONTAINER QUERY SUPPORT (Progressive Enhancement)
+   Future-proofing for container-based responsive design
+   ===================================================================== */
+@supports (container-type: inline-size) {
+  /* Component-level responsive sizing would use container queries */
+}
+
+/* =====================================================================
+   BASE LAYOUT UTILITIES
+   Foundational classes used across the application
+   ===================================================================== */
+
+/* Full viewport sizing with safe area support */
+.viewport-full {
+  width: 100%;
+  height: 100dvh;
+  width: 100vw;
+  width: 100%;
+}
+
+/* Safe area padding for notched devices */
+.safe-area-padded {
+  padding-left: max(var(--spacing-md), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--spacing-md), env(safe-area-inset-right, 0px));
+  padding-top: max(var(--spacing-md), env(safe-area-inset-top, 0px));
+  padding-bottom: max(var(--spacing-md), env(safe-area-inset-bottom, 0px));
+}
+
+/* Disable zoom on touch interactions */
+.no-zoom-on-touch {
+  touch-action: manipulation;
+}
+
+/* Smooth scrolling with momentum on iOS */
+.smooth-scroll {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* =====================================================================
+   FLEX UTILITIES
+   Responsive flexbox layouts
+   ===================================================================== */
+
+/* Row with gap using custom property */
+.flex-row {
+  display: flex;
+  flex-direction: row;
+  gap: var(--spacing-md);
+}
+
+/* Column with gap using custom property */
+.flex-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+/* =====================================================================
+   GRID UTILITIES
+   Responsive grid layouts
+   ===================================================================== */
+
+/* Auto-fit grid that adapts column count */
+.grid-auto-fit {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+/* Auto-fill grid (different from auto-fit) */
+.grid-auto-fill {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+/* =====================================================================
+   RESPONSIVE UTILITIES
+   Display and visibility helpers
+   ===================================================================== */
+
+/* Hide on mobile */
+.hide-mobile {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .hide-mobile {
+    display: initial;
+  }
+}
+
+/* Show only on mobile */
+.show-mobile {
+  display: initial;
+}
+
+@media (min-width: 640px) {
+  .show-mobile {
+    display: none;
+  }
+}
+
+/* Hide on tablet and below */
+.hide-tablet-down {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .hide-tablet-down {
+    display: initial;
+  }
+}
+
+/* Show only on tablet and below */
+.show-tablet-down {
+  display: initial;
+}
+
+@media (min-width: 1024px) {
+  .show-tablet-down {
+    display: none;
+  }
+}
+
+/* Hide on desktop */
+.hide-desktop {
+  display: initial;
+}
+
+@media (min-width: 1024px) {
+  .hide-desktop {
+    display: none;
+  }
+}
+
+/* Show only on desktop */
+.show-desktop {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .show-desktop {
+    display: initial;
+  }
+}
+
+/* =====================================================================
+   OVERFLOW & SCROLLING
+   Handle content overflow consistently across breakpoints
+   ===================================================================== */
+
+/* Hide scrollbars but keep scrolling functional */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Custom scrollbar styling (for desktop primarily) */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-dark);
+}
+
+/* =====================================================================
+   TEXT OVERFLOW & TRUNCATION
+   Responsive text handling
+   ===================================================================== */
+
+/* Truncate text with ellipsis */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Multi-line truncate (2 lines) */
+.truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Multi-line truncate (3 lines) */
+.truncate-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* =====================================================================
+   ASPECT RATIO UTILITIES
+   Maintain aspect ratios responsively
+   ===================================================================== */
+
+/* Square aspect ratio (1:1) */
+.aspect-square {
+  aspect-ratio: 1 / 1;
+}
+
+/* Video aspect ratio (16:9) */
+.aspect-video {
+  aspect-ratio: 16 / 9;
+}
+
+/* Portrait aspect ratio (3:4) */
+.aspect-portrait {
+  aspect-ratio: 3 / 4;
+}
+
+/* =====================================================================
+   BREAKPOINT DEBUG HELPER
+   Shows current breakpoint (remove in production)
+   ===================================================================== */
+.bp-debug {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 9999;
+  display: none;
+}
+
+/* Show on debug mode */
+:root.debug-mode .bp-debug {
+  display: block;
+}
+
+.bp-debug::before {
+  content: 'Mobile';
+}
+
+@media (min-width: 640px) {
+  .bp-debug::before {
+    content: 'Tablet';
+  }
+}
+
+@media (min-width: 1024px) {
+  .bp-debug::before {
+    content: 'Desktop';
+  }
+}
+
+@media (min-width: 1440px) {
+  .bp-debug::before {
+    content: 'Ultra-Wide';
+  }
+}

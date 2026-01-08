@@ -16,6 +16,8 @@
   export let allTrips: Trip[] = [];
   export let onClose: () => void = () => {};
   export let onSave: (updatedItem: TravelItem | Trip) => void = () => {};
+  export let isMobile: boolean = false;
+  export let containerType: 'modal' | 'sidebar' = 'sidebar';
 
   let loading = false;
   let error: string | null = null;
@@ -410,20 +412,47 @@
   }
 </script>
 
-<div class="edit-panel">
-  <div class="edit-header">
-    <div class="header-left">
-      <button class="back-btn" on:click={onClose}>
-        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-        </svg>
+{#if containerType === 'modal'}
+  <div class="form-modal-overlay" on:click={onClose} role="presentation" />
+{/if}
+
+<div class="edit-panel" class:modal-container={containerType === 'modal'}>
+  {#if containerType === 'modal'}
+    <div class="modal-header">
+      <h2 class="modal-title">
+        {#if itemType === 'trip'}
+          {data?.id ? 'Edit Trip' : 'New Trip'}
+        {:else if itemType === 'flight'}
+          {data?.id ? 'Edit Flight' : 'New Flight'}
+        {:else if itemType === 'hotel'}
+          {data?.id ? 'Edit Hotel' : 'New Hotel'}
+        {:else if itemType === 'transportation'}
+          {data?.id ? 'Edit Transportation' : 'New Transportation'}
+        {:else if itemType === 'carRental'}
+          {data?.id ? 'Edit Car Rental' : 'New Car Rental'}
+        {:else if itemType === 'event'}
+          {data?.id ? 'Edit Event' : 'New Event'}
+        {/if}
+      </h2>
+      <button class="modal-close-button" on:click={onClose} aria-label="Close form">
+        <span class="material-symbols-outlined">close</span>
       </button>
-      <h3>{config.title}</h3>
     </div>
-    <div class="icon-badge" data-type={itemType}>
-      <span class="material-symbols-outlined">{getItemIcon(itemType)}</span>
+  {:else}
+    <div class="edit-header">
+      <div class="header-left">
+        <button class="back-btn" on:click={onClose}>
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <h3>{config.title}</h3>
+      </div>
+      <div class="icon-badge" data-type={itemType}>
+        <span class="material-symbols-outlined">{getItemIcon(itemType)}</span>
+      </div>
     </div>
-  </div>
+  {/if}
 
   <form on:submit|preventDefault={handleSubmit} class="edit-content">
     {#if error}
@@ -997,6 +1026,128 @@
 </div>
 
 <style>
+  /* Modal container styles */
+  .form-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 40;
+    animation: fadeIn 0.3s ease-out;
+    display: none;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  /* Show modal on mobile */
+  @media (max-width: 639px) {
+    .form-modal-overlay {
+      display: block;
+    }
+
+    .edit-panel.modal-container {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-height: 90vh;
+      background: white;
+      border-radius: 1rem 1rem 0 0;
+      display: flex;
+      flex-direction: column;
+      z-index: 50;
+      animation: slideUp 0.3s ease-out;
+      box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.15);
+      padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+      max-width: 100%;
+    }
+  }
+
+  /* Hide modal on desktop */
+  @media (min-width: 640px) {
+    .form-modal-overlay {
+      display: none !important;
+    }
+
+    .edit-panel.modal-container {
+      display: none !important;
+    }
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+  }
+
+  .modal-title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .modal-close-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .modal-close-button:active {
+    background: #f3f4f6;
+    color: #111827;
+  }
+
+  .modal-close-button :global(.material-symbols-outlined) {
+    font-size: 1.5rem;
+  }
+
+  /* Modal content scrolling */
+  @media (max-width: 639px) {
+    .edit-panel.modal-container .edit-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+    }
+  }
+
+  /* Landscape mode - reduce max height */
+  @media (max-height: 600px) {
+    .edit-panel.modal-container {
+      max-height: 95vh;
+    }
+  }
+
   .checkbox-group label {
     display: flex;
     align-items: center;

@@ -16,7 +16,8 @@
   export let onTripHover: (tripId: string | null) => void = () => {};
   export let onItemHover: (itemType: string | null, itemId: string | null) => void = () => {};
   export let onItemClick: (itemType: string, data: any) => void = () => {};
-  export let onTripEdit: (trip: any, event: Event) => void = () => {};
+  export let onTripCardClick: (trip: any, event: Event) => void = () => {};
+  export let onEditIconClick: (trip: any, event: Event) => void = () => {};
 
   function handleTripExpand(tripId: string) {
     onTripExpand(tripId);
@@ -75,10 +76,9 @@
               <!-- Trip Header -->
               <div
                 class="trip-header"
-                on:click={(e) => onTripEdit(item.data, e)}
+                on:click={(e) => onTripCardClick(item.data, e)}
                 role="button"
                 tabindex="0"
-                on:keydown={(e) => e.key === 'Enter' && onTripEdit(item.data, e as any)}
               >
                 <div class="trip-icon-column">
                   <div class="trip-icon-container">
@@ -98,7 +98,7 @@
                     <button
                       class="edit-btn"
                       title="Edit trip details and companions"
-                      on:click={(e) => onTripEdit(item.data, e)}
+                      on:click={(e) => onEditIconClick(item.data, e)}
                     >
                       <span class="material-symbols-outlined">edit</span>
                     </button>
@@ -111,16 +111,18 @@
                   {/if}
                 </div>
 
-                <button
-                  class="expand-btn"
-                  class:rotated={expandedTrips.has(item.data.id)}
-                  on:click={(e) => {
-                    e.stopPropagation();
-                    handleTripExpand(item.data.id);
-                  }}
-                >
-                  <span class="material-symbols-outlined">expand_more</span>
-                </button>
+                {#if typeof window !== 'undefined' && window.innerWidth >= 640}
+                  <button
+                    class="expand-btn"
+                    class:rotated={expandedTrips.has(item.data.id)}
+                    on:click={(e) => {
+                      e.stopPropagation();
+                      handleTripExpand(item.data.id);
+                    }}
+                  >
+                    <span class="material-symbols-outlined">expand_more</span>
+                  </button>
+                {/if}
               </div>
 
               {#if item.data.tripCompanions && item.data.tripCompanions.length > 0}
@@ -129,8 +131,8 @@
                 </div>
               {/if}
 
-              <!-- Trip Items (Accordion Content) -->
-              {#if expandedTrips.has(item.data.id)}
+              <!-- Trip Items (Accordion Content) - Desktop only -->
+              {#if expandedTrips.has(item.data.id) && typeof window !== 'undefined' && window.innerWidth >= 640}
                 <div class="trip-items">
                   {#each Object.keys(groupTripItemsByDate(item.data)) as dayKey (dayKey)}
                     <div class="trip-item-date-group">
@@ -462,4 +464,5 @@
     flex-direction: column;
     gap: 0.3rem;
   }
+
 </style>

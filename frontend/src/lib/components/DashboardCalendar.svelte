@@ -451,7 +451,7 @@
         <!-- Month label -->
         <div class="month-label">
           <div class="month-name">{monthData.name.substring(0, 3)}</div>
-          <div class="year">{monthData.year}</div>
+          <div class="year">'{ String(monthData.year).slice(-2)}</div>
         </div>
 
         <!-- Days grid -->
@@ -541,28 +541,29 @@
   }
 
   .month-label {
-    width: 50px;
+    width: 30px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     font-size: 0.75rem;
     font-weight: 600;
     color: #9ca3af;
-    background: #ffffff70;
+    background: #ffffffcc;
     padding: 0.5rem 0.25rem;
     flex-shrink: 0;
-    text-align: center;
+    text-align: right;
     border-right: 1px solid #f3f4f6;
   }
 
   .month-name {
-    font-weight: 700;
+    font-weight: 600;
   }
 
   .year {
     font-size: 0.65rem;
     color: #9ca3af;
+    font-weight: 600;
   }
 
   .days-grid {

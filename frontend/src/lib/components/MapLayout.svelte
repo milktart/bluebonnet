@@ -2,7 +2,7 @@
   import MapVisualization from './MapVisualization.svelte';
   import MobileTabNavigation from './MobileTabNavigation.svelte';
   import MobileTripDetailView from './MobileTripDetailView.svelte';
-  import { onMount } from 'svelte';
+  import { onMount, createEventDispatcher } from 'svelte';
 
   export let tripData: any = null;
   export let isPast: boolean = false;
@@ -15,6 +15,9 @@
   export let mobileSelectedItem: any = null;
   export let mobileSelectedItemType: string | null = null;
   export let viewportWidth: number = typeof window !== 'undefined' ? window.innerWidth : 1024;
+  export let allTrips: any[] = [];
+
+  const dispatch = createEventDispatcher();
 
   let secondarySidebarEl: HTMLElement;
   let tertiarySidebarEl: HTMLElement;
@@ -22,9 +25,11 @@
   let mobileMapComponent: any = null;
   let isMobileView: boolean = false;
 
-  // Detect mobile view and sync viewport width
+  // Detect mobile view - use both width and height (landscape phones are wider but shorter)
   $: if (typeof window !== 'undefined') {
-    isMobileView = viewportWidth < 640;
+    const viewportHeight = window.innerHeight;
+    // Mobile if: width < 640px OR (height < 600px AND width < 1024px) - landscape phone
+    isMobileView = viewportWidth < 640 || (viewportHeight < 600 && viewportWidth < 1024);
   }
 
   // Export the map component so parent can access its methods
@@ -42,17 +47,13 @@
   }
 
   function handleMobileEdit(event: any) {
-    // Dispatch to parent to handle edit
-    const { item, itemType } = event.detail;
-    const customEvent = new CustomEvent('mobileEdit', { detail: { item, itemType } });
-    window.dispatchEvent(customEvent);
+    // Forward the edit event to parent
+    dispatch('mobileEdit', event.detail);
   }
 
   function handleMobileDelete(event: any) {
-    // Dispatch to parent to handle delete
-    const { item, itemType } = event.detail;
-    const customEvent = new CustomEvent('mobileDelete', { detail: { item, itemType } });
-    window.dispatchEvent(customEvent);
+    // Forward the delete event to parent
+    dispatch('mobileDelete', event.detail);
   }
 
   onMount(() => {
@@ -117,6 +118,7 @@
             selectedItem={mobileSelectedItem}
             itemType={mobileSelectedItemType}
             {isPast}
+            {allTrips}
             on:back={handleMobileBack}
             on:edit={handleMobileEdit}
             on:delete={handleMobileDelete}
@@ -196,6 +198,14 @@
     z-index: 1;
   }
 
+  /* Landscape mode: ensure nav stays visible */
+  @media (max-height: 600px) {
+    .mobile-layout {
+      height: 100vh;
+      overflow: visible;
+    }
+  }
+
   .mobile-content-area {
     flex: 1;
     overflow-y: auto;
@@ -203,7 +213,15 @@
     display: flex;
     flex-direction: column;
     background: #fff;
-    padding-bottom: 0;
+    padding-bottom: 60px;
+    min-height: 0;
+  }
+
+  /* Landscape mode: smaller nav bar */
+  @media (max-height: 600px) {
+    .mobile-content-area {
+      padding-bottom: 50px;
+    }
   }
 
   .mobile-list-view,
@@ -212,6 +230,8 @@
     height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
   }
 
   /* DESKTOP/TABLET LAYOUT (640px+) */

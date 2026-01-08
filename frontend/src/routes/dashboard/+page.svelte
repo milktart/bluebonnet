@@ -5,13 +5,12 @@
   import { dataService, setupDataSyncListener } from '$lib/services/dataService';
   import { dashboardStore, dashboardStoreActions } from '$lib/stores/dashboardStore';
   import { formatTimeInTimezone, formatDateTimeInTimezone } from '$lib/utils/timezoneUtils';
-  import MapLayout from '$lib/components/MapLayout.svelte';
+  import ResponsiveLayout from '$lib/components/ResponsiveLayout.svelte';
   import Button from '$lib/components/Button.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import Alert from '$lib/components/Alert.svelte';
   import ItemEditForm from '$lib/components/ItemEditForm.svelte';
   import DashboardCalendar from '$lib/components/DashboardCalendar.svelte';
-  import MobileFormModal from '$lib/components/MobileFormModal.svelte';
   import SettingsProfile from '$lib/components/SettingsProfile.svelte';
   import SettingsSecurity from '$lib/components/SettingsSecurity.svelte';
   import SettingsVouchers from '$lib/components/SettingsVouchers.svelte';
@@ -171,6 +170,7 @@
     if (item && itemType) {
       mobileFormState = {
         type: itemType,
+        tripId: item.tripId || null,
         itemId: item.id,
         data: item
       };
@@ -248,6 +248,52 @@
     window.addEventListener('mobileEdit', handleMobileEdit);
     window.addEventListener('mobileDelete', handleMobileDelete);
 
+    // Store form data when switching between mobile and desktop to preserve user input
+    let formDataBuffer: any = null;
+
+    // Sync form state when resizing between mobile and desktop
+    const handleResponsiveResize = () => {
+      const isMobile = window.innerWidth < 640;
+
+      // When transitioning to mobile, move any sidebar form to mobile modal
+      if (isMobile) {
+        // If there's a form in secondary sidebar, save it to mobileFormState
+        if (secondarySidebarContent?.type && secondarySidebarContent?.itemType && !mobileFormState) {
+          // Capture current form data from the form element to preserve user input
+          const formElement = document.querySelector('.edit-panel:not(.modal-container) form');
+          if (formElement instanceof HTMLFormElement) {
+            const formData = new FormData(formElement);
+            formDataBuffer = Object.fromEntries(formData);
+          }
+
+          mobileFormState = {
+            type: secondarySidebarContent.itemType as any,
+            data: formDataBuffer || secondarySidebarContent.data || null
+          };
+          // Don't close the sidebar - just let CSS hide it. The store still has the content.
+        }
+      }
+      // When transitioning to desktop, move mobile form state back to secondary sidebar if applicable
+      else if (!isMobile && mobileFormState && !secondarySidebarContent?.itemType) {
+        // Capture current form data from the mobile form to preserve user input
+        const formElement = document.querySelector('.edit-panel.modal-container form');
+        if (formElement instanceof HTMLFormElement) {
+          const formData = new FormData(formElement);
+          formDataBuffer = Object.fromEntries(formData);
+        }
+
+        dashboardStoreActions.openSecondarySidebar({
+          type: mobileFormState.type,
+          itemType: mobileFormState.type,
+          data: formDataBuffer || mobileFormState.data || {}
+        });
+        mobileFormState = null;
+        formDataBuffer = null;
+      }
+    };
+
+    window.addEventListener('resize', handleResponsiveResize);
+
     return () => {
       // Cleanup subscriptions
       if (unsubscribe) unsubscribe();
@@ -260,6 +306,7 @@
       window.removeEventListener('mobileEdit', handleMobileEdit);
       window.removeEventListener('mobileDelete', handleMobileDelete);
       window.removeEventListener('dataChanged', () => {});
+      window.removeEventListener('resize', handleResponsiveResize);
     };
   });
 
@@ -495,14 +542,21 @@
 
   function handleItemsListTripEdit(trip: any, event: Event) {
     event.stopPropagation();
-    // On mobile: show trip detail view (when card is clicked)
-    // On desktop: open edit form in sidebar (when pencil icon is clicked)
+    // Desktop: expand/collapse trip card
+    // Mobile: show trip detail view
     if (typeof window !== 'undefined' && window.innerWidth < 640) {
       mobileSelectedItem = trip;
       mobileSelectedItemType = 'trip';
     } else {
-      dashboardStoreActions.openSecondarySidebar({ type: 'trip', itemType: 'trip', data: trip });
+      // Desktop: toggle expand/collapse
+      toggleTripExpanded(trip.id);
     }
+  }
+
+  function handleEditTripIcon(trip: any, event: Event) {
+    event.stopPropagation();
+    // Open edit form in sidebar (both desktop and mobile)
+    dashboardStoreActions.openSecondarySidebar({ type: 'trip', itemType: 'trip', data: trip });
   }
 
 </script>
@@ -511,17 +565,16 @@
   <title>Dashboard - Bluebonnet</title>
 </svelte:head>
 
-<MapLayout
+<ResponsiveLayout
   tripData={mapData}
   isPast={activeTab === 'past'}
   {highlightedTripId}
   highlightedItemType={highlightedItemType}
   highlightedItemId={highlightedItemId}
+  allTrips={trips}
   bind:mobileActiveTab
   bind:mobileSelectedItem
   bind:mobileSelectedItemType
-  on:mobileEdit={handleMobileEdit}
-  on:mobileDelete={handleMobileDelete}
 >
   <div slot="primary" class="primary-content">
     <div class="header-section">
@@ -606,7 +659,8 @@
           onTripHover={handleItemsListTripHover}
           onItemHover={handleItemsListItemHover}
           onItemClick={handleItemsListItemClick}
-          onTripEdit={handleItemsListTripEdit}
+          onTripCardClick={handleItemsListTripEdit}
+          onEditIconClick={handleEditTripIcon}
         />
       {/if}
     </div>
@@ -793,9 +847,13 @@
               handleMobileItemClick(data, itemType);
               handleItemsListItemClick(itemType, data);
             }}
-            onTripEdit={(trip, event) => {
+            onTripCardClick={(trip, event) => {
               event.stopPropagation();
-              handleMobileItemClick(trip, 'trip');
+              handleItemsListTripEdit(trip, event);
+            }}
+            onEditIconClick={(trip, event) => {
+              event.stopPropagation();
+              handleEditTripIcon(trip, event);
             }}
           />
         </div>
@@ -835,22 +893,6 @@
     {/if}
   </div>
 
-  <!-- Mobile Form Modal (Bottom Sheet) -->
-  {#if typeof window !== 'undefined'}
-    <MobileFormModal
-      formType={mobileFormState?.type || null}
-      tripId={mobileFormState?.tripId || null}
-      itemId={mobileFormState?.itemId || null}
-      data={mobileFormState?.data || null}
-      on:close={() => mobileFormState = null}
-      on:success={async (e) => {
-        mobileFormState = null;
-        await loadTripData();
-      }}
-      on:cancel={() => mobileFormState = null}
-    />
-  {/if}
-
   <div slot="mobile-calendar" class="mobile-calendar-content">
     <DashboardCalendar {trips} {standaloneItems} onItemClick={handleItemClick} />
   </div>
@@ -858,7 +900,23 @@
   <div slot="mobile-settings" class="mobile-settings-content">
     <DashboardSettingsPanel />
   </div>
-</MapLayout>
+</ResponsiveLayout>
+
+<!-- Mobile Form Modal (Bottom Sheet) - Outside ResponsiveLayout to avoid overflow:hidden clipping -->
+{#if typeof window !== 'undefined' && mobileFormState}
+  <ItemEditForm
+    itemType={mobileFormState.type}
+    tripId={mobileFormState?.tripId || ''}
+    data={mobileFormState?.data || null}
+    allTrips={trips}
+    containerType="modal"
+    onClose={() => mobileFormState = null}
+    onSave={async (e) => {
+      mobileFormState = null;
+      await loadTripData();
+    }}
+  />
+{/if}
 
 <style>
   .primary-content {
@@ -1891,13 +1949,21 @@
   /* Mobile-specific styles */
   .mobile-list-content,
   .mobile-add-content,
-  .mobile-calendar-content,
   .mobile-settings-content {
     width: 100%;
     height: 100%;
     overflow-y: auto;
-    padding: 1rem;
-    padding-bottom: calc(60px + 1rem + env(safe-area-inset-bottom, 0px));
+    padding: clamp(0.5rem, 2vw, 1rem);
+    padding-bottom: clamp(0.5rem, 2vw, 1rem);
+    scroll-padding-bottom: 70px;
+  }
+
+  .mobile-calendar-content {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    padding: clamp(0.5rem, 2vw, 1rem);
+    scroll-padding-bottom: 70px;
   }
 
   .mobile-empty-state {

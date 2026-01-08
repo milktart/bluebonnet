@@ -18,6 +18,7 @@
   export let highlightedTripId: string | null = null;
   export let highlightedItemType: string | null = null;
   export let highlightedItemId: string | null = null;
+  export let isMobile: boolean = false;
 
   let mapContainer: HTMLDivElement;
   let mapInstance: any;
@@ -636,19 +637,22 @@
       // First, fit to bounds normally to establish the zoom level
       mapInstance.fitBounds(bounds, { maxZoom, animate: false });
 
-      // Now get the current bounds after fitting
-      const currentBounds = mapInstance.getBounds();
-      const currentCenter = currentBounds.getCenter();
-      const boundsWidth = currentBounds.getEast() - currentBounds.getWest();
-      const boundsHeight = currentBounds.getNorth() - currentBounds.getSouth();
+      // On desktop, offset map center to account for sidebar; on mobile, keep centered
+      if (!isMobile) {
+        // Now get the current bounds after fitting
+        const currentBounds = mapInstance.getBounds();
+        const currentCenter = currentBounds.getCenter();
+        const boundsWidth = currentBounds.getEast() - currentBounds.getWest();
+        const boundsHeight = currentBounds.getNorth() - currentBounds.getSouth();
 
-      // Calculate new center offset to push map left by ~13.5% of the bounds width
-      const newCenter = L.latLng(
-        currentCenter.lat,
-        currentCenter.lng - (boundsWidth * 0.135)
-      );
+        // Calculate new center offset to push map left by ~13.5% of the bounds width
+        const newCenter = L.latLng(
+          currentCenter.lat,
+          currentCenter.lng - (boundsWidth * 0.135)
+        );
 
-      mapInstance.setView(newCenter, mapInstance.getZoom(), { animate: false });
+        mapInstance.setView(newCenter, mapInstance.getZoom(), { animate: false });
+      }
     }
 
   }

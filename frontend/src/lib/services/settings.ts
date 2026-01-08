@@ -9,12 +9,8 @@ function getAccountBase(): string {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     const protocol = window.location.protocol;
-    const port = window.location.port;
 
-    if (port === '5173') {
-      // SvelteKit dev server accessing Docker backend
-      return `${protocol}//${hostname}:3501`;
-    } else if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
       // Local development
       return `${protocol}//localhost:3000`;
     } else {
@@ -30,12 +26,8 @@ function getApiBase(): string {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     const protocol = window.location.protocol;
-    const port = window.location.port;
 
-    if (port === '5173') {
-      // SvelteKit dev server accessing Docker backend
-      return `${protocol}//${hostname}:3501`;
-    } else if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
       // Local development
       return `${protocol}//localhost:3000`;
     } else {

@@ -78,7 +78,7 @@ print_success "Dependencies installed"
 # Show configuration
 print_header "Configuration"
 
-echo "Frontend URL: ${BLUE}http://localhost:5173${NC}"
+echo "Frontend URL: ${BLUE}http://localhost:3001${NC}"
 echo "Backend API: ${BLUE}http://localhost:3000${NC}"
 echo ""
 echo "Make sure the Express backend is running!"
@@ -91,7 +91,7 @@ print_header "Starting Development Server"
 
 echo "Starting Svelte development server..."
 echo ""
-echo -e "${YELLOW}Opening http://localhost:5173 in your browser...${NC}"
+echo -e "${YELLOW}Opening http://localhost:3001 in your browser...${NC}"
 echo ""
 echo "Press ${YELLOW}Ctrl+C${NC} to stop the server"
 echo ""

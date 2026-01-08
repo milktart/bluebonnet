@@ -7,6 +7,7 @@
     "start": "node server.js",
     "dev": "tsx watch server.js",
     "dev:node": "nodemon server.js",
+    "dev:docker": "node scripts/dev-server-integrated.js",
     "build-css": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css --watch",
     "build-css-prod": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css --minify",
     "clean-js": "rm -rf public/dist/*.js public/dist/*.js.map public/dist/chunks/*.js public/dist/chunks/*.js.map",

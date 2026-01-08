@@ -18,15 +18,33 @@
 
   let loading = false;
   let error: string | null = null;
+
+  // Helper function to parse startDateTime/endDateTime into separate date and time
+  function parseDateTime(dateTimeStr: string): { date: string; time: string } {
+    if (!dateTimeStr) return { date: '', time: '' };
+
+    try {
+      const dt = new Date(dateTimeStr);
+      const date = dt.toISOString().split('T')[0];
+      const time = dt.toTimeString().slice(0, 5); // HH:MM format
+      return { date, time };
+    } catch (e) {
+      return { date: '', time: '' };
+    }
+  }
+
+  const startDateTime = parseDateTime(event?.startDateTime || '');
+  const endDateTime = parseDateTime(event?.endDateTime || '');
+
   let formData = {
     tripId: tripId,
     name: event?.name || '',
     description: event?.description || '',
     location: event?.location || '',
-    startDate: event?.startDate || '',
-    startTime: event?.startTime || '',
-    endDate: event?.endDate || '',
-    endTime: event?.endTime || '',
+    startDate: event?.startDate || startDateTime.date || '',
+    startTime: event?.startTime || startDateTime.time || '',
+    endDate: event?.endDate || endDateTime.date || '',
+    endTime: event?.endTime || endDateTime.time || '',
     category: event?.category || 'activity',
     ticketNumber: event?.ticketNumber || '',
     cost: event?.cost || '',

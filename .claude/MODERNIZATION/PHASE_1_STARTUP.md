@@ -64,7 +64,7 @@ npm install -D typescript
 npm run dev
 ```
 
-**Expected:** App running at `http://localhost:5173`
+**Expected:** App running at `http://localhost:3001`
 
 ### Week 1, Day 2: Project Structure
 

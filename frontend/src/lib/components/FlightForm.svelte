@@ -18,16 +18,34 @@
 
   let loading = false;
   let error: string | null = null;
+
+  // Helper function to parse dateTime into separate date and time
+  function parseDateTime(dateTimeStr: string): { date: string; time: string } {
+    if (!dateTimeStr) return { date: '', time: '' };
+
+    try {
+      const dt = new Date(dateTimeStr);
+      const date = dt.toISOString().split('T')[0];
+      const time = dt.toTimeString().slice(0, 5); // HH:MM format
+      return { date, time };
+    } catch (e) {
+      return { date: '', time: '' };
+    }
+  }
+
+  const departureDateTime = parseDateTime(flight?.departureDateTime || '');
+  const arrivalDateTime = parseDateTime(flight?.arrivalDateTime || '');
+
   let formData = {
     tripId: tripId,
     airline: flight?.airline || '',
     flightNumber: flight?.flightNumber || '',
     origin: flight?.origin || '',
     destination: flight?.destination || '',
-    departureDate: flight?.departureDate || '',
-    departureTime: flight?.departureTime || '',
-    arrivalDate: flight?.arrivalDate || '',
-    arrivalTime: flight?.arrivalTime || '',
+    departureDate: flight?.departureDate || departureDateTime.date || '',
+    departureTime: flight?.departureTime || departureDateTime.time || '',
+    arrivalDate: flight?.arrivalDate || arrivalDateTime.date || '',
+    arrivalTime: flight?.arrivalTime || arrivalDateTime.time || '',
     seatNumber: flight?.seatNumber || '',
     seatClass: flight?.seatClass || 'economy',
     boardingGroup: flight?.boardingGroup || '',

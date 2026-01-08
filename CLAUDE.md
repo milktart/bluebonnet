@@ -15,7 +15,7 @@
 # Backend + Database + Frontend (all together)
 docker-compose up --build
 # Backend at http://localhost:3500
-# Frontend at http://localhost:5173
+# Frontend at http://localhost:3001
 ```
 
 ### Option 2: Local Development (15 minutes)
@@ -31,7 +31,7 @@ npm run dev
 cd ./frontend
 npm install
 npm run dev
-# Frontend at http://localhost:5173
+# Frontend at http://localhost:3001
 ```
 
 ### Frontend-Only Development
@@ -39,7 +39,7 @@ npm run dev
 cd ./frontend
 npm install
 npm run dev
-# Frontend at http://localhost:5173
+# Frontend at http://localhost:3001
 # (Requires backend running separately)
 ```
 

@@ -8,7 +8,7 @@
 docker-compose up --build
 ```
 
-Then visit: **http://localhost:5173**
+Then visit: **http://localhost:3001**
 
 ---
 
@@ -29,7 +29,7 @@ Then visit: **http://localhost:5173**
 - Dashboard with filtering
 - Responsive design (mobile, tablet, desktop)
 - Vite HMR (hot reload)
-- Port: **5173**
+- Port: **3001**
 
 ### Infrastructure
 - PostgreSQL: **Port 5432**
@@ -57,13 +57,13 @@ docker-compose up --build
 1. ✅ PostgreSQL database starts (initializes schema)
 2. ✅ Redis cache starts
 3. ✅ Express backend API starts (port 3000)
-4. ✅ Svelte frontend starts (port 5173)
+4. ✅ Svelte frontend starts (port 3001)
 5. ✅ All services connected via bridge network
 
 **Wait for**:
 - Backend health check: "DB_HOST: postgres"
 - Frontend: "VITE v5..." message
-- Then visit http://localhost:5173
+- Then visit http://localhost:3001
 
 ### Stop Services
 
@@ -190,7 +190,7 @@ PostgreSQL + Redis
 
 ### Services
 ```
-Frontend (5173) ←→ Backend API (3000)
+Frontend (3001) ←→ Backend API (3000)
                         ↓
                    PostgreSQL (5432)
                    Redis (6379)
@@ -227,7 +227,7 @@ Start with: **[TESTING_GUIDE.md](./TESTING_GUIDE.md)**
 
 **Quick test**:
 1. Start services: `docker-compose up --build`
-2. Go to http://localhost:5173
+2. Go to http://localhost:3001
 3. Register a new account
 4. Create a trip
 5. Add a flight to the trip
@@ -297,7 +297,7 @@ Created in `/bluebonnet-dev/.env`:
 NODE_ENV=development
 PORT=3000
 APP_PORT=3000
-FRONTEND_PORT=5173
+FRONTEND_PORT=3001
 DB_PORT=5432
 DB_NAME=bluebonnet
 DB_USER=postgres
@@ -357,7 +357,7 @@ docker network inspect bluebonnet_network
 
 | Service | URL/Port | Purpose |
 |---------|----------|---------|
-| Frontend | http://localhost:5173 | Svelte app |
+| Frontend | http://localhost:3001 | Svelte app |
 | Backend API | http://localhost:3000 | Express REST API |
 | Database | localhost:5432 | PostgreSQL |
 | Cache | localhost:6379 | Redis |
@@ -368,7 +368,7 @@ docker network inspect bluebonnet_network
 
 Everything is working if:
 1. ✅ All services start without errors
-2. ✅ Frontend loads at http://localhost:5173
+2. ✅ Frontend loads at http://localhost:3001
 3. ✅ Can create an account
 4. ✅ Can create a trip
 5. ✅ Can add travel items to trip
@@ -462,7 +462,7 @@ docker-compose up --build
 ```
 
 ### To Access
-- Frontend: http://localhost:5173
+- Frontend: http://localhost:3001
 - Backend: http://localhost:3000
 
 ### To Test
@@ -479,7 +479,7 @@ docker-compose up --build
 docker-compose up --build
 ```
 
-Then visit: **http://localhost:5173**
+Then visit: **http://localhost:3001**
 
 ---
 

@@ -14,7 +14,7 @@ Bluebonnet is a distributed system with a **REST API backend** and a **modern Sv
 ┌─────────────────────────────────────────────────────────────┐
 │                     User Browser                             │
 ├─────────────────────────────────────────────────────────────┤
-│  SvelteKit Frontend (Port 5173)                              │
+│  SvelteKit Frontend (Port 3001)                              │
 │  ├── Routes: Login, Register, Dashboard, Trip Detail         │
 │  ├── Components: 33+ Svelte files                            │
 │  ├── Stores: Reactive state management                       │
@@ -446,7 +446,7 @@ npm run lint             # Check code style
 npm run db:migrate       # Run migrations
 
 # Frontend
-npm run dev              # Development server (port 5173)
+npm run dev              # Development server (port 3001)
 npm run build            # Production build
 npm test                 # Run tests
 npm run lint             # Check code
@@ -483,7 +483,7 @@ docker-compose up --build
 
 # Ports:
 # - Backend: 3500 (exposed)
-# - Frontend: 5173 (via nginx)
+# - Frontend: 3001 (via nginx)
 # - Database: 5432 (internal only)
 # - Redis: 6379 (internal only)
 ```

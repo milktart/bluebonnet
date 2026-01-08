@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================================
+   IMPORT RESPONSIVE DESIGN SYSTEM
+   ============================================================================ */
+@import './lib/styles/responsive.css';
+@import './lib/styles/layout.css';
+
 /* Fluid Typography System - Scales smoothly across all breakpoints */
 html {
   /* Base font size for body text: scales from 14px on mobile to 16px on desktop */
@@ -277,5 +283,24 @@ button:disabled {
   select {
     padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
     padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+  }
+}
+
+/* Disable all zoom gestures on mobile devices */
+@media (max-width: 639px) {
+  html,
+  body,
+  * {
+    touch-action: manipulation;
+  }
+
+  /* Explicitly prevent double-tap zoom on interactive elements */
+  button,
+  a,
+  input,
+  textarea,
+  select,
+  [role='button'] {
+    touch-action: manipulation;
   }
 }

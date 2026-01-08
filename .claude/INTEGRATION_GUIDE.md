@@ -68,7 +68,7 @@ npm run dev
 
 **Ports:**
 - Backend: `http://localhost:3500` (Docker) or `http://localhost:3000` (local)
-- Frontend: `http://localhost:5173`
+- Frontend: `http://localhost:3001`
 - Database: `localhost:5432` (internal only)
 
 ### Option 2: Local Development
@@ -85,7 +85,7 @@ npm run dev
 cd bluebonnet-svelte
 npm install
 npm run dev
-# Runs on http://localhost:5173
+# Runs on http://localhost:3001
 ```
 
 ### Option 3: Frontend Only (for UI development)
@@ -428,7 +428,7 @@ services:
   frontend:
     # SvelteKit dev server
     ports:
-      - "5173:5173"
+      - "3001:3001"
 
   postgres:
     # Database
@@ -464,7 +464,7 @@ fetch('http://localhost:3000/api/auth/me')
 // Check CORS headers
 // In bluebonnet-dev server.js:
 const corsOptions = {
-  origin: 'http://localhost:5173',  // Frontend URL
+  origin: 'http://localhost:3001',  // Frontend URL
   credentials: true                  // Include cookies
 };
 app.use(cors(corsOptions));
@@ -690,7 +690,7 @@ docker-compose build
 docker-compose up
 
 # Backend at localhost:3500
-# Frontend at localhost:5173
+# Frontend at localhost:3001
 ```
 
 ---

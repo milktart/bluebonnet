@@ -52,7 +52,9 @@
     backdrop-filter: blur(10px);
     border-top: 1px solid #e5e7eb;
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
-    z-index: 50;
+    z-index: 9999;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .tab-button {
@@ -64,6 +66,7 @@
     justify-content: center;
     gap: 0.25rem;
     padding: 0.5rem;
+    padding-top: clamp(0.5rem, 2vw, 0.75rem);
     border: none;
     background: none;
     cursor: pointer;
@@ -73,6 +76,13 @@
     min-height: 44px;
     -webkit-user-select: none;
     user-select: none;
+  }
+
+  /* Landscape mode: add top padding for visual balance */
+  @media (max-height: 600px) {
+    .tab-button {
+      padding-top: 0.75rem;
+    }
   }
 
   .tab-button:active {
@@ -134,7 +144,8 @@
   }
 
   /* Tablet and desktop - hide (use MapLayout sidebars instead) */
-  @media (min-width: 640px) {
+  /* Only hide on actual desktop/tablet, not on landscape phones */
+  @media (min-width: 640px) and (min-height: 600px) {
     .mobile-tab-navigation {
       display: none;
     }

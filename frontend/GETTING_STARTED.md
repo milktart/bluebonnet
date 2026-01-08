@@ -22,7 +22,7 @@ docker-compose up --build
 ```
 
 Then visit:
-- **Frontend**: http://localhost:5173
+- **Frontend**: http://localhost:3001
 - **Backend API**: http://localhost:3000
 
 ### Option 2: Local Development
@@ -43,7 +43,7 @@ npm install
 npm run dev
 ```
 
-3. Open browser to http://localhost:5173
+3. Open browser to http://localhost:3001
 
 ## Project Structure
 
@@ -304,7 +304,7 @@ docker-compose logs -f frontend
 
 #### "Cannot GET /"
 - Ensure dev server is running: `npm run dev`
-- Check http://localhost:5173 (not 3000)
+- Check http://localhost:3001 (not 3000)
 
 #### "API Connection Failed"
 - Verify backend is running: `npm run dev` in `/home/home/bluebonnet`
@@ -356,7 +356,7 @@ npm run dev -- --port 5174
 ```bash
 # Development
 npm install              # Install dependencies
-npm run dev             # Start dev server (http://localhost:5173)
+npm run dev             # Start dev server (http://localhost:3001)
 
 # Building
 npm run build           # Build for production
@@ -378,7 +378,7 @@ docker-compose down              # Stop services
 ```
 User Browser
      ↓
-http://localhost:5173
+http://localhost:3001
      ↓
 Svelte Components (src/routes, src/lib/components)
      ↓
@@ -429,6 +429,6 @@ npm run dev             # Start development
 docker-compose up       # Or run in Docker from bluebonnet-dev
 ```
 
-Visit **http://localhost:5173** to see the app!
+Visit **http://localhost:3001** to see the app!
 
 For detailed testing instructions, see [TESTING_GUIDE.md](./TESTING_GUIDE.md)

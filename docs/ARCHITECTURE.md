@@ -24,7 +24,7 @@
 ```
 ┌──────────────────────────────────────────────────────────┐
 │                    Browser (Frontend)                    │
-│         SvelteKit + TypeScript (Port 5173)              │
+│         SvelteKit + TypeScript (Port 3001)              │
 │  ┌────────────────────────────────────────────────────┐ │
 │  │ Routes: /, /login, /register, /dashboard           │ │
 │  │ State: Svelte Stores (auth, trip, ui)              │ │
@@ -541,7 +541,7 @@ Frontend                          Backend                  Cache/Database
 
 ```
 Frontend (npm run dev)
-  ↓ localhost:5173
+  ↓ localhost:3001
 Backend (npm run dev)
   ↓ localhost:3000
 PostgreSQL
@@ -555,7 +555,7 @@ docker-compose up --build
 
 Services:
   - backend (port 3500)
-  - frontend (port 5173)
+  - frontend (port 3001)
   - postgres (port 5432)
   - redis (port 6379, optional)
 ```

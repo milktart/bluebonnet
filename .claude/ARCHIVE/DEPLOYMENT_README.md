@@ -296,7 +296,7 @@ Server runs on port 3000
 ### Phase 1 (Express + SvelteKit)
 ```
 Deploy Express backend (port 3000)
-Deploy SvelteKit frontend (port 5173, proxied to 3000 for API)
+Deploy SvelteKit frontend (port 3001, proxied to 3000 for API)
 OR
 - Frontend serves statically from Express (more common)
 ```

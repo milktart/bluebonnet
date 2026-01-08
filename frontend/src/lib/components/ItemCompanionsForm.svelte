@@ -290,6 +290,13 @@
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   }
 
+  /* Mobile: Use 16px font to prevent iOS auto-zoom on focus */
+  @media (max-width: 639px) {
+    .search-input {
+      font-size: 16px;
+    }
+  }
+
   .search-input::placeholder {
     color: #9ca3af;
   }

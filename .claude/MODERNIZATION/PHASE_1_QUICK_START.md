@@ -35,7 +35,7 @@ npm install
 npm run dev
 ```
 
-**✅ By end of Day 5: SvelteKit running on http://localhost:5173**
+**✅ By end of Day 5: SvelteKit running on http://localhost:3001**
 
 ---
 

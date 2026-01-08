@@ -21,7 +21,7 @@ postgres: accepting connections ✓
 ```
 
 ### 3. Open Browser
-Visit: **http://localhost:5173**
+Visit: **http://localhost:3001**
 
 ### 4. Test It
 - Click "Sign Up"
@@ -37,7 +37,7 @@ Visit: **http://localhost:5173**
 
 | Component | Port | Purpose |
 |-----------|------|---------|
-| **Frontend** (Svelte) | 5173 | Travel planning UI |
+| **Frontend** (Svelte) | 3001 | Travel planning UI |
 | **Backend** (Express) | 3000 | REST API |
 | **Database** (PostgreSQL) | 5432 | Trip data |
 | **Cache** (Redis) | 6379 | Session/cache |
@@ -112,7 +112,7 @@ docker-compose exec frontend sh
 ### Quick Manual Test
 
 1. **Create Account**
-   - Go to http://localhost:5173/register
+   - Go to http://localhost:3001/register
    - Sign up with test@example.com / password
 
 2. **Create Trip**
@@ -141,11 +141,11 @@ See: [TESTING_GUIDE.md](./TESTING_GUIDE.md)
 
 ## ❓ Troubleshooting
 
-### "Cannot connect to port 5173"
+### "Cannot connect to port 3001"
 ```bash
 # Port may already be in use, try different port
 docker-compose down -v
-# Edit docker-compose.yml and change 5173 to 5174
+# Edit docker-compose.yml and change 3001 to 5174
 # Then restart
 docker-compose up --build
 ```
@@ -226,7 +226,7 @@ START HERE ← You are here
 
 ### Right Now
 1. Run: `docker-compose up --build`
-2. Visit: http://localhost:5173
+2. Visit: http://localhost:3001
 3. Create account → Create trip
 
 ### Then
@@ -272,7 +272,7 @@ docker-compose exec frontend sh
 | Question | Answer |
 |----------|--------|
 | How do I run it? | `docker-compose up --build` |
-| Where's the frontend? | http://localhost:5173 |
+| Where's the frontend? | http://localhost:3001 |
 | Where's the API? | http://localhost:3000 |
 | How do I test? | See [TESTING_GUIDE.md](./TESTING_GUIDE.md) |
 | How do I deploy? | See [DOCKER_SETUP.md](./DOCKER_SETUP.md) |
@@ -289,7 +289,7 @@ Everything is set up and ready to go.
 docker-compose up --build
 ```
 
-Then visit: http://localhost:5173
+Then visit: http://localhost:3001
 
 ---
 

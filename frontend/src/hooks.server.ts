@@ -17,9 +17,9 @@ export const handle: Handle = async ({ event, resolve }) => {
     // (could be expired or invalidated)
     try {
       // Determine backend URL
-      // In Docker, frontend container can reach backend app container via internal service name
-      // The docker-compose defines the service as 'app', listening on port 3001
-      let apiBase = 'http://app:3001';
+      // In dev mode, Express backend runs on port 3000 (same container/process)
+      // In production, this would be configured differently
+      let apiBase = 'http://localhost:3000';
 
       // Call backend to verify session is valid
       const verifyResponse = await fetch(`${apiBase}/auth/verify-session`, {

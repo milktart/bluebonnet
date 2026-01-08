@@ -48,6 +48,13 @@
     box-sizing: border-box;
   }
 
+  /* Mobile: Use 16px font to prevent iOS auto-zoom on focus */
+  @media (max-width: 639px) {
+    textarea {
+      font-size: 16px !important;
+    }
+  }
+
   textarea:focus {
     outline: none;
     border-color: #007bff;

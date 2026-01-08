@@ -1,19 +1,25 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import MapVisualization from './MapVisualization.svelte';
+  import ItemCard from './ItemCard.svelte';
+  import ItemEditForm from './ItemEditForm.svelte';
   import { groupTripItemsByDate, getDayKeyForItem } from '$lib/utils/dashboardGrouping';
-  import { formatTripDateHeader, formatDateTime, formatTimeOnly, formatDateOnly } from '$lib/utils/dashboardFormatters';
+  import { formatTripDateHeader, formatDateTime, formatTimeOnly, formatDateOnly, formatDate, calculateNights, capitalize } from '$lib/utils/dashboardFormatters';
   import { getCityName, getTransportIcon } from '$lib/utils/dashboardItem';
-  import { capitalize } from '$lib/utils/dashboardFormatters';
+  import CompanionIndicators from './CompanionIndicators.svelte';
+  import '$lib/styles/form-styles.css';
 
   export let tripData: any = null;
   export let selectedItem: any = null;
   export let itemType: string | null = null;
   export let isPast: boolean = false;
+  export let allTrips: any[] = [];
 
   const dispatch = createEventDispatcher();
 
   let mapComponent: any = null;
+  let selectedTripItem: any = null;
+  let selectedTripItemType: string | null = null;
 
   // Export for parent access
   export function getMapComponent() {
@@ -21,7 +27,12 @@
   }
 
   function handleBack() {
-    dispatch('back');
+    if (selectedTripItem) {
+      selectedTripItem = null;
+      selectedTripItemType = null;
+    } else {
+      dispatch('back');
+    }
   }
 
   function handleEdit() {
@@ -32,6 +43,16 @@
     dispatch('delete', { item: selectedItem, itemType });
   }
 
+  function handleTripItemClick(event: any) {
+    selectedTripItem = { ...event.detail.item, tripId: selectedItem?.id };
+    selectedTripItemType = event.detail.itemType;
+  }
+
+  function handleTripItemBackClick() {
+    selectedTripItem = null;
+    selectedTripItemType = null;
+  }
+
   // Get trip items grouped by date (only if this is a trip)
   function getTripItemsByDate() {
     if (itemType === 'trip' && selectedItem?.flights) {
@@ -39,20 +60,56 @@
     }
     return {};
   }
+
+  // Filter tripData to only show items from the selected trip or standalone item
+  function getFilteredTripData() {
+    if (!tripData || !selectedItem) {
+      return tripData;
+    }
+
+    // For standalone items, show only that item on the map
+    if (itemType !== 'trip') {
+      return {
+        flights: itemType === 'flight' ? [selectedItem] : [],
+        hotels: itemType === 'hotel' ? [selectedItem] : [],
+        events: itemType === 'event' ? [selectedItem] : [],
+        transportation: itemType === 'transportation' ? [selectedItem] : [],
+        carRentals: itemType === 'carRental' ? [selectedItem] : []
+      };
+    }
+
+    // If a specific trip item is selected, only show that item
+    if (selectedTripItem && selectedTripItemType) {
+      return {
+        flights: selectedTripItemType === 'flight' ? [selectedTripItem] : [],
+        hotels: selectedTripItemType === 'hotel' ? [selectedTripItem] : [],
+        events: selectedTripItemType === 'event' ? [selectedTripItem] : [],
+        transportation: selectedTripItemType === 'transportation' ? [selectedTripItem] : [],
+        carRentals: selectedTripItemType === 'carRental' ? [selectedTripItem] : []
+      };
+    }
+
+    const tripId = selectedItem.id;
+    return {
+      flights: tripData.flights?.filter((f: any) => f.tripId === tripId) || [],
+      hotels: tripData.hotels?.filter((h: any) => h.tripId === tripId) || [],
+      events: tripData.events?.filter((e: any) => e.tripId === tripId) || [],
+      transportation: tripData.transportation?.filter((t: any) => t.tripId === tripId) || [],
+      carRentals: tripData.carRentals?.filter((c: any) => c.tripId === tripId) || []
+    };
+  }
 </script>
 
 <div class="mobile-detail-view">
   <!-- Top half: Map -->
   <div class="map-section">
-    <button type="button" class="back-button" aria-label="Back to list" on:click={handleBack}>
-      ← Back
-    </button>
     <div id="tripDetailMap" class="detail-map-container">
       {#key JSON.stringify(selectedItem)}
         <MapVisualization
           bind:this={mapComponent}
-          {tripData}
+          tripData={getFilteredTripData()}
           {isPast}
+          isMobile={true}
           highlightedTripId={itemType === 'trip' ? selectedItem?.id : selectedItem?.tripId}
           highlightedItemType={itemType === 'trip' ? null : itemType}
           highlightedItemId={itemType === 'trip' ? null : selectedItem?.id}
@@ -66,83 +123,100 @@
     <div class="details-content">
       {#if selectedItem}
         {#if itemType === 'trip'}
-          <!-- Trip Timeline View -->
-          <div class="trip-header">
-            <h3 class="trip-title">{selectedItem.name}</h3>
-            <p class="trip-dates">{selectedItem.departureDate} - {selectedItem.returnDate || selectedItem.departureDate}</p>
-          </div>
-
-          <!-- Timeline of trip items -->
-          <div class="trip-items-timeline">
-            {#each Object.keys(getTripItemsByDate()).sort() as dayKey (dayKey)}
-              <div class="timeline-day-group">
-                <div class="timeline-day-header">
-                  <span class="day-badge">{formatTripDateHeader(dayKey)}</span>
+          <!-- Trip Timeline View or Item Edit View -->
+          {#if selectedTripItem && selectedTripItemType}
+            <!-- Item Edit View -->
+            <div class="trip-header">
+              <button type="button" class="back-arrow" aria-label="Back to trip" on:click={handleTripItemBackClick}>
+                <span class="material-symbols-outlined">arrow_back</span>
+              </button>
+              <div class="trip-header-content">
+                <h3 class="trip-title">{selectedTripItem.name || selectedTripItem.flightNumber || selectedTripItem.hotelName || 'Item'}</h3>
+              </div>
+            </div>
+            <div class="trip-items-timeline item-edit-form">
+              <ItemEditForm
+                data={selectedTripItem}
+                itemType={selectedTripItemType}
+                tripId={selectedItem?.id}
+                {allTrips}
+                isMobile={true}
+                onClose={handleTripItemBackClick}
+                onSave={() => {
+                  handleTripItemBackClick();
+                  dispatch('itemUpdated');
+                }}
+              />
+            </div>
+          {:else}
+            <!-- Trip Timeline View -->
+            <div class="trip-header">
+              <button type="button" class="back-arrow" aria-label="Back to list" on:click={handleBack}>
+                <span class="material-symbols-outlined">arrow_back</span>
+              </button>
+              <div class="trip-header-content">
+                <div class="trip-title-line">
+                  <h3 class="trip-title">{selectedItem.name}</h3>
+                  {#if selectedItem.purpose}
+                    <span class="purpose-badge" class:leisure={selectedItem.purpose.toLowerCase() === 'leisure'} class:business={selectedItem.purpose.toLowerCase() === 'business'}>
+                      {capitalize(selectedItem.purpose)}
+                    </span>
+                  {/if}
                 </div>
-                <div class="timeline-day-items">
-                  {#each getTripItemsByDate()[dayKey] as item (item.id)}
-                    <div class="timeline-item-card">
-                      <div class="item-icon-wrapper">
-                        {#if item.type === 'flight'}
-                          <p class="flight-time">{formatTimeOnly(item.departureDateTime, item.originTimezone)}</p>
-                          <div class="item-icon blue">
-                            <span class="material-symbols-outlined">flight</span>
-                          </div>
-                        {:else if item.type === 'hotel'}
-                          <div class="item-icon green">
-                            <span class="material-symbols-outlined">hotel</span>
-                          </div>
-                        {:else if item.type === 'transportation'}
-                          <p class="flight-time">{formatTimeOnly(item.departureDateTime, item.originTimezone)}</p>
-                          <div class="item-icon red">
-                            <span class="material-symbols-outlined">{getTransportIcon(item.method)}</span>
-                          </div>
-                        {:else if item.type === 'carRental'}
-                          <div class="item-icon gray">
-                            <span class="material-symbols-outlined">directions_car</span>
-                          </div>
-                        {:else if item.type === 'event'}
-                          <div class="item-icon purple">
-                            <span class="material-symbols-outlined">event</span>
-                          </div>
-                        {/if}
+                <div class="trip-meta">
+                  <div class="trip-date-line">
+                    <div class="date-time-section">
+                      <div class="nights-badge">
+                        <span class="material-symbols-outlined">moon_stars</span>
+                        <span>{calculateNights(selectedItem.departureDate, selectedItem.returnDate)}</span>
                       </div>
-                      <div class="item-info">
-                        <p class="item-title">
-                          {item.type === 'flight' ? item.flightNumber : item.type === 'hotel' ? (item.hotelName || item.name) : item.type === 'carRental' ? item.company : item.type === 'event' ? item.name : capitalize(item.method)}
-                        </p>
-                        {#if item.type === 'hotel'}
-                          <p class="item-date">{formatDateOnly(item.checkInDateTime, item.timezone)} - {formatDateOnly(item.checkOutDateTime, item.timezone)}</p>
-                        {:else}
-                          <p class="item-date">{formatDateTime(item.departureDateTime || item.pickupDateTime || item.startDateTime, item.originTimezone || item.pickupTimezone || item.timezone)}</p>
-                        {/if}
-                        <p class="item-location">
-                          {#if item.type === 'flight'}
-                            {getCityName(item.origin)} → {getCityName(item.destination)}
-                          {:else if item.type === 'hotel'}
-                            {getCityName(item.address) || getCityName(item.city)}
-                          {:else if item.type === 'transportation'}
-                            {getCityName(item.origin)} → {getCityName(item.destination)}
-                          {:else if item.type === 'carRental'}
-                            {getCityName(item.pickupLocation)}
-                          {:else if item.type === 'event'}
-                            {item.location}
-                          {/if}
-                        </p>
-                      </div>
+                      <p class="trip-dates">{formatDate(selectedItem.departureDate)} - {formatDate(selectedItem.returnDate || selectedItem.departureDate)}</p>
                     </div>
-                  {/each}
+                    {#if selectedItem.tripCompanions && selectedItem.tripCompanions.length > 0}
+                      <div class="trip-companions-mobile">
+                        <CompanionIndicators companions={selectedItem.tripCompanions} />
+                      </div>
+                    {/if}
+                  </div>
                 </div>
               </div>
-            {/each}
-          </div>
+            </div>
+
+            <!-- Timeline of trip items -->
+            <div class="trip-items-timeline">
+              {#each Object.keys(getTripItemsByDate()).sort() as dayKey (dayKey)}
+                <div class="timeline-day-group">
+                  <div class="timeline-day-header">
+                    <span class="day-badge">{formatTripDateHeader(dayKey)}</span>
+                  </div>
+                  <div class="timeline-day-items">
+                    {#each getTripItemsByDate()[dayKey] as item (item.id)}
+                      <ItemCard
+                        {item}
+                        itemType={item.type}
+                        isHighlighted={selectedTripItem?.id === item.id}
+                        isUnconfirmed={item.isConfirmed === false}
+                        showCompanions={true}
+                        on:click={handleTripItemClick}
+                      />
+                    {/each}
+                  </div>
+                </div>
+              {/each}
+            </div>
+          {/if}
         {:else}
           <!-- Single Item Details View -->
           <div class="item-header">
-            <h3 class="item-title">{selectedItem.name || selectedItem.title || 'Item Details'}</h3>
-            {#if selectedItem.type}
-              <span class="item-type-badge">{selectedItem.type}</span>
-            {/if}
+            <button type="button" class="back-arrow" aria-label="Back to list" on:click={handleBack}>
+              <span class="material-symbols-outlined">arrow_back</span>
+            </button>
+            <div class="item-header-content">
+              <h3 class="item-title">{selectedItem.name || selectedItem.title || 'Item Details'}</h3>
+              {#if selectedItem.type}
+                <span class="item-type-badge">{selectedItem.type}</span>
+              {/if}
+            </div>
           </div>
 
           <div class="item-details">
@@ -183,15 +257,59 @@
                 <span class="value">{new Date(selectedItem.checkOutDate).toLocaleDateString()}</span>
               </div>
             {/if}
-          {:else if itemType === 'event' || selectedItem.eventDate}
+          {:else if itemType === 'event' || selectedItem.startDateTime}
+            {#if selectedItem.name}
+              <div class="detail-row">
+                <span class="label">Event Name</span>
+                <span class="value">{selectedItem.name || 'N/A'}</span>
+              </div>
+            {/if}
             <div class="detail-row">
               <span class="label">Location</span>
               <span class="value">{selectedItem.location || 'N/A'}</span>
             </div>
-            {#if selectedItem.eventDate}
+            {#if selectedItem.startDateTime}
               <div class="detail-row">
-                <span class="label">Date</span>
-                <span class="value">{new Date(selectedItem.eventDate).toLocaleDateString()}</span>
+                <span class="label">Start</span>
+                <span class="value">{formatDateTime(selectedItem.startDateTime, selectedItem.timezone) || 'N/A'}</span>
+              </div>
+            {/if}
+            {#if selectedItem.endDateTime}
+              <div class="detail-row">
+                <span class="label">End</span>
+                <span class="value">{formatDateTime(selectedItem.endDateTime, selectedItem.timezone) || 'N/A'}</span>
+              </div>
+            {/if}
+            {#if selectedItem.category}
+              <div class="detail-row">
+                <span class="label">Category</span>
+                <span class="value">{capitalize(selectedItem.category) || 'N/A'}</span>
+              </div>
+            {/if}
+            {#if selectedItem.description}
+              <div class="detail-row">
+                <span class="label">Description</span>
+                <span class="value">{selectedItem.description || 'N/A'}</span>
+              </div>
+            {/if}
+            {#if selectedItem.ticketNumber}
+              <div class="detail-row">
+                <span class="label">Ticket Number</span>
+                <span class="value">{selectedItem.ticketNumber || 'N/A'}</span>
+              </div>
+            {/if}
+            {#if selectedItem.cost}
+              <div class="detail-row">
+                <span class="label">Cost</span>
+                <span class="value">{selectedItem.cost || 'N/A'}</span>
+              </div>
+            {/if}
+            {#if selectedItem.url}
+              <div class="detail-row">
+                <span class="label">URL</span>
+                <span class="value">
+                  <a href={selectedItem.url} target="_blank" rel="noopener noreferrer">{selectedItem.url}</a>
+                </span>
               </div>
             {/if}
           {:else if itemType === 'transportation' || selectedItem.transportationType}
@@ -233,10 +351,11 @@
         </div>
 
         <!-- Action buttons -->
-        <div class="action-buttons">
-          <button type="button" class="btn btn-primary" on:click={handleEdit}>Edit</button>
-          <button type="button" class="btn btn-danger" on:click={handleDelete}>Delete</button>
+        <div class="form-buttons">
+          <button type="button" class="submit-btn" on:click={handleEdit}>Edit</button>
+          <button type="button" class="cancel-btn" on:click={handleBack}>Back</button>
         </div>
+        <button type="button" class="delete-btn" on:click={handleDelete}>Delete</button>
         {/if}
       {:else}
         <p class="no-selection">Select an item to view details</p>
@@ -254,39 +373,13 @@
     background: #fff;
   }
 
-  /* Map Section (top 40%) */
+  /* Map Section (top 40% in portrait, 0% in landscape) */
   .map-section {
     position: relative;
     flex: 0 0 40%;
     background: #f0f0f0;
     border-bottom: 1px solid #e5e7eb;
     overflow: hidden;
-  }
-
-  .back-button {
-    position: absolute;
-    top: max(0.5rem, env(safe-area-inset-top, 0.5rem));
-    left: max(0.5rem, env(safe-area-inset-left, 0.5rem));
-    z-index: 10;
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid #e5e7eb;
-    border-radius: 0.375rem;
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #2563eb;
-    cursor: pointer;
-    min-height: 44px;
-    min-width: 44px;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    transition: all 0.2s ease-in-out;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-
-  .back-button:active {
-    background: #f3f4f6;
   }
 
   .detail-map-container {
@@ -297,7 +390,7 @@
     left: 0;
   }
 
-  /* Details Section (bottom 60%) */
+  /* Details Section (bottom 60% in portrait, full height in landscape) */
   .details-section {
     flex: 1;
     overflow-y: auto;
@@ -309,16 +402,56 @@
 
   .details-content {
     padding: 1rem;
-    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(1rem + 60px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+
+  .back-arrow {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    border-radius: 0.425rem;
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .back-arrow:hover {
+    color: #4b5563;
+    background-color: #f3f4f6;
+  }
+
+  .back-arrow:active {
+    background-color: #e5e7eb;
+  }
+
+  .back-arrow :global(.material-symbols-outlined) {
+    font-size: 1.5rem !important;
   }
 
   .item-header {
     display: flex;
-    align-items: center;
     gap: 0.75rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     border-bottom: 1px solid #e5e7eb;
-    padding-bottom: 1rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .item-header-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
   }
 
   .item-title {
@@ -326,7 +459,6 @@
     font-size: 1.25rem;
     font-weight: 600;
     color: #111827;
-    flex: 1;
     word-break: break-word;
   }
 
@@ -339,13 +471,14 @@
     font-weight: 500;
     text-transform: uppercase;
     white-space: nowrap;
+    width: fit-content;
   }
 
   .item-details {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.75rem;
   }
 
   .detail-row {
@@ -381,45 +514,6 @@
     margin: 0;
   }
 
-  /* Action Buttons */
-  .action-buttons {
-    display: flex;
-    gap: 0.75rem;
-    margin-top: auto;
-  }
-
-  .btn {
-    flex: 1;
-    padding: 0.75rem 1rem;
-    border: none;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .btn-primary {
-    background: #2563eb;
-    color: white;
-  }
-
-  .btn-primary:active {
-    background: #1d4ed8;
-  }
-
-  .btn-danger {
-    background: #ef4444;
-    color: white;
-  }
-
-  .btn-danger:active {
-    background: #dc2626;
-  }
 
   /* Scrollbar styling for details section */
   .details-section::-webkit-scrollbar {
@@ -441,9 +535,28 @@
 
   /* Trip Timeline View Styles */
   .trip-header {
-    margin-bottom: 1.5rem;
+    display: flex;
+    gap: 0.75rem;
     border-bottom: 1px solid #e5e7eb;
-    padding-bottom: 1rem;
+    padding: 0.5rem;
+    background: #fff;
+    flex-shrink: 0;
+    z-index: 10;
+    min-height: 0;
+  }
+
+  .trip-header-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+  }
+
+  .trip-title-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
   }
 
   .trip-title {
@@ -452,18 +565,92 @@
     font-weight: 600;
     color: #111827;
     word-break: break-word;
+    line-height: 1.2;
+  }
+
+  .trip-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .trip-date-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .date-time-section {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   .trip-dates {
-    margin: 0.5rem 0 0 0;
+    margin: 0;
     font-size: 0.875rem;
     color: #6b7280;
+    white-space: nowrap;
+  }
+
+  .purpose-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .purpose-badge.leisure {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .purpose-badge.business {
+    background: #dbeafe;
+    color: #0c4a6e;
+  }
+
+  .nights-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    background: #f3f4f6;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .nights-badge :global(.material-symbols-outlined) {
+    font-size: 0.875rem !important;
+  }
+
+  .trip-companions-mobile {
+    display: flex;
+    gap: 0.25rem;
   }
 
   .trip-items-timeline {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    padding: 0.5rem;
+    padding-bottom: calc(0.5rem + 60px + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .trip-items-timeline.item-edit-form {
+    gap: 1rem;
+    padding: 0.5rem;
+    padding-bottom: calc(0.5rem + 60px + env(safe-area-inset-bottom, 0px));
+    min-height: 0;
   }
 
   .timeline-day-group {
@@ -494,108 +681,6 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-  }
-
-  .timeline-item-card {
-    display: flex;
-    gap: 1rem;
-    padding: 0.75rem;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.375rem;
-    align-items: flex-start;
-  }
-
-  .item-icon-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.25rem;
-    flex-shrink: 0;
-    position: relative;
-  }
-
-  .flight-time {
-    margin: 0;
-    font-size: 0.65rem;
-    font-weight: 600;
-    color: #4b5563;
-    min-width: 35px;
-    text-align: center;
-  }
-
-  .item-icon {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .item-icon.blue {
-    background: #dbeafe;
-    color: #0284c7;
-  }
-
-  .item-icon.green {
-    background: #dbeafe;
-    color: #16a34a;
-  }
-
-  .item-icon.red {
-    background: #fee2e2;
-    color: #dc2626;
-  }
-
-  .item-icon.gray {
-    background: #f3f4f6;
-    color: #6b7280;
-  }
-
-  .item-icon.purple {
-    background: #f3e8ff;
-    color: #9333ea;
-  }
-
-  .item-icon :global(.material-symbols-outlined) {
-    font-size: 1.3rem !important;
-  }
-
-  .item-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-    flex: 1;
-  }
-
-  .timeline-item-card .item-title {
-    margin: 0;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: #111827;
-    line-height: 1;
-    text-align: left;
-  }
-
-  .timeline-item-card .item-date {
-    margin: 0;
-    font-size: 0.65rem;
-    font-weight: 600;
-    color: #4b5563;
-    line-height: 1;
-    text-align: left;
-  }
-
-  .timeline-item-card .item-location {
-    margin: 0;
-    font-size: 0.65rem;
-    font-weight: 600;
-    color: #6b7280;
-    line-height: 1;
-    text-align: left;
-    font-style: italic;
   }
 
   /* Only show on mobile */
