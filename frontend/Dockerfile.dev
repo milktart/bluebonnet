@@ -5,21 +5,25 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Use built-in node user for consistent file ownership
+RUN chown -R node:node /app
 
-# Install all dependencies (including dev)
+# Copy package files with proper ownership
+COPY --chown=node:node package*.json ./
+
+# Install all dependencies (including dev) as node user
+USER node
 RUN npm install
 
-# Copy source code
-COPY . .
+# Copy source code with proper ownership
+COPY --chown=node:node . .
 
 # Expose development port for Vite
-EXPOSE 5173
+EXPOSE 3001
 
 # Expose HMR port for hot module replacement
 EXPOSE 24678
 
 # Start development server with HMR enabled
 # --host 0.0.0.0 allows access from outside container
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3001"]

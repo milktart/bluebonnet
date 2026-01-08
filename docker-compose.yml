@@ -46,6 +46,7 @@ services:
     container_name: ${NODE_ENV}_travel_planner_app
     ports:
       - "${APP_PORT}:${PORT}"
+    user: "node"
     environment:
       NODE_ENV: ${NODE_ENV}
       DB_HOST: postgres
@@ -71,6 +72,24 @@ services:
     networks:
       - bluebonnet_network
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: ${NODE_ENV}_travel_planner_frontend
+    ports:
+      - "3501:3001"
+    user: "node"
+    environment:
+      NODE_ENV: ${NODE_ENV}
+    restart: unless-stopped
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - bluebonnet_network
+    depends_on:
+      - app
 
 volumes:
   postgres_data:

@@ -30,23 +30,21 @@ WORKDIR /app
 # Install build dependencies (needed for some npm packages) and git for version info
 RUN apk add --no-cache python3 make g++ git
 
-# Create non-root user for all build and runtime operations
-# This ensures consistent file ownership across all environments (dev, test, prod)
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    mkdir -p /app && \
-    chown -R nodejs:nodejs /app
+# Use the built-in node user (uid 1000, gid 1000)
+# Ensure /app directory exists and is owned by node
+RUN mkdir -p /app && \
+    chown -R node:node /app
 
 # Copy package files
-COPY --chown=nodejs:nodejs package*.json ./
+COPY --chown=node:node package*.json ./
 
 # ============================================================================
 # Stage 2: Development Dependencies
 # ============================================================================
 FROM base AS development-deps
 
-# Install all dependencies as nodejs user to ensure proper ownership
-USER nodejs
+# Install all dependencies as node user to ensure proper ownership
+USER node
 RUN npm install
 
 # ============================================================================
@@ -54,9 +52,9 @@ RUN npm install
 # ============================================================================
 FROM base AS production-deps
 
-# Install only production dependencies as nodejs user
+# Install only production dependencies as node user
 # Skip prepare script (husky) since git is not available in Docker
-USER nodejs
+USER node
 RUN npm ci --omit=dev --ignore-scripts && npm rebuild bcrypt 2>/dev/null || true
 
 # ============================================================================
@@ -64,12 +62,12 @@ RUN npm ci --omit=dev --ignore-scripts && npm rebuild bcrypt 2>/dev/null || true
 # ============================================================================
 FROM base AS builder
 
-# Install all dependencies for building as nodejs user
-USER nodejs
+# Install all dependencies for building as node user
+USER node
 RUN npm ci
 
 # Copy source code with proper ownership
-COPY --chown=nodejs:nodejs . .
+COPY --chown=node:node . .
 
 # Capture build information (git commit, timestamp) and save to .build-info file
 # This allows production builds to know the exact commit they were built from
@@ -94,22 +92,20 @@ WORKDIR /app
 # Install git for version info
 RUN apk add --no-cache git
 
-# Create non-root user (same as base stage) for consistent file ownership
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    chown -R nodejs:nodejs /app
+# Use built-in node user for consistent file ownership
+RUN chown -R node:node /app
 
 # Configure git to trust the /app directory (for volume mounts)
 RUN git config --global --add safe.directory /app
 
 # Copy all dependencies (including dev) with proper ownership
-COPY --from=development-deps --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=development-deps --chown=node:node /app/node_modules ./node_modules
 
 # Copy source code with proper ownership
-COPY --chown=nodejs:nodejs . .
+COPY --chown=node:node . .
 
-# Build JavaScript bundles as nodejs user (consistent with production)
-USER nodejs
+# Build JavaScript bundles as node user (consistent with production)
+USER node
 RUN npm run build-js
 
 # Don't install or build frontend in Docker for development
@@ -140,19 +136,17 @@ FROM node:20-alpine AS test
 
 WORKDIR /app
 
-# Create non-root user (same as base stage) for consistent file ownership
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    chown -R nodejs:nodejs /app
+# Use built-in node user for consistent file ownership
+RUN chown -R node:node /app
 
 # Copy all dependencies (including dev for testing tools) with proper ownership
-COPY --from=development-deps --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=development-deps --chown=node:node /app/node_modules ./node_modules
 
 # Copy source code with proper ownership
-COPY --chown=nodejs:nodejs . .
+COPY --chown=node:node . .
 
-# Build JavaScript bundles as nodejs user (consistent with dev/prod)
-USER nodejs
+# Build JavaScript bundles as node user (consistent with dev/prod)
+USER node
 RUN npm run build-js
 
 # Don't install or build frontend in Docker for test
@@ -182,19 +176,17 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
-# Create non-root user (same as base stage) for consistent behavior
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    chown -R nodejs:nodejs /app
+# Use built-in node user for consistent behavior
+RUN chown -R node:node /app
 
 # Copy all dependencies with proper ownership
-COPY --from=development-deps --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=development-deps --chown=node:node /app/node_modules ./node_modules
 
 # Copy application code with proper ownership (exclude dev files via .dockerignore)
-COPY --chown=nodejs:nodejs . .
+COPY --chown=node:node . .
 
-# Build JavaScript bundles as nodejs user (consistent with dev/test)
-USER nodejs
+# Build JavaScript bundles as node user (consistent with dev/test)
+USER node
 RUN npm run build-js
 
 # Don't build frontend in Docker - let it be handled at runtime
@@ -202,7 +194,7 @@ RUN npm run build-js
 
 # Create logs directory with proper permissions
 USER root
-RUN mkdir -p /app/logs && chmod -R 777 /app/logs
+RUN mkdir -p /app/logs && chown -R node:node /app/logs
 
 # Set production environment
 ENV NODE_ENV=production
@@ -232,19 +224,17 @@ FROM node:20-alpine AS prod
 
 WORKDIR /app
 
-# Create non-root user (same as base stage) for consistent behavior
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    chown -R nodejs:nodejs /app
+# Use built-in node user for consistent behavior
+RUN chown -R node:node /app
 
 # Copy all dependencies with proper ownership
-COPY --from=development-deps --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=development-deps --chown=node:node /app/node_modules ./node_modules
 
 # Copy application code with proper ownership (exclude dev files via .dockerignore)
-COPY --chown=nodejs:nodejs . .
+COPY --chown=node:node . .
 
-# Build JavaScript bundles as nodejs user (consistent with dev/test)
-USER nodejs
+# Build JavaScript bundles as node user (consistent with dev/test)
+USER node
 RUN npm run build-js
 
 # Don't build frontend in Docker - let it be handled at runtime
@@ -253,7 +243,7 @@ RUN npm run build-js
 
 # Create logs directory with proper permissions
 USER root
-RUN mkdir -p /app/logs && chmod -R 777 /app/logs
+RUN mkdir -p /app/logs && chown -R node:node /app/logs
 
 # Set prod environment (will be overridden by NODE_ENV env var at runtime)
 ENV NODE_ENV=prod
