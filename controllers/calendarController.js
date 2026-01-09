@@ -8,7 +8,6 @@ const {
   Event,
   TripCompanion,
   TravelCompanion,
-  User,
   TripInvitation,
 } = require('../models');
 const logger = require('../utils/logger');
@@ -22,11 +21,58 @@ exports.getCalendarSidebar = async (req, res) => {
   try {
     // Simplified includes - only fetch what we need for calendar display
     const minimalTripIncludes = [
-      { model: Flight, as: 'flights', attributes: ['id', 'tripId', 'departureDateTime', 'arrivalDateTime', 'origin', 'destination', 'originTimezone', 'destinationTimezone'] },
-      { model: Hotel, as: 'hotels', attributes: ['id', 'tripId', 'checkInDateTime', 'checkOutDateTime', 'hotelName', 'address', 'phone'] },
-      { model: Transportation, as: 'transportation', attributes: ['id', 'tripId', 'departureDateTime', 'arrivalDateTime', 'origin', 'destination', 'method', 'originTimezone', 'destinationTimezone'] },
-      { model: CarRental, as: 'carRentals', attributes: ['id', 'tripId', 'pickupDateTime', 'dropoffDateTime', 'company'] },
-      { model: Event, as: 'events', attributes: ['id', 'tripId', 'startDateTime', 'endDateTime', 'name', 'isConfirmed'] },
+      {
+        model: Flight,
+        as: 'flights',
+        attributes: [
+          'id',
+          'tripId',
+          'departureDateTime',
+          'arrivalDateTime',
+          'origin',
+          'destination',
+          'originTimezone',
+          'destinationTimezone',
+        ],
+      },
+      {
+        model: Hotel,
+        as: 'hotels',
+        attributes: [
+          'id',
+          'tripId',
+          'checkInDateTime',
+          'checkOutDateTime',
+          'hotelName',
+          'address',
+          'phone',
+        ],
+      },
+      {
+        model: Transportation,
+        as: 'transportation',
+        attributes: [
+          'id',
+          'tripId',
+          'departureDateTime',
+          'arrivalDateTime',
+          'origin',
+          'destination',
+          'method',
+          'originTimezone',
+          'destinationTimezone',
+        ],
+      },
+      {
+        model: CarRental,
+        as: 'carRentals',
+        attributes: ['id', 'tripId', 'pickupDateTime', 'dropoffDateTime', 'company'],
+      },
+      {
+        model: Event,
+        as: 'events',
+        attributes: ['id', 'tripId', 'startDateTime', 'endDateTime', 'name', 'isConfirmed'],
+      },
     ];
 
     // Get trips the user owns - simpler query without companion details
@@ -38,34 +84,46 @@ exports.getCalendarSidebar = async (req, res) => {
     });
 
     // Get trip IDs the user owns for quick filtering
-    const ownedTripIds = new Set(ownedTrips.map(t => t.id));
+    const ownedTripIds = new Set(ownedTrips.map((t) => t.id));
 
     // Get trips where the user is a companion (simpler query)
     const companionTripIds = await TripCompanion.findAll({
-      include: [{
-        model: TravelCompanion,
-        as: 'companion',
-        where: { userId: req.user.id },
-        attributes: ['id'],
-      }],
+      include: [
+        {
+          model: TravelCompanion,
+          as: 'companion',
+          where: { userId: req.user.id },
+          attributes: ['id'],
+        },
+      ],
       attributes: ['tripId'],
       raw: true,
-    }).then(records => [...new Set(records.map(r => r.tripId))]);
+    }).then((records) => [...new Set(records.map((r) => r.tripId))]);
 
     // Filter out trips we already have and exclude pending invitations
     const pendingTripIds = await TripInvitation.findAll({
       where: { invitedUserId: req.user.id, status: 'pending' },
       attributes: ['tripId'],
       raw: true,
-    }).then(invitations => new Set(invitations.map(inv => inv.tripId)));
+    }).then((invitations) => new Set(invitations.map((inv) => inv.tripId)));
 
-    const newCompanionTripIds = companionTripIds.filter(id => !ownedTripIds.has(id) && !pendingTripIds.has(id));
+    const newCompanionTripIds = companionTripIds.filter(
+      (id) => !ownedTripIds.has(id) && !pendingTripIds.has(id)
+    );
 
     let companionTrips = [];
     if (newCompanionTripIds.length > 0) {
       companionTrips = await Trip.findAll({
         where: { id: { [Op.in]: newCompanionTripIds } },
-        attributes: ['id', 'name', 'departureDate', 'returnDate', 'userId', 'purpose', 'isConfirmed'],
+        attributes: [
+          'id',
+          'name',
+          'departureDate',
+          'returnDate',
+          'userId',
+          'purpose',
+          'isConfirmed',
+        ],
         order: [['departureDate', 'ASC']],
         include: minimalTripIncludes,
       });
@@ -75,10 +133,24 @@ exports.getCalendarSidebar = async (req, res) => {
     const uniqueTrips = [...ownedTrips, ...companionTrips];
 
     // Get all standalone items in parallel (minimal attributes)
-    const [standaloneFlights, standaloneHotels, standaloneTransportation, standaloneCarRentals, standaloneEvents] = await Promise.all([
+    const [
+      standaloneFlights,
+      standaloneHotels,
+      standaloneTransportation,
+      standaloneCarRentals,
+      standaloneEvents,
+    ] = await Promise.all([
       Flight.findAll({
         where: { userId: req.user.id, tripId: null },
-        attributes: ['id', 'departureDateTime', 'arrivalDateTime', 'origin', 'destination', 'originTimezone', 'destinationTimezone'],
+        attributes: [
+          'id',
+          'departureDateTime',
+          'arrivalDateTime',
+          'origin',
+          'destination',
+          'originTimezone',
+          'destinationTimezone',
+        ],
         order: [['departureDateTime', 'ASC']],
       }).catch(() => []),
       Hotel.findAll({
@@ -88,7 +160,16 @@ exports.getCalendarSidebar = async (req, res) => {
       }).catch(() => []),
       Transportation.findAll({
         where: { userId: req.user.id, tripId: null },
-        attributes: ['id', 'departureDateTime', 'arrivalDateTime', 'origin', 'destination', 'method', 'originTimezone', 'destinationTimezone'],
+        attributes: [
+          'id',
+          'departureDateTime',
+          'arrivalDateTime',
+          'origin',
+          'destination',
+          'method',
+          'originTimezone',
+          'destinationTimezone',
+        ],
         order: [['departureDateTime', 'ASC']],
       }).catch(() => []),
       CarRental.findAll({
@@ -106,7 +187,7 @@ exports.getCalendarSidebar = async (req, res) => {
     // Helper function to enrich items with timezone info (bulk operation)
     const enrichItemsWithTimezone = (items) => {
       if (!items || items.length === 0) return items;
-      return items.map(item => {
+      return items.map((item) => {
         const itemData = item.dataValues || item;
         const itemWithTimezone = { ...itemData };
 
@@ -116,7 +197,8 @@ exports.getCalendarSidebar = async (req, res) => {
           if (originMatch) {
             const airportData = airportService.getAirportByCode(originMatch[1]);
             if (airportData) {
-              itemWithTimezone.originTimezone = airportData.timezone || itemWithTimezone.originTimezone;
+              itemWithTimezone.originTimezone =
+                airportData.timezone || itemWithTimezone.originTimezone;
             }
           }
         }
@@ -127,7 +209,8 @@ exports.getCalendarSidebar = async (req, res) => {
           if (destinationMatch) {
             const airportData = airportService.getAirportByCode(destinationMatch[1]);
             if (airportData) {
-              itemWithTimezone.destinationTimezone = airportData.timezone || itemWithTimezone.destinationTimezone;
+              itemWithTimezone.destinationTimezone =
+                airportData.timezone || itemWithTimezone.destinationTimezone;
             }
           }
         }
@@ -137,8 +220,15 @@ exports.getCalendarSidebar = async (req, res) => {
     };
 
     // Enrich trips with timezone info
-    const enrichedTrips = uniqueTrips.map(trip => {
-      const tripData = trip.dataValues ? { ...trip.dataValues } : (trip.toJSON ? trip.toJSON() : trip);
+    const enrichedTrips = uniqueTrips.map((trip) => {
+      let tripData;
+      if (trip.dataValues) {
+        tripData = { ...trip.dataValues };
+      } else if (trip.toJSON) {
+        tripData = trip.toJSON();
+      } else {
+        tripData = trip;
+      }
       if (tripData.flights) {
         tripData.flights = enrichItemsWithTimezone(tripData.flights);
       }
@@ -149,7 +239,7 @@ exports.getCalendarSidebar = async (req, res) => {
       logger.debug(`Trip ${trip.id} events:`, {
         hasEvents: !!tripData.events,
         eventsCount: tripData.events ? tripData.events.length : 0,
-        firstEvent: tripData.events && tripData.events.length > 0 ? tripData.events[0] : 'none'
+        firstEvent: tripData.events && tripData.events.length > 0 ? tripData.events[0] : 'none',
       });
       return tripData;
     });
@@ -175,7 +265,7 @@ exports.getCalendarSidebar = async (req, res) => {
       logger.debug(`Trip ${idx} (${trip.id}):`, {
         hasEvents: !!trip.events,
         eventsProperty: typeof trip.events,
-        eventsLength: trip.events ? trip.events.length : 0
+        eventsLength: trip.events ? trip.events.length : 0,
       });
       if (trip.events && trip.events.length > 0) {
         trip.events.forEach((event, eventIdx) => {
@@ -207,7 +297,7 @@ exports.getCalendarSidebar = async (req, res) => {
 
     // Debug: log trip details
     logger.debug('=== CALENDAR CONTROLLER TRIPS ===');
-    calendarData.trips.forEach(trip => {
+    calendarData.trips.forEach((trip) => {
       logger.debug('Calendar Trip:', {
         id: trip.id,
         name: trip.name,
@@ -218,11 +308,8 @@ exports.getCalendarSidebar = async (req, res) => {
       });
     });
 
-    // Render as partial with minimal HTML wrapper for AJAX injection
-    res.render('partials/calendar-sidebar', {
-      ...calendarData,
-      layout: false, // Don't use main layout
-    });
+    // Return calendar data as JSON
+    res.json({ success: true, ...calendarData });
   } catch (error) {
     logger.error('Error fetching calendar sidebar:', {
       message: error.message,

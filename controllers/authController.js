@@ -2,27 +2,14 @@ const bcrypt = require('bcrypt');
 const logger = require('../utils/logger');
 const { User, TravelCompanion, CompanionRelationship, Notification } = require('../models');
 
-exports.getLogin = (req, res) => {
-  res.render('login', { title: 'Login' });
-};
-
-exports.getRegister = (req, res) => {
-  res.render('register', { title: 'Register' });
-};
-
 exports.postRegister = async (req, res) => {
   try {
     const { email, password, firstName, lastName, name } = req.body;
-    const isJsonRequest = req.get('content-type')?.includes('application/json');
 
     const existingUser = await User.findOne({ where: { email: email.toLowerCase() } });
 
     if (existingUser) {
-      if (isJsonRequest) {
-        return res.status(400).json({ success: false, message: 'Email already registered' });
-      }
-      req.flash('error_msg', 'Email already registered');
-      return res.redirect('/auth/register');
+      return res.status(400).json({ success: false, message: 'Email already registered' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -97,30 +84,21 @@ exports.postRegister = async (req, res) => {
       }
     }
 
-    if (isJsonRequest) {
-      return res.json({
-        success: true,
-        message: 'Registration successful! Please log in.',
-        user: {
-          id: newUser.id,
-          email: newUser.email,
-          firstName: newUser.firstName,
-          lastName: newUser.lastName,
-        },
-      });
-    }
-
-    req.flash('success_msg', 'Registration successful! Please log in.');
-    res.redirect('/auth/login');
+    return res.json({
+      success: true,
+      message: 'Registration successful! Please log in.',
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+      },
+    });
   } catch (error) {
     logger.error(error);
-    if (req.get('content-type')?.includes('application/json')) {
-      return res
-        .status(500)
-        .json({ success: false, message: 'An error occurred during registration' });
-    }
-    req.flash('error_msg', 'An error occurred during registration');
-    res.redirect('/auth/register');
+    return res
+      .status(500)
+      .json({ success: false, message: 'An error occurred during registration' });
   }
 };
 
@@ -129,7 +107,6 @@ exports.logout = (req, res, next) => {
     if (err) {
       return next(err);
     }
-    req.flash('success_msg', 'You are logged out');
-    res.redirect('/');
+    res.json({ success: true, message: 'You have been logged out' });
   });
 };

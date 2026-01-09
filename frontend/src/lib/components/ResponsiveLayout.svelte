@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
   import MapVisualization from './MapVisualization.svelte';
   import MobileTabNavigation from './MobileTabNavigation.svelte';
   import MobileTripDetailView from './MobileTripDetailView.svelte';
@@ -44,9 +45,13 @@
     mobileActiveTab = event.detail.tabId;
   }
 
-  function handleMobileBack() {
+  async function handleMobileBack() {
     mobileSelectedItem = null;
     mobileSelectedItemType = null;
+    // Navigate back to dashboard when closing mobile trip detail view
+    if (typeof window !== 'undefined') {
+      await goto('/dashboard', { replaceHistory: true });
+    }
   }
 
   function handleMobileEdit(event: any) {

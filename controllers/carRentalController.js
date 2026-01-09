@@ -93,7 +93,15 @@ exports.createCarRental = async (req, res) => {
     }
 
     // Send response (handles both async and traditional form submission)
-    return sendAsyncResponse(res, true, carRental, 'Car rental added successfully', tripId, req, 'carRentals');
+    return sendAsyncResponse(
+      res,
+      true,
+      carRental,
+      'Car rental added successfully',
+      tripId,
+      req,
+      'carRentals'
+    );
   } catch (error) {
     logger.error(error);
     return sendAsyncResponse(res, false, null, 'Error adding car rental', req.params.tripId, req);
@@ -137,15 +145,13 @@ exports.updateCarRental = async (req, res) => {
         }
         return redirectAfterError(res, req, null, 'Car rental not found');
       }
-    } else {
+    } else if (carRental.userId !== req.user.id) {
       // Standalone car rental - verify direct ownership
-      if (carRental.userId !== req.user.id) {
-        const isAsync = req.headers['x-async-request'] === 'true';
-        if (isAsync) {
-          return res.status(403).json({ success: false, error: 'Car rental not found' });
-        }
-        return redirectAfterError(res, req, null, 'Car rental not found');
+      const isAsync = req.headers['x-async-request'] === 'true';
+      if (isAsync) {
+        return res.status(403).json({ success: false, error: 'Car rental not found' });
       }
+      return redirectAfterError(res, req, null, 'Car rental not found');
     }
 
     // Verify trip edit access if changing trip association
@@ -153,11 +159,7 @@ exports.updateCarRental = async (req, res) => {
       const hasAccess = await verifyTripEditAccess(newTripId, req.user.id);
       if (!hasAccess) {
         const isAsync = req.headers['x-async-request'] === 'true';
-        if (isAsync) {
-          return res.status(403).json({ success: false, error: 'Cannot attach to this trip' });
-        }
-        req.flash('error_msg', 'Cannot attach to this trip');
-        return res.redirect('back');
+        return res.status(403).json({ success: false, error: 'Cannot attach to this trip' });
       }
     }
 
@@ -204,11 +206,7 @@ exports.updateCarRental = async (req, res) => {
   } catch (error) {
     logger.error(error);
     const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.status(500).json({ success: false, error: 'Error updating car rental' });
-    }
-    req.flash('error_msg', 'Error updating car rental');
-    res.redirect('back');
+    return res.status(500).json({ success: false, error: 'Error updating car rental' });
   }
 };
 
@@ -237,15 +235,13 @@ exports.deleteCarRental = async (req, res) => {
         }
         return redirectAfterError(res, req, null, 'Car rental not found');
       }
-    } else {
+    } else if (carRental.userId !== req.user.id) {
       // Standalone car rental - verify direct ownership
-      if (carRental.userId !== req.user.id) {
-        const isAsync = req.headers['x-async-request'] === 'true';
-        if (isAsync) {
-          return res.status(403).json({ success: false, error: 'Car rental not found' });
-        }
-        return redirectAfterError(res, req, null, 'Car rental not found');
+      const isAsync = req.headers['x-async-request'] === 'true';
+      if (isAsync) {
+        return res.status(403).json({ success: false, error: 'Car rental not found' });
       }
+      return redirectAfterError(res, req, null, 'Car rental not found');
     }
 
     const { tripId } = carRental;
@@ -270,11 +266,7 @@ exports.deleteCarRental = async (req, res) => {
   } catch (error) {
     logger.error(error);
     const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.status(500).json({ success: false, error: 'Error deleting car rental' });
-    }
-    req.flash('error_msg', 'Error deleting car rental');
-    res.redirect('back');
+    return res.status(500).json({ success: false, error: 'Error deleting car rental' });
   }
 };
 
@@ -323,7 +315,8 @@ exports.getAddForm = async (req, res) => {
     // Fetch trip selector data
     const tripSelectorData = await getTripSelectorData(null, req.user.id);
 
-    res.render('partials/car-rental-form', {
+    res.json({
+      success: true,
       tripId: tripId || null,
       isEditing: false,
       data: null,
@@ -333,7 +326,7 @@ exports.getAddForm = async (req, res) => {
     });
   } catch (error) {
     logger.error(error);
-    res.status(500).send('Error loading form');
+    res.status(500).json({ success: false, error: 'Error loading form' });
   }
 };
 
@@ -358,11 +351,9 @@ exports.getEditForm = async (req, res) => {
       if (!verifyResourceOwnershipViaTrip(carRental, req.user.id)) {
         return res.status(403).send('Car rental not found');
       }
-    } else {
+    } else if (carRental.userId !== req.user.id) {
       // Standalone car rental - verify direct ownership
-      if (carRental.userId !== req.user.id) {
-        return res.status(403).send('Car rental not found');
-      }
+      return res.status(403).send('Car rental not found');
     }
 
     // Format data for display
@@ -406,7 +397,8 @@ exports.getEditForm = async (req, res) => {
     // Fetch trip selector data
     const tripSelectorData = await getTripSelectorData(carRental, req.user.id);
 
-    res.render('partials/car-rental-form', {
+    res.json({
+      success: true,
       tripId: carRental.tripId,
       isEditing: true,
       data: formattedData,
@@ -416,6 +408,6 @@ exports.getEditForm = async (req, res) => {
     });
   } catch (error) {
     logger.error(error);
-    res.status(500).send('Error loading form');
+    res.status(500).json({ success: false, error: 'Error loading form' });
   }
 };

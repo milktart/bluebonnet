@@ -83,18 +83,11 @@ const formLimiter = rateLimit({
       userId: req.user?.id,
     });
 
-    // Check if this is an AJAX request
-    const isAjax = req.xhr || req.headers['x-async-request'] === 'true';
-
-    if (isAjax) {
-      return res.status(429).json({
-        success: false,
-        error: 'Too many submissions. Please wait a few minutes.',
-      });
-    }
-
-    req.flash('error_msg', 'Too many submissions. Please wait a few minutes.');
-    res.redirect('back');
+    // Always return JSON for API requests
+    return res.status(429).json({
+      success: false,
+      error: 'Too many submissions. Please wait a few minutes.',
+    });
   },
 });
 

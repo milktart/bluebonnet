@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
   import { onMount } from 'svelte';
   import { authStore } from '$lib/stores/authStore';
   import { tripsApi, flightsApi, hotelsApi, transportationApi, carRentalsApi, eventsApi } from '$lib/services/api';
@@ -23,13 +25,20 @@
   import CompanionIndicators from '$lib/components/CompanionIndicators.svelte';
   import DashboardHeader from './components/DashboardHeader.svelte';
   import DashboardTripsList from './components/DashboardTripsList.svelte';
-  import DashboardItemList from './components/DashboardItemList.svelte';
   import DashboardSettingsPanel from './components/DashboardSettingsPanel.svelte';
   import DashboardItemEditor from './components/DashboardItemEditor.svelte';
   import ItemsList from '$lib/components/ItemsList.svelte';
   import { parseLocalDate, getTripEndDate, getItemDate, getDateKeyForItem, getDayKeyForItem, groupTripItemsByDate } from '$lib/utils/dashboardGrouping';
   import { formatDate, formatMonthHeader, formatTripDateHeader, formatTimeOnly, formatDateTime, formatDateOnly, capitalize, calculateNights } from '$lib/utils/dashboardFormatters';
   import { getCityName, getTransportIcon, getTransportColor, getTripIcon, getTripCities, calculateLayover, getFlightLayoverInfo, layoverSpansDates } from '$lib/utils/dashboardItem';
+
+  // Props passed from layout routes
+  export let tripIdToExpand: string | null = null;
+  export let shouldOpenCalendar: boolean = false;
+
+  // Track whether the calendar was explicitly closed by the user
+  let calendarExplicitlyClosed = false;
+
 
   let trips: any[] = [];
   let standaloneItems: any = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
@@ -96,6 +105,35 @@
   } else {
     groupedItems = {};
     dateKeysInOrder = [];
+  }
+
+  // Auto-expand trip when tripIdToExpand prop is set
+  $: if (tripIdToExpand && $dashboardStore.trips.length > 0) {
+    console.log('[Dashboard] Auto-expanding trip:', tripIdToExpand, 'trips available:', $dashboardStore.trips.length);
+
+    // On desktop: expand trip card
+    if (!$dashboardStore.expandedTrips.has(tripIdToExpand)) {
+      dashboardStoreActions.toggleTripExpanded(tripIdToExpand);
+    }
+
+    // On mobile: set selected item to show trip detail view
+    if (typeof window !== 'undefined' && window.innerWidth < 640) {
+      const selectedTrip = $dashboardStore.trips.find((t) => t.id === tripIdToExpand);
+      if (selectedTrip && mobileSelectedItem?.id !== tripIdToExpand) {
+        console.log('[Dashboard] Setting mobile selected item to trip:', tripIdToExpand);
+        mobileSelectedItem = selectedTrip;
+        mobileSelectedItemType = 'trip';
+      }
+    }
+  }
+
+  $: if (tripIdToExpand && $dashboardStore.trips.length === 0) {
+    console.log('[Dashboard] tripIdToExpand is set but trips not loaded yet:', tripIdToExpand);
+  }
+
+  // Open calendar sidebar after data loads if requested (but not if user explicitly closed it)
+  $: if (shouldOpenCalendar && $dashboardStore.trips.length > 0 && !secondarySidebarContent?.type && !calendarExplicitlyClosed) {
+    dashboardStoreActions.openSecondarySidebar({ type: 'calendar', data: {} });
   }
 
   // Manage secondary sidebar full-width class and tertiary presence
@@ -232,6 +270,16 @@
 
     // Load initial data
     await loadTripData();
+
+    // Check for section query parameter to auto-open settings
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const section = params.get('section');
+      if (section) {
+        dashboardStoreActions.setActiveView('settings');
+        dashboardStoreActions.openSecondarySidebar({ type: section, data: {} });
+      }
+    }
 
     // Listen for data import events
     window.addEventListener('dataImported', handleDataImported);
@@ -444,9 +492,12 @@
     dashboardStoreActions.openSecondarySidebar({ type: 'newItemMenu', data: {} });
   }
 
-  function handleCalendarClick() {
+  async function handleCalendarClick() {
     dashboardStoreActions.openSecondarySidebar({ type: 'calendar', data: {} });
     updateSecondarySidebarClass();
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', '/calendar');
+    }
   }
 
   function updateSecondarySidebarClass() {
@@ -462,14 +513,20 @@
     }, 0);
   }
 
-  function handleNewTripClick() {
+  async function handleNewTripClick() {
     dashboardStoreActions.setShowNewItemMenu(false);
     dashboardStoreActions.openSecondarySidebar({ type: 'trip', itemType: 'trip', data: {} });
+    if (typeof window !== 'undefined') {
+      await goto('/');
+    }
   }
 
-  function handleNewItemClick(itemType: string) {
+  async function handleNewItemClick(itemType: string) {
     dashboardStoreActions.setShowNewItemMenu(false);
     dashboardStoreActions.openSecondarySidebar({ type: itemType, itemType, data: {} });
+    if (typeof window !== 'undefined') {
+      await goto('/');
+    }
   }
 
   function toggleTripExpanded(tripId: string) {
@@ -492,11 +549,21 @@
     dashboardStoreActions.setHighlightedItem(null, null);
   }
 
-  function handleItemClick(type: string, itemType: string | null, data: any) {
+  async function handleItemClick(type: string, itemType: string | null, data: any) {
     dashboardStoreActions.openSecondarySidebar({ type, itemType: itemType || undefined, data });
+    if (typeof window !== 'undefined' && data?.id && itemType) {
+      await goto(`/item/${data.id}`);
+    }
   }
 
   function closeSecondarySidebar() {
+    if (secondarySidebarContent?.type === 'calendar') {
+      calendarExplicitlyClosed = true;
+      // Update URL when closing calendar
+      if (typeof window !== 'undefined') {
+        window.history.pushState({}, '', '/dashboard');
+      }
+    }
     dashboardStoreActions.closeSecondarySidebar();
     updateSecondarySidebarClass();
   }
@@ -517,7 +584,19 @@
 
   // ItemsList component handlers
   function handleItemsListTripExpand(tripId: string) {
+    const isCurrentlyExpanded = expandedTrips.has(tripId);
     toggleTripExpanded(tripId);
+
+    // Update URL based on new expanded state (without navigation)
+    if (typeof window !== 'undefined') {
+      if (isCurrentlyExpanded) {
+        // Was expanded, now collapsed - update URL to dashboard
+        window.history.pushState({}, '', '/dashboard');
+      } else {
+        // Was collapsed, now expanded - update URL to trip detail
+        window.history.pushState({}, '', `/trip/${tripId}`);
+      }
+    }
   }
 
   function handleItemsListTripHover(tripId: string | null) {
@@ -540,23 +619,55 @@
     handleItemClick(itemType, itemType, data);
   }
 
-  function handleItemsListTripEdit(trip: any, event: Event) {
+  async function updateUrlForSettings(section: string) {
+    if (typeof window !== 'undefined') {
+      const sectionMap: Record<string, string> = {
+        'settings-profile': 'account',
+        'settings-security': 'security',
+        'settings-backup': 'backup',
+        'settings-vouchers': 'vouchers',
+        'settings-companions': 'companions',
+        'settings-users': 'users',
+        'settings-airports': 'airports'
+      };
+      const url = `/settings/${sectionMap[section] || 'account'}`;
+      await goto(url);
+    }
+  }
+
+  async function handleItemsListTripEdit(trip: any, event: Event) {
     event.stopPropagation();
     // Desktop: expand/collapse trip card
     // Mobile: show trip detail view
     if (typeof window !== 'undefined' && window.innerWidth < 640) {
       mobileSelectedItem = trip;
       mobileSelectedItemType = 'trip';
+      await goto(`/trip/${trip.id}`);
     } else {
       // Desktop: toggle expand/collapse
+      const isCurrentlyExpanded = expandedTrips.has(trip.id);
       toggleTripExpanded(trip.id);
+
+      // Update URL based on new expanded state (without navigation)
+      if (typeof window !== 'undefined') {
+        if (isCurrentlyExpanded) {
+          // Was expanded, now collapsed - update URL to dashboard
+          window.history.pushState({}, '', '/dashboard');
+        } else {
+          // Was collapsed, now expanded - update URL to trip detail
+          window.history.pushState({}, '', `/trip/${trip.id}`);
+        }
+      }
     }
   }
 
-  function handleEditTripIcon(trip: any, event: Event) {
+  async function handleEditTripIcon(trip: any, event: Event) {
     event.stopPropagation();
     // Open edit form in sidebar (both desktop and mobile)
     dashboardStoreActions.openSecondarySidebar({ type: 'trip', itemType: 'trip', data: trip });
+    if (typeof window !== 'undefined') {
+      await goto(`/trip/${trip.id}/edit`);
+    }
   }
 
 </script>
@@ -675,6 +786,7 @@
         {secondarySidebarContent}
         {trips}
         {standaloneItems}
+        onCloseSecondarySidebar={closeSecondarySidebar}
         on:close={closeSecondarySidebar}
         on:save={async (e) => {
           const item = e.detail;
@@ -919,6 +1031,8 @@
 {/if}
 
 <style>
+  @import '$lib/styles/timeline.css';
+
   .primary-content {
     display: flex;
     flex-direction: column;
@@ -1093,277 +1207,10 @@
     padding: 1rem 0;
   }
 
-  .timeline-date-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding-left: 0;
-    margin-bottom: 1rem;
-    border-left: none;
-  }
-
-  .timeline-date-header {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 0;
-  }
-
-  .date-badge {
-    display: inline-block;
-    padding: 0.4rem 0;
-    background: transparent;
-    color: #007bff;
-    border: none;
-    border-radius: 0;
-    font-size: 0.75rem;
-    font-weight: 700;
-    white-space: nowrap;
-    text-transform: uppercase;
-    letter-spacing: 0.1rem;
-    font-style: oblique;
-  }
-
-  .timeline-items {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .trip-card {
-    border: 1px solid #e0e0e0;
-    border-radius: 0.425rem;
-    background: #ffffff90;
-    overflow: hidden;
-    transition: all 0.2s;
-    position: relative;
-  }
-
-  .trip-card:hover,
-  .trip-card.highlighted {
-    background: #f3f4f6;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  }
-
-  .trip-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.2s;
-  }
-
-  .trip-header:hover {
-    background: #f9f9f9;
-  }
-
-  .trip-icon-column {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    flex-shrink: 0;
-  }
-
-  .trip-icon-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    border-radius: 0.425rem;
-    background: #f0f0f0;
-    flex-shrink: 0;
-  }
-
-  .trip-icon {
-    font-size: 0.875rem !important;
-    color: #28536b;
-  }
-
-  .trip-nights {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.15rem;
-    font-size: 0.65rem;
-    color: #4b5563;
-    white-space: nowrap;
-    height: 0.8rem;
-  }
-
-  .nights-icon {
-    font-size: 0.65rem !important;
-    color: #6b7280;
-    line-height: 1;
-  }
-
-  .nights-number {
-    font-weight: 600;
-    color: #111827;
-    line-height: 1;
-  }
-
-  .trip-info {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .trip-name-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: -2px;
-  }
-
-  .trip-name {
-    margin: 0;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: #111827;
-    line-height: 1;
-    text-align: left;
-  }
-
-  .trip-dates {
-    margin: 0;
-    font-size: 0.65rem;
-    font-weight: 600;
-    color: #4b5563;
-    line-height: 1;
-    text-align: left;
-  }
-
-  .trip-cities {
-    margin: 0;
-    font-size: 0.65rem;
-    font-weight: 600;
-    color: #6b7280;
-    font-style: italic;
-    line-height: 1;
-    text-align: left;
-  }
-
-  .edit-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    color: #9ca3af;
-    opacity: 0;
-    transition: opacity 0.2s, color 0.2s;
-    font-size: 0.75rem;
-    width: 1rem;
-    height: 1rem;
-    margin-top: -2px;
-  }
-
-  .trip-card:hover .edit-btn {
-    opacity: 1;
-  }
-
-  .edit-btn:hover {
-    color: #3b82f6;
-  }
-
-  .edit-btn :global(.material-symbols-outlined) {
-    font-size: 0.9rem !important;
-  }
-
-  .expand-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: transform 0.3s;
-  }
-
-  .expand-btn.rotated :global(.material-symbols-outlined) {
-    transform: rotate(180deg);
-  }
-
-  .trip-companions {
-    position: absolute;
-    top: 0.3rem;
-    right: 0.3rem;
-    z-index: 5;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-  }
-
-  .trip-items {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0 0.5rem 0.5rem;
-    border-top: 1px solid #e5e7eb;
-  }
-
-  .trip-card.expanded .trip-items {
-    border-top: none;
-  }
-
-  .trip-item-date-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-    padding-left: 0;
-    margin: 0.75rem 0 0 0;
-    border-left: none;
-  }
-
-  .trip-card.expanded .trip-item-date-group {
-    padding-left: 0.5rem;
-    border-left: 1px solid #007bff;
-  }
-
-  .trip-item-date-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.15rem 0px;
-  }
-
   .date-header-layovers {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-  }
-
-  .trip-date-badge {
-    display: inline-block;
-    padding: 0.2rem 0;
-    background: transparent;
-    color: #007bff;
-    border: none;
-    border-radius: 0;
-    font-size: 0.65rem;
-    font-weight: 700;
-    white-space: nowrap;
-    text-transform: uppercase;
-    letter-spacing: 0.08rem;
-    font-style: oblique;
-  }
-
-  .trip-item-date-items {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
   }
 
 

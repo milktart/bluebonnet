@@ -12,10 +12,7 @@ const {
   verifyResourceOwnership,
   convertToUTC,
 } = require('./helpers/resourceController');
-const {
-  getTripSelectorData,
-  verifyTripEditAccess,
-} = require('./helpers/tripSelectorHelper');
+const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 
 exports.createTransportation = async (req, res) => {
@@ -98,10 +95,25 @@ exports.createTransportation = async (req, res) => {
     }
 
     // Send response (handles both async and traditional form submission)
-    return sendAsyncResponse(res, true, transportation, 'Transportation added successfully', tripId, req, 'transportation');
+    return sendAsyncResponse(
+      res,
+      true,
+      transportation,
+      'Transportation added successfully',
+      tripId,
+      req,
+      'transportation'
+    );
   } catch (error) {
     logger.error(error);
-    return sendAsyncResponse(res, false, null, 'Error adding transportation', req.params.tripId, req);
+    return sendAsyncResponse(
+      res,
+      false,
+      null,
+      'Error adding transportation',
+      req.params.tripId,
+      req
+    );
   }
 };
 
@@ -196,7 +208,11 @@ exports.updateTransportation = async (req, res) => {
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
     if (isAsync) {
-      return res.json({ success: true, data: transportation, message: 'Transportation updated successfully' });
+      return res.json({
+        success: true,
+        data: transportation,
+        message: 'Transportation updated successfully',
+      });
     }
 
     redirectAfterSuccess(
@@ -209,11 +225,7 @@ exports.updateTransportation = async (req, res) => {
   } catch (error) {
     logger.error(error);
     const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.status(500).json({ success: false, error: 'Error updating transportation' });
-    }
-    req.flash('error_msg', 'Error updating transportation');
-    res.redirect('back');
+    return res.status(500).json({ success: false, error: 'Error updating transportation' });
   }
 };
 
@@ -262,11 +274,7 @@ exports.deleteTransportation = async (req, res) => {
   } catch (error) {
     logger.error(error);
     const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.status(500).json({ success: false, error: 'Error deleting transportation' });
-    }
-    req.flash('error_msg', 'Error deleting transportation');
-    res.redirect('back');
+    return res.status(500).json({ success: false, error: 'Error deleting transportation' });
   }
 };
 
@@ -313,24 +321,21 @@ exports.getAddForm = async (req, res) => {
     }
 
     // Get available trips for trip selector
-    const tripSelectorData = await getTripSelectorData(
-      { tripId: tripId || null },
-      req.user.id
-    );
+    const tripSelectorData = await getTripSelectorData({ tripId: tripId || null }, req.user.id);
 
-    // Render form partial for sidebar (not modal)
-    res.render('partials/transportation-form', {
+    // Return form data as JSON
+    res.json({
+      success: true,
       tripId: tripId || null,
       isEditing: false,
       data: null,
-      isModal: false, // This tells the partial to render for sidebar
       currentTripId: tripSelectorData.currentTripId,
       currentTripName: tripSelectorData.currentTripName,
       availableTrips: tripSelectorData.availableTrips,
     });
   } catch (error) {
     logger.error('Error fetching add form:', error);
-    res.status(500).send('Error loading form');
+    res.status(500).json({ success: false, error: 'Error loading form' });
   }
 };
 
@@ -368,27 +373,28 @@ exports.getEditForm = async (req, res) => {
     let arrivalTime = '';
 
     if (departureDateTimeLocal) {
-      const parts = departureDateTimeLocal.split('T');
-      if (parts.length === 2) {
-        departureDate = parts[0];
-        departureTime = parts[1];
+      const [depDate, depTime] = departureDateTimeLocal.split('T');
+      if (depDate && depTime) {
+        departureDate = depDate;
+        departureTime = depTime;
       }
     }
 
     if (arrivalDateTimeLocal) {
-      const parts = arrivalDateTimeLocal.split('T');
-      if (parts.length === 2) {
-        arrivalDate = parts[0];
-        arrivalTime = parts[1];
+      const [arrDate, arrTime] = arrivalDateTimeLocal.split('T');
+      if (arrDate && arrTime) {
+        arrivalDate = arrDate;
+        arrivalTime = arrTime;
       }
     }
 
     // Get available trips for trip selector
     const tripSelectorData = await getTripSelectorData(transportation, req.user.id);
 
-    // Render form partial for sidebar (not modal)
-    res.render('partials/transportation-form', {
-      tripId: transportation.tripId || '', // Use tripId if available, empty string otherwise
+    // Return form data as JSON
+    res.json({
+      success: true,
+      tripId: transportation.tripId || '',
       isEditing: true,
       data: {
         ...transportation.toJSON(),
@@ -397,13 +403,12 @@ exports.getEditForm = async (req, res) => {
         arrivalDate,
         arrivalTime,
       },
-      isModal: false, // This tells the partial to render for sidebar
       currentTripId: tripSelectorData.currentTripId,
       currentTripName: tripSelectorData.currentTripName,
       availableTrips: tripSelectorData.availableTrips,
     });
   } catch (error) {
     logger.error('Error fetching edit form:', error);
-    res.status(500).send('Error loading form');
+    res.status(500).json({ success: false, error: 'Error loading form' });
   }
 };

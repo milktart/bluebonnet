@@ -11,10 +11,7 @@ const {
   convertToUTC,
   geocodeWithAirportFallback,
 } = require('./helpers/resourceController');
-const {
-  getTripSelectorData,
-  verifyTripEditAccess,
-} = require('./helpers/tripSelectorHelper');
+const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 
 exports.searchAirports = async (req, res) => {
@@ -456,13 +453,9 @@ exports.updateFlight = async (req, res) => {
       requestBody: req.body,
     });
     const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      const errorMessage = error.message || 'Error updating flight';
-      logger.error('Returning error response:', errorMessage);
-      return res.status(500).json({ success: false, error: errorMessage });
-    }
-    req.flash('error_msg', 'Error updating flight');
-    res.redirect('back');
+    const errorMessage = error.message || 'Error updating flight';
+    logger.error('Returning error response:', errorMessage);
+    return res.status(500).json({ success: false, error: errorMessage });
   }
 };
 
@@ -504,11 +497,7 @@ exports.deleteFlight = async (req, res) => {
   } catch (error) {
     logger.error(error);
     const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.status(500).json({ success: false, error: 'Error deleting flight' });
-    }
-    req.flash('error_msg', 'Error deleting flight');
-    res.redirect('back');
+    return res.status(500).json({ success: false, error: 'Error deleting flight' });
   }
 };
 
@@ -553,28 +542,25 @@ exports.getAddForm = async (req, res) => {
     }
 
     // Get available trips for trip selector
-    const tripSelectorData = await getTripSelectorData(
-      { tripId: tripId || null },
-      req.user.id
-    );
+    const tripSelectorData = await getTripSelectorData({ tripId: tripId || null }, req.user.id);
 
     // Get airline data for the form (used by lookupAirline function)
     const airlineData = airportService.getAllAirlines();
 
-    // Render form partial for sidebar (not modal)
-    res.render('partials/flight-form', {
+    // Return form data as JSON
+    res.json({
+      success: true,
       tripId: tripId || null,
       isEditing: false,
       data: null,
-      isModal: false, // This tells the partial to render for sidebar
-      airlineData: JSON.stringify(airlineData), // Pass as JSON string for window.airlineData
+      airlineData,
       currentTripId: tripSelectorData.currentTripId,
       currentTripName: tripSelectorData.currentTripName,
       availableTrips: tripSelectorData.availableTrips,
     });
   } catch (error) {
     logger.error('Error fetching add form:', error);
-    res.status(500).send('Error loading form');
+    res.status(500).json({ success: false, error: 'Error loading form' });
   }
 };
 
@@ -674,12 +660,13 @@ exports.getEditForm = async (req, res) => {
     // Get available trips for trip selector
     const tripSelectorData = await getTripSelectorData(flight, req.user.id);
 
-    // Render form partial for sidebar (not modal)
-    res.render('partials/flight-form', {
-      tripId: flight.tripId || '', // Use tripId if available, empty string otherwise
-      trip: flight.trip ? { id: flight.trip.id } : { id: flight.tripId }, // Pass trip object for voucher panel
+    // Return form data as JSON
+    res.json({
+      success: true,
+      tripId: flight.tripId || '',
+      trip: flight.trip ? { id: flight.trip.id } : { id: flight.tripId },
       isEditing: true,
-      isOwner: true, // User is owner since we already verified ownership above
+      isOwner: true,
       data: {
         ...flightData,
         departureDate,
@@ -687,8 +674,7 @@ exports.getEditForm = async (req, res) => {
         arrivalDate,
         arrivalTime,
       },
-      isModal: false, // This tells the partial to render for sidebar
-      airlineData: JSON.stringify(airlineData), // Pass as JSON string for window.airlineData
+      airlineData,
       currentTripId: tripSelectorData.currentTripId,
       currentTripName: tripSelectorData.currentTripName,
       availableTrips: tripSelectorData.availableTrips,
@@ -696,6 +682,6 @@ exports.getEditForm = async (req, res) => {
   } catch (error) {
     logger.error('Error fetching edit form:', error);
     logger.error('Stack:', error.stack);
-    res.status(500).send(`Error loading form: ${error.message}`);
+    res.status(500).json({ success: false, error: `Error loading form: ${error.message}` });
   }
 };

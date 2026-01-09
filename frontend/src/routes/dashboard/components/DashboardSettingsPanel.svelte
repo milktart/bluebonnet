@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
   import { dashboardStoreActions } from '$lib/stores/dashboardStore';
   import { authStore } from '$lib/stores/authStore';
 
@@ -13,8 +14,23 @@
     }
   });
 
-  const handleSettingClick = (type: string, data: any = {}) => {
+  const handleSettingClick = async (type: string, data: any = {}) => {
     dashboardStoreActions.openSecondarySidebar({ type, data });
+
+    // Update URL when clicking settings menu items
+    if (typeof window !== 'undefined') {
+      const sectionMap: Record<string, string> = {
+        'settings-profile': 'account',
+        'settings-security': 'security',
+        'settings-backup': 'backup',
+        'settings-vouchers': 'vouchers',
+        'settings-companions': 'companions',
+        'settings-users': 'users',
+        'settings-airports': 'airports'
+      };
+      const url = `/settings/${sectionMap[type] || 'account'}`;
+      await goto(url);
+    }
   };
 </script>
 

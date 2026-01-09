@@ -16,9 +16,14 @@
   export let secondarySidebarContent: { type: string; itemType?: string; data: any } | null = null;
   export let trips: any[] = [];
   export let standaloneItems: any = {};
+  export let onCloseSecondarySidebar: (() => void) | null = null;
 
   const closeSecondarySidebar = () => {
-    dashboardStoreActions.closeSecondarySidebar();
+    if (onCloseSecondarySidebar) {
+      onCloseSecondarySidebar();
+    } else {
+      dashboardStoreActions.closeSecondarySidebar();
+    }
   };
 
   const handleItemSave = async (item: any) => {

@@ -30,8 +30,10 @@ exports.updateProfile = async (req, res) => {
       });
 
       if (existingUser) {
-        req.flash('error_msg', 'Email address is already taken by another user');
-        return res.redirect('/account');
+        return res.status(400).json({
+          success: false,
+          message: 'Email address is already taken by another user',
+        });
       }
     }
 
@@ -52,12 +54,16 @@ exports.updateProfile = async (req, res) => {
     req.user.lastName = lastName;
     req.user.email = email.toLowerCase();
 
-    req.flash('success_msg', 'Profile updated successfully');
-    res.redirect('/account');
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+    });
   } catch (error) {
     logger.error('Profile update error:', error);
-    req.flash('error_msg', 'An error occurred while updating your profile');
-    res.redirect('/account');
+    res.status(500).json({
+      success: false,
+      message: 'An error occurred while updating your profile',
+    });
   }
 };
 
@@ -71,14 +77,18 @@ exports.changePassword = async (req, res) => {
     const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
 
     if (!isCurrentPasswordValid) {
-      req.flash('error_msg', 'Current password is incorrect');
-      return res.redirect('/account');
+      return res.status(400).json({
+        success: false,
+        message: 'Current password is incorrect',
+      });
     }
 
     // Check if new passwords match
     if (newPassword !== confirmPassword) {
-      req.flash('error_msg', 'New passwords do not match');
-      return res.redirect('/account');
+      return res.status(400).json({
+        success: false,
+        message: 'New passwords do not match',
+      });
     }
 
     // Hash new password and update
@@ -92,12 +102,16 @@ exports.changePassword = async (req, res) => {
       }
     );
 
-    req.flash('success_msg', 'Password changed successfully');
-    res.redirect('/account');
+    res.json({
+      success: true,
+      message: 'Password changed successfully',
+    });
   } catch (error) {
     logger.error('Password change error:', error);
-    req.flash('error_msg', 'An error occurred while changing your password');
-    res.redirect('/account');
+    res.status(500).json({
+      success: false,
+      message: 'An error occurred while changing your password',
+    });
   }
 };
 
@@ -120,37 +134,33 @@ exports.getAccountSettingsSidebar = async (req, res) => {
       order: [['createdAt', 'DESC']],
     });
 
-    res.render('partials/account-forms', {
+    res.json({
+      success: true,
       user: req.user,
       companionProfiles,
-      isSidebarRequest: true,
-      layout: false, // Don't use main layout, just render the partial
     });
   } catch (error) {
     logger.error('Error loading account settings sidebar:', error);
-    res
-      .status(500)
-      .send(
-        '<div class="p-4"><p class="text-red-600">Error loading account settings. Please try again.</p></div>'
-      );
+    res.status(500).json({
+      success: false,
+      error: 'Error loading account settings. Please try again.',
+    });
   }
 };
 
 exports.getCompanionsSidebar = async (req, res) => {
   try {
-    // Simply render the companions sidebar partial
-    // The partial will load companion data via JavaScript API calls
-    res.render('partials/account-companions-sidebar', {
+    // Return companions data
+    res.json({
+      success: true,
       user: req.user,
-      layout: false, // Don't use main layout, just render the partial
     });
   } catch (error) {
     logger.error('Error loading companions sidebar:', error);
-    res
-      .status(500)
-      .send(
-        '<div class="p-4"><p class="text-red-600">Error loading companions. Please try again.</p></div>'
-      );
+    res.status(500).json({
+      success: false,
+      error: 'Error loading companions. Please try again.',
+    });
   }
 };
 
@@ -169,30 +179,17 @@ exports.revokeCompanionAccess = async (req, res) => {
 
     if (!companion) {
       const errorMsg = 'Companion access not found';
-      if (isAjax) {
-        return res.status(404).json({ success: false, error: errorMsg });
-      }
-      req.flash('error_msg', errorMsg);
-      return res.redirect('/account');
+      return res.status(404).json({ success: false, error: errorMsg });
     }
 
     await companion.update({ userId: null });
 
     const successMsg = 'Companion access revoked successfully';
-    if (isAjax) {
-      return res.json({ success: true, message: successMsg });
-    }
-
-    req.flash('success_msg', successMsg);
-    res.redirect('/account');
+    res.json({ success: true, message: successMsg });
   } catch (error) {
     logger.error('Error revoking companion access:', error);
     const errorMsg = 'Error revoking companion access';
-    if (req.get('X-Sidebar-Request') === 'true' || req.xhr) {
-      return res.status(500).json({ success: false, error: errorMsg });
-    }
-    req.flash('error_msg', errorMsg);
-    res.redirect('/account');
+    res.status(500).json({ success: false, error: errorMsg });
   }
 };
 
@@ -235,15 +232,17 @@ exports.getVouchers = async (req, res) => {
       return vData;
     });
 
-    res.render('account/vouchers', {
-      title: 'Travel Vouchers & Credits',
+    res.json({
+      success: true,
       user: req.user,
       vouchers: vouchersWithInfo,
     });
   } catch (error) {
     logger.error('Error loading vouchers:', error);
-    req.flash('error_msg', 'Error loading vouchers');
-    res.redirect('/account');
+    res.status(500).json({
+      success: false,
+      error: 'Error loading vouchers',
+    });
   }
 };
 
@@ -289,20 +288,18 @@ exports.getVouchersSidebar = async (req, res) => {
         v.status === 'CANCELLED'
     );
 
-    res.render('partials/vouchers-sidebar', {
+    res.json({
+      success: true,
       openVouchers,
       closedVouchers,
       user: req.user,
-      isSidebarRequest: true,
-      layout: false,
     });
   } catch (error) {
     logger.error('Error loading vouchers sidebar:', error);
-    res
-      .status(500)
-      .send(
-        '<div class="p-4"><p class="text-red-600">Error loading vouchers. Please try again.</p></div>'
-      );
+    res.status(500).json({
+      success: false,
+      error: 'Error loading vouchers. Please try again.',
+    });
   }
 };
 
@@ -322,18 +319,18 @@ exports.getVoucherDetails = async (req, res) => {
     });
 
     if (!voucher) {
-      return res
-        .status(404)
-        .send('<div class="p-4"><p class="text-red-600">Voucher not found</p></div>');
+      return res.status(404).json({
+        success: false,
+        error: 'Voucher not found',
+      });
     }
 
     // Check authorization: user must be owner or voucher must be non-owner-bound
     if (voucher.userId && voucher.userId !== userId) {
-      return res
-        .status(403)
-        .send(
-          '<div class="p-4"><p class="text-red-600">Unauthorized to access this voucher</p></div>'
-        );
+      return res.status(403).json({
+        success: false,
+        error: 'Unauthorized to access this voucher',
+      });
     }
 
     // Calculate values
@@ -345,17 +342,16 @@ exports.getVoucherDetails = async (req, res) => {
       ? Math.round(((voucher.usedAmount || 0) / voucher.totalValue) * 100)
       : 0;
 
-    res.render('partials/voucher-details-tertiary', {
+    res.json({
+      success: true,
       voucher: voucherData,
-      layout: false,
     });
   } catch (error) {
     logger.error('Error loading voucher details:', error);
-    res
-      .status(500)
-      .send(
-        '<div class="p-4"><p class="text-red-600">Error loading voucher details. Please try again.</p></div>'
-      );
+    res.status(500).json({
+      success: false,
+      error: 'Error loading voucher details. Please try again.',
+    });
   }
 };
 
@@ -440,8 +436,10 @@ exports.importAccountData = async (req, res) => {
     const userId = req.user.id;
 
     if (!req.file) {
-      req.flash('error_msg', 'No file uploaded');
-      return res.redirect('/account');
+      return res.status(400).json({
+        success: false,
+        error: 'No file uploaded',
+      });
     }
 
     // Parse the JSON file
@@ -449,14 +447,18 @@ exports.importAccountData = async (req, res) => {
     try {
       importData = JSON.parse(req.file.buffer.toString('utf8'));
     } catch (parseError) {
-      req.flash('error_msg', 'Invalid JSON file format');
-      return res.redirect('/account');
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid JSON file format',
+      });
     }
 
     // Validate version
     if (importData.version !== '1.0') {
-      req.flash('error_msg', 'Incompatible export file version');
-      return res.redirect('/account');
+      return res.status(400).json({
+        success: false,
+        error: 'Incompatible export file version',
+      });
     }
 
     // Track created IDs for mapping relationships
@@ -612,44 +614,47 @@ exports.importAccountData = async (req, res) => {
       }
     }
 
-    req.flash(
-      'success_msg',
-      'Account data imported successfully! All trips, items, vouchers, and companions have been restored.'
-    );
-    res.redirect('/account');
+    res.json({
+      success: true,
+      message:
+        'Account data imported successfully! All trips, items, vouchers, and companions have been restored.',
+    });
   } catch (error) {
     logger.error('Error importing account data:', error);
-    req.flash('error_msg', 'An error occurred while importing data');
-    res.redirect('/account');
+    res.status(500).json({
+      success: false,
+      error: 'An error occurred while importing data',
+    });
   }
 };
 
 exports.getDataManagement = async (req, res) => {
   try {
-    res.render('account/data-management', {
-      title: 'Manage Account Data',
+    res.json({
+      success: true,
       user: req.user,
     });
   } catch (error) {
     logger.error('Error loading data management page:', error);
-    req.flash('error_msg', 'Error loading data management');
-    res.redirect('/trips');
+    res.status(500).json({
+      success: false,
+      error: 'Error loading data management',
+    });
   }
 };
 
 exports.getDataManagementSidebar = async (req, res) => {
   try {
-    res.render('partials/data-management-sidebar', {
+    res.json({
+      success: true,
       user: req.user,
-      layout: false,
     });
   } catch (error) {
     logger.error('Error loading data management sidebar:', error);
-    res
-      .status(500)
-      .send(
-        '<div class="p-4"><p class="text-red-600">Error loading data management. Please try again.</p></div>'
-      );
+    res.status(500).json({
+      success: false,
+      error: 'Error loading data management. Please try again.',
+    });
   }
 };
 

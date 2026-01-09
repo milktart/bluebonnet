@@ -29,7 +29,18 @@ router.get('/sidebar', async (req, res) => {
     // Fetch all notifications for this user (unread first)
     const notifications = await db.Notification.findAll({
       where: { userId },
-      attributes: ['id', 'userId', 'type', 'relatedId', 'relatedType', 'message', 'read', 'actionRequired', 'createdAt', 'updatedAt'],
+      attributes: [
+        'id',
+        'userId',
+        'type',
+        'relatedId',
+        'relatedType',
+        'message',
+        'read',
+        'actionRequired',
+        'createdAt',
+        'updatedAt',
+      ],
       include: [
         {
           model: db.User,
@@ -37,7 +48,10 @@ router.get('/sidebar', async (req, res) => {
           attributes: ['id', 'firstName', 'lastName', 'email'],
         },
       ],
-      order: [['read', 'ASC'], ['createdAt', 'DESC']], // Unread first, then by date
+      order: [
+        ['read', 'ASC'],
+        ['createdAt', 'DESC'],
+      ], // Unread first, then by date
     });
 
     logger.info('Found notifications:', notifications.length);
@@ -52,9 +66,9 @@ router.get('/sidebar', async (req, res) => {
 
     logger.info('Unread count:', unreadCount);
 
-    // The /sidebar endpoint always renders the partial
-    logger.info('Rendering notifications sidebar partial');
-    return res.render('partials/notifications-sidebar', {
+    // Return notifications as JSON
+    return res.json({
+      success: true,
       notifications,
       unreadCount,
     });

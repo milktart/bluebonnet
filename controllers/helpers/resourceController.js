@@ -69,45 +69,6 @@ async function geocodeOriginDestination({
 }
 
 /**
- * Standard redirect after CRUD operation
- * @param {Object} res - Express response object
- * @param {Object} req - Express request object
- * @param {string} tripId - Trip ID to redirect to (or null)
- * @param {string} tab - Tab to show on trip view page
- * @param {string} successMessage - Flash message to show
- */
-function redirectAfterSuccess(res, req, tripId, tab, successMessage) {
-  if (successMessage) {
-    req.flash('success_msg', successMessage);
-  }
-
-  if (tripId) {
-    res.redirect(`/trips/${tripId}?tab=${tab}`);
-  } else {
-    res.redirect('/');
-  }
-}
-
-/**
- * Standard redirect after error
- * @param {Object} res - Express response object
- * @param {Object} req - Express request object
- * @param {string} tripId - Trip ID to redirect to (or null)
- * @param {string} errorMessage - Flash message to show
- */
-function redirectAfterError(res, req, tripId, errorMessage) {
-  if (errorMessage) {
-    req.flash('error_msg', errorMessage);
-  }
-
-  if (tripId) {
-    res.redirect(`/trips/${tripId}`);
-  } else {
-    res.redirect('/');
-  }
-}
-
-/**
  * Verify resource ownership (for resources that belong directly to a user)
  * @param {Object} resource - Resource object with userId
  * @param {string} currentUserId - Current user's ID
@@ -197,8 +158,6 @@ module.exports = {
   verifyTripOwnership,
   geocodeIfChanged,
   geocodeOriginDestination,
-  redirectAfterSuccess,
-  redirectAfterError,
   verifyResourceOwnership,
   verifyResourceOwnershipViaTrip,
   convertToUTC,

@@ -10,16 +10,13 @@ const {
   redirectAfterError,
   verifyResourceOwnershipViaTrip,
 } = require('./helpers/resourceController');
-const {
-  getTripSelectorData,
-  verifyTripEditAccess,
-} = require('./helpers/tripSelectorHelper');
+const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 
 exports.createHotel = async (req, res) => {
   try {
     const { tripId } = req.params;
-    let {
+    const {
       hotelName,
       address,
       phone,
@@ -61,7 +58,14 @@ exports.createHotel = async (req, res) => {
           checkOutDate,
           checkOutTime,
         });
-        return sendAsyncResponse(res, false, null, 'All date and time fields are required', tripId, req);
+        return sendAsyncResponse(
+          res,
+          false,
+          null,
+          'All date and time fields are required',
+          tripId,
+          req
+        );
       }
       // Combine date and time fields
       checkInDateTime = `${checkInDate}T${checkInTime}`;
@@ -158,15 +162,13 @@ exports.updateHotel = async (req, res) => {
         }
         return redirectAfterError(res, req, null, 'Hotel not found');
       }
-    } else {
+    } else if (hotel.userId !== req.user.id) {
       // Standalone hotel - verify direct ownership
-      if (hotel.userId !== req.user.id) {
-        const isAsync = req.headers['x-async-request'] === 'true';
-        if (isAsync) {
-          return res.status(403).json({ success: false, error: 'Hotel not found' });
-        }
-        return redirectAfterError(res, req, null, 'Hotel not found');
+      const isAsync = req.headers['x-async-request'] === 'true';
+      if (isAsync) {
+        return res.status(403).json({ success: false, error: 'Hotel not found' });
       }
+      return redirectAfterError(res, req, null, 'Hotel not found');
     }
 
     // Verify trip edit access if changing trips
@@ -224,11 +226,7 @@ exports.updateHotel = async (req, res) => {
   } catch (error) {
     logger.error(error);
     const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.status(500).json({ success: false, error: 'Error updating hotel' });
-    }
-    req.flash('error_msg', 'Error updating hotel');
-    res.redirect('back');
+    return res.status(500).json({ success: false, error: 'Error updating hotel' });
   }
 };
 
@@ -257,15 +255,13 @@ exports.deleteHotel = async (req, res) => {
         }
         return redirectAfterError(res, req, null, 'Hotel not found');
       }
-    } else {
+    } else if (hotel.userId !== req.user.id) {
       // Standalone hotel - verify direct ownership
-      if (hotel.userId !== req.user.id) {
-        const isAsync = req.headers['x-async-request'] === 'true';
-        if (isAsync) {
-          return res.status(403).json({ success: false, error: 'Hotel not found' });
-        }
-        return redirectAfterError(res, req, null, 'Hotel not found');
+      const isAsync = req.headers['x-async-request'] === 'true';
+      if (isAsync) {
+        return res.status(403).json({ success: false, error: 'Hotel not found' });
       }
+      return redirectAfterError(res, req, null, 'Hotel not found');
     }
 
     const { tripId } = hotel;
@@ -286,11 +282,7 @@ exports.deleteHotel = async (req, res) => {
   } catch (error) {
     logger.error(error);
     const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.status(500).json({ success: false, error: 'Error deleting hotel' });
-    }
-    req.flash('error_msg', 'Error deleting hotel');
-    res.redirect('back');
+    return res.status(500).json({ success: false, error: 'Error deleting hotel' });
   }
 };
 
@@ -346,16 +338,16 @@ exports.getAddForm = async (req, res) => {
       let checkOutDate = '';
 
       if (checkInDateTime) {
-        const parts = checkInDateTime.split('T');
-        if (parts.length >= 1) {
-          checkInDate = parts[0];
+        const [inDate] = checkInDateTime.split('T');
+        if (inDate) {
+          checkInDate = inDate;
         }
       }
 
       if (checkOutDateTime) {
-        const parts = checkOutDateTime.split('T');
-        if (parts.length >= 1) {
-          checkOutDate = parts[0];
+        const [outDate] = checkOutDateTime.split('T');
+        if (outDate) {
+          checkOutDate = outDate;
         }
       }
 
@@ -368,24 +360,21 @@ exports.getAddForm = async (req, res) => {
     }
 
     // Get available trips for trip selector
-    const tripSelectorData = await getTripSelectorData(
-      { tripId: tripId || null },
-      req.user.id
-    );
+    const tripSelectorData = await getTripSelectorData({ tripId: tripId || null }, req.user.id);
 
-    // Render form partial for sidebar (not modal)
-    res.render('partials/hotel-form', {
+    // Return form data as JSON
+    res.json({
+      success: true,
       tripId: tripId || null,
       isEditing: false,
       data: formData,
-      isModal: false, // This tells the partial to render for sidebar
       currentTripId: tripSelectorData.currentTripId,
       currentTripName: tripSelectorData.currentTripName,
       availableTrips: tripSelectorData.availableTrips,
     });
   } catch (error) {
     logger.error('Error fetching add form:', error);
-    res.status(500).send('Error loading form');
+    res.status(500).json({ success: false, error: 'Error loading form' });
   }
 };
 
@@ -409,11 +398,9 @@ exports.getEditForm = async (req, res) => {
       if (!verifyResourceOwnershipViaTrip(hotel, req.user.id)) {
         return res.status(403).send('Unauthorized');
       }
-    } else {
+    } else if (hotel.userId !== req.user.id) {
       // Standalone hotel - verify direct ownership
-      if (hotel.userId !== req.user.id) {
-        return res.status(403).send('Unauthorized');
-      }
+      return res.status(403).send('Unauthorized');
     }
 
     // Format dates/times for display from stored datetime values (use UTC methods to avoid timezone conversion)
@@ -436,17 +423,18 @@ exports.getEditForm = async (req, res) => {
 
     // Split the combined datetime into separate date and time fields for form input
     // Handle empty strings by providing defaults
-    let checkInDate = formatDateForInput(hotel.checkInDateTime);
-    let checkInTime = formatTimeForInput(hotel.checkInDateTime) || '14:00';
-    let checkOutDate = formatDateForInput(hotel.checkOutDateTime);
-    let checkOutTime = formatTimeForInput(hotel.checkOutDateTime) || '11:00';
+    const checkInDate = formatDateForInput(hotel.checkInDateTime);
+    const checkInTime = formatTimeForInput(hotel.checkInDateTime) || '14:00';
+    const checkOutDate = formatDateForInput(hotel.checkOutDateTime);
+    const checkOutTime = formatTimeForInput(hotel.checkOutDateTime) || '11:00';
 
     // Get available trips for trip selector
     const tripSelectorData = await getTripSelectorData(hotel, req.user.id);
 
-    // Render form partial for sidebar (not modal)
-    res.render('partials/hotel-form', {
-      tripId: hotel.tripId || '', // Use tripId if available, empty string otherwise
+    // Return form data as JSON
+    res.json({
+      success: true,
+      tripId: hotel.tripId || '',
       isEditing: true,
       data: {
         ...hotel.toJSON(),
@@ -455,13 +443,12 @@ exports.getEditForm = async (req, res) => {
         checkOutDate,
         checkOutTime,
       },
-      isModal: false, // This tells the partial to render for sidebar
       currentTripId: tripSelectorData.currentTripId,
       currentTripName: tripSelectorData.currentTripName,
       availableTrips: tripSelectorData.availableTrips,
     });
   } catch (error) {
     logger.error('Error fetching edit form:', error);
-    res.status(500).send('Error loading form');
+    res.status(500).json({ success: false, error: 'Error loading form' });
   }
 };

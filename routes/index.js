@@ -111,7 +111,16 @@ router.get('/dashboard/api', ensureAuthenticated, async (req, res) => {
 
 // GET new item menu (used in dashboard secondary sidebar)
 router.get('/new-item-menu', ensureAuthenticated, (req, res) => {
-  res.render('partials/new-item-menu');
+  res.json({
+    success: true,
+    items: [
+      { label: 'Flight', value: 'flight' },
+      { label: 'Hotel', value: 'hotel' },
+      { label: 'Event', value: 'event' },
+      { label: 'Transportation', value: 'transportation' },
+      { label: 'Car Rental', value: 'car-rental' },
+    ],
+  });
 });
 
 // GET form for creating a new trip (sidebar form)

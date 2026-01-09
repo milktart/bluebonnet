@@ -3,40 +3,28 @@ const express = require('express');
 const router = express.Router();
 const passport = require('passport');
 const authController = require('../controllers/authController');
-const { ensureAuthenticated, forwardAuthenticated } = require('../middleware/auth');
+const { ensureAuthenticated } = require('../middleware/auth');
 const { validateRegistration, validateLogin } = require('../middleware/validation');
 
-router.get('/login', forwardAuthenticated, authController.getLogin);
-
 router.post('/login', validateLogin, (req, res, next) => {
-  const isJsonRequest = req.get('content-type')?.includes('application/json');
-
   passport.authenticate('local', (err, user, info) => {
     if (err) {
       return next(err);
     }
 
     if (!user) {
-      if (isJsonRequest) {
-        return res.status(401).json({
-          success: false,
-          message: info?.message || 'Invalid credentials',
-        });
-      }
-      req.flash('error_msg', info?.message || 'Invalid credentials');
-      return res.redirect('/auth/login');
+      return res.status(401).json({
+        success: false,
+        message: info?.message || 'Invalid credentials',
+      });
     }
 
     // Check if account is active (soft delete check)
     if (!user.isActive) {
-      if (isJsonRequest) {
-        return res.status(401).json({
-          success: false,
-          message: 'This account has been deactivated. Contact support for assistance.',
-        });
-      }
-      req.flash('error_msg', 'This account has been deactivated. Contact support for assistance.');
-      return res.redirect('/auth/login');
+      return res.status(401).json({
+        success: false,
+        message: 'This account has been deactivated. Contact support for assistance.',
+      });
     }
 
     req.logIn(user, async (err) => {
@@ -52,27 +40,19 @@ router.post('/login', validateLogin, (req, res, next) => {
         console.error('Error updating lastLogin:', updateError);
       }
 
-      if (isJsonRequest) {
-        return res.json({
-          success: true,
-          user: {
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            isAdmin: user.isAdmin,
-          },
-        });
-      }
-
-      const returnTo = req.session.returnTo || '/';
-      delete req.session.returnTo;
-      res.redirect(returnTo);
+      return res.json({
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          isAdmin: user.isAdmin,
+        },
+      });
     });
   })(req, res, next);
 });
-
-router.get('/register', forwardAuthenticated, authController.getRegister);
 
 router.post('/register', validateRegistration, authController.postRegister);
 

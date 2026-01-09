@@ -66,16 +66,16 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
     });
 
     // Get standalone items (not attached to any trip) and filter by end date
-    let standaloneFlights = [];
-    let standaloneHotels = [];
-    let standaloneTransportation = [];
-    let standaloneCarRentals = [];
-    let standaloneEvents = [];
-    let pastStandaloneFlights = [];
-    let pastStandaloneHotels = [];
-    let pastStandaloneTransportation = [];
-    let pastStandaloneCarRentals = [];
-    let pastStandaloneEvents = [];
+    const standaloneFlights = [];
+    const standaloneHotels = [];
+    const standaloneTransportation = [];
+    const standaloneCarRentals = [];
+    const standaloneEvents = [];
+    const pastStandaloneFlights = [];
+    const pastStandaloneHotels = [];
+    const pastStandaloneTransportation = [];
+    const pastStandaloneCarRentals = [];
+    const pastStandaloneEvents = [];
 
     if (activeTab === 'upcoming' || activeTab === 'all') {
       // Get all standalone flights and filter by arrival date
@@ -83,7 +83,7 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
         where: { userId: req.user.id, tripId: null },
         order: [['departureDateTime', 'ASC']],
       });
-      allStandaloneFlights.forEach(f => {
+      allStandaloneFlights.forEach((f) => {
         const arrivalDate = new Date(f.arrivalDateTime || f.departureDateTime);
         if (arrivalDate >= today) {
           standaloneFlights.push(f);
@@ -97,7 +97,7 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
         where: { userId: req.user.id, tripId: null },
         order: [['checkInDateTime', 'ASC']],
       });
-      allStandaloneHotels.forEach(h => {
+      allStandaloneHotels.forEach((h) => {
         const checkoutDate = new Date(h.checkOutDateTime);
         if (checkoutDate >= today) {
           standaloneHotels.push(h);
@@ -111,7 +111,7 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
         where: { userId: req.user.id, tripId: null },
         order: [['departureDateTime', 'ASC']],
       });
-      allStandaloneTransportation.forEach(t => {
+      allStandaloneTransportation.forEach((t) => {
         const arrivalDate = new Date(t.arrivalDateTime || t.departureDateTime);
         if (arrivalDate >= today) {
           standaloneTransportation.push(t);
@@ -125,7 +125,7 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
         where: { userId: req.user.id, tripId: null },
         order: [['pickupDateTime', 'ASC']],
       });
-      allStandaloneCarRentals.forEach(c => {
+      allStandaloneCarRentals.forEach((c) => {
         const dropoffDate = new Date(c.dropoffDateTime);
         if (dropoffDate >= today) {
           standaloneCarRentals.push(c);
@@ -139,7 +139,7 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
         where: { userId: req.user.id, tripId: null },
         order: [['startDateTime', 'ASC']],
       });
-      allStandaloneEvents.forEach(e => {
+      allStandaloneEvents.forEach((e) => {
         const endDate = new Date(e.endDateTime || e.startDateTime);
         if (endDate >= today) {
           standaloneEvents.push(e);
@@ -153,7 +153,7 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
         where: { userId: req.user.id, tripId: null },
         order: [['departureDateTime', 'DESC']],
       });
-      allStandaloneFlights.forEach(f => {
+      allStandaloneFlights.forEach((f) => {
         const arrivalDate = new Date(f.arrivalDateTime || f.departureDateTime);
         if (arrivalDate < today) {
           pastStandaloneFlights.push(f);
@@ -164,7 +164,7 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
         where: { userId: req.user.id, tripId: null },
         order: [['checkInDateTime', 'DESC']],
       });
-      allStandaloneHotels.forEach(h => {
+      allStandaloneHotels.forEach((h) => {
         const checkoutDate = new Date(h.checkOutDateTime);
         if (checkoutDate < today) {
           pastStandaloneHotels.push(h);
@@ -175,7 +175,7 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
         where: { userId: req.user.id, tripId: null },
         order: [['departureDateTime', 'DESC']],
       });
-      allStandaloneTransportation.forEach(t => {
+      allStandaloneTransportation.forEach((t) => {
         const arrivalDate = new Date(t.arrivalDateTime || t.departureDateTime);
         if (arrivalDate < today) {
           pastStandaloneTransportation.push(t);
@@ -186,7 +186,7 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
         where: { userId: req.user.id, tripId: null },
         order: [['pickupDateTime', 'DESC']],
       });
-      allStandaloneCarRentals.forEach(c => {
+      allStandaloneCarRentals.forEach((c) => {
         const dropoffDate = new Date(c.dropoffDateTime);
         if (dropoffDate < today) {
           pastStandaloneCarRentals.push(c);
@@ -197,7 +197,7 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
         where: { userId: req.user.id, tripId: null },
         order: [['startDateTime', 'DESC']],
       });
-      allStandaloneEvents.forEach(e => {
+      allStandaloneEvents.forEach((e) => {
         const endDate = new Date(e.endDateTime || e.startDateTime);
         if (endDate < today) {
           pastStandaloneEvents.push(e);
@@ -236,19 +236,20 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
     }
 
     // Enrich flights and transportation with airport timezones
-    const enrichedStandaloneFlights = standaloneFlights.map(flight => {
+    const enrichedStandaloneFlights = standaloneFlights.map((flight) => {
       const flightWithTimezone = { ...flight.dataValues };
       const originMatch = flightWithTimezone.origin.match(/^([A-Z]{3})/);
       if (originMatch) {
         const airportData = airportService.getAirportByCode(originMatch[1]);
         if (airportData) {
-          flightWithTimezone.originTimezone = airportData.timezone || flightWithTimezone.originTimezone;
+          flightWithTimezone.originTimezone =
+            airportData.timezone || flightWithTimezone.originTimezone;
         }
       }
       return flightWithTimezone;
     });
 
-    const enrichedStandaloneTransportation = standaloneTransportation.map(item => {
+    const enrichedStandaloneTransportation = standaloneTransportation.map((item) => {
       const itemWithTimezone = { ...item.dataValues };
       const originMatch = itemWithTimezone.origin.match(/^([A-Z]{3})/);
       if (originMatch) {
@@ -260,29 +261,31 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
       return itemWithTimezone;
     });
 
-    const enrichedTrips = ownedTrips.map(trip => {
+    const enrichedTrips = ownedTrips.map((trip) => {
       const tripData = trip.dataValues ? { ...trip.dataValues } : trip;
       if (tripData.flights) {
-        tripData.flights = tripData.flights.map(flight => {
-          const flightWithTimezone = { ...flight.dataValues || flight };
+        tripData.flights = tripData.flights.map((flight) => {
+          const flightWithTimezone = { ...(flight.dataValues || flight) };
           const originMatch = flightWithTimezone.origin.match(/^([A-Z]{3})/);
           if (originMatch) {
             const airportData = airportService.getAirportByCode(originMatch[1]);
             if (airportData) {
-              flightWithTimezone.originTimezone = airportData.timezone || flightWithTimezone.originTimezone;
+              flightWithTimezone.originTimezone =
+                airportData.timezone || flightWithTimezone.originTimezone;
             }
           }
           return flightWithTimezone;
         });
       }
       if (tripData.transportation) {
-        tripData.transportation = tripData.transportation.map(item => {
-          const itemWithTimezone = { ...item.dataValues || item };
+        tripData.transportation = tripData.transportation.map((item) => {
+          const itemWithTimezone = { ...(item.dataValues || item) };
           const originMatch = itemWithTimezone.origin.match(/^([A-Z]{3})/);
           if (originMatch) {
             const airportData = airportService.getAirportByCode(originMatch[1]);
             if (airportData) {
-              itemWithTimezone.originTimezone = airportData.timezone || itemWithTimezone.originTimezone;
+              itemWithTimezone.originTimezone =
+                airportData.timezone || itemWithTimezone.originTimezone;
             }
           }
           return itemWithTimezone;
@@ -292,20 +295,21 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
     });
 
     // Enrich past standalone flights and transportation with airport timezones
-    const enrichedPastStandaloneFlights = pastStandaloneFlights.map(flight => {
+    const enrichedPastStandaloneFlights = pastStandaloneFlights.map((flight) => {
       const flightData = flight.dataValues || flight;
       const flightWithTimezone = { ...flightData };
       const originMatch = flightWithTimezone.origin.match(/^([A-Z]{3})/);
       if (originMatch) {
         const airportData = airportService.getAirportByCode(originMatch[1]);
         if (airportData) {
-          flightWithTimezone.originTimezone = airportData.timezone || flightWithTimezone.originTimezone;
+          flightWithTimezone.originTimezone =
+            airportData.timezone || flightWithTimezone.originTimezone;
         }
       }
       return flightWithTimezone;
     });
 
-    const enrichedPastStandaloneTransportation = pastStandaloneTransportation.map(item => {
+    const enrichedPastStandaloneTransportation = pastStandaloneTransportation.map((item) => {
       const itemData = item.dataValues || item;
       const itemWithTimezone = { ...itemData };
       const originMatch = itemWithTimezone.origin.match(/^([A-Z]{3})/);
@@ -318,33 +322,34 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
       return itemWithTimezone;
     });
 
-    const enrichedPastStandaloneHotels = pastStandaloneHotels.map(hotel => {
+    const enrichedPastStandaloneHotels = pastStandaloneHotels.map((hotel) => {
       return hotel.dataValues || hotel;
     });
 
-    const enrichedPastStandaloneCarRentals = pastStandaloneCarRentals.map(carRental => {
+    const enrichedPastStandaloneCarRentals = pastStandaloneCarRentals.map((carRental) => {
       return carRental.dataValues || carRental;
     });
 
-    const enrichedPastStandaloneEvents = pastStandaloneEvents.map(event => {
+    const enrichedPastStandaloneEvents = pastStandaloneEvents.map((event) => {
       return event.dataValues || event;
     });
 
     // Separate trips into upcoming and past (same logic as listTrips)
-    const upcomingTrips = enrichedTrips.filter(trip => {
+    const upcomingTrips = enrichedTrips.filter((trip) => {
       const returnDate = new Date(trip.returnDate);
       returnDate.setHours(23, 59, 59, 999);
       return returnDate >= today;
     });
 
-    const pastTrips = enrichedTrips.filter(trip => {
+    const pastTrips = enrichedTrips.filter((trip) => {
       const returnDate = new Date(trip.returnDate);
       returnDate.setHours(23, 59, 59, 999);
       return returnDate < today;
     });
 
-    // Render as partial with minimal HTML wrapper for AJAX injection
-    res.render('partials/dashboard-sidebar-content', {
+    // Return JSON data for dashboard content
+    res.json({
+      success: true,
       trips: upcomingTrips,
       pastTrips,
       standaloneFlights: enrichedStandaloneFlights,
@@ -360,8 +365,6 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
       pendingInvitations,
       activeTab,
       versionInfo,
-      formatInTimezone,
-      layout: false, // Don't use main layout
     });
   } catch (error) {
     logger.error('Error fetching primary sidebar content:', error);
@@ -427,16 +430,16 @@ exports.listTrips = async (req, res, options = {}) => {
       },
       attributes: ['tripId'],
       raw: true,
-    }).then(invitations => invitations.map(inv => inv.tripId));
+    }).then((invitations) => invitations.map((inv) => inv.tripId));
 
     const companionTrips = await Trip.findAll({
       where: {
         // Exclude trips with pending invitations
         ...(pendingTripIds.length > 0 && {
           id: {
-            [Op.notIn]: pendingTripIds
-          }
-        })
+            [Op.notIn]: pendingTripIds,
+          },
+        }),
       },
       include: [
         ...tripIncludes,
@@ -470,23 +473,23 @@ exports.listTrips = async (req, res, options = {}) => {
     );
 
     // Fetch ALL standalone items ALWAYS (template needs both upcoming and past)
-    let standaloneFlights = [];
-    let standaloneHotels = [];
-    let standaloneTransportation = [];
-    let standaloneCarRentals = [];
-    let standaloneEvents = [];
-    let pastStandaloneFlights = [];
-    let pastStandaloneHotels = [];
-    let pastStandaloneTransportation = [];
-    let pastStandaloneCarRentals = [];
-    let pastStandaloneEvents = [];
+    const standaloneFlights = [];
+    const standaloneHotels = [];
+    const standaloneTransportation = [];
+    const standaloneCarRentals = [];
+    const standaloneEvents = [];
+    const pastStandaloneFlights = [];
+    const pastStandaloneHotels = [];
+    const pastStandaloneTransportation = [];
+    const pastStandaloneCarRentals = [];
+    const pastStandaloneEvents = [];
 
     // Fetch and categorize flights
     const allFlights = await Flight.findAll({
       where: { userId: req.user.id, tripId: null },
       order: [['departureDateTime', 'ASC']],
     });
-    allFlights.forEach(f => {
+    allFlights.forEach((f) => {
       const arrivalDate = new Date(f.arrivalDateTime || f.departureDateTime);
       const isUpcoming = arrivalDate >= today;
       console.log('[listTrips] Flight categorization:', {
@@ -496,7 +499,7 @@ exports.listTrips = async (req, res, options = {}) => {
         arrivalDate: arrivalDate.toISOString(),
         today: today.toISOString(),
         isUpcoming,
-        willBePast: !isUpcoming
+        willBePast: !isUpcoming,
       });
       if (isUpcoming) {
         standaloneFlights.push(f);
@@ -510,7 +513,7 @@ exports.listTrips = async (req, res, options = {}) => {
       where: { userId: req.user.id, tripId: null },
       order: [['checkInDateTime', 'ASC']],
     });
-    allHotels.forEach(h => {
+    allHotels.forEach((h) => {
       const checkoutDate = new Date(h.checkOutDateTime);
       if (checkoutDate >= today) {
         standaloneHotels.push(h);
@@ -524,7 +527,7 @@ exports.listTrips = async (req, res, options = {}) => {
       where: { userId: req.user.id, tripId: null },
       order: [['departureDateTime', 'ASC']],
     });
-    allTransportation.forEach(t => {
+    allTransportation.forEach((t) => {
       const arrivalDate = new Date(t.arrivalDateTime || t.departureDateTime);
       if (arrivalDate >= today) {
         standaloneTransportation.push(t);
@@ -538,7 +541,7 @@ exports.listTrips = async (req, res, options = {}) => {
       where: { userId: req.user.id, tripId: null },
       order: [['pickupDateTime', 'ASC']],
     });
-    allCarRentals.forEach(c => {
+    allCarRentals.forEach((c) => {
       const dropoffDate = new Date(c.dropoffDateTime);
       if (dropoffDate >= today) {
         standaloneCarRentals.push(c);
@@ -552,7 +555,7 @@ exports.listTrips = async (req, res, options = {}) => {
       where: { userId: req.user.id, tripId: null },
       order: [['startDateTime', 'ASC']],
     });
-    allEvents.forEach(e => {
+    allEvents.forEach((e) => {
       const endDate = new Date(e.endDateTime || e.startDateTime);
       if (endDate >= today) {
         standaloneEvents.push(e);
@@ -596,20 +599,21 @@ exports.listTrips = async (req, res, options = {}) => {
     };
 
     // Enrich flights and transportation with airport timezones from database
-    const enrichedStandaloneFlights = standaloneFlights.map(flight => {
+    const enrichedStandaloneFlights = standaloneFlights.map((flight) => {
       const flightWithTimezone = { ...flight.dataValues };
       // Extract airport code from origin (format: "AMS - Amsterdam, Netherlands")
       const originMatch = flightWithTimezone.origin.match(/^([A-Z]{3})/);
       if (originMatch) {
         const airportData = airportService.getAirportByCode(originMatch[1]);
         if (airportData) {
-          flightWithTimezone.originTimezone = airportData.timezone || flightWithTimezone.originTimezone;
+          flightWithTimezone.originTimezone =
+            airportData.timezone || flightWithTimezone.originTimezone;
         }
       }
       return flightWithTimezone;
     });
 
-    const enrichedStandaloneTransportation = standaloneTransportation.map(item => {
+    const enrichedStandaloneTransportation = standaloneTransportation.map((item) => {
       const itemWithTimezone = { ...item.dataValues };
       const originMatch = itemWithTimezone.origin.match(/^([A-Z]{3})/);
       if (originMatch) {
@@ -622,29 +626,31 @@ exports.listTrips = async (req, res, options = {}) => {
     });
 
     // Enrich trips with airport timezones for flights and transportation
-    const enrichedTrips = uniqueTrips.map(trip => {
+    const enrichedTrips = uniqueTrips.map((trip) => {
       const tripData = trip.dataValues ? { ...trip.dataValues } : trip;
       if (tripData.flights) {
-        tripData.flights = tripData.flights.map(flight => {
-          const flightWithTimezone = { ...flight.dataValues || flight };
+        tripData.flights = tripData.flights.map((flight) => {
+          const flightWithTimezone = { ...(flight.dataValues || flight) };
           const originMatch = flightWithTimezone.origin.match(/^([A-Z]{3})/);
           if (originMatch) {
             const airportData = airportService.getAirportByCode(originMatch[1]);
             if (airportData) {
-              flightWithTimezone.originTimezone = airportData.timezone || flightWithTimezone.originTimezone;
+              flightWithTimezone.originTimezone =
+                airportData.timezone || flightWithTimezone.originTimezone;
             }
           }
           return flightWithTimezone;
         });
       }
       if (tripData.transportation) {
-        tripData.transportation = tripData.transportation.map(item => {
-          const itemWithTimezone = { ...item.dataValues || item };
+        tripData.transportation = tripData.transportation.map((item) => {
+          const itemWithTimezone = { ...(item.dataValues || item) };
           const originMatch = itemWithTimezone.origin.match(/^([A-Z]{3})/);
           if (originMatch) {
             const airportData = airportService.getAirportByCode(originMatch[1]);
             if (airportData) {
-              itemWithTimezone.originTimezone = airportData.timezone || itemWithTimezone.originTimezone;
+              itemWithTimezone.originTimezone =
+                airportData.timezone || itemWithTimezone.originTimezone;
             }
           }
           return itemWithTimezone;
@@ -654,33 +660,34 @@ exports.listTrips = async (req, res, options = {}) => {
     });
 
     // Separate trips into upcoming and past
-    const upcomingTrips = enrichedTrips.filter(trip => {
+    const upcomingTrips = enrichedTrips.filter((trip) => {
       const returnDate = new Date(trip.returnDate);
       returnDate.setHours(23, 59, 59, 999);
       return returnDate >= today;
     });
 
-    const pastTrips = enrichedTrips.filter(trip => {
+    const pastTrips = enrichedTrips.filter((trip) => {
       const returnDate = new Date(trip.returnDate);
       returnDate.setHours(23, 59, 59, 999);
       return returnDate < today;
     });
 
     // Enrich past standalone flights and transportation with airport timezones
-    const enrichedPastStandaloneFlights = pastStandaloneFlights.map(flight => {
+    const enrichedPastStandaloneFlights = pastStandaloneFlights.map((flight) => {
       const flightData = flight.dataValues || flight;
       const flightWithTimezone = { ...flightData };
       const originMatch = flightWithTimezone.origin.match(/^([A-Z]{3})/);
       if (originMatch) {
         const airportData = airportService.getAirportByCode(originMatch[1]);
         if (airportData) {
-          flightWithTimezone.originTimezone = airportData.timezone || flightWithTimezone.originTimezone;
+          flightWithTimezone.originTimezone =
+            airportData.timezone || flightWithTimezone.originTimezone;
         }
       }
       return flightWithTimezone;
     });
 
-    const enrichedPastStandaloneTransportation = pastStandaloneTransportation.map(item => {
+    const enrichedPastStandaloneTransportation = pastStandaloneTransportation.map((item) => {
       const itemData = item.dataValues || item;
       const itemWithTimezone = { ...itemData };
       const originMatch = itemWithTimezone.origin.match(/^([A-Z]{3})/);
@@ -693,15 +700,15 @@ exports.listTrips = async (req, res, options = {}) => {
       return itemWithTimezone;
     });
 
-    const enrichedPastStandaloneHotels = pastStandaloneHotels.map(hotel => {
+    const enrichedPastStandaloneHotels = pastStandaloneHotels.map((hotel) => {
       return hotel.dataValues || hotel;
     });
 
-    const enrichedPastStandaloneCarRentals = pastStandaloneCarRentals.map(carRental => {
+    const enrichedPastStandaloneCarRentals = pastStandaloneCarRentals.map((carRental) => {
       return carRental.dataValues || carRental;
     });
 
-    const enrichedPastStandaloneEvents = pastStandaloneEvents.map(event => {
+    const enrichedPastStandaloneEvents = pastStandaloneEvents.map((event) => {
       return event.dataValues || event;
     });
 
@@ -734,48 +741,60 @@ exports.listTrips = async (req, res, options = {}) => {
     };
 
     // Return JSON for API requests (Svelte frontend), render EJS view for traditional requests
-    const isApiRequest = req.get('Content-Type')?.includes('application/json') ||
-                        req.get('X-Requested-With') === 'XMLHttpRequest' ||
-                        req.accepts('json') === 'json';
+    const isApiRequest =
+      req.get('Content-Type')?.includes('application/json') ||
+      req.get('X-Requested-With') === 'XMLHttpRequest' ||
+      req.accepts('json') === 'json';
 
     logger.info('LIST_TRIPS_RESPONSE', {
       isApiRequest,
       contentType: req.get('Content-Type'),
       xRequestedWith: req.get('X-Requested-With'),
-      accepts: req.accepts()
+      accepts: req.accepts(),
     });
 
     if (isApiRequest) {
       return res.json({
         success: true,
-        data: renderData
+        data: renderData,
       });
     }
 
-    res.render('trips/dashboard', renderData);
+    // Return JSON for all requests (frontend will handle rendering)
+    res.json({
+      success: true,
+      data: renderData,
+    });
   } catch (error) {
     logger.error(error);
-    req.flash('error_msg', 'Error loading trips');
-    res.redirect('/');
+    res.status(500).json({
+      success: false,
+      message: 'Error loading trips',
+    });
   }
 };
 
 exports.getCreateForm = async (req, res) => {
   try {
-    // Render the create trip form partial
-    res.render('partials/trip-create-form', {
-      layout: false, // Don't use main layout, just render the partial
-    });
+    // Return empty success response (frontend will show create form modal)
+    res.json({ success: true });
   } catch (error) {
     logger.error('Error fetching create trip form:', error);
-    res.status(500).send('Error loading trip form');
+    res.status(500).json({ success: false, error: 'Error loading trip form' });
   }
 };
 
 exports.createTrip = async (req, res) => {
   try {
-    const { name, departureDate, returnDate, companions, purpose, defaultCompanionEditPermission, isConfirmed } =
-      req.body;
+    const {
+      name,
+      departureDate,
+      returnDate,
+      companions,
+      purpose,
+      defaultCompanionEditPermission,
+      isConfirmed,
+    } = req.body;
 
     // Create the trip
     const trip = await Trip.create({
@@ -891,12 +910,18 @@ exports.createTrip = async (req, res) => {
       }
     }
 
-    req.flash('success_msg', 'Trip created successfully');
-    res.redirect(`/trips/${trip.id}`);
+    // Return success response with trip data
+    res.json({
+      success: true,
+      message: 'Trip created successfully',
+      trip,
+    });
   } catch (error) {
     logger.error('Error creating trip:', error);
-    req.flash('error_msg', 'Error creating trip');
-    res.redirect('/');
+    res.status(500).json({
+      success: false,
+      message: 'Error creating trip',
+    });
   }
 };
 
@@ -957,8 +982,10 @@ exports.viewTrip = async (req, res) => {
     }
 
     if (!trip) {
-      req.flash('error_msg', 'Trip not found');
-      return res.redirect('/');
+      return res.status(404).json({
+        success: false,
+        message: 'Trip not found',
+      });
     }
 
     // Check if user has permission to view this trip
@@ -966,8 +993,10 @@ exports.viewTrip = async (req, res) => {
     const companionRecord = trip.tripCompanions?.find((tc) => tc.companion.userId === req.user.id);
 
     if (!isOwner && !companionRecord) {
-      req.flash('error_msg', 'You do not have permission to view this trip');
-      return res.redirect('/');
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission to view this trip',
+      });
     }
 
     // Determine if user can edit this trip
@@ -1027,21 +1056,22 @@ exports.viewTrip = async (req, res) => {
       tripStatus = 'completed';
     }
 
-    res.render('trips/trip', {
-      title: trip.name,
+    res.json({
+      success: true,
       trip,
       isOwner,
       canEdit,
       airlines,
-      formatInTimezone,
-      userItemCompanions, // Pass item companions data to view
-      userCompanionId, // Pass user's companion ID for reference
+      userItemCompanions,
+      userCompanionId,
       tripStatus,
     });
   } catch (error) {
     logger.error(error);
-    req.flash('error_msg', 'Error loading trip');
-    res.redirect('/');
+    res.status(500).json({
+      success: false,
+      message: 'Error loading trip',
+    });
   }
 };
 
@@ -1071,22 +1101,27 @@ exports.getEditTrip = async (req, res) => {
     });
 
     if (!trip) {
-      req.flash('error_msg', 'Trip not found');
-      return res.redirect('/');
+      return res.status(404).json({
+        success: false,
+        message: 'Trip not found',
+      });
     }
 
     // Filter out the trip owner from the companions list shown in edit form
     if (trip.tripCompanions) {
-      trip.tripCompanions = trip.tripCompanions.filter(
-        tc => tc.companion.userId !== req.user.id
-      );
+      trip.tripCompanions = trip.tripCompanions.filter((tc) => tc.companion.userId !== req.user.id);
     }
 
-    res.render('trips/edit', { title: 'Edit Trip', trip });
+    res.json({
+      success: true,
+      trip,
+    });
   } catch (error) {
     logger.error(error);
-    req.flash('error_msg', 'Error loading trip');
-    res.redirect('/');
+    res.status(500).json({
+      success: false,
+      message: 'Error loading trip',
+    });
   }
 };
 
@@ -1121,19 +1156,19 @@ exports.getEditTripSidebar = async (req, res) => {
 
     // Filter out the trip owner from the companions list shown in edit form
     if (trip.tripCompanions) {
-      trip.tripCompanions = trip.tripCompanions.filter(
-        tc => tc.companion.userId !== req.user.id
-      );
+      trip.tripCompanions = trip.tripCompanions.filter((tc) => tc.companion.userId !== req.user.id);
     }
 
-    res.render('trips/edit', {
-      title: 'Edit Trip',
+    res.json({
+      success: true,
       trip,
-      layout: false, // Don't use main layout, just render the content
     });
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Error loading trip' });
+    res.status(500).json({
+      success: false,
+      error: 'Error loading trip',
+    });
   }
 };
 
@@ -1155,8 +1190,10 @@ exports.updateTrip = async (req, res) => {
     });
 
     if (!trip) {
-      req.flash('error_msg', 'Trip not found');
-      return res.redirect('/');
+      return res.status(404).json({
+        success: false,
+        message: 'Trip not found',
+      });
     }
 
     // Update trip details
@@ -1328,12 +1365,17 @@ exports.updateTrip = async (req, res) => {
       }
     }
 
-    req.flash('success_msg', 'Trip updated successfully');
-    res.redirect(`/trips/${trip.id}`);
+    res.json({
+      success: true,
+      message: 'Trip updated successfully',
+      trip,
+    });
   } catch (error) {
     logger.error(error);
-    req.flash('error_msg', 'Error updating trip');
-    res.redirect(`/trips/${req.params.id}/edit`);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating trip',
+    });
   }
 };
 
@@ -1344,17 +1386,23 @@ exports.deleteTrip = async (req, res) => {
     });
 
     if (!trip) {
-      req.flash('error_msg', 'Trip not found');
-      return res.redirect('/');
+      return res.status(404).json({
+        success: false,
+        message: 'Trip not found',
+      });
     }
 
     await trip.destroy();
-    req.flash('success_msg', 'Trip deleted successfully');
-    res.redirect('/');
+    res.json({
+      success: true,
+      message: 'Trip deleted successfully',
+    });
   } catch (error) {
     logger.error(error);
-    req.flash('error_msg', 'Error deleting trip');
-    res.redirect('/');
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting trip',
+    });
   }
 };
 
@@ -1372,15 +1420,22 @@ exports.getMapView = async (req, res) => {
     });
 
     if (!trip) {
-      req.flash('error_msg', 'Trip not found');
-      return res.redirect('/');
+      return res.status(404).json({
+        success: false,
+        message: 'Trip not found',
+      });
     }
 
-    res.render('trips/map', { title: `${trip.name} - Map`, trip });
+    res.json({
+      success: true,
+      trip,
+    });
   } catch (error) {
     logger.error(error);
-    req.flash('error_msg', 'Error loading map');
-    res.redirect('/');
+    res.status(500).json({
+      success: false,
+      message: 'Error loading map',
+    });
   }
 };
 
@@ -1611,10 +1666,10 @@ exports.getTripSidebarHtml = async (req, res) => {
       });
     }
 
-    // Render just the sidebar content partial
-    res.render('partials/trip-sidebar-content', {
+    // Return JSON response with sidebar data
+    res.json({
+      success: true,
       trip,
-      formatInTimezone,
       isOwner,
       userItemCompanions,
       userCompanionId,
@@ -1623,7 +1678,10 @@ exports.getTripSidebarHtml = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error fetching sidebar HTML:', error);
-    res.status(500).send('<p class="text-red-600">Error loading sidebar</p>');
+    res.status(500).json({
+      success: false,
+      error: 'Error loading sidebar',
+    });
   }
 };
 
@@ -1639,7 +1697,7 @@ exports.getDashboardApiData = async (req, res) => {
       where: {
         [Op.or]: [
           { userId: req.user.id }, // Trips user owns
-        ]
+        ],
       },
       attributes: ['id', 'returnDate'],
     });
@@ -1675,21 +1733,21 @@ exports.getDashboardApiData = async (req, res) => {
     if (activeTab === 'upcoming') {
       // Only upcoming trips
       tripIds = uniqueTrips
-        .filter(trip => {
+        .filter((trip) => {
           const returnDate = new Date(trip.returnDate);
           returnDate.setHours(23, 59, 59, 999);
           return returnDate >= today;
         })
-        .map(t => t.id);
+        .map((t) => t.id);
     } else if (activeTab === 'past') {
       // Only past trips
       tripIds = uniqueTrips
-        .filter(trip => {
+        .filter((trip) => {
           const returnDate = new Date(trip.returnDate);
           returnDate.setHours(23, 59, 59, 999);
           return returnDate < today;
         })
-        .map(t => t.id);
+        .map((t) => t.id);
     }
 
     // Fetch items based on active tab
@@ -1705,7 +1763,7 @@ exports.getDashboardApiData = async (req, res) => {
         where: { userId: req.user.id, tripId: null },
         order: [['departureDateTime', 'ASC']],
       });
-      flights = upcomingStandaloneFlights.filter(f => {
+      flights = upcomingStandaloneFlights.filter((f) => {
         const arrivalDate = new Date(f.arrivalDateTime || f.departureDateTime);
         return arrivalDate >= today;
       });
@@ -1722,7 +1780,7 @@ exports.getDashboardApiData = async (req, res) => {
         where: { userId: req.user.id, tripId: null },
         order: [['checkInDateTime', 'ASC']],
       });
-      hotels = upcomingHotels.filter(h => {
+      hotels = upcomingHotels.filter((h) => {
         const checkoutDate = new Date(h.checkOutDateTime);
         return checkoutDate >= today;
       });
@@ -1736,7 +1794,7 @@ exports.getDashboardApiData = async (req, res) => {
         where: { userId: req.user.id, tripId: null },
         order: [['departureDateTime', 'ASC']],
       });
-      transportation = upcomingTransportation.filter(t => {
+      transportation = upcomingTransportation.filter((t) => {
         const arrivalDate = new Date(t.arrivalDateTime || t.departureDateTime);
         return arrivalDate >= today;
       });
@@ -1750,7 +1808,7 @@ exports.getDashboardApiData = async (req, res) => {
         where: { userId: req.user.id, tripId: null },
         order: [['pickupDateTime', 'ASC']],
       });
-      carRentals = upcomingCarRentals.filter(c => {
+      carRentals = upcomingCarRentals.filter((c) => {
         const dropoffDate = new Date(c.dropoffDateTime);
         return dropoffDate >= today;
       });
@@ -1764,7 +1822,7 @@ exports.getDashboardApiData = async (req, res) => {
         where: { userId: req.user.id, tripId: null },
         order: [['startDateTime', 'ASC']],
       });
-      events = upcomingEvents.filter(e => {
+      events = upcomingEvents.filter((e) => {
         const endDate = new Date(e.endDateTime || e.startDateTime);
         return endDate >= today;
       });
@@ -1779,7 +1837,7 @@ exports.getDashboardApiData = async (req, res) => {
         where: { userId: req.user.id, tripId: null },
         order: [['departureDateTime', 'DESC']],
       });
-      flights = pastStandaloneFlights.filter(f => {
+      flights = pastStandaloneFlights.filter((f) => {
         const arrivalDate = new Date(f.arrivalDateTime || f.departureDateTime);
         return arrivalDate < today;
       });
@@ -1796,7 +1854,7 @@ exports.getDashboardApiData = async (req, res) => {
         where: { userId: req.user.id, tripId: null },
         order: [['checkInDateTime', 'DESC']],
       });
-      hotels = pastHotels.filter(h => {
+      hotels = pastHotels.filter((h) => {
         const checkoutDate = new Date(h.checkOutDateTime);
         return checkoutDate < today;
       });
@@ -1810,7 +1868,7 @@ exports.getDashboardApiData = async (req, res) => {
         where: { userId: req.user.id, tripId: null },
         order: [['departureDateTime', 'DESC']],
       });
-      transportation = pastTransportation.filter(t => {
+      transportation = pastTransportation.filter((t) => {
         const arrivalDate = new Date(t.arrivalDateTime || t.departureDateTime);
         return arrivalDate < today;
       });
@@ -1824,7 +1882,7 @@ exports.getDashboardApiData = async (req, res) => {
         where: { userId: req.user.id, tripId: null },
         order: [['pickupDateTime', 'DESC']],
       });
-      carRentals = pastCarRentals.filter(c => {
+      carRentals = pastCarRentals.filter((c) => {
         const dropoffDate = new Date(c.dropoffDateTime);
         return dropoffDate < today;
       });
@@ -1838,7 +1896,7 @@ exports.getDashboardApiData = async (req, res) => {
         where: { userId: req.user.id, tripId: null },
         order: [['startDateTime', 'DESC']],
       });
-      events = pastEvents.filter(e => {
+      events = pastEvents.filter((e) => {
         const endDate = new Date(e.endDateTime || e.startDateTime);
         return endDate < today;
       });

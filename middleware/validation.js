@@ -3,28 +3,14 @@ const { body, validationResult } = require('express-validator');
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    const isJsonRequest = req.get('content-type')?.includes('application/json');
-
-    if (isJsonRequest) {
-      // Return JSON error response for API requests
-      return res.status(400).json({
-        success: false,
-        message: errors
-          .array()
-          .map((e) => e.msg)
-          .join(', ')
-      });
-    }
-
-    // Redirect for form submissions
-    req.flash(
-      'error_msg',
-      errors
+    // Always return JSON for API requests
+    return res.status(400).json({
+      success: false,
+      message: errors
         .array()
         .map((e) => e.msg)
-        .join(', ')
-    );
-    return res.redirect('back');
+        .join(', '),
+    });
   }
   next();
 };

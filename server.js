@@ -3,14 +3,12 @@ const express = require('express');
 const session = require('express-session');
 const RedisStore = require('connect-redis').default;
 const passport = require('passport');
-const flash = require('connect-flash');
 const methodOverride = require('method-override');
 const compression = require('compression');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const db = require('./models');
-const dateFormatter = require('./utils/dateFormatter');
 const logger = require('./utils/logger');
 const redis = require('./utils/redis');
 const { MS_PER_DAY } = require('./utils/constants');
@@ -27,10 +25,6 @@ if (missingVars.length > 0) {
 }
 
 const app = express();
-
-// View engine setup
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
 
 // Trust proxy - required for rate limiting behind reverse proxy/load balancer
 // This allows Express to trust X-Forwarded-* headers
@@ -112,9 +106,6 @@ require('./config/passport')(passport);
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Flash messages
-app.use(flash());
-
 // Request logging middleware (Phase 3)
 const requestLogger = require('./middleware/requestLogger');
 
@@ -151,54 +142,6 @@ try {
 function getBundle(name) {
   return bundleManifest[name] || `/js/entries/${name}.js`;
 }
-
-// Global variables and utility functions
-app.use((req, res, next) => {
-  res.locals.success_msg = req.flash('success_msg');
-  res.locals.error_msg = req.flash('error_msg');
-  res.locals.error = req.flash('error');
-  res.locals.user = req.user || null;
-
-  // Asset version for cache-busting
-  res.locals.assetVersion = ASSET_VERSION;
-
-  // Bundle paths for templates
-  res.locals.getBundle = getBundle;
-
-  // Map configuration
-  res.locals.mapTileUrl =
-    process.env.MAP_TILE_URL ||
-    'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}';
-
-  // Make date formatting utilities available to all EJS templates
-  res.locals.formatDate = dateFormatter.formatDate;
-  res.locals.formatTime = dateFormatter.formatTime;
-  res.locals.formatDateTime = dateFormatter.formatDateTime;
-  res.locals.formatInTimezone = dateFormatter.formatInTimezone;
-  res.locals.getAirportCode = dateFormatter.getAirportCode;
-  res.locals.getFlightNum = dateFormatter.getFlightNum;
-  res.locals.getCityName = dateFormatter.getCityName;
-  res.locals.calculateLayoverDuration = dateFormatter.calculateLayoverDuration;
-  res.locals.formatLayoverDisplay = dateFormatter.formatLayoverDisplay;
-  res.locals.calculateLayover = dateFormatter.calculateLayover;
-  res.locals.getLayoverText = dateFormatter.getLayoverText;
-
-  // Make item color utilities available to all EJS templates
-  const {
-    getItemHexColor,
-    getItemColorStyle,
-    getActionColor,
-    getApproveColor,
-    getDeclineColor,
-  } = require('./config/itemColors');
-  res.locals.getItemHexColor = getItemHexColor;
-  res.locals.getItemColorStyle = getItemColorStyle;
-  res.locals.getActionColor = getActionColor;
-  res.locals.getApproveColor = getApproveColor;
-  res.locals.getDeclineColor = getDeclineColor;
-
-  next();
-});
 
 // Sidebar content middleware
 const { setSidebarFlag } = require('./middleware/sidebarContent');
@@ -312,7 +255,7 @@ app.use(async (req, res, next) => {
   if (svelteKitHandler === null && svelteKitLoadError === null) {
     try {
       // eslint-disable-next-line import/no-unresolved, import/extensions
-      const svelteKitModule = await import('./frontend/build/handler.js');
+      const svelteKitModule = await import('bluebonnet-svelte/build/handler.js');
       svelteKitHandler = svelteKitModule.handler;
       logger.info('SvelteKit frontend handler loaded successfully on first request');
     } catch (error) {

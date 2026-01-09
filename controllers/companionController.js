@@ -11,10 +11,7 @@ exports.listCompanions = async (req, res) => {
         createdBy: req.user.id,
         // Exclude account owner's companion profile (where userId equals current user)
         // Must explicitly handle NULL since SQL NULL != value evaluates to NULL (not true)
-        [Op.or]: [
-          { userId: { [Op.is]: null } },
-          { userId: { [Op.ne]: req.user.id } }
-        ]
+        [Op.or]: [{ userId: { [Op.is]: null } }, { userId: { [Op.ne]: req.user.id } }],
       },
       include: [
         {
@@ -52,10 +49,7 @@ exports.listCompanionsSidebar = async (req, res) => {
         createdBy: req.user.id,
         // Exclude account owner's companion profile (where userId equals current user)
         // Must explicitly handle NULL since SQL NULL != value evaluates to NULL (not true)
-        [Op.or]: [
-          { userId: { [Op.is]: null } },
-          { userId: { [Op.ne]: req.user.id } }
-        ]
+        [Op.or]: [{ userId: { [Op.is]: null } }, { userId: { [Op.ne]: req.user.id } }],
       },
       include: [
         {
@@ -67,10 +61,7 @@ exports.listCompanionsSidebar = async (req, res) => {
       order: [['name', 'ASC']],
     });
 
-    res.render('partials/companions-list', {
-      companions,
-      layout: false, // Don't use main layout, just render the partial
-    });
+    res.json({ success: true, companions });
   } catch (error) {
     logger.error(error);
     res
@@ -89,10 +80,7 @@ exports.getCompanionsJson = async (req, res) => {
         createdBy: req.user.id,
         // Exclude account owner's companion profile (where userId equals current user)
         // Must explicitly handle NULL since SQL NULL != value evaluates to NULL (not true)
-        [Op.or]: [
-          { userId: { [Op.is]: null } },
-          { userId: { [Op.ne]: req.user.id } }
-        ]
+        [Op.or]: [{ userId: { [Op.is]: null } }, { userId: { [Op.ne]: req.user.id } }],
       },
       include: [
         {
@@ -131,10 +119,7 @@ exports.getAllCompanions = async (req, res) => {
     const companionsCreated = await TravelCompanion.findAll({
       where: {
         createdBy: userId,
-        [Op.or]: [
-          { userId: { [Op.is]: null } },
-          { userId: { [Op.ne]: userId } }
-        ]
+        [Op.or]: [{ userId: { [Op.is]: null } }, { userId: { [Op.ne]: userId } }],
       },
       include: [
         {
@@ -149,8 +134,8 @@ exports.getAllCompanions = async (req, res) => {
     // Get companion profiles (where user was added by others)
     const companionProfiles = await TravelCompanion.findAll({
       where: {
-        userId: userId,
-        createdBy: { [Op.ne]: userId }
+        userId,
+        createdBy: { [Op.ne]: userId },
       },
       include: [
         {
@@ -187,7 +172,8 @@ exports.getAllCompanions = async (req, res) => {
         // Bidirectional relationship
         companionMap.get(key).theyInvited = true;
         companionMap.get(key).theyInvitedId = profile.id;
-        companionMap.get(key).canBeAddedByOthers = companionMap.get(key).canBeAddedByOthers || profile.canBeAddedByOthers;
+        companionMap.get(key).canBeAddedByOthers =
+          companionMap.get(key).canBeAddedByOthers || profile.canBeAddedByOthers;
       } else {
         // They invited you, but you didn't create a companion for them
         companionMap.set(key, {
@@ -235,23 +221,24 @@ exports.createCompanion = async (req, res) => {
         .array()
         .map((e) => e.msg)
         .join(', ');
-      const isAjax = req.get('X-Sidebar-Request') === 'true' ||
-                     req.xhr ||
-                     req.get('Content-Type')?.includes('application/json');
+      const isAjax =
+        req.get('X-Sidebar-Request') === 'true' ||
+        req.xhr ||
+        req.get('Content-Type')?.includes('application/json');
 
       if (isAjax) {
         return res.status(400).json({ success: false, error: errorMsg });
       }
-      req.flash('error_msg', errorMsg);
-      return res.redirect('/companions/create');
+      return res.status(400).json({ success: false, error: errorMsg });
     }
 
     let { firstName, lastName, name, email, phone, canBeAddedByOthers, canEdit } = req.body;
     // Check if this is an API request: X-Sidebar-Request header, xhr flag, JSON content-type, or X-Requested-With
-    const isAjax = req.get('X-Sidebar-Request') === 'true' ||
-                   req.xhr ||
-                   req.get('X-Requested-With') === 'XMLHttpRequest' ||
-                   req.get('Content-Type')?.includes('application/json');
+    const isAjax =
+      req.get('X-Sidebar-Request') === 'true' ||
+      req.xhr ||
+      req.get('X-Requested-With') === 'XMLHttpRequest' ||
+      req.get('Content-Type')?.includes('application/json');
     const emailLower = email.toLowerCase();
 
     // Convert string boolean to actual boolean
@@ -266,7 +253,7 @@ exports.createCompanion = async (req, res) => {
       isAjax,
       firstName,
       lastName,
-      email: emailLower
+      email: emailLower,
     });
 
     // Check if companion with this email already exists (globally unique)
@@ -281,8 +268,7 @@ exports.createCompanion = async (req, res) => {
       if (isAjax) {
         return res.status(400).json({ success: false, error: errorMsg });
       }
-      req.flash('error_msg', errorMsg);
-      return res.redirect('/companions/create');
+      return res.status(400).json({ success: false, error: errorMsg });
     }
 
     // Check if there's already a user account with this email to auto-link
@@ -299,7 +285,8 @@ exports.createCompanion = async (req, res) => {
     } else if (name) {
       companionName = name;
     } else {
-      companionName = email.split('@')[0];
+      const [emailName] = email.split('@');
+      companionName = emailName;
     }
 
     const canAddByOthers = canBeAddedByOthers !== undefined ? !!canBeAddedByOthers : !!canEdit;
@@ -331,27 +318,26 @@ exports.createCompanion = async (req, res) => {
           email: companion.email,
           phone: companion.phone,
           canEdit: companion.canBeAddedByOthers,
-          addedAt: companion.createdAt
-        }
+          addedAt: companion.createdAt,
+        },
       });
     }
 
-    req.flash('success_msg', successMsg);
-    res.redirect('/companions');
+    res.json({ success: true, message: successMsg });
   } catch (error) {
     logger.error('COMPANION_CREATE_ERROR', { error: error.message, stack: error.stack });
     const errorMsg = 'Error adding travel companion';
-    const isAjax = req.get('X-Sidebar-Request') === 'true' ||
-                   req.xhr ||
-                   req.get('Content-Type')?.includes('application/json');
+    const isAjax =
+      req.get('X-Sidebar-Request') === 'true' ||
+      req.xhr ||
+      req.get('Content-Type')?.includes('application/json');
 
     logger.info('COMPANION_CREATE_ERROR_RESPONSE', { isAjax, errorMsg });
 
     if (isAjax) {
       return res.status(500).json({ success: false, error: errorMsg });
     }
-    req.flash('error_msg', errorMsg);
-    res.redirect('/companions/create');
+    res.status(500).json({ success: false, error: errorMsg });
   }
 };
 
@@ -374,8 +360,7 @@ exports.updateCompanionPermissions = async (req, res) => {
       if (isAjax) {
         return res.status(404).json({ success: false, error: errorMsg });
       }
-      req.flash('error_msg', errorMsg);
-      return res.redirect('/companions');
+      return res.status(404).json({ success: false, error: errorMsg });
     }
 
     await companion.update({
@@ -387,24 +372,26 @@ exports.updateCompanionPermissions = async (req, res) => {
       return res.json({ success: true, message: successMsg });
     }
 
-    req.flash('success_msg', successMsg);
-    res.redirect('/companions');
+    res.json({ success: true, message: successMsg });
   } catch (error) {
     logger.error(error);
     const errorMsg = 'Error updating companion permissions';
     if (req.get('X-Sidebar-Request') === 'true' || req.xhr) {
       return res.status(500).json({ success: false, error: errorMsg });
     }
-    req.flash('error_msg', errorMsg);
-    res.redirect('/companions');
+    res.status(500).json({ success: false, error: errorMsg });
   }
 };
 
 // API endpoint for autocomplete search
 exports.searchCompanions = async (req, res) => {
-  logger.info('COMPANION_SEARCH_ENDPOINT_HIT', { path: req.path, url: req.originalUrl, method: req.method });
+  logger.info('COMPANION_SEARCH_ENDPOINT_HIT', {
+    path: req.path,
+    url: req.originalUrl,
+    method: req.method,
+  });
+  const { q = '' } = req.query;
   try {
-    const { q } = req.query;
     const userId = req.user.id;
 
     logger.info('COMPANION_SEARCH_START', { query: q, userId, queryLength: q ? q.length : 0 });
@@ -428,17 +415,11 @@ exports.searchCompanions = async (req, res) => {
           },
           // Search filter: name or email matches
           {
-            [Op.or]: [
-              { name: { [Op.iLike]: `%${q}%` } },
-              { email: { [Op.iLike]: `%${q}%` } },
-            ],
+            [Op.or]: [{ name: { [Op.iLike]: `%${q}%` } }, { email: { [Op.iLike]: `%${q}%` } }],
           },
           // Exclude account owner's companion profile
           {
-            [Op.or]: [
-              { userId: { [Op.is]: null } },
-              { userId: { [Op.ne]: userId } },
-            ],
+            [Op.or]: [{ userId: { [Op.is]: null } }, { userId: { [Op.ne]: userId } }],
           },
         ],
       },
@@ -454,7 +435,11 @@ exports.searchCompanions = async (req, res) => {
       order: [['name', 'ASC']],
     });
 
-    logger.info('COMPANION_SEARCH_QUERY_EXECUTED', { query: q, userId, companionsFound: companions.length });
+    logger.info('COMPANION_SEARCH_QUERY_EXECUTED', {
+      query: q,
+      userId,
+      companionsFound: companions.length,
+    });
 
     // Deduplicate by email - since email is now globally unique, we should only return one entry per email
     // Prioritize: user-created companions first, then others marked as addable
@@ -481,7 +466,11 @@ exports.searchCompanions = async (req, res) => {
         : null,
     }));
 
-    logger.info('COMPANION_SEARCH_RESPONSE', { query: q, resultsCount: results.length, deduplicatedCount: companions.length });
+    logger.info('COMPANION_SEARCH_RESPONSE', {
+      query: q,
+      resultsCount: results.length,
+      deduplicatedCount: companions.length,
+    });
     res.json(results);
   } catch (error) {
     logger.error('COMPANION_SEARCH_ERROR', { query: q, error: error.message, stack: error.stack });
@@ -498,10 +487,7 @@ exports.getEditCompanion = async (req, res) => {
         createdBy: req.user.id,
         // Prevent editing own companion profile (where userId equals current user)
         // Must explicitly handle NULL since SQL NULL != value evaluates to NULL (not true)
-        [Op.or]: [
-          { userId: { [Op.is]: null } },
-          { userId: { [Op.ne]: req.user.id } }
-        ]
+        [Op.or]: [{ userId: { [Op.is]: null } }, { userId: { [Op.ne]: req.user.id } }],
       },
       include: [
         {
@@ -525,7 +511,7 @@ exports.getEditCompanion = async (req, res) => {
         phone: companion.phone,
         canEdit: companion.canBeAddedByOthers,
         linkedAccount: companion.linkedAccount,
-      }
+      },
     });
   } catch (error) {
     logger.error(error);
@@ -542,10 +528,7 @@ exports.getEditCompanionSidebar = async (req, res) => {
         createdBy: req.user.id,
         // Prevent editing own companion profile (where userId equals current user)
         // Must explicitly handle NULL since SQL NULL != value evaluates to NULL (not true)
-        [Op.or]: [
-          { userId: { [Op.is]: null } },
-          { userId: { [Op.ne]: req.user.id } }
-        ]
+        [Op.or]: [{ userId: { [Op.is]: null } }, { userId: { [Op.ne]: req.user.id } }],
       },
       include: [
         {
@@ -569,7 +552,7 @@ exports.getEditCompanionSidebar = async (req, res) => {
         phone: companion.phone,
         canEdit: companion.canBeAddedByOthers,
         linkedAccount: companion.linkedAccount,
-      }
+      },
     });
   } catch (error) {
     logger.error(error);
@@ -587,23 +570,24 @@ exports.updateCompanion = async (req, res) => {
         .array()
         .map((e) => e.msg)
         .join(', ');
-      const isAjax = req.get('X-Sidebar-Request') === 'true' ||
-                     req.xhr ||
-                     req.get('Content-Type')?.includes('application/json');
+      const isAjax =
+        req.get('X-Sidebar-Request') === 'true' ||
+        req.xhr ||
+        req.get('Content-Type')?.includes('application/json');
 
       if (isAjax) {
         return res.status(400).json({ success: false, error: errorMsg });
       }
-      req.flash('error_msg', errorMsg);
-      return res.redirect(`/companions/${req.params.id}/edit`);
+      return res.status(400).json({ success: false, error: errorMsg });
     }
 
     let { firstName, lastName, name, email, phone, canBeAddedByOthers } = req.body;
     const companionId = req.params.id;
-    const isAjax = req.get('X-Sidebar-Request') === 'true' ||
-                   req.xhr ||
-                   req.get('X-Requested-With') === 'XMLHttpRequest' ||
-                   req.get('Content-Type')?.includes('application/json');
+    const isAjax =
+      req.get('X-Sidebar-Request') === 'true' ||
+      req.xhr ||
+      req.get('X-Requested-With') === 'XMLHttpRequest' ||
+      req.get('Content-Type')?.includes('application/json');
 
     // Convert string boolean to actual boolean
     if (typeof canBeAddedByOthers === 'string') {
@@ -616,10 +600,7 @@ exports.updateCompanion = async (req, res) => {
         createdBy: req.user.id,
         // Prevent editing own companion profile (where userId equals current user)
         // Must explicitly handle NULL since SQL NULL != value evaluates to NULL (not true)
-        [Op.or]: [
-          { userId: { [Op.is]: null } },
-          { userId: { [Op.ne]: req.user.id } }
-        ]
+        [Op.or]: [{ userId: { [Op.is]: null } }, { userId: { [Op.ne]: req.user.id } }],
       },
     });
 
@@ -628,8 +609,7 @@ exports.updateCompanion = async (req, res) => {
       if (isAjax) {
         return res.status(404).json({ success: false, error: errorMsg });
       }
-      req.flash('error_msg', errorMsg);
-      return res.redirect('/companions');
+      return res.status(404).json({ success: false, error: errorMsg });
     }
 
     // Check if email is being changed and if it conflicts (globally unique)
@@ -646,8 +626,7 @@ exports.updateCompanion = async (req, res) => {
         if (isAjax) {
           return res.status(400).json({ success: false, error: errorMsg });
         }
-        req.flash('error_msg', errorMsg);
-        return res.redirect(`/companions/${companionId}/edit`);
+        return res.status(400).json({ success: false, error: errorMsg });
       }
 
       // Check if there's a user account to link to
@@ -664,7 +643,8 @@ exports.updateCompanion = async (req, res) => {
       } else if (name) {
         companionName = name;
       } else {
-        companionName = email.split('@')[0];
+        const [emailName] = email.split('@');
+        companionName = emailName;
       }
 
       await companion.update({
@@ -711,21 +691,19 @@ exports.updateCompanion = async (req, res) => {
           email: companion.email,
           phone: companion.phone,
           canEdit: companion.canBeAddedByOthers,
-          updatedAt: companion.updatedAt
-        }
+          updatedAt: companion.updatedAt,
+        },
       });
     }
 
-    req.flash('success_msg', successMsg);
-    res.redirect('/companions');
+    res.json({ success: true, message: successMsg });
   } catch (error) {
     logger.error(error);
     const errorMsg = 'Error updating companion';
     if (req.get('X-Sidebar-Request') === 'true' || req.xhr) {
       return res.status(500).json({ success: false, error: errorMsg });
     }
-    req.flash('error_msg', errorMsg);
-    res.redirect(`/companions/${req.params.id}/edit`);
+    res.status(500).json({ success: false, error: errorMsg });
   }
 };
 
@@ -740,10 +718,7 @@ exports.deleteCompanion = async (req, res) => {
         createdBy: req.user.id,
         // Prevent deleting own companion profile (where userId equals current user)
         // Must explicitly handle NULL since SQL NULL != value evaluates to NULL (not true)
-        [Op.or]: [
-          { userId: { [Op.is]: null } },
-          { userId: { [Op.ne]: req.user.id } }
-        ]
+        [Op.or]: [{ userId: { [Op.is]: null } }, { userId: { [Op.ne]: req.user.id } }],
       },
     });
 
@@ -752,8 +727,7 @@ exports.deleteCompanion = async (req, res) => {
       if (isAjax) {
         return res.status(404).json({ success: false, error: errorMsg });
       }
-      req.flash('error_msg', errorMsg);
-      return res.redirect('/companions');
+      return res.status(404).json({ success: false, error: errorMsg });
     }
 
     await companion.destroy();
@@ -763,16 +737,14 @@ exports.deleteCompanion = async (req, res) => {
       return res.json({ success: true, message: successMsg });
     }
 
-    req.flash('success_msg', successMsg);
-    res.redirect('/companions');
+    res.json({ success: true, message: successMsg });
   } catch (error) {
     logger.error(error);
     const errorMsg = 'Error deleting companion';
     if (req.get('X-Sidebar-Request') === 'true' || req.xhr) {
       return res.status(500).json({ success: false, error: errorMsg });
     }
-    req.flash('error_msg', errorMsg);
-    res.redirect('/companions');
+    res.status(500).json({ success: false, error: errorMsg });
   }
 };
 
@@ -793,8 +765,7 @@ exports.unlinkCompanion = async (req, res) => {
       if (isAjax) {
         return res.status(404).json({ success: false, error: errorMsg });
       }
-      req.flash('error_msg', errorMsg);
-      return res.redirect('/companions');
+      return res.status(404).json({ success: false, error: errorMsg });
     }
 
     await companion.update({ userId: null });
@@ -804,15 +775,13 @@ exports.unlinkCompanion = async (req, res) => {
       return res.json({ success: true, message: successMsg });
     }
 
-    req.flash('success_msg', successMsg);
-    res.redirect('/companions');
+    res.json({ success: true, message: successMsg });
   } catch (error) {
     logger.error(error);
     const errorMsg = 'Error unlinking companion';
     if (req.get('X-Sidebar-Request') === 'true' || req.xhr) {
       return res.status(500).json({ success: false, error: errorMsg });
     }
-    req.flash('error_msg', errorMsg);
-    res.redirect('/companions');
+    res.status(500).json({ success: false, error: errorMsg });
   }
 };
