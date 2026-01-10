@@ -21,6 +21,7 @@
     "db:seed": "sequelize-cli db:seed:all",
     "db:sync": "node scripts/sync-database.js",
     "db:seed-airports": "node scripts/seed-airports.js",
+    "db:verify-migration": "node scripts/verify-migration.js",
     "cache:clear": "node scripts/clear-cache.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
