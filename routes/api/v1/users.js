@@ -2,7 +2,15 @@ const express = require('express');
 
 const router = express.Router();
 const userController = require('../../../controllers/userController');
-const { requireAdmin } = require('../../../middleware/auth');
+const { requireAdmin, ensureAuthenticated } = require('../../../middleware/auth');
+
+/**
+ * GET /api/v1/users/search
+ * Search users by email (requires authentication)
+ * Query params: email=<email>
+ * Returns users matching the email
+ */
+router.get('/search', ensureAuthenticated, userController.searchUsersByEmail);
 
 /**
  * GET /api/v1/users

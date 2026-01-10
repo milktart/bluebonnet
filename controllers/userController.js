@@ -189,3 +189,41 @@ exports.getUserById = async (req, res) => {
     res.status(500).json({ success: false, message: 'Error fetching user' });
   }
 };
+
+/**
+ * Search users by email (requires authentication)
+ * Returns users matching the email (case-insensitive partial match)
+ * Excludes soft-deleted accounts
+ */
+exports.searchUsersByEmail = async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    if (!email || typeof email !== 'string' || email.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email search parameter is required',
+      });
+    }
+
+    const searchTerm = email.toLowerCase().trim();
+
+    // Search for users matching the email
+    const users = await User.findAll({
+      where: {
+        isActive: true,
+        email: {
+          [require('sequelize').Op.iLike]: `%${searchTerm}%`,
+        },
+      },
+      attributes: ['id', 'email', 'firstName', 'lastName'],
+      limit: 10,
+      order: [['email', 'ASC']],
+    });
+
+    res.json({ success: true, users });
+  } catch (error) {
+    logger.error('Error searching users:', error);
+    res.status(500).json({ success: false, message: 'Error searching users' });
+  }
+};

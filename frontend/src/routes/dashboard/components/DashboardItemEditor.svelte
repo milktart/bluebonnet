@@ -7,6 +7,7 @@
   import SettingsSecurity from '$lib/components/SettingsSecurity.svelte';
   import SettingsVouchers from '$lib/components/SettingsVouchers.svelte';
   import SettingsCompanions from '$lib/components/SettingsCompanions.svelte';
+  import SettingsTrustedCompanions from '$lib/components/SettingsTrustedCompanions.svelte';
   import SettingsBackup from '$lib/components/SettingsBackup.svelte';
   import SettingsUsers from '$lib/components/SettingsUsers.svelte';
   import SettingsAirports from '$lib/components/SettingsAirports.svelte';
@@ -58,6 +59,7 @@
       type === 'calendar' ||
       type === 'settings-vouchers' ||
       type === 'settings-companions' ||
+      type === 'settings-trusted-companions' ||
       type === 'settings-backup' ||
       type === 'settings-users' ||
       type === 'settings-airports'
@@ -140,6 +142,16 @@
         </div>
       </div>
       <SettingsCompanions />
+    </div>
+  {:else if secondarySidebarContent?.type === 'settings-trusted-companions'}
+    <div class="calendar-sidebar-container">
+      <div class="calendar-sidebar-header">
+        <h2>Trusted Companions</h2>
+        <button class="close-btn" on:click={closeSecondarySidebar} title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <SettingsTrustedCompanions />
     </div>
   {:else if secondarySidebarContent?.type === 'settings-backup'}
     <div class="calendar-sidebar-container">

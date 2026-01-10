@@ -502,5 +502,108 @@ export const settingsApi = {
     }
 
     return response.json();
+  },
+
+  /**
+   * Get all full-access permissions granted to others
+   */
+  async getGrantedPermissions(): Promise<any> {
+    const base = getApiBase();
+    const response = await fetch(`${base}/api/v1/user/companion-permissions`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch granted permissions: ${response.statusText}`);
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Get all full-access permissions received from others
+   */
+  async getReceivedPermissions(): Promise<any> {
+    const base = getApiBase();
+    const response = await fetch(`${base}/api/v1/user/companion-permissions/received`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch received permissions: ${response.statusText}`);
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Grant full-access permission to another user
+   */
+  async grantPermission(data: {
+    trustedUserId: string;
+    canManageAllTrips?: boolean;
+    canViewAllTrips?: boolean;
+  }): Promise<any> {
+    const base = getApiBase();
+    const response = await fetch(`${base}/api/v1/user/companion-permissions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || `Failed to grant permission: ${response.statusText}`);
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Update permission level for a user
+   */
+  async updatePermission(trustedUserId: string, data: {
+    canManageAllTrips?: boolean;
+    canViewAllTrips?: boolean;
+  }): Promise<any> {
+    const base = getApiBase();
+    const response = await fetch(`${base}/api/v1/user/companion-permissions/${trustedUserId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || `Failed to update permission: ${response.statusText}`);
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Revoke full-access permission for a user
+   */
+  async revokePermission(trustedUserId: string): Promise<any> {
+    const base = getApiBase();
+    const response = await fetch(`${base}/api/v1/user/companion-permissions/${trustedUserId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || `Failed to revoke permission: ${response.statusText}`);
+    }
+
+    return response.json();
   }
 };
