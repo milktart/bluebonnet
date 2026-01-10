@@ -414,6 +414,30 @@ export const itemCompanionsApi = {
 };
 
 /**
+ * Item Trips API (Multi-trip item association)
+ */
+export const itemTripApi = {
+  getItemTrips: (itemType: string, itemId: string) =>
+    apiCall(`/v1/items/${itemType}/${itemId}/trips`),
+
+  setItemTrips: (itemType: string, itemId: string, tripIds: string[]) =>
+    apiCall(`/v1/items/${itemType}/${itemId}/trips`, {
+      method: 'PUT',
+      body: JSON.stringify({ tripIds }),
+    }),
+
+  addItemToTrip: (itemType: string, itemId: string, tripId: string) =>
+    apiCall(`/v1/items/${itemType}/${itemId}/trips/${tripId}`, {
+      method: 'POST',
+    }),
+
+  removeItemFromTrip: (itemType: string, itemId: string, tripId: string) =>
+    apiCall(`/v1/items/${itemType}/${itemId}/trips/${tripId}`, {
+      method: 'DELETE',
+    }),
+};
+
+/**
  * Vouchers API
  */
 export const vouchersApi = {
