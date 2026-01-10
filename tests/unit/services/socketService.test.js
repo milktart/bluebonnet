@@ -1,5 +1,5 @@
-const socketService = require('../../../services/socketService');
 const { Server } = require('socket.io');
+const socketService = require('../../../services/socketService');
 
 // Mock Socket.IO
 jest.mock('socket.io');
@@ -43,11 +43,14 @@ describe('SocketService', () => {
 
       socketService.initialize(mockServer, sessionMiddleware);
 
-      expect(Server).toHaveBeenCalledWith(mockServer, expect.objectContaining({
-        cors: expect.any(Object),
-        pingTimeout: expect.any(Number),
-        pingInterval: expect.any(Number),
-      }));
+      expect(Server).toHaveBeenCalledWith(
+        mockServer,
+        expect.objectContaining({
+          cors: expect.any(Object),
+          pingTimeout: expect.any(Number),
+          pingInterval: expect.any(Number),
+        })
+      );
     });
 
     it('should set up session middleware', () => {

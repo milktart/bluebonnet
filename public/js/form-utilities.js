@@ -17,7 +17,7 @@ function initializeDateSync(startFieldSelector, endFieldSelector) {
 
   if (!startDateInput || !endDateInput) return;
 
-  startDateInput.addEventListener('change', function() {
+  startDateInput.addEventListener('change', function () {
     const startDate = this.value;
     const endDate = endDateInput.value;
 
@@ -72,7 +72,7 @@ function initializeTimezoneInference(locationFieldId, timezoneFieldId) {
 
   // Debounce blur events to avoid too many API calls
   let timeoutId;
-  locationInput.addEventListener('blur', function() {
+  locationInput.addEventListener('blur', function () {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => {
       inferAndUpdateTimezone(this.value);
@@ -127,7 +127,7 @@ function initializeOriginDestTimezoneInference(
   }
 
   let originTimeoutId;
-  originInput.addEventListener('blur', function() {
+  originInput.addEventListener('blur', function () {
     clearTimeout(originTimeoutId);
     originTimeoutId = setTimeout(() => {
       inferAndUpdateOriginTimezone(this.value);
@@ -162,7 +162,7 @@ function initializeOriginDestTimezoneInference(
   }
 
   let destTimeoutId;
-  destinationInput.addEventListener('blur', function() {
+  destinationInput.addEventListener('blur', function () {
     clearTimeout(destTimeoutId);
     destTimeoutId = setTimeout(() => {
       inferAndUpdateDestTimezone(this.value);
@@ -183,7 +183,7 @@ function ensureTimezoneBeforeSubmit(timezoneFieldId, formId) {
 
   if (!form || !timezoneField) return;
 
-  form.addEventListener('submit', function(e) {
+  form.addEventListener('submit', function (e) {
     // If timezone is still empty, set it to UTC as fallback
     if (!timezoneField.value || timezoneField.value.trim() === '') {
       timezoneField.value = 'UTC';
@@ -214,10 +214,11 @@ function displayValidationErrors(response, containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  let errorHTML = '<div class="bg-red-50 border border-red-200 rounded-md p-3 mb-4"><ul class="list-disc list-inside text-sm text-red-700">';
+  let errorHTML =
+    '<div class="bg-red-50 border border-red-200 rounded-md p-3 mb-4"><ul class="list-disc list-inside text-sm text-red-700">';
 
   if (response.errors && Array.isArray(response.errors)) {
-    response.errors.forEach(error => {
+    response.errors.forEach((error) => {
       errorHTML += `<li>${error.message || error}</li>`;
     });
   } else if (response.error) {

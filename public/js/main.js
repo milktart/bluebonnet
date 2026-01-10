@@ -1,11 +1,8 @@
 // Main JavaScript for Travel Planner
 
 // Import constants
-const {
-  UI_DEBOUNCE_DELAY,
-  UI_NOTIFICATION_DISMISS,
-  UI_ALERT_AUTO_DISMISS,
-} = window.CONSTANTS || {};
+const { UI_DEBOUNCE_DELAY, UI_NOTIFICATION_DISMISS, UI_ALERT_AUTO_DISMISS } =
+  window.CONSTANTS || {};
 
 // Handle browser back/forward button navigation
 window.addEventListener('popstate', function (e) {
@@ -276,17 +273,13 @@ function editFlight(id) {
   // Implement edit modal or redirect to edit page
 }
 
-function editHotel(id) {
-}
+function editHotel(id) {}
 
-function editTransportation(id) {
-}
+function editTransportation(id) {}
 
-function editCarRental(id) {
-}
+function editCarRental(id) {}
 
-function editEvent(id) {
-}
+function editEvent(id) {}
 
 // Note: formatDate() and formatDateTime() are now provided by datetime-formatter.js
 // which is loaded before this file in the templates.
@@ -367,4 +360,3 @@ function showDeleteNotification(itemName, itemType, itemId, restoreUrl, onUndoCa
     }, 300); // Fade-out animation delay (keep hardcoded)
   }, UI_ALERT_AUTO_DISMISS || 5000);
 }
-

@@ -21,11 +21,18 @@ router.post('/trips/:tripId/invite', tripInvitationController.inviteCompanion);
 router.get('/pending', tripInvitationController.getPendingInvitations);
 
 // Respond to a trip invitation (join or decline)
-router.put('/:invitationId/respond', (req, res, next) => {
-  const logger = require('../utils/logger');
-  logger.info('PUT /:invitationId/respond route hit', { invitationId: req.params.invitationId, method: req.method });
-  next();
-}, tripInvitationController.respondToInvitation);
+router.put(
+  '/:invitationId/respond',
+  (req, res, next) => {
+    const logger = require('../utils/logger');
+    logger.info('PUT /:invitationId/respond route hit', {
+      invitationId: req.params.invitationId,
+      method: req.method,
+    });
+    next();
+  },
+  tripInvitationController.respondToInvitation
+);
 
 // Leave a trip (must be a companion, not owner)
 router.post('/trips/:tripId/leave', tripInvitationController.leaveTrip);

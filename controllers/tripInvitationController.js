@@ -89,7 +89,11 @@ exports.inviteCompanion = async (req, res) => {
       status: 'pending',
     });
 
-    logger.info('TRIP_INVITE_CREATE SUCCESS', { invitationId: invitation.id, tripId, invitedUserId });
+    logger.info('TRIP_INVITE_CREATE SUCCESS', {
+      invitationId: invitation.id,
+      tripId,
+      invitedUserId,
+    });
 
     // Create notification
     const notification = await db.Notification.create({
@@ -102,7 +106,10 @@ exports.inviteCompanion = async (req, res) => {
       actionRequired: true,
     });
 
-    logger.info('NOTIF_CREATE SUCCESS', { notificationId: notification.id, relatedId: notification.relatedId });
+    logger.info('NOTIF_CREATE SUCCESS', {
+      notificationId: notification.id,
+      relatedId: notification.relatedId,
+    });
 
     return res.status(201).json({
       success: true,
@@ -187,7 +194,11 @@ exports.respondToInvitation = async (req, res) => {
       ],
     });
 
-    logger.info('TRIP_INVITE_LOOKUP', { invitationId, found: !!invitation, status: invitation?.status || 'NOT_FOUND' });
+    logger.info('TRIP_INVITE_LOOKUP', {
+      invitationId,
+      found: !!invitation,
+      status: invitation?.status || 'NOT_FOUND',
+    });
 
     if (!invitation) {
       return res.status(404).json({

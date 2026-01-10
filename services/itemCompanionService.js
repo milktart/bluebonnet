@@ -1,4 +1,13 @@
-const { ItemCompanion, TravelCompanion, Flight, Hotel, Transportation, CarRental, Event, Trip } = require('../models');
+const {
+  ItemCompanion,
+  TravelCompanion,
+  Flight,
+  Hotel,
+  Transportation,
+  CarRental,
+  Event,
+  Trip,
+} = require('../models');
 const { sortCompanions } = require('../utils/itemCompanionHelper');
 const logger = require('../utils/logger');
 

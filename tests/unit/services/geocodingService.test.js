@@ -1,5 +1,5 @@
-const geocodingService = require('../../../services/geocodingService');
 const axios = require('axios');
+const geocodingService = require('../../../services/geocodingService');
 
 // Mock axios
 jest.mock('axios');
@@ -196,15 +196,9 @@ describe('GeocodingService - Enhanced with Retry & Circuit Breaker', () => {
 
   describe('getTimezoneForCountry', () => {
     it('should return correct timezone for known countries', () => {
-      expect(geocodingService.getTimezoneForCountry('US', 40, -75)).toBe(
-        'America/New_York'
-      );
-      expect(geocodingService.getTimezoneForCountry('GB', 51.5, -0.1)).toBe(
-        'Europe/London'
-      );
-      expect(geocodingService.getTimezoneForCountry('JP', 35.67, 139.65)).toBe(
-        'Asia/Tokyo'
-      );
+      expect(geocodingService.getTimezoneForCountry('US', 40, -75)).toBe('America/New_York');
+      expect(geocodingService.getTimezoneForCountry('GB', 51.5, -0.1)).toBe('Europe/London');
+      expect(geocodingService.getTimezoneForCountry('JP', 35.67, 139.65)).toBe('Asia/Tokyo');
     });
 
     it('should handle US timezone variations by longitude', () => {

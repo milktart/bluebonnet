@@ -33,7 +33,15 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: false,
       },
       purpose: {
-        type: DataTypes.ENUM('business', 'leisure', 'family', 'romantic', 'adventure', 'pleasure', 'other'),
+        type: DataTypes.ENUM(
+          'business',
+          'leisure',
+          'family',
+          'romantic',
+          'adventure',
+          'pleasure',
+          'other'
+        ),
         allowNull: false,
         defaultValue: 'leisure',
       },

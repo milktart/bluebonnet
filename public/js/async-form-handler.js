@@ -33,7 +33,6 @@ function setupAsyncFormSubmission(formId) {
     const formData = new FormData(form);
     const data = Object.fromEntries(formData);
 
-
     // Combine date and time fields for flight, hotel, transportation, and car rental forms
     if (data.departureDate && data.departureTime && !data.departureDateTime) {
       data.departureDateTime = `${data.departureDate}T${data.departureTime}`;
@@ -77,7 +76,8 @@ function setupAsyncFormSubmission(formId) {
     }
 
     const { action } = form;
-    const isUpdate = formData.get('_method') === 'PUT' || form.getAttribute('method').toUpperCase() === 'PUT';
+    const isUpdate =
+      formData.get('_method') === 'PUT' || form.getAttribute('method').toUpperCase() === 'PUT';
 
     try {
       const response = await fetch(action, {
@@ -106,7 +106,7 @@ function setupAsyncFormSubmission(formId) {
 
         // Determine if this is a trip item or standalone item
         // Check: 1) window.tripId from form, 2) hidden tripId field in form, 3) window.tripData?.id, 4) URL path
-        let tripId = window.tripId;
+        let { tripId } = window;
 
         // If window.tripId is empty, check the hidden tripId field in the form
         if (!tripId || tripId.trim() === '') {
@@ -278,7 +278,7 @@ async function refreshDashboardSidebar() {
     if (typeof window.eventBus !== 'undefined' && typeof window.EventTypes !== 'undefined') {
       window.eventBus.emit(window.EventTypes.DATA_SYNCED, {
         type: 'dashboard',
-        activeTab: activeTab,
+        activeTab,
       });
     }
   } catch (error) {
@@ -312,14 +312,16 @@ async function refreshMapIfPresent() {
       tripData = window.tripData;
     }
     // Check if we're on a dashboard page - use the data that was set by refreshDashboardSidebar
-    else if (window.tripData && (window.tripData.flights || window.tripData.hotels || window.tripData.transportation)) {
+    else if (
+      window.tripData &&
+      (window.tripData.flights || window.tripData.hotels || window.tripData.transportation)
+    ) {
       tripData = window.tripData;
     }
     // Fallback: check for dashboard-specific data structures
     else if (window.upcomingTripsData) {
       tripData = window.upcomingTripsData;
-    }
-    else if (window.allTripsData) {
+    } else if (window.allTripsData) {
       tripData = window.allTripsData;
     }
     // No data found
@@ -388,10 +390,16 @@ function restoreActiveDashboardTab(activeTab) {
 
   // Reset all tabs
   const allTabs = [upcomingTab, pastTab, settingsTab];
-  allTabs.forEach(tab => {
+  allTabs.forEach((tab) => {
     if (tab) {
       tab.classList.remove('border-blue-500', 'text-blue-600', 'bg-blue-50');
-      tab.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50', 'hover:border-gray-300');
+      tab.classList.add(
+        'border-transparent',
+        'text-gray-500',
+        'hover:text-gray-700',
+        'hover:bg-gray-50',
+        'hover:border-gray-300'
+      );
     }
   });
 
@@ -402,16 +410,34 @@ function restoreActiveDashboardTab(activeTab) {
 
   // Activate the appropriate tab and content
   if (activeTab === 'past' && pastTab && pastContent) {
-    pastTab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50', 'hover:border-gray-300');
+    pastTab.classList.remove(
+      'border-transparent',
+      'text-gray-500',
+      'hover:text-gray-700',
+      'hover:bg-gray-50',
+      'hover:border-gray-300'
+    );
     pastTab.classList.add('border-blue-500', 'text-blue-600', 'bg-blue-50');
     pastContent.classList.remove('hidden');
   } else if (activeTab === 'settings' && settingsTab && settingsContent) {
-    settingsTab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50', 'hover:border-gray-300');
+    settingsTab.classList.remove(
+      'border-transparent',
+      'text-gray-500',
+      'hover:text-gray-700',
+      'hover:bg-gray-50',
+      'hover:border-gray-300'
+    );
     settingsTab.classList.add('border-blue-500', 'text-blue-600', 'bg-blue-50');
     settingsContent.classList.remove('hidden');
   } else if (upcomingTab && upcomingContent) {
     // Default to upcoming
-    upcomingTab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50', 'hover:border-gray-300');
+    upcomingTab.classList.remove(
+      'border-transparent',
+      'text-gray-500',
+      'hover:text-gray-700',
+      'hover:bg-gray-50',
+      'hover:border-gray-300'
+    );
     upcomingTab.classList.add('border-blue-500', 'text-blue-600', 'bg-blue-50');
     upcomingContent.classList.remove('hidden');
   }
@@ -421,7 +447,7 @@ function restoreActiveDashboardTab(activeTab) {
  * Extract trip ID from current URL
  */
 function extractTripIdFromUrl() {
-  const pathname = window.location.pathname;
+  const { pathname } = window.location;
   const match = pathname.match(/\/trips\/([a-f0-9-]+)/);
   const result = match ? match[1] : null;
   return result;
@@ -474,7 +500,7 @@ async function deleteItem(type, id, itemName = '') {
       }
 
       // Determine if this is a trip item or standalone item
-      let tripId = window.tripId;
+      const { tripId } = window;
 
       if (!tripId || tripId.trim() === '') {
         // Standalone item on dashboard - refresh primary sidebar without page reload

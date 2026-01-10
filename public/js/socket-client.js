@@ -10,11 +10,8 @@
 import { eventBus, EventTypes } from './eventBus.js';
 
 // Import constants
-const {
-  SOCKET_POLL_INTERVAL,
-  SOCKET_RECONNECT_DELAY,
-  SOCKET_RECONNECT_DELAY_MAX,
-} = window.CONSTANTS || {};
+const { SOCKET_POLL_INTERVAL, SOCKET_RECONNECT_DELAY, SOCKET_RECONNECT_DELAY_MAX } =
+  window.CONSTANTS || {};
 
 // Import Socket.IO client library (loaded via CDN in base template)
 let socket = null;

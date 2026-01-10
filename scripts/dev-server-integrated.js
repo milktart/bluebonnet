@@ -46,15 +46,19 @@ async function startDevServer() {
     });
 
     // Wait a bit for Express to start, then start SvelteKit
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     // Start SvelteKit dev server on port 3001
     logger.info('Starting SvelteKit dev server on port 3001...');
-    const svelteKitServer = spawn('npm', ['run', 'dev', '--', '--host', '0.0.0.0', '--port', PORT], {
-      cwd: frontendDir,
-      stdio: 'inherit',
-      shell: true,
-    });
+    const svelteKitServer = spawn(
+      'npm',
+      ['run', 'dev', '--', '--host', '0.0.0.0', '--port', PORT],
+      {
+        cwd: frontendDir,
+        stdio: 'inherit',
+        shell: true,
+      }
+    );
 
     svelteKitServer.on('error', (err) => {
       logger.error('Failed to start SvelteKit dev server', {

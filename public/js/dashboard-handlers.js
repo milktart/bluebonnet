@@ -8,12 +8,7 @@
 /* eslint-disable no-alert, no-console */
 
 import { registerHandlers, getElementData } from './event-delegation.js';
-import {
-  showUpcomingTrips,
-  showPastTrips,
-  showSettings,
-  toggleAccordion,
-} from './trips-list.js';
+import { showUpcomingTrips, showPastTrips, showSettings, toggleAccordion } from './trips-list.js';
 
 /**
  * Close secondary sidebar

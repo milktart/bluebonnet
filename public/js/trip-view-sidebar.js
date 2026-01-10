@@ -295,12 +295,12 @@ function showAddForm(type, isStandalone = false) {
       if (typeof setupAsyncFormSubmission === 'function') {
         // Map type to form ID
         const formIdMap = {
-          'flight': 'addFlightForm',
-          'hotel': 'addHotelForm',
-          'transportation': 'addTransportationForm',
-          'carRental': 'addCarRentalForm',
+          flight: 'addFlightForm',
+          hotel: 'addHotelForm',
+          transportation: 'addTransportationForm',
+          carRental: 'addCarRentalForm',
           'car-rental': 'addCarRentalForm',
-          'event': 'addEventForm'
+          event: 'addEventForm',
         };
         const formId = formIdMap[type];
 
@@ -372,7 +372,9 @@ function showAddForm(type, isStandalone = false) {
       break;
     case 'transportation':
       // Fetch form via AJAX
-      const transportationUrl = isStandalone ? '/transportation/standalone/form' : `/transportation/trips/${tripId}/form`;
+      const transportationUrl = isStandalone
+        ? '/transportation/standalone/form'
+        : `/transportation/trips/${tripId}/form`;
       fetch(transportationUrl)
         .then((response) => response.text())
         .then(async (html) => {
@@ -380,7 +382,9 @@ function showAddForm(type, isStandalone = false) {
           executeLoadedScripts(formContainer);
           // Call form initialization directly
           if (typeof setupAsyncFormSubmission === 'function') {
-            setupAsyncFormSubmission(isStandalone ? 'addStandaloneTransportationForm' : 'addTransportationForm');
+            setupAsyncFormSubmission(
+              isStandalone ? 'addStandaloneTransportationForm' : 'addTransportationForm'
+            );
           }
           // Ensure companions are loaded before initializing
           await ensureCompanionsInitialized();
@@ -393,7 +397,9 @@ function showAddForm(type, isStandalone = false) {
     case 'carRental':
     case 'car-rental':
       // Fetch form via AJAX
-      const carRentalUrl = isStandalone ? '/car-rentals/standalone/form' : `/car-rentals/trips/${tripId}/form`;
+      const carRentalUrl = isStandalone
+        ? '/car-rentals/standalone/form'
+        : `/car-rentals/trips/${tripId}/form`;
       fetch(carRentalUrl)
         .then((response) => response.text())
         .then(async (html) => {
@@ -401,7 +407,9 @@ function showAddForm(type, isStandalone = false) {
           executeLoadedScripts(formContainer);
           // Call form initialization directly
           if (typeof setupAsyncFormSubmission === 'function') {
-            setupAsyncFormSubmission(isStandalone ? 'addStandaloneCarRentalForm' : 'addCarRentalForm');
+            setupAsyncFormSubmission(
+              isStandalone ? 'addStandaloneCarRentalForm' : 'addCarRentalForm'
+            );
           }
           // Ensure companions are loaded before initializing
           await ensureCompanionsInitialized();

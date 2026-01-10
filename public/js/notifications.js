@@ -22,7 +22,8 @@ async function loadNotificationsSidebar() {
     }
 
     // Show loading state
-    container.innerHTML = '<div class="text-center py-8"><p class="text-gray-500">Loading notifications...</p></div>';
+    container.innerHTML =
+      '<div class="text-center py-8"><p class="text-gray-500">Loading notifications...</p></div>';
 
     // Fetch sidebar content
     const response = await fetch('/notifications/sidebar', {
@@ -60,7 +61,8 @@ async function loadNotificationsSidebar() {
   } catch (error) {
     const container = document.getElementById('secondary-sidebar-content');
     if (container) {
-      container.innerHTML = '<div class="p-4"><p class="text-red-600">Error loading notifications. Please try again.</p></div>';
+      container.innerHTML =
+        '<div class="p-4"><p class="text-red-600">Error loading notifications. Please try again.</p></div>';
     }
   }
 }
@@ -192,11 +194,7 @@ function initializeNotifications() {
 // ============================================================================
 
 // ES6 Module exports
-export {
-  loadNotificationsSidebar,
-  updateNotificationBadge,
-  initializeNotifications,
-};
+export { loadNotificationsSidebar, updateNotificationBadge, initializeNotifications };
 
 // Make functions available globally for backward compatibility
 if (typeof window !== 'undefined') {

@@ -27,7 +27,10 @@ describe('DuplicateDetectionService', () => {
     });
 
     it('should return high similarity for similar strings', () => {
-      const similarity = duplicateDetectionService.calculateStringSimilarity('Los Angeles', 'Los Angles');
+      const similarity = duplicateDetectionService.calculateStringSimilarity(
+        'Los Angeles',
+        'Los Angles'
+      );
       expect(similarity).toBeGreaterThan(85);
     });
 
@@ -45,7 +48,10 @@ describe('DuplicateDetectionService', () => {
     });
 
     it('should calculate correct similarity for common misspellings', () => {
-      const similarity = duplicateDetectionService.calculateStringSimilarity('New York', 'New Yrok');
+      const similarity = duplicateDetectionService.calculateStringSimilarity(
+        'New York',
+        'New Yrok'
+      );
       expect(similarity).toBeGreaterThan(85);
     });
 
@@ -89,7 +95,9 @@ describe('DuplicateDetectionService', () => {
     });
 
     it('should return true for same day different times', () => {
-      expect(duplicateDetectionService.compareDates('2025-12-15T08:00:00Z', '2025-12-15T22:00:00Z')).toBe(true);
+      expect(
+        duplicateDetectionService.compareDates('2025-12-15T08:00:00Z', '2025-12-15T22:00:00Z')
+      ).toBe(true);
     });
 
     it('should return false for different days', () => {
@@ -274,7 +282,9 @@ describe('DuplicateDetectionService', () => {
         departureDateTime: '2025-06-01T10:00:00Z',
       };
 
-      const result = duplicateDetectionService.checkFlightDuplicates(sampleFlight, [existingFlight]);
+      const result = duplicateDetectionService.checkFlightDuplicates(sampleFlight, [
+        existingFlight,
+      ]);
 
       if (result.isDuplicate) {
         expect(result.duplicateOf).toHaveProperty('name');
@@ -298,7 +308,9 @@ describe('DuplicateDetectionService', () => {
         departureDateTime: '2025-06-01T10:00:00Z',
       };
 
-      const result = duplicateDetectionService.checkFlightDuplicates(sampleFlight, [differentFlight]);
+      const result = duplicateDetectionService.checkFlightDuplicates(sampleFlight, [
+        differentFlight,
+      ]);
 
       // Should not detect as duplicate due to different flight number
       expect(result.isDuplicate).toBe(false);
@@ -381,10 +393,9 @@ describe('DuplicateDetectionService', () => {
     };
 
     it('should detect exact duplicate transportation', () => {
-      const result = duplicateDetectionService.checkTransportationDuplicates(
+      const result = duplicateDetectionService.checkTransportationDuplicates(sampleTransportation, [
         sampleTransportation,
-        [sampleTransportation]
-      );
+      ]);
 
       expect(result.isDuplicate).toBe(true);
       expect(result.similarity).toBe(100);
@@ -398,10 +409,9 @@ describe('DuplicateDetectionService', () => {
         departureDateTime: '2025-06-05T10:00:00Z',
       };
 
-      const result = duplicateDetectionService.checkTransportationDuplicates(
-        sampleTransportation,
-        [otherTransportation]
-      );
+      const result = duplicateDetectionService.checkTransportationDuplicates(sampleTransportation, [
+        otherTransportation,
+      ]);
 
       expect(result.isDuplicate).toBe(false);
     });
@@ -734,7 +744,10 @@ describe('DuplicateDetectionService', () => {
   describe('Edge cases and robustness', () => {
     it('should handle very long strings', () => {
       const longString = 'a'.repeat(1000);
-      const similarity = duplicateDetectionService.calculateStringSimilarity(longString, longString);
+      const similarity = duplicateDetectionService.calculateStringSimilarity(
+        longString,
+        longString
+      );
       expect(similarity).toBe(100);
     });
 
@@ -756,11 +769,26 @@ describe('DuplicateDetectionService', () => {
     });
 
     it('should handle multiple duplicates and return first match', () => {
-      const trip = { name: 'Paris', destination: 'Paris, France', startDate: '2025-06-01', endDate: '2025-06-07' };
+      const trip = {
+        name: 'Paris',
+        destination: 'Paris, France',
+        startDate: '2025-06-01',
+        endDate: '2025-06-07',
+      };
       const existingTrips = [
-        { name: 'Tokyo', destination: 'Tokyo, Japan', startDate: '2025-08-01', endDate: '2025-08-07' },
+        {
+          name: 'Tokyo',
+          destination: 'Tokyo, Japan',
+          startDate: '2025-08-01',
+          endDate: '2025-08-07',
+        },
         trip, // Exact match
-        { name: 'Paris Trip', destination: 'Paris, France', startDate: '2025-06-01', endDate: '2025-06-07' }, // Also similar
+        {
+          name: 'Paris Trip',
+          destination: 'Paris, France',
+          startDate: '2025-06-01',
+          endDate: '2025-06-07',
+        }, // Also similar
       ];
 
       const result = duplicateDetectionService.checkTripDuplicates(trip, existingTrips);

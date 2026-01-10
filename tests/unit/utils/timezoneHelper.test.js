@@ -41,9 +41,15 @@ describe('TimezoneHelper', () => {
 
     it('should handle daylight saving time', () => {
       // Summer date (DST active)
-      const summerOffset = timezoneHelper.getTimezoneOffset('America/New_York', new Date('2025-07-15'));
+      const summerOffset = timezoneHelper.getTimezoneOffset(
+        'America/New_York',
+        new Date('2025-07-15')
+      );
       // Winter date (DST inactive)
-      const winterOffset = timezoneHelper.getTimezoneOffset('America/New_York', new Date('2025-01-15'));
+      const winterOffset = timezoneHelper.getTimezoneOffset(
+        'America/New_York',
+        new Date('2025-01-15')
+      );
 
       expect(summerOffset).not.toBe(winterOffset);
     });
@@ -52,7 +58,11 @@ describe('TimezoneHelper', () => {
   describe('formatInTimezone', () => {
     it('should format date in specified timezone', () => {
       const date = new Date('2025-01-15T12:00:00Z');
-      const result = timezoneHelper.formatInTimezone(date, 'America/Los_Angeles', 'DD MMM YYYY HH:MM');
+      const result = timezoneHelper.formatInTimezone(
+        date,
+        'America/Los_Angeles',
+        'DD MMM YYYY HH:MM'
+      );
 
       expect(typeof result).toBe('string');
       expect(result).toMatch(/Jan 2025/);

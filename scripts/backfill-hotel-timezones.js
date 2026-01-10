@@ -19,9 +19,9 @@ async function backfillHotelTimezones() {
     // Find all hotels without timezone
     const hotelsWithoutTimezone = await Hotel.findAll({
       where: {
-        timezone: [null, '']
+        timezone: [null, ''],
       },
-      attributes: ['id', 'hotelName', 'address', 'lat', 'lng']
+      attributes: ['id', 'hotelName', 'address', 'lat', 'lng'],
     });
 
     logger.info(`Found ${hotelsWithoutTimezone.length} hotels without timezone`);
@@ -79,7 +79,7 @@ async function backfillHotelTimezones() {
       }
 
       // Rate limiting: add delay between API calls to avoid hitting rate limits
-      await new Promise(resolve => setTimeout(resolve, 1100));
+      await new Promise((resolve) => setTimeout(resolve, 1100));
     }
 
     logger.info('===== BACKFILL COMPLETE =====');

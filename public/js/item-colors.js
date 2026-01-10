@@ -4,7 +4,7 @@
  * Colors are loaded from data attributes on the parent form
  */
 
-(function() {
+(function () {
   // Color definitions - MUST match config/itemColors.js
   const ITEM_COLORS = {
     trip: '#28536b',
@@ -18,7 +18,9 @@
   };
 
   function getColor(itemType) {
-    const normalized = String(itemType || '').toLowerCase().replace(/_/g, '');
+    const normalized = String(itemType || '')
+      .toLowerCase()
+      .replace(/_/g, '');
     return ITEM_COLORS[normalized] || ITEM_COLORS.flight;
   }
 
@@ -33,13 +35,13 @@
     // Find all forms with data-item-type attribute
     const forms = document.querySelectorAll('[data-item-type]');
 
-    forms.forEach(form => {
+    forms.forEach((form) => {
       const itemType = form.getAttribute('data-item-type');
       const color = getColor(itemType);
 
       // Apply focus ring color to all inputs and textareas
       const inputs = form.querySelectorAll('input, textarea, select');
-      inputs.forEach(input => {
+      inputs.forEach((input) => {
         // Store original classes
         const originalClass = input.className;
 
@@ -47,12 +49,12 @@
         input.style.setProperty('--focus-color', color);
 
         // Add dynamic focus handler
-        input.addEventListener('focus', function() {
+        input.addEventListener('focus', function () {
           this.style.borderColor = color;
           this.style.boxShadow = `0 0 0 3px ${rgbToRgba(color, 0.1)}`;
         });
 
-        input.addEventListener('blur', function() {
+        input.addEventListener('blur', function () {
           this.style.borderColor = '';
           this.style.boxShadow = '';
         });
@@ -64,7 +66,7 @@
         submitButton.style.backgroundColor = color;
 
         // Add hover effect
-        submitButton.addEventListener('mouseenter', function() {
+        submitButton.addEventListener('mouseenter', function () {
           const rgb = parseInt(color.slice(1), 16);
           const r = (rgb >> 16) & 255;
           const g = (rgb >> 8) & 255;
@@ -74,14 +76,14 @@
           this.style.backgroundColor = darker;
         });
 
-        submitButton.addEventListener('mouseleave', function() {
+        submitButton.addEventListener('mouseleave', function () {
           this.style.backgroundColor = color;
         });
       }
 
       // Apply icon/badge colors
       const iconBadges = form.querySelectorAll('[data-icon-badge]');
-      iconBadges.forEach(badge => {
+      iconBadges.forEach((badge) => {
         const icon = badge.querySelector('[class*="material-symbols"]');
         if (icon) {
           icon.style.color = color;
@@ -100,11 +102,11 @@
 
   // Also apply colors when new forms are dynamically loaded (AJAX)
   const originalFetch = window.fetch;
-  window.fetch = function(...args) {
-    return originalFetch.apply(this, args).then(response => {
+  window.fetch = function (...args) {
+    return originalFetch.apply(this, args).then((response) => {
       // Clone the response so we can read it
       const clone = response.clone();
-      clone.text().then(html => {
+      clone.text().then((html) => {
         // If response contains HTML, reapply colors after it's rendered
         if (html.includes('<form') || html.includes('input')) {
           setTimeout(applyFormColors, 100);

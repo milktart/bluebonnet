@@ -11,7 +11,7 @@ class SimpleLogger {
     const timestamp = new Date().toTimeString().slice(0, 8);
     let output = `[${timestamp}] ${level.toUpperCase()}: ${message}`;
     if (meta && Object.keys(meta).length > 0) {
-      output += ' ' + JSON.stringify(meta);
+      output += ` ${JSON.stringify(meta)}`;
     }
     return output;
   }

@@ -131,10 +131,7 @@ async function executeWithRetry(fn, location) {
 
       // Log retry
       if (!isLastAttempt) {
-        const delay = Math.min(
-          INITIAL_RETRY_DELAY * Math.pow(2, attempt - 1),
-          MAX_RETRY_DELAY
-        );
+        const delay = Math.min(INITIAL_RETRY_DELAY * 2 ** (attempt - 1), MAX_RETRY_DELAY);
         logger.warn(
           `Geocoding retry ${attempt}/${MAX_RETRIES} for "${location}" after ${error.message}, waiting ${delay}ms`
         );

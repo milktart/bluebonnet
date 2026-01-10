@@ -24,12 +24,12 @@ function loadModuleScript(scriptSrc, flagName, callback) {
     script.type = 'module';
   }
 
-  script.onload = function() {
+  script.onload = function () {
     window[flagName] = true;
     if (callback) callback();
   };
 
-  script.onerror = function() {
+  script.onerror = function () {
     console.error(`Failed to load script: ${scriptSrc}`);
   };
 

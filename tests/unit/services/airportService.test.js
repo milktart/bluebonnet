@@ -192,8 +192,22 @@ describe('AirportService', () => {
   describe('getAllAirports', () => {
     it('should return all airports', async () => {
       const mockAirports = [
-        { iata: 'LAX', name: 'Los Angeles', city: 'Los Angeles', country: 'US', latitude: 33.9425, longitude: -118.408 },
-        { iata: 'JFK', name: 'JFK', city: 'New York', country: 'US', latitude: 40.6398, longitude: -73.7789 },
+        {
+          iata: 'LAX',
+          name: 'Los Angeles',
+          city: 'Los Angeles',
+          country: 'US',
+          latitude: 33.9425,
+          longitude: -118.408,
+        },
+        {
+          iata: 'JFK',
+          name: 'JFK',
+          city: 'New York',
+          country: 'US',
+          latitude: 40.6398,
+          longitude: -73.7789,
+        },
       ];
       Airport.findAll.mockResolvedValue(mockAirports);
 
@@ -208,9 +222,7 @@ describe('AirportService', () => {
 
       await airportService.getAllAirports(50);
 
-      expect(Airport.findAll).toHaveBeenCalledWith(
-        expect.objectContaining({ limit: 50 })
-      );
+      expect(Airport.findAll).toHaveBeenCalledWith(expect.objectContaining({ limit: 50 }));
     });
 
     it('should handle database errors gracefully', async () => {

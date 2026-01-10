@@ -75,7 +75,13 @@ function generatePreviewData(importData, currentUserData) {
       if (tripDuplicate.isDuplicate) preview.stats.totalDuplicates++;
 
       // Process trip's children
-      const tripChildren = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
+      const tripChildren = {
+        flights: [],
+        hotels: [],
+        transportation: [],
+        carRentals: [],
+        events: [],
+      };
 
       // Flights
       if (trip.flights && Array.isArray(trip.flights)) {
@@ -525,7 +531,11 @@ function formatTripSummary(trip) {
     try {
       const date = new Date(trip.departureDate);
       if (!isNaN(date.getTime())) {
-        departureDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        departureDate = date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        });
       }
     } catch {
       // Keep as 'No date'
@@ -537,7 +547,11 @@ function formatTripSummary(trip) {
     try {
       const date = new Date(trip.returnDate);
       if (!isNaN(date.getTime())) {
-        returnDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        returnDate = date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        });
       }
     } catch {
       // Keep as 'No date'

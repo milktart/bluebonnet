@@ -1,5 +1,5 @@
-const redis = require('../../../utils/redis');
 const redisModule = require('redis');
+const redis = require('../../../utils/redis');
 const logger = require('../../../utils/logger');
 
 // Mock redis module
@@ -84,7 +84,9 @@ describe('Redis Utility', () => {
       const client = await redis.initRedis();
 
       expect(redisModule.createClient).not.toHaveBeenCalled();
-      expect(logger.info).toHaveBeenCalledWith('Redis is disabled (not in production or REDIS_ENABLED not set)');
+      expect(logger.info).toHaveBeenCalledWith(
+        'Redis is disabled (not in production or REDIS_ENABLED not set)'
+      );
       expect(client).toBeNull();
     });
 
@@ -95,7 +97,9 @@ describe('Redis Utility', () => {
 
       const client = await redis.initRedis();
 
-      expect(logger.error).toHaveBeenCalledWith('Failed to initialize Redis', { error: 'Connection failed' });
+      expect(logger.error).toHaveBeenCalledWith('Failed to initialize Redis', {
+        error: 'Connection failed',
+      });
       expect(logger.warn).toHaveBeenCalledWith('Application will continue without Redis caching');
       expect(client).toBeNull();
     });

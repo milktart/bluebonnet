@@ -21,7 +21,6 @@
     ],
     "no-param-reassign": ["error", { "props": false }],
     "import/no-dynamic-require": "off",
-    "import/no-unresolved": "off",
     "global-require": "off",
     "no-await-in-loop": "off",
     "no-restricted-syntax": [
@@ -50,6 +49,13 @@
     "import/order": "warn"
   },
   "overrides": [
+    {
+      "files": ["server.js"],
+      "rules": {
+        "import/no-unresolved": "off",
+        "import/extensions": "off"
+      }
+    },
     {
       "files": ["public/js/**/*.js"],
       "env": {

@@ -62,8 +62,10 @@ function compareDates(date1, date2, toleranceMs = 0) {
 
   try {
     // Normalize to ISO string first to handle both Date objects and strings
-    let iso1 = typeof date1 === 'string' ? date1 : (date1.toISOString ? date1.toISOString() : String(date1));
-    let iso2 = typeof date2 === 'string' ? date2 : (date2.toISOString ? date2.toISOString() : String(date2));
+    const iso1 =
+      typeof date1 === 'string' ? date1 : date1.toISOString ? date1.toISOString() : String(date1);
+    const iso2 =
+      typeof date2 === 'string' ? date2 : date2.toISOString ? date2.toISOString() : String(date2);
 
     // Extract just the date part (YYYY-MM-DD) for comparison
     const datePart1 = iso1.split('T')[0];
@@ -112,15 +114,13 @@ function checkTripDuplicates(importedTrip, existingTrips) {
   const threshold = 90;
 
   // Normalize imported trip - handle both Sequelize instances and plain objects
-  const normalizedImported = typeof importedTrip.get === 'function'
-    ? importedTrip.get({ plain: true })
-    : importedTrip;
+  const normalizedImported =
+    typeof importedTrip.get === 'function' ? importedTrip.get({ plain: true }) : importedTrip;
 
   for (const existing of existingTrips) {
     // Normalize existing trip
-    const normalizedExisting = typeof existing.get === 'function'
-      ? existing.get({ plain: true })
-      : existing;
+    const normalizedExisting =
+      typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
 
     const weights = {
       name: 0.5,
@@ -130,8 +130,10 @@ function checkTripDuplicates(importedTrip, existingTrips) {
 
     const scores = [
       calculateWeightedSimilarity(normalizedImported.name, normalizedExisting.name, weights.name),
-      (compareDates(normalizedImported.departureDate, normalizedExisting.departureDate) ? 100 : 0) * weights.departureDate,
-      (compareDates(normalizedImported.returnDate, normalizedExisting.returnDate) ? 100 : 0) * weights.returnDate,
+      (compareDates(normalizedImported.departureDate, normalizedExisting.departureDate) ? 100 : 0) *
+        weights.departureDate,
+      (compareDates(normalizedImported.returnDate, normalizedExisting.returnDate) ? 100 : 0) *
+        weights.returnDate,
     ];
 
     const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
@@ -157,15 +159,13 @@ function checkFlightDuplicates(importedFlight, existingFlights) {
   const threshold = 90;
 
   // Normalize imported flight
-  const normalizedImported = typeof importedFlight.get === 'function'
-    ? importedFlight.get({ plain: true })
-    : importedFlight;
+  const normalizedImported =
+    typeof importedFlight.get === 'function' ? importedFlight.get({ plain: true }) : importedFlight;
 
   for (const existing of existingFlights) {
     // Normalize existing flight
-    const normalizedExisting = typeof existing.get === 'function'
-      ? existing.get({ plain: true })
-      : existing;
+    const normalizedExisting =
+      typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
 
     const weights = {
       airline: 0.2,
@@ -176,7 +176,11 @@ function checkFlightDuplicates(importedFlight, existingFlights) {
     };
 
     const scores = [
-      calculateWeightedSimilarity(normalizedImported.airline, normalizedExisting.airline, weights.airline),
+      calculateWeightedSimilarity(
+        normalizedImported.airline,
+        normalizedExisting.airline,
+        weights.airline
+      ),
       calculateWeightedSimilarity(
         normalizedImported.flightNumber,
         normalizedExisting.flightNumber,
@@ -220,15 +224,13 @@ function checkHotelDuplicates(importedHotel, existingHotels) {
   const threshold = 90;
 
   // Normalize imported hotel
-  const normalizedImported = typeof importedHotel.get === 'function'
-    ? importedHotel.get({ plain: true })
-    : importedHotel;
+  const normalizedImported =
+    typeof importedHotel.get === 'function' ? importedHotel.get({ plain: true }) : importedHotel;
 
   for (const existing of existingHotels) {
     // Normalize existing hotel
-    const normalizedExisting = typeof existing.get === 'function'
-      ? existing.get({ plain: true })
-      : existing;
+    const normalizedExisting =
+      typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
 
     const weights = {
       hotelName: 0.4,
@@ -238,12 +240,22 @@ function checkHotelDuplicates(importedHotel, existingHotels) {
     };
 
     const scores = [
-      calculateWeightedSimilarity(normalizedImported.hotelName, normalizedExisting.hotelName, weights.hotelName),
-      calculateWeightedSimilarity(normalizedImported.address, normalizedExisting.address, weights.address),
-      (compareDates(normalizedImported.checkInDateTime, normalizedExisting.checkInDateTime) ? 100 : 0) *
-        weights.checkInDateTime,
-      (compareDates(normalizedImported.checkOutDateTime, normalizedExisting.checkOutDateTime) ? 100 : 0) *
-        weights.checkOutDateTime,
+      calculateWeightedSimilarity(
+        normalizedImported.hotelName,
+        normalizedExisting.hotelName,
+        weights.hotelName
+      ),
+      calculateWeightedSimilarity(
+        normalizedImported.address,
+        normalizedExisting.address,
+        weights.address
+      ),
+      (compareDates(normalizedImported.checkInDateTime, normalizedExisting.checkInDateTime)
+        ? 100
+        : 0) * weights.checkInDateTime,
+      (compareDates(normalizedImported.checkOutDateTime, normalizedExisting.checkOutDateTime)
+        ? 100
+        : 0) * weights.checkOutDateTime,
     ];
 
     const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
@@ -269,15 +281,15 @@ function checkTransportationDuplicates(importedTransportation, existingTransport
   const threshold = 90;
 
   // Normalize imported transportation
-  const normalizedImported = typeof importedTransportation.get === 'function'
-    ? importedTransportation.get({ plain: true })
-    : importedTransportation;
+  const normalizedImported =
+    typeof importedTransportation.get === 'function'
+      ? importedTransportation.get({ plain: true })
+      : importedTransportation;
 
   for (const existing of existingTransportation) {
     // Normalize existing transportation
-    const normalizedExisting = typeof existing.get === 'function'
-      ? existing.get({ plain: true })
-      : existing;
+    const normalizedExisting =
+      typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
 
     const weights = {
       type: 0.25,
@@ -287,11 +299,7 @@ function checkTransportationDuplicates(importedTransportation, existingTransport
     };
 
     const scores = [
-      calculateWeightedSimilarity(
-        normalizedImported.type,
-        normalizedExisting.type,
-        weights.type
-      ),
+      calculateWeightedSimilarity(normalizedImported.type, normalizedExisting.type, weights.type),
       calculateWeightedSimilarity(
         normalizedImported.departureLocation,
         normalizedExisting.departureLocation,
@@ -302,10 +310,7 @@ function checkTransportationDuplicates(importedTransportation, existingTransport
         normalizedExisting.arrivalLocation,
         weights.arrivalLocation
       ),
-      (compareDates(
-        normalizedImported.departureDateTime,
-        normalizedExisting.departureDateTime
-      )
+      (compareDates(normalizedImported.departureDateTime, normalizedExisting.departureDateTime)
         ? 100
         : 0) * weights.departureDateTime,
     ];
@@ -333,15 +338,15 @@ function checkCarRentalDuplicates(importedCarRental, existingCarRentals) {
   const threshold = 90;
 
   // Normalize imported car rental
-  const normalizedImported = typeof importedCarRental.get === 'function'
-    ? importedCarRental.get({ plain: true })
-    : importedCarRental;
+  const normalizedImported =
+    typeof importedCarRental.get === 'function'
+      ? importedCarRental.get({ plain: true })
+      : importedCarRental;
 
   for (const existing of existingCarRentals) {
     // Normalize existing car rental
-    const normalizedExisting = typeof existing.get === 'function'
-      ? existing.get({ plain: true })
-      : existing;
+    const normalizedExisting =
+      typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
 
     const weights = {
       pickupLocation: 0.25,
@@ -361,10 +366,12 @@ function checkCarRentalDuplicates(importedCarRental, existingCarRentals) {
         normalizedExisting.dropoffLocation,
         weights.dropoffLocation
       ),
-      (compareDates(normalizedImported.pickupDateTime, normalizedExisting.pickupDateTime) ? 100 : 0) *
-        weights.pickupDateTime,
-      (compareDates(normalizedImported.dropoffDateTime, normalizedExisting.dropoffDateTime) ? 100 : 0) *
-        weights.dropoffDateTime,
+      (compareDates(normalizedImported.pickupDateTime, normalizedExisting.pickupDateTime)
+        ? 100
+        : 0) * weights.pickupDateTime,
+      (compareDates(normalizedImported.dropoffDateTime, normalizedExisting.dropoffDateTime)
+        ? 100
+        : 0) * weights.dropoffDateTime,
     ];
 
     const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
@@ -392,12 +399,10 @@ function checkEventDuplicates(importedEvent, existingEvents) {
 
   for (const existing of existingEvents) {
     // Normalize event objects - handle both Sequelize instances and plain objects
-    const normalizedImported = typeof importedEvent.get === 'function'
-      ? importedEvent.get({ plain: true })
-      : importedEvent;
-    const normalizedExisting = typeof existing.get === 'function'
-      ? existing.get({ plain: true })
-      : existing;
+    const normalizedImported =
+      typeof importedEvent.get === 'function' ? importedEvent.get({ plain: true }) : importedEvent;
+    const normalizedExisting =
+      typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
 
     // For events, we primarily care about matching on name, location, and START date
     // End date is less critical since events with the same start date but different end dates
@@ -411,11 +416,25 @@ function checkEventDuplicates(importedEvent, existingEvents) {
     // For date comparison, use the existing event's timezone if available
     // This allows comparing local dates rather than UTC dates
     const timezone = normalizedExisting.timezone || 'UTC';
-    const startDateScore = (compareDatesByTimezone(normalizedImported.startDateTime, normalizedExisting.startDateTime, timezone) ? 100 : 0) *
-      weights.startDateTime;
+    const startDateScore =
+      (compareDatesByTimezone(
+        normalizedImported.startDateTime,
+        normalizedExisting.startDateTime,
+        timezone
+      )
+        ? 100
+        : 0) * weights.startDateTime;
 
-    const nameScore = calculateWeightedSimilarity(normalizedImported.name, normalizedExisting.name, weights.name);
-    const locationScore = calculateWeightedSimilarity(normalizedImported.location, normalizedExisting.location, weights.location);
+    const nameScore = calculateWeightedSimilarity(
+      normalizedImported.name,
+      normalizedExisting.name,
+      weights.name
+    );
+    const locationScore = calculateWeightedSimilarity(
+      normalizedImported.location,
+      normalizedExisting.location,
+      weights.location
+    );
 
     const scores = [nameScore, locationScore, startDateScore];
 
@@ -423,7 +442,11 @@ function checkEventDuplicates(importedEvent, existingEvents) {
     const similarity = scores.reduce((a, b) => a + b, 0) / totalWeight;
 
     // Log comparison details for debugging
-    const startDateComparisonResult = compareDatesByTimezone(normalizedImported.startDateTime, normalizedExisting.startDateTime, timezone);
+    const startDateComparisonResult = compareDatesByTimezone(
+      normalizedImported.startDateTime,
+      normalizedExisting.startDateTime,
+      timezone
+    );
     logger.debug('Event duplicate detection:', {
       importedName: normalizedImported.name,
       existingName: normalizedExisting.name,
@@ -470,7 +493,12 @@ function compareDatesByTimezone(date1, date2, timezone) {
     const d2 = new Date(date2);
 
     if (isNaN(d1.getTime()) || isNaN(d2.getTime())) {
-      logger.debug('Invalid date in compareDatesByTimezone:', { date1, date2, d1: d1.toISOString ? d1.toISOString() : d1, d2: d2.toISOString ? d2.toISOString() : d2 });
+      logger.debug('Invalid date in compareDatesByTimezone:', {
+        date1,
+        date2,
+        d1: d1.toISOString ? d1.toISOString() : d1,
+        d2: d2.toISOString ? d2.toISOString() : d2,
+      });
       return false;
     }
 
@@ -499,7 +527,13 @@ function compareDatesByTimezone(date1, date2, timezone) {
     // Compare the local date strings (MM/DD/YYYY format)
     return date1Local === date2Local;
   } catch (error) {
-    logger.debug('Error comparing dates by timezone:', { date1, date2, timezone, error: error.message, stack: error.stack });
+    logger.debug('Error comparing dates by timezone:', {
+      date1,
+      date2,
+      timezone,
+      error: error.message,
+      stack: error.stack,
+    });
     // Fallback to UTC comparison if timezone conversion fails
     return compareDates(date1, date2);
   }
@@ -513,15 +547,15 @@ function checkVoucherDuplicates(importedVoucher, existingVouchers) {
   const threshold = 90;
 
   // Normalize imported voucher
-  const normalizedImported = typeof importedVoucher.get === 'function'
-    ? importedVoucher.get({ plain: true })
-    : importedVoucher;
+  const normalizedImported =
+    typeof importedVoucher.get === 'function'
+      ? importedVoucher.get({ plain: true })
+      : importedVoucher;
 
   for (const existing of existingVouchers) {
     // Normalize existing voucher
-    const normalizedExisting = typeof existing.get === 'function'
-      ? existing.get({ plain: true })
-      : existing;
+    const normalizedExisting =
+      typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
 
     const weights = {
       voucherNumber: 0.5,
@@ -531,10 +565,20 @@ function checkVoucherDuplicates(importedVoucher, existingVouchers) {
     };
 
     const scores = [
-      calculateWeightedSimilarity(normalizedImported.voucherNumber, normalizedExisting.voucherNumber, weights.voucherNumber),
+      calculateWeightedSimilarity(
+        normalizedImported.voucherNumber,
+        normalizedExisting.voucherNumber,
+        weights.voucherNumber
+      ),
       calculateWeightedSimilarity(normalizedImported.type, normalizedExisting.type, weights.type),
-      calculateWeightedSimilarity(normalizedImported.issuer, normalizedExisting.issuer, weights.issuer),
-      (compareDates(normalizedImported.expirationDate, normalizedExisting.expirationDate) ? 100 : 0) * weights.expirationDate,
+      calculateWeightedSimilarity(
+        normalizedImported.issuer,
+        normalizedExisting.issuer,
+        weights.issuer
+      ),
+      (compareDates(normalizedImported.expirationDate, normalizedExisting.expirationDate)
+        ? 100
+        : 0) * weights.expirationDate,
     ];
 
     const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
@@ -560,15 +604,15 @@ function checkCompanionDuplicates(importedCompanion, existingCompanions) {
   const threshold = 90;
 
   // Normalize imported companion
-  const normalizedImported = typeof importedCompanion.get === 'function'
-    ? importedCompanion.get({ plain: true })
-    : importedCompanion;
+  const normalizedImported =
+    typeof importedCompanion.get === 'function'
+      ? importedCompanion.get({ plain: true })
+      : importedCompanion;
 
   for (const existing of existingCompanions) {
     // Normalize existing companion
-    const normalizedExisting = typeof existing.get === 'function'
-      ? existing.get({ plain: true })
-      : existing;
+    const normalizedExisting =
+      typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
 
     const weights = {
       name: 0.6,
@@ -577,7 +621,11 @@ function checkCompanionDuplicates(importedCompanion, existingCompanions) {
 
     const scores = [
       calculateWeightedSimilarity(normalizedImported.name, normalizedExisting.name, weights.name),
-      calculateWeightedSimilarity(normalizedImported.email, normalizedExisting.email, weights.email),
+      calculateWeightedSimilarity(
+        normalizedImported.email,
+        normalizedExisting.email,
+        weights.email
+      ),
     ];
 
     const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
@@ -607,7 +655,9 @@ function getDuplicateDisplayName(item, type) {
     case 'hotel':
       return item.name || 'Hotel';
     case 'transportation':
-      return `${item.type} - ${item.departureLocation} to ${item.arrivalLocation}` || 'Transportation';
+      return (
+        `${item.type} - ${item.departureLocation} to ${item.arrivalLocation}` || 'Transportation'
+      );
     case 'carRental':
       return `${item.pickupLocation} to ${item.dropoffLocation}` || 'Car Rental';
     case 'event':

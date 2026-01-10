@@ -370,7 +370,6 @@ try {
 
   // Write back to file
   fs.writeFileSync(filePath, JSON.stringify(newData, null, 2));
-
 } catch (error) {
   process.exit(1);
 }

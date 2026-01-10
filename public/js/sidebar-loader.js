@@ -24,7 +24,8 @@ async function loadNotificationsSidebar() {
     }
 
     // Show loading state
-    container.innerHTML = '<div class="text-center py-8"><p class="text-gray-500">Loading notifications...</p></div>';
+    container.innerHTML =
+      '<div class="text-center py-8"><p class="text-gray-500">Loading notifications...</p></div>';
 
     // Fetch sidebar content
     const response = await fetch('/notifications/sidebar', {
@@ -60,7 +61,8 @@ async function loadNotificationsSidebar() {
   } catch (error) {
     const container = document.getElementById('notifications-content');
     if (container) {
-      container.innerHTML = '<div class="p-4"><p class="text-red-600">Error loading notifications. Please try again.</p></div>';
+      container.innerHTML =
+        '<div class="p-4"><p class="text-red-600">Error loading notifications. Please try again.</p></div>';
     }
   }
 }
@@ -255,7 +257,6 @@ function initializeSidebarContent() {
       // Error initializing item companions
     });
   }
-
 }
 
 /**
@@ -271,7 +272,8 @@ async function goBackInSidebar() {
     const sidebar = document.getElementById('secondary-sidebar');
 
     if (container) {
-      container.innerHTML = '<div class="text-center py-8"><p class="text-gray-500">Loading...</p></div>';
+      container.innerHTML =
+        '<div class="text-center py-8"><p class="text-gray-500">Loading...</p></div>';
 
       try {
         const response = await fetch(historyEntry.url, {
@@ -309,7 +311,8 @@ async function goBackInSidebar() {
 
         initializeSidebarContent();
       } catch (error) {
-        container.innerHTML = '<div class="p-4"><p class="text-red-600">Error loading content. Please try again.</p></div>';
+        container.innerHTML =
+          '<div class="p-4"><p class="text-red-600">Error loading content. Please try again.</p></div>';
       }
     }
 

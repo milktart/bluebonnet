@@ -8,8 +8,8 @@
  */
 
 require('dotenv').config();
-const db = require('../models');
 const { Op } = require('sequelize');
+const db = require('../models');
 const logger = require('../utils/logger');
 
 async function cleanupDuplicates() {
@@ -18,7 +18,10 @@ async function cleanupDuplicates() {
 
     // Get all companions ordered by email and creation date
     const companions = await db.TravelCompanion.findAll({
-      order: [['email', 'ASC'], ['createdAt', 'ASC']],
+      order: [
+        ['email', 'ASC'],
+        ['createdAt', 'ASC'],
+      ],
     });
 
     if (companions.length === 0) {
@@ -30,7 +33,7 @@ async function cleanupDuplicates() {
     const emailMap = {};
     const idsToDelete = [];
 
-    companions.forEach(companion => {
+    companions.forEach((companion) => {
       const email = companion.email.toLowerCase();
       if (!emailMap[email]) {
         emailMap[email] = [];
@@ -50,11 +53,11 @@ async function cleanupDuplicates() {
       if (records.length > 1) {
         duplicateCount += records.length - 1;
         logger.info(`Found ${records.length} companions with email ${email}`, {
-          records: records.map(r => ({ id: r.id, name: r.name, createdAt: r.createdAt }))
+          records: records.map((r) => ({ id: r.id, name: r.name, createdAt: r.createdAt })),
         });
 
         // Keep the first one (oldest), delete the rest
-        records.slice(1).forEach(record => {
+        records.slice(1).forEach((record) => {
           idsToDelete.push(record.id);
         });
       }
@@ -69,19 +72,19 @@ async function cleanupDuplicates() {
 
     // Delete related trip_companions records first
     const deletedTripCompanions = await db.TripCompanion.destroy({
-      where: { companionId: { [Op.in]: idsToDelete } }
+      where: { companionId: { [Op.in]: idsToDelete } },
     });
     logger.info(`Deleted ${deletedTripCompanions} trip_companions records`);
 
     // Delete related item_companions records
     const deletedItemCompanions = await db.ItemCompanion.destroy({
-      where: { companionId: { [Op.in]: idsToDelete } }
+      where: { companionId: { [Op.in]: idsToDelete } },
     });
     logger.info(`Deleted ${deletedItemCompanions} item_companions records`);
 
     // Delete the duplicate companions
     const deletedCompanions = await db.TravelCompanion.destroy({
-      where: { id: { [Op.in]: idsToDelete } }
+      where: { id: { [Op.in]: idsToDelete } },
     });
     logger.info(`Deleted ${deletedCompanions} duplicate companion records`);
 
@@ -98,6 +101,6 @@ cleanupDuplicates()
   .then(() => {
     process.exit(0);
   })
-  .catch(error => {
+  .catch((error) => {
     process.exit(1);
   });

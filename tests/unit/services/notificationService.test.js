@@ -80,7 +80,9 @@ describe('NotificationService', () => {
       const error = new Error('Database error');
       db.Notification.create.mockRejectedValue(error);
 
-      await expect(notificationService.createNotification(notificationData)).rejects.toThrow('Database error');
+      await expect(notificationService.createNotification(notificationData)).rejects.toThrow(
+        'Database error'
+      );
 
       expect(logger.error).toHaveBeenCalledWith('Error creating notification', {
         error: 'Database error',
@@ -216,7 +218,9 @@ describe('NotificationService', () => {
       const error = new Error('Bulk create failed');
       db.Notification.bulkCreate.mockRejectedValue(error);
 
-      await expect(notificationService.createNotifications(notificationsData)).rejects.toThrow('Bulk create failed');
+      await expect(notificationService.createNotifications(notificationsData)).rejects.toThrow(
+        'Bulk create failed'
+      );
 
       expect(logger.error).toHaveBeenCalledWith('Error creating notifications', {
         error: 'Bulk create failed',
