@@ -15,6 +15,7 @@ Then visit: **http://localhost:3001**
 ## 📦 What's Included
 
 ### Backend (Express API)
+
 - Trips, Flights, Hotels, Events, Car Rentals, Transportation CRUD
 - Travel Companions management
 - Authentication and authorization
@@ -23,6 +24,7 @@ Then visit: **http://localhost:3001**
 - Port: **3000**
 
 ### Frontend (Svelte)
+
 - 25+ reusable components
 - Full trip management UI
 - Authentication pages
@@ -32,6 +34,7 @@ Then visit: **http://localhost:3001**
 - Port: **3001**
 
 ### Infrastructure
+
 - PostgreSQL: **Port 5432**
 - Redis: **Port 6379**
 - Docker Compose orchestration
@@ -43,6 +46,7 @@ Then visit: **http://localhost:3001**
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Docker Desktop (Mac/Windows) or Docker + Docker Compose (Linux)
 - 4GB RAM minimum for Docker
 
@@ -54,6 +58,7 @@ docker-compose up --build
 ```
 
 **What happens**:
+
 1. ✅ PostgreSQL database starts (initializes schema)
 2. ✅ Redis cache starts
 3. ✅ Express backend API starts (port 3000)
@@ -61,6 +66,7 @@ docker-compose up --build
 5. ✅ All services connected via bridge network
 
 **Wait for**:
+
 - Backend health check: "DB_HOST: postgres"
 - Frontend: "VITE v5..." message
 - Then visit http://localhost:3001
@@ -83,9 +89,11 @@ docker-compose down -v
 ## 📚 Documentation
 
 ### Getting Started with Frontend
-👉 **[../bluebonnet-svelte/GETTING_STARTED.md](../bluebonnet-svelte/GETTING_STARTED.md)**
+
+👉 **[./frontend/GETTING_STARTED.md](./frontend/GETTING_STARTED.md)**
 
 Quick start guide with:
+
 - Project structure overview
 - Available npm commands
 - Component library reference
@@ -93,9 +101,11 @@ Quick start guide with:
 - Deployment instructions
 
 ### Complete Testing Guide
-👉 **[TESTING_GUIDE.md](./TESTING_GUIDE.md)** or **[../bluebonnet-svelte/TESTING_GUIDE.md](../bluebonnet-svelte/TESTING_GUIDE.md)**
+
+👉 **[TESTING_GUIDE.md](./TESTING_GUIDE.md)** or **[./frontend/TESTING_GUIDE.md](./frontend/TESTING_GUIDE.md)**
 
 Comprehensive testing procedures covering:
+
 - Authentication flow testing
 - Dashboard functionality
 - Travel item management
@@ -105,9 +115,11 @@ Comprehensive testing procedures covering:
 - Troubleshooting guide
 
 ### Docker & Deployment
+
 👉 **[DOCKER_SETUP.md](./DOCKER_SETUP.md)**
 
 Complete Docker reference including:
+
 - Service descriptions
 - Environment variables
 - Development workflow
@@ -117,9 +129,11 @@ Complete Docker reference including:
 - Security best practices
 
 ### Project Completion Summary
-👉 **[../bluebonnet-svelte/PHASE_1_COMPLETION_SUMMARY.md](../bluebonnet-svelte/PHASE_1_COMPLETION_SUMMARY.md)**
+
+👉 **[./frontend/PHASE_1_COMPLETION_SUMMARY.md](./frontend/PHASE_1_COMPLETION_SUMMARY.md)**
 
 Detailed metrics:
+
 - All 12 weeks of Phase 1 breakdown
 - Component inventory (25+)
 - File structure
@@ -127,9 +141,11 @@ Detailed metrics:
 - Performance metrics
 
 ### This Complete Overview
+
 👉 **[COMPLETE_SOLUTION_SUMMARY.md](./COMPLETE_SOLUTION_SUMMARY.md)**
 
 Everything in one place:
+
 - What was delivered
 - Architecture overview
 - Key features
@@ -141,12 +157,14 @@ Everything in one place:
 ## 🎯 Features
 
 ### Trip Management
+
 - ✅ Create, edit, delete trips
 - ✅ Trip dashboard with filtering (upcoming/past/all)
 - ✅ Trip detail view with tabs
 - ✅ Trip summary sidebar
 
 ### Travel Items
+
 - ✅ **Flights**: Origin, destination, airline, dates/times, seat info
 - ✅ **Hotels**: Name, location, check-in/check-out, room details
 - ✅ **Events**: Name, category, location, date/time, cost, tickets
@@ -155,6 +173,7 @@ Everything in one place:
 - ✅ **Companions**: Add companions to trips with contact info
 
 ### User Experience
+
 - ✅ User registration and login
 - ✅ Token-based authentication
 - ✅ Session persistence
@@ -164,6 +183,7 @@ Everything in one place:
 - ✅ Responsive design (works on all screen sizes)
 
 ### Developer Experience
+
 - ✅ Hot module replacement (HMR) - changes reload instantly
 - ✅ TypeScript - full type safety
 - ✅ Component library - reusable, composable
@@ -176,6 +196,7 @@ Everything in one place:
 ## 📊 Architecture
 
 ### Frontend
+
 ```
 Components (Svelte)
     ↓
@@ -189,6 +210,7 @@ PostgreSQL + Redis
 ```
 
 ### Services
+
 ```
 Frontend (3001) ←→ Backend API (3000)
                         ↓
@@ -197,6 +219,7 @@ Frontend (3001) ←→ Backend API (3000)
 ```
 
 ### All services communicate via Docker bridge network
+
 - Frontend connects to backend using service name: `http://app:3000`
 - Backend connects to database using service name: `postgres`
 
@@ -208,14 +231,14 @@ All frontend operations integrated with Express backend:
 
 ```typescript
 // Trips
-tripsApi.getAll()
-tripsApi.getOne(id)
-tripsApi.create(data)
-tripsApi.update(id, data)
-tripsApi.delete(id)
+tripsApi.getAll();
+tripsApi.getOne(id);
+tripsApi.create(data);
+tripsApi.update(id, data);
+tripsApi.delete(id);
 
 // Flights, Hotels, Events, etc. follow same pattern
-// See: /bluebonnet-svelte/src/lib/services/api.ts
+// See: ./frontend/src/lib/services/api.ts
 ```
 
 ---
@@ -223,9 +246,11 @@ tripsApi.delete(id)
 ## 🧪 Testing
 
 ### Manual Testing
+
 Start with: **[TESTING_GUIDE.md](./TESTING_GUIDE.md)**
 
 **Quick test**:
+
 1. Start services: `docker-compose up --build`
 2. Go to http://localhost:3001
 3. Register a new account
@@ -235,6 +260,7 @@ Start with: **[TESTING_GUIDE.md](./TESTING_GUIDE.md)**
 7. Test responsive design (F12 device toolbar)
 
 ### Automated Testing (Coming Soon)
+
 ```bash
 # Unit tests
 npm run test
@@ -254,35 +280,30 @@ npm run test:e2e
 ├── TESTING_GUIDE.md            # Testing procedures
 ├── COMPLETE_SOLUTION_SUMMARY.md # Everything in one place
 ├── README.md                   # This file
-└── Dockerfile                  # Backend (Express)
-
-/bluebonnet-svelte/
-├── src/
-│   ├── lib/
-│   │   ├── components/         # 25+ reusable Svelte components
-│   │   ├── services/
-│   │   │   └── api.ts          # API client
-│   │   └── stores/
-│   │       ├── tripStore.ts    # Trip state
-│   │       ├── authStore.ts    # Auth state
-│   │       └── uiStore.ts      # UI state
-│   └── routes/
-│       ├── +layout.svelte      # Global layout
-│       ├── +page.svelte        # Home/landing
-│       ├── +error.svelte       # Error page
-│       ├── login/              # Login page
-│       ├── register/           # Register page
-│       ├── dashboard/          # Trip dashboard
-│       └── trips/              # Trip management
-├── Dockerfile                  # Production build
-├── Dockerfile.dev             # Development build (hot reload)
-├── GETTING_STARTED.md         # Frontend quick start
-├── TESTING_GUIDE.md           # Testing procedures
-├── PHASE_1_COMPLETION_SUMMARY # Detailed metrics
-└── package.json
-
-/bluebonnet/
-└── [Unchanged - original backend]
+├── Dockerfile                  # Backend (Express)
+└── frontend/
+    ├── src/
+    │   ├── lib/
+    │   │   ├── components/     # 25+ reusable Svelte components
+    │   │   ├── services/
+    │   │   │   └── api.ts      # API client
+    │   │   └── stores/
+    │   │       ├── tripStore.ts # Trip state
+    │   │       ├── authStore.ts # Auth state
+    │   │       └── dashboardStore.ts # UI state
+    │   └── routes/
+    │       ├── +layout.svelte  # Global layout
+    │       ├── +page.svelte    # Home/landing
+    │       ├── +error.svelte   # Error page
+    │       ├── login/          # Login page
+    │       ├── register/       # Register page
+    │       └── dashboard/      # Trip management
+    ├── Dockerfile              # Production build
+    ├── Dockerfile.dev          # Development build (hot reload)
+    ├── GETTING_STARTED.md      # Frontend quick start
+    ├── TESTING_GUIDE.md        # Testing procedures
+    ├── PHASE_1_COMPLETION_SUMMARY.md # Detailed metrics
+    └── package.json
 ```
 
 ---
@@ -355,18 +376,19 @@ docker network inspect bluebonnet_network
 
 ## 🔗 Access Points
 
-| Service | URL/Port | Purpose |
-|---------|----------|---------|
-| Frontend | http://localhost:3001 | Svelte app |
+| Service     | URL/Port              | Purpose          |
+| ----------- | --------------------- | ---------------- |
+| Frontend    | http://localhost:3001 | Svelte app       |
 | Backend API | http://localhost:3000 | Express REST API |
-| Database | localhost:5432 | PostgreSQL |
-| Cache | localhost:6379 | Redis |
+| Database    | localhost:5432        | PostgreSQL       |
+| Cache       | localhost:6379        | Redis            |
 
 ---
 
 ## ✅ Verification
 
 Everything is working if:
+
 1. ✅ All services start without errors
 2. ✅ Frontend loads at http://localhost:3001
 3. ✅ Can create an account
@@ -379,12 +401,14 @@ Everything is working if:
 ## 🚨 Troubleshooting
 
 ### Port Already in Use
+
 ```bash
 # Change port in docker-compose.yml or .env
 FRONTEND_PORT=5174
 ```
 
 ### Cannot Connect to Backend
+
 ```bash
 # Check backend is running
 docker-compose logs app
@@ -394,6 +418,7 @@ docker-compose exec frontend curl http://app:3000
 ```
 
 ### Database Connection Failed
+
 ```bash
 # Check PostgreSQL
 docker-compose logs postgres
@@ -404,6 +429,7 @@ docker-compose up --build
 ```
 
 ### Out of Memory
+
 ```bash
 # Increase Docker memory limit in Docker Desktop
 # Settings → Resources → Memory (increase to 8GB+)
@@ -436,16 +462,18 @@ For more troubleshooting: See **[DOCKER_SETUP.md](./DOCKER_SETUP.md)**
 ## 📞 Need Help?
 
 ### Documentation
-| Need | File |
-|------|------|
-| How to run | This README |
-| How to test | [TESTING_GUIDE.md](./TESTING_GUIDE.md) |
-| Docker details | [DOCKER_SETUP.md](./DOCKER_SETUP.md) |
-| Frontend guide | [../bluebonnet-svelte/GETTING_STARTED.md](../bluebonnet-svelte/GETTING_STARTED.md) |
-| Project metrics | [../bluebonnet-svelte/PHASE_1_COMPLETION_SUMMARY.md](../bluebonnet-svelte/PHASE_1_COMPLETION_SUMMARY.md) |
-| Everything | [COMPLETE_SOLUTION_SUMMARY.md](./COMPLETE_SOLUTION_SUMMARY.md) |
+
+| Need            | File                                                                                 |
+| --------------- | ------------------------------------------------------------------------------------ |
+| How to run      | This README                                                                          |
+| How to test     | [TESTING_GUIDE.md](./TESTING_GUIDE.md)                                               |
+| Docker details  | [DOCKER_SETUP.md](./DOCKER_SETUP.md)                                                 |
+| Frontend guide  | [./frontend/GETTING_STARTED.md](./frontend/GETTING_STARTED.md)                       |
+| Project metrics | [./frontend/PHASE_1_COMPLETION_SUMMARY.md](./frontend/PHASE_1_COMPLETION_SUMMARY.md) |
+| Everything      | [COMPLETE_SOLUTION_SUMMARY.md](./COMPLETE_SOLUTION_SUMMARY.md)                       |
 
 ### Quick Verification
+
 ```bash
 # Run verification script
 bash /tmp/verify_setup.sh
@@ -456,19 +484,23 @@ bash /tmp/verify_setup.sh
 ## 🎉 Summary
 
 ### To Start
+
 ```bash
 cd /home/home/bluebonnet-dev
 docker-compose up --build
 ```
 
 ### To Access
+
 - Frontend: http://localhost:3001
 - Backend: http://localhost:3000
 
 ### To Test
+
 - See [TESTING_GUIDE.md](./TESTING_GUIDE.md)
 
 ### To Deploy
+
 - See [DOCKER_SETUP.md](./DOCKER_SETUP.md)
 
 ---

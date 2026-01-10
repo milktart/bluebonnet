@@ -8,8 +8,9 @@
 ## 🔗 Overview
 
 The Bluebonnet application is a **full-stack** system with:
+
 - **Backend:** Express.js REST API (bluebonnet-dev/)
-- **Frontend:** SvelteKit SPA (bluebonnet-svelte/)
+- **Frontend:** SvelteKit SPA (frontend/)
 - **Database:** PostgreSQL (shared)
 
 These communicate via standard HTTP/REST APIs.
@@ -21,7 +22,7 @@ These communicate via standard HTTP/REST APIs.
 ```
 ┌──────────────────────────────────┐
 │   SvelteKit Frontend              │
-│   (bluebonnet-svelte/)            │
+│   (frontend/)            │
 │                                   │
 │  - Svelte Components              │
 │  - TypeScript                     │
@@ -55,23 +56,26 @@ These communicate via standard HTTP/REST APIs.
 ## 🚀 Running Both Systems
 
 ### Option 1: Docker (Recommended)
+
 ```bash
 # Terminal 1: Start backend + database
 cd bluebonnet-dev
 docker-compose up --build
 
-# Terminal 2: Start frontend
-cd ../bluebonnet-svelte
+# Terminal 2: Start frontend (built into bluebonnet-dev/frontend)
+cd ./frontend
 npm install
 npm run dev
 ```
 
 **Ports:**
+
 - Backend: `http://localhost:3500` (Docker) or `http://localhost:3000` (local)
 - Frontend: `http://localhost:3001`
 - Database: `localhost:5432` (internal only)
 
 ### Option 2: Local Development
+
 ```bash
 # Terminal 1: Backend
 cd bluebonnet-dev
@@ -82,20 +86,21 @@ npm run dev
 # Runs on http://localhost:3000
 
 # Terminal 2: Frontend
-cd bluebonnet-svelte
+cd ./frontend
 npm install
 npm run dev
 # Runs on http://localhost:3001
 ```
 
 ### Option 3: Frontend Only (for UI development)
+
 ```bash
 # Terminal 1: Backend still running separately
-cd bluebonnet-dev
+cd ./bluebonnet-dev
 npm run dev
 
 # Terminal 2: Frontend
-cd bluebonnet-svelte
+cd ./frontend
 npm run dev
 
 # Frontend automatically proxies to backend (see svelte.config.js)
@@ -107,7 +112,7 @@ npm run dev
 
 ### Frontend API Client
 
-**File:** `bluebonnet-svelte/src/lib/services/api.ts`
+**File:** `frontend/src/lib/services/api.ts`
 
 ```typescript
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
@@ -120,17 +125,25 @@ export const api = {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        ...options.headers
-      }
+        ...options.headers,
+      },
     });
     // Error handling and response transformation
     return response.json();
   },
 
-  get(path: string) { /* ... */ },
-  post(path: string, data: any) { /* ... */ },
-  put(path: string, data: any) { /* ... */ },
-  delete(path: string) { /* ... */ }
+  get(path: string) {
+    /* ... */
+  },
+  post(path: string, data: any) {
+    /* ... */
+  },
+  put(path: string, data: any) {
+    /* ... */
+  },
+  delete(path: string) {
+    /* ... */
+  },
 };
 ```
 
@@ -193,6 +206,7 @@ export const api = {
 ### Protected Routes
 
 **Frontend Protection:**
+
 ```typescript
 // src/routes/+layout.ts
 export async function load({ fetch }) {
@@ -205,12 +219,13 @@ export async function load({ fetch }) {
 ```
 
 **Backend Protection:**
+
 ```javascript
 // routes/api.js
 router.get('/trips', ensureAuthenticated, async (req, res) => {
   // req.user contains authenticated user
   const trips = await Trip.findAll({
-    where: { userId: req.user.id }  // Always filter by user
+    where: { userId: req.user.id }, // Always filter by user
   });
   res.json({ success: true, data: trips });
 });
@@ -301,6 +316,7 @@ router.get('/trips', ensureAuthenticated, async (req, res) => {
 ## 🔗 API Endpoints Reference
 
 ### Authentication
+
 ```
 POST /api/auth/login
   Request:  { email, password }
@@ -318,6 +334,7 @@ POST /api/auth/register
 ```
 
 ### Trips (Complete CRUD)
+
 ```
 GET /api/trips
   Response: { success, data: [ { trips array } ] }
@@ -338,6 +355,7 @@ DELETE /api/trips/{id}
 ```
 
 ### Travel Items (same pattern for all types)
+
 ```
 GET /api/trips/{id}/flights
   Response: [ flights in this trip ]
@@ -359,6 +377,7 @@ POST /api/flights  (standalone)
 ```
 
 ### Companions
+
 ```
 GET /api/trips/{id}/companions
   Response: [ companions for this trip ]
@@ -372,6 +391,7 @@ DELETE /api/companions/{id}
 ```
 
 ### Vouchers
+
 ```
 GET /api/trips/{id}/vouchers
   Response: [ vouchers for this trip ]
@@ -392,13 +412,15 @@ DELETE /api/vouchers/{id}
 
 ## 🛠️ Environment Configuration
 
-### Frontend (bluebonnet-svelte/.env)
+### Frontend (frontend/.env)
+
 ```env
 VITE_API_URL=http://localhost:3000/api
 VITE_APP_NAME=Bluebonnet
 ```
 
 ### Backend (bluebonnet-dev/.env)
+
 ```env
 DB_HOST=localhost
 DB_PORT=5432
@@ -418,22 +440,23 @@ LOG_LEVEL=info
 ```
 
 ### Docker (docker-compose.yml)
+
 ```yaml
 services:
   backend:
     # Express server
     ports:
-      - "3500:3000"  # Exposed to host
+      - '3500:3000' # Exposed to host
 
   frontend:
     # SvelteKit dev server
     ports:
-      - "3001:3001"
+      - '3001:3001'
 
   postgres:
     # Database
     ports:
-      - "5432:5432"  # Only for development
+      - '5432:5432' # Only for development
 
   redis:
     # Session store
@@ -447,25 +470,27 @@ services:
 ### Frontend Can't Connect to Backend
 
 **Symptoms:**
+
 - Network errors in browser console
 - "Failed to fetch" messages
 - CORS errors
 
 **Solutions:**
+
 ```javascript
 // Check API URL
 console.log(import.meta.env.VITE_API_URL);
 
 // Test backend is running
 fetch('http://localhost:3000/api/auth/me')
-  .then(r => console.log(r))
-  .catch(e => console.error('Backend unreachable:', e));
+  .then((r) => console.log(r))
+  .catch((e) => console.error('Backend unreachable:', e));
 
 // Check CORS headers
 // In bluebonnet-dev server.js:
 const corsOptions = {
-  origin: 'http://localhost:3001',  // Frontend URL
-  credentials: true                  // Include cookies
+  origin: 'http://localhost:3001', // Frontend URL
+  credentials: true, // Include cookies
 };
 app.use(cors(corsOptions));
 ```
@@ -473,10 +498,12 @@ app.use(cors(corsOptions));
 ### Database Connection Issues
 
 **Symptoms:**
+
 - "connect ECONNREFUSED 127.0.0.1:5432"
 - Database queries timing out
 
 **Solutions:**
+
 ```bash
 # Check if PostgreSQL is running
 psql -U postgres -d bluebonnet
@@ -494,24 +521,28 @@ npm run db:seed-airports
 ### Authentication Issues
 
 **Symptoms:**
+
 - Login works but next page shows 401
 - Session expires immediately
 
 **Solutions:**
+
 ```javascript
 // Check session middleware is applied
 // In bluebonnet-dev/server.js:
-app.use(session({
-  store: new RedisStore({ client: redisClient }),
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: false,  // true in production
-    httpOnly: true,
-    sameSite: 'lax'
-  }
-}));
+app.use(
+  session({
+    store: new RedisStore({ client: redisClient }),
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false, // true in production
+      httpOnly: true,
+      sameSite: 'lax',
+    },
+  })
+);
 
 // Check passport is configured
 app.use(passport.initialize());
@@ -525,14 +556,15 @@ app.use(passport.session());
 ### 1. Create Backend Endpoint
 
 **File:** `bluebonnet-dev/routes/api/v1/flights.js`
+
 ```javascript
 router.post('/flights/:id/duplicate', ensureAuthenticated, async (req, res) => {
   try {
     const flight = await Flight.findByPk(req.params.id);
     const duplicate = await Flight.create({
       ...flight.dataValues,
-      id: undefined,  // Generate new ID
-      createdAt: undefined
+      id: undefined, // Generate new ID
+      createdAt: undefined,
     });
     res.json({ success: true, data: duplicate });
   } catch (error) {
@@ -543,7 +575,8 @@ router.post('/flights/:id/duplicate', ensureAuthenticated, async (req, res) => {
 
 ### 2. Call from Frontend Component
 
-**File:** `bluebonnet-svelte/src/lib/components/FlightForm.svelte`
+**File:** `frontend/src/lib/components/FlightForm.svelte`
+
 ```svelte
 <script lang="ts">
   async function handleDuplicate(flightId: string) {
@@ -580,25 +613,25 @@ export const tripStore = writable({
   trips: [],
   selectedTrip: null,
   loading: false,
-  error: null
+  error: null,
 });
 
 export async function loadTrips() {
-  tripStore.update(s => ({ ...s, loading: true }));
+  tripStore.update((s) => ({ ...s, loading: true }));
   try {
     const response = await api.get('/trips');
-    tripStore.update(s => ({
+    tripStore.update((s) => ({
       ...s,
       trips: response.data,
-      error: null
+      error: null,
     }));
   } catch (error) {
-    tripStore.update(s => ({
+    tripStore.update((s) => ({
       ...s,
-      error: error.message
+      error: error.message,
     }));
   } finally {
-    tripStore.update(s => ({ ...s, loading: false }));
+    tripStore.update((s) => ({ ...s, loading: false }));
   }
 }
 ```
@@ -630,6 +663,7 @@ export async function loadTrips() {
 ## ✅ Validation
 
 ### Frontend Validation (UX)
+
 ```typescript
 // Immediate user feedback
 if (!tripName.trim()) {
@@ -644,6 +678,7 @@ if (departureDate > returnDate) {
 ```
 
 ### Backend Validation (Security)
+
 ```javascript
 // Never trust frontend validation
 const { name, departureDate, returnDate } = req.body;
@@ -651,14 +686,14 @@ const { name, departureDate, returnDate } = req.body;
 if (!name || !name.trim()) {
   return res.status(400).json({
     success: false,
-    error: 'Name is required'
+    error: 'Name is required',
   });
 }
 
 if (new Date(returnDate) < new Date(departureDate)) {
   return res.status(400).json({
     success: false,
-    error: 'Invalid date range'
+    error: 'Invalid date range',
   });
 }
 
@@ -670,10 +705,12 @@ if (new Date(returnDate) < new Date(departureDate)) {
 ## 🚀 Deployment Considerations
 
 ### Same Origin Requirement
+
 - Frontend and backend should be on same domain (or CORS configured)
 - Cookies work with `credentials: true` in fetch
 
 ### Production Setup
+
 ```
 Domain: example.com
 ├─ Frontend: example.com/ (SvelteKit built/deployed)
@@ -682,6 +719,7 @@ Domain: example.com
 ```
 
 ### Docker Deployment
+
 ```bash
 # Build containers
 docker-compose build
@@ -698,8 +736,9 @@ docker-compose up
 ## 📊 Testing Integration
 
 ### E2E Test Example
+
 ```typescript
-// bluebonnet-svelte/src/tests/integration.test.ts
+// frontend/src/tests/integration.test.ts
 describe('Trip Creation Flow', () => {
   it('should create trip via UI', async () => {
     // 1. Navigate to dashboard
@@ -714,7 +753,7 @@ describe('Trip Creation Flow', () => {
     await page.fill('input[name="returnDate"]', '2025-06-10');
 
     // 4. Mock API response
-    await page.route('/api/trips', async route => {
+    await page.route('/api/trips', async (route) => {
       await route.abort('Trip created', { status: 201 });
     });
 
@@ -733,6 +772,7 @@ describe('Trip Creation Flow', () => {
 ## 📞 Support & Debugging
 
 **Check logs:**
+
 ```bash
 # Frontend console
 # Open DevTools (F12) → Console tab
@@ -745,6 +785,7 @@ psql -U postgres -d bluebonnet -c "SELECT * FROM trips;"
 ```
 
 **Common issues:**
+
 - Port already in use: `lsof -i :3000`
 - Database not initialized: `npm run db:sync`
 - Missing environment variables: Check `.env` files

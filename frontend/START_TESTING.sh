@@ -54,10 +54,10 @@ print_success "npm $(npm -v)"
 # Check if we're in the right directory
 if [ ! -f "package.json" ]; then
     echo -e "${RED}✗ package.json not found${NC}"
-    echo "Please run this script from the bluebonnet-svelte directory"
+    echo "Please run this script from the bluebonnet-frontend directory"
     exit 1
 fi
-print_success "In correct directory: bluebonnet-svelte"
+print_success "In correct directory: bluebonnet-frontend"
 
 # Install dependencies
 print_header "Installing Dependencies"

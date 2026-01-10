@@ -255,7 +255,7 @@ app.use(async (req, res, next) => {
   if (svelteKitHandler === null && svelteKitLoadError === null) {
     try {
       // eslint-disable-next-line import/no-unresolved, import/extensions
-      const svelteKitModule = await import('bluebonnet-svelte/build/handler.js');
+      const svelteKitModule = await import('bluebonnet-frontend/build/handler.js');
       svelteKitHandler = svelteKitModule.handler;
       logger.info('SvelteKit frontend handler loaded successfully on first request');
     } catch (error) {

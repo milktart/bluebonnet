@@ -22,23 +22,27 @@ docker-compose up --build
 ```
 
 Then visit:
+
 - **Frontend**: http://localhost:3001
 - **Backend API**: http://localhost:3000
 
 ### Option 2: Local Development
 
 #### Prerequisites
+
 - Node.js 20+ installed
 - Backend running on http://localhost:3000
 
 #### Steps
 
 1. Install dependencies:
+
 ```bash
 npm install
 ```
 
 2. Start the development server:
+
 ```bash
 npm run dev
 ```
@@ -48,7 +52,7 @@ npm run dev
 ## Project Structure
 
 ```
-/home/home/bluebonnet-svelte/
+/home/home/bluebonnet-dev/frontend/
 ├── src/
 │   ├── lib/
 │   │   ├── components/          # 25+ Svelte components
@@ -127,6 +131,7 @@ npm run test
 During development, changes to files are automatically reflected in the browser without full page reload.
 
 **What's included**:
+
 - ✅ Component changes
 - ✅ Style changes
 - ✅ TypeScript changes
@@ -138,10 +143,11 @@ During development, changes to files are automatically reflected in the browser 
 Follow the comprehensive testing guide:
 
 ```bash
-cat /home/home/bluebonnet-svelte/TESTING_GUIDE.md
+cat ./TESTING_GUIDE.md
 ```
 
 **Testing phases covered**:
+
 1. Authentication flow
 2. Dashboard navigation
 3. Trip management
@@ -208,11 +214,11 @@ The frontend is fully integrated with the Express backend:
 // src/lib/services/api.ts
 
 // Trips
-tripsApi.getAll()
-tripsApi.getOne(id)
-tripsApi.create(data)
-tripsApi.update(id, data)
-tripsApi.delete(id)
+tripsApi.getAll();
+tripsApi.getOne(id);
+tripsApi.create(data);
+tripsApi.update(id, data);
+tripsApi.delete(id);
 
 // Flights, Hotels, Events, etc. follow same pattern
 ```
@@ -232,36 +238,39 @@ The app uses token-based authentication:
 Three core Svelte stores manage application state:
 
 ### tripStore
+
 Manages all trip-related data: trips, flights, hotels, events, companions
 
 ```typescript
-tripStore.subscribe(data => {
-  console.log(data.trips);      // Array of trips
-  console.log(data.flights);    // Array of flights
+tripStore.subscribe((data) => {
+  console.log(data.trips); // Array of trips
+  console.log(data.flights); // Array of flights
   console.log(data.currentTrip); // Currently selected trip
-})
+});
 ```
 
 ### authStore
+
 Manages user authentication state
 
 ```typescript
-authStore.subscribe(auth => {
-  console.log(auth.isAuthenticated);  // boolean
-  console.log(auth.user);             // user object
-  console.log(auth.token);            // auth token
-})
+authStore.subscribe((auth) => {
+  console.log(auth.isAuthenticated); // boolean
+  console.log(auth.user); // user object
+  console.log(auth.token); // auth token
+});
 ```
 
 ### uiStore
+
 Manages UI state: modals, sidebars, loading indicators
 
 ```typescript
-uiStore.subscribe(ui => {
-  console.log(ui.loading);             // boolean
-  console.log(ui.sidebarOpen);         // boolean
-  console.log(ui.notification);        // notification message
-})
+uiStore.subscribe((ui) => {
+  console.log(ui.loading); // boolean
+  console.log(ui.sidebarOpen); // boolean
+  console.log(ui.notification); // notification message
+});
 ```
 
 ## Deployment
@@ -303,26 +312,31 @@ docker-compose logs -f frontend
 ### Common Issues
 
 #### "Cannot GET /"
+
 - Ensure dev server is running: `npm run dev`
 - Check http://localhost:3001 (not 3000)
 
 #### "API Connection Failed"
+
 - Verify backend is running: `npm run dev` in `/home/home/bluebonnet`
 - Check API_BASE in `src/lib/services/api.ts`
 - Verify CORS is enabled on backend
 
 #### "Module not found"
+
 - Run `npm install`
 - Clear .svelte-kit cache: `rm -rf .svelte-kit`
 - Restart dev server
 
 #### "Port already in use"
+
 ```bash
 # Change port in package.json or environment:
 npm run dev -- --port 5174
 ```
 
 #### Styles not loading
+
 - Check browser console for CSS errors
 - Verify CSS files are in src/
 - Clear browser cache: Ctrl+Shift+Delete
@@ -330,6 +344,7 @@ npm run dev -- --port 5174
 ### Getting Help
 
 1. **Check the logs**:
+
    ```bash
    npm run dev 2>&1 | tee debug.log
    ```
@@ -423,6 +438,7 @@ PostgreSQL + Redis
 ## You're All Set! 🎉
 
 **Quick commands**:
+
 ```bash
 npm install              # First time setup
 npm run dev             # Start development

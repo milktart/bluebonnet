@@ -7,13 +7,16 @@
 ## ⚡ Quick Start (60 Seconds)
 
 ### 1. Run Everything
+
 ```bash
 cd /home/home/bluebonnet-dev
 docker-compose up --build
 ```
 
 ### 2. Wait for Setup
+
 Look for these messages:
+
 ```
 backend: DB_HOST: postgres ✓
 frontend: VITE v5... ✓
@@ -21,9 +24,11 @@ postgres: accepting connections ✓
 ```
 
 ### 3. Open Browser
+
 Visit: **http://localhost:3001**
 
 ### 4. Test It
+
 - Click "Sign Up"
 - Create an account
 - Create a trip
@@ -35,12 +40,12 @@ Visit: **http://localhost:3001**
 
 ## 📋 What You Have
 
-| Component | Port | Purpose |
-|-----------|------|---------|
-| **Frontend** (Svelte) | 3001 | Travel planning UI |
-| **Backend** (Express) | 3000 | REST API |
-| **Database** (PostgreSQL) | 5432 | Trip data |
-| **Cache** (Redis) | 6379 | Session/cache |
+| Component                 | Port | Purpose            |
+| ------------------------- | ---- | ------------------ |
+| **Frontend** (Svelte)     | 3001 | Travel planning UI |
+| **Backend** (Express)     | 3000 | REST API           |
+| **Database** (PostgreSQL) | 5432 | Trip data          |
+| **Cache** (Redis)         | 6379 | Session/cache      |
 
 ---
 
@@ -60,9 +65,9 @@ Visit: **http://localhost:3001**
 
 - **"See all the details"** → Read [COMPLETE_SOLUTION_SUMMARY.md](./COMPLETE_SOLUTION_SUMMARY.md)
 
-- **"Learn the frontend"** → Read [../bluebonnet-svelte/GETTING_STARTED.md](../bluebonnet-svelte/GETTING_STARTED.md)
+- **"Learn the frontend"** → Read [./frontend/GETTING_STARTED.md](./frontend/GETTING_STARTED.md)
 
-- **"Check the metrics"** → Read [../bluebonnet-svelte/PHASE_1_COMPLETION_SUMMARY.md](../bluebonnet-svelte/PHASE_1_COMPLETION_SUMMARY.md)
+- **"Check the metrics"** → Read [./frontend/PHASE_1_COMPLETION_SUMMARY.md](./frontend/PHASE_1_COMPLETION_SUMMARY.md)
 
 ---
 
@@ -135,6 +140,7 @@ docker-compose exec frontend sh
    - Verify layout works on mobile
 
 ### For Comprehensive Testing
+
 See: [TESTING_GUIDE.md](./TESTING_GUIDE.md)
 
 ---
@@ -142,6 +148,7 @@ See: [TESTING_GUIDE.md](./TESTING_GUIDE.md)
 ## ❓ Troubleshooting
 
 ### "Cannot connect to port 3001"
+
 ```bash
 # Port may already be in use, try different port
 docker-compose down -v
@@ -151,6 +158,7 @@ docker-compose up --build
 ```
 
 ### "API connection failed"
+
 ```bash
 # Check backend is running
 docker-compose logs app
@@ -160,6 +168,7 @@ docker-compose exec frontend curl http://app:3000
 ```
 
 ### "Database error"
+
 ```bash
 # Reset everything
 docker-compose down -v
@@ -167,6 +176,7 @@ docker-compose up --build
 ```
 
 ### More help?
+
 See: [DOCKER_SETUP.md](./DOCKER_SETUP.md) (Troubleshooting section)
 
 ---
@@ -187,14 +197,14 @@ START HERE ← You are here
 │  └─ TESTING_GUIDE.md ........... Complete testing guide
 │
 ├─ For Frontend Development
-│  └─ ../bluebonnet-svelte/GETTING_STARTED.md
+│  └─ ./frontend/GETTING_STARTED.md
 │
 ├─ For Detailed Info
 │  ├─ COMPLETE_SOLUTION_SUMMARY.md .... Everything
-│  └─ ../bluebonnet-svelte/PHASE_1_COMPLETION_SUMMARY.md
+│  └─ ./frontend/PHASE_1_COMPLETION_SUMMARY.md
 │
 └─ For Code
-   └─ ../bluebonnet-svelte/src/ ...... All source code
+   └─ ./frontend/src/ ...... All source code
 ```
 
 ---
@@ -202,11 +212,13 @@ START HERE ← You are here
 ## ✨ What's Been Built
 
 ### Phase 0: Documentation
+
 - 36+ markdown files organized
 - 75-85% token reduction
 - Complete architectural docs
 
 ### Phase 1: Complete Frontend (12 Weeks, 1 Session)
+
 - **Week 1**: SvelteKit foundation
 - **Week 2**: 13 core components
 - **Weeks 3-4**: Dashboard & trips
@@ -215,6 +227,7 @@ START HERE ← You are here
 - **Weeks 11-12**: Polish & deployment
 
 ### Docker Setup
+
 - All services orchestrated
 - Hot reload for development
 - Production-ready builds
@@ -225,16 +238,19 @@ START HERE ← You are here
 ## 🎯 Next Steps
 
 ### Right Now
+
 1. Run: `docker-compose up --build`
 2. Visit: http://localhost:3001
 3. Create account → Create trip
 
 ### Then
+
 1. Follow [TESTING_GUIDE.md](./TESTING_GUIDE.md)
 2. Test all features
 3. Fix any issues
 
 ### Later
+
 1. Set up automated tests
 2. Deploy to staging
 3. Production release
@@ -244,11 +260,13 @@ START HERE ← You are here
 ## 💡 Pro Tips
 
 ### Development
+
 - Edit code while Docker is running - changes reload automatically (HMR)
 - Use F12 DevTools to inspect components and API calls
 - Check browser console for any errors
 
 ### Debugging
+
 ```bash
 # View all logs
 docker-compose logs
@@ -261,6 +279,7 @@ docker-compose exec frontend sh
 ```
 
 ### Performance
+
 - Frontend bundle: ~35 KB gzipped (very small!)
 - No external CSS framework (pure CSS)
 - Hot reload is instant with Vite
@@ -269,15 +288,15 @@ docker-compose exec frontend sh
 
 ## 📞 Help Resources
 
-| Question | Answer |
-|----------|--------|
-| How do I run it? | `docker-compose up --build` |
-| Where's the frontend? | http://localhost:3001 |
-| Where's the API? | http://localhost:3000 |
-| How do I test? | See [TESTING_GUIDE.md](./TESTING_GUIDE.md) |
-| How do I deploy? | See [DOCKER_SETUP.md](./DOCKER_SETUP.md) |
-| What's included? | See [README.md](./README.md) |
-| Everything? | See [COMPLETE_SOLUTION_SUMMARY.md](./COMPLETE_SOLUTION_SUMMARY.md) |
+| Question              | Answer                                                             |
+| --------------------- | ------------------------------------------------------------------ |
+| How do I run it?      | `docker-compose up --build`                                        |
+| Where's the frontend? | http://localhost:3001                                              |
+| Where's the API?      | http://localhost:3000                                              |
+| How do I test?        | See [TESTING_GUIDE.md](./TESTING_GUIDE.md)                         |
+| How do I deploy?      | See [DOCKER_SETUP.md](./DOCKER_SETUP.md)                           |
+| What's included?      | See [README.md](./README.md)                                       |
+| Everything?           | See [COMPLETE_SOLUTION_SUMMARY.md](./COMPLETE_SOLUTION_SUMMARY.md) |
 
 ---
 
@@ -295,7 +314,7 @@ Then visit: http://localhost:3001
 
 **Questions?** Check the appropriate documentation file above.
 
-**Ready to code?** Start editing files in `/bluebonnet-svelte/src/` - changes reload instantly!
+**Ready to code?** Start editing files in `./frontend/src/` - changes reload instantly!
 
 **Time**: ~1 minute to get running
 **Status**: ✅ Production Ready

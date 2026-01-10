@@ -6,7 +6,7 @@
 
 ```bash
 # Navigate to the project directory
-cd /home/home/bluebonnet-svelte
+cd /home/home/bluebonnet-dev/frontend
 
 # Install dependencies (if not already installed)
 npm install
@@ -38,6 +38,7 @@ Backend API will be at `http://localhost:3000`
 #### 1.1 Register a New Account
 
 **Steps**:
+
 1. Go to `http://localhost:3001`
 2. Click "Get Started Free" or navigate to `/register`
 3. Fill in the form:
@@ -49,6 +50,7 @@ Backend API will be at `http://localhost:3000`
 4. Click "Create Account"
 
 **Expected Results**:
+
 - ✅ Form validates required fields
 - ✅ Password confirmation matches checked
 - ✅ Account created successfully
@@ -56,6 +58,7 @@ Backend API will be at `http://localhost:3000`
 - ✅ User name appears in navigation
 
 **Troubleshooting**:
+
 - If registration fails, check browser console for errors
 - Verify Express backend is running
 - Check that API_BASE in `src/lib/services/api.ts` is correct
@@ -63,6 +66,7 @@ Backend API will be at `http://localhost:3000`
 #### 1.2 Login
 
 **Steps**:
+
 1. Navigate to `/login`
 2. Enter credentials:
    - Email: `test@example.com`
@@ -70,22 +74,26 @@ Backend API will be at `http://localhost:3000`
 3. Click "Sign In"
 
 **Expected Results**:
+
 - ✅ Form validates inputs
 - ✅ Login successful
 - ✅ Redirected to dashboard
 - ✅ User session maintained (refresh page - still logged in)
 
 **Troubleshooting**:
+
 - Check browser DevTools Network tab for API responses
 - Verify token is stored in localStorage
 
 #### 1.3 Logout
 
 **Steps**:
+
 1. Click user name in top-right navbar
 2. Click "Logout"
 
 **Expected Results**:
+
 - ✅ Logged out successfully
 - ✅ Redirected to login page
 - ✅ Session cleared (refresh shows login)
@@ -95,11 +103,13 @@ Backend API will be at `http://localhost:3000`
 #### 2.1 Dashboard Navigation
 
 **Steps**:
+
 1. Login to the app
 2. Verify dashboard loads with trip list
 3. Click on "Upcoming", "Past", "All" tabs
 
 **Expected Results**:
+
 - ✅ Dashboard displays correctly
 - ✅ Trip list shows all trips
 - ✅ Tabs filter correctly
@@ -108,6 +118,7 @@ Backend API will be at `http://localhost:3000`
 #### 2.2 Create Trip
 
 **Steps**:
+
 1. Click "+ New Trip" button on dashboard
 2. Fill in the form:
    - Trip Name: `Paris Adventure 2025`
@@ -120,6 +131,7 @@ Backend API will be at `http://localhost:3000`
 3. Click "Create Trip"
 
 **Expected Results**:
+
 - ✅ Form validates all required fields
 - ✅ Trip created successfully
 - ✅ Redirected to trip detail page
@@ -128,11 +140,13 @@ Backend API will be at `http://localhost:3000`
 #### 2.3 Delete Trip
 
 **Steps**:
+
 1. Go to dashboard
 2. Find a trip card
 3. Click "Delete" button
 
 **Expected Results**:
+
 - ✅ Trip deleted without confirmation (per architecture)
 - ✅ Dashboard updates automatically
 - ✅ Trip no longer appears in list
@@ -142,10 +156,12 @@ Backend API will be at `http://localhost:3000`
 #### 3.1 View Trip Details
 
 **Steps**:
+
 1. Click on a trip from dashboard
 2. Verify all tabs load correctly
 
 **Expected Results**:
+
 - ✅ Trip name, destination, dates display
 - ✅ All tabs (Flights, Hotels, Events, Companions) load
 - ✅ Summary sidebar shows trip metrics
@@ -154,12 +170,14 @@ Backend API will be at `http://localhost:3000`
 #### 3.2 Edit Trip
 
 **Steps**:
+
 1. Go to trip detail page
 2. Click "Edit Trip" button
 3. Modify a field (e.g., change destination)
 4. Click "Update Trip"
 
 **Expected Results**:
+
 - ✅ Edit form loads with current trip data
 - ✅ Changes saved successfully
 - ✅ Redirected back to trip detail
@@ -170,6 +188,7 @@ Backend API will be at `http://localhost:3000`
 #### 4.1 Add Flight
 
 **Steps**:
+
 1. Go to trip detail page
 2. Click "Flights" tab
 3. Click "+ Add Flight" button
@@ -185,6 +204,7 @@ Backend API will be at `http://localhost:3000`
 5. Click "Add Flight"
 
 **Expected Results**:
+
 - ✅ Form validates required fields
 - ✅ Date/time picker works correctly
 - ✅ Flight created successfully
@@ -194,12 +214,14 @@ Backend API will be at `http://localhost:3000`
 #### 4.2 Edit Flight
 
 **Steps**:
+
 1. Go to trip detail, Flights tab
 2. Click "Edit" on a flight
 3. Modify a field (e.g., seat number)
 4. Click "Update Flight"
 
 **Expected Results**:
+
 - ✅ Edit form shows current flight data
 - ✅ Changes saved successfully
 - ✅ Sidebar refreshes automatically
@@ -207,10 +229,12 @@ Backend API will be at `http://localhost:3000`
 #### 4.3 Delete Flight
 
 **Steps**:
+
 1. Go to trip detail, Flights tab
 2. Click "Delete" on a flight
 
 **Expected Results**:
+
 - ✅ Flight deleted immediately
 - ✅ Flight list updates
 - ✅ Summary shows updated count
@@ -218,6 +242,7 @@ Backend API will be at `http://localhost:3000`
 #### 4.4 Add Hotel
 
 **Steps**:
+
 1. Go to trip detail page
 2. Click "Hotels" tab
 3. Click "+ Add Hotel"
@@ -232,6 +257,7 @@ Backend API will be at `http://localhost:3000`
 5. Click "Add Hotel"
 
 **Expected Results**:
+
 - ✅ Hotel form validates
 - ✅ Hotel created and appears in list
 - ✅ Trip summary updated
@@ -239,6 +265,7 @@ Backend API will be at `http://localhost:3000`
 #### 4.5 Add Event
 
 **Steps**:
+
 1. Click "Events" tab
 2. Click "+ Add Event"
 3. Fill in:
@@ -251,6 +278,7 @@ Backend API will be at `http://localhost:3000`
 4. Click "Add Event"
 
 **Expected Results**:
+
 - ✅ Event created
 - ✅ Appears in Events tab
 - ✅ Calendar timeline includes new event
@@ -258,6 +286,7 @@ Backend API will be at `http://localhost:3000`
 #### 4.6 Add Companions
 
 **Steps**:
+
 1. Click "Companions" tab
 2. Click "+ Add Companion"
 3. Fill in:
@@ -267,6 +296,7 @@ Backend API will be at `http://localhost:3000`
 4. Click "Add Companion"
 
 **Expected Results**:
+
 - ✅ Companion form validates
 - ✅ Companion added to trip
 - ✅ Appears in Companions tab
@@ -339,6 +369,7 @@ Backend API will be at `http://localhost:3000`
 ```
 
 **Verify**:
+
 - ✅ 2-column layouts display correctly
 - ✅ Sidebars visible
 - ✅ Navigation fully expanded
@@ -352,6 +383,7 @@ Backend API will be at `http://localhost:3000`
 ```
 
 **Verify**:
+
 - ✅ 1-column layouts
 - ✅ Touch targets large enough
 - ✅ Forms stack vertically
@@ -365,6 +397,7 @@ Backend API will be at `http://localhost:3000`
 ```
 
 **Verify**:
+
 - ✅ Hamburger menu displays
 - ✅ Single column layout
 - ✅ Buttons/links tappable (44px minimum)
@@ -376,11 +409,13 @@ Backend API will be at `http://localhost:3000`
 #### 7.1 Network Monitoring
 
 **Steps**:
+
 1. Open DevTools > Network tab
 2. Create a new trip
 3. Watch network requests
 
 **Verify**:
+
 - ✅ POST request sent to correct endpoint
 - ✅ Request includes all form data
 - ✅ Response status 200/201
@@ -390,11 +425,13 @@ Backend API will be at `http://localhost:3000`
 #### 7.2 Error Handling
 
 **Test Network Errors**:
+
 1. Disconnect internet or block API
 2. Try to create a trip
 3. Verify error message displays
 
 **Verify**:
+
 - ✅ Error alert displays
 - ✅ Form doesn't submit
 - ✅ User can retry
@@ -402,11 +439,13 @@ Backend API will be at `http://localhost:3000`
 #### 7.3 Data Persistence
 
 **Steps**:
+
 1. Create a trip
 2. Refresh the page (F5)
 3. Navigate to dashboard
 
 **Verify**:
+
 - ✅ Trip still visible (loaded from API)
 - ✅ All trip data preserved
 - ✅ No data loss on refresh
@@ -416,11 +455,13 @@ Backend API will be at `http://localhost:3000`
 #### 8.1 Console (F12 > Console)
 
 **Check for**:
+
 - ✅ No JavaScript errors (red messages)
 - ✅ No warnings that block functionality
 - ✅ Clean console on load
 
 **Common Issues**:
+
 - Missing API endpoints
 - CORS errors
 - TypeScript compilation errors
@@ -428,6 +469,7 @@ Backend API will be at `http://localhost:3000`
 #### 8.2 Network (F12 > Network)
 
 **Check**:
+
 - ✅ All API calls successful (200/201)
 - ✅ No 404s or 500s
 - ✅ API response times < 1 second
@@ -436,6 +478,7 @@ Backend API will be at `http://localhost:3000`
 #### 8.3 Storage (F12 > Application > Storage)
 
 **Check localStorage**:
+
 - ✅ `authToken` stored on login
 - ✅ `user` object stored
 - ✅ Data cleared on logout
@@ -443,6 +486,7 @@ Backend API will be at `http://localhost:3000`
 #### 8.4 Elements (F12 > Inspector)
 
 **Verify**:
+
 - ✅ Semantic HTML structure
 - ✅ Proper label associations
 - ✅ ARIA attributes present
@@ -475,6 +519,7 @@ npm run test:e2e
 ## Test Checklist
 
 ### Functionality
+
 - [ ] User registration works
 - [ ] User login works
 - [ ] User logout works
@@ -489,6 +534,7 @@ npm run test:e2e
 - [ ] Delete items works
 
 ### Forms
+
 - [ ] All required fields validated
 - [ ] Error messages display
 - [ ] Date picker works
@@ -498,6 +544,7 @@ npm run test:e2e
 - [ ] Form submission successful
 
 ### UI/UX
+
 - [ ] All buttons clickable
 - [ ] All links navigate correctly
 - [ ] Error messages user-friendly
@@ -507,6 +554,7 @@ npm run test:e2e
 - [ ] Alerts dismissible
 
 ### Performance
+
 - [ ] Page loads in < 2 seconds
 - [ ] No memory leaks
 - [ ] Smooth scrolling
@@ -514,6 +562,7 @@ npm run test:e2e
 - [ ] Images optimized
 
 ### Accessibility
+
 - [ ] Keyboard navigation works
 - [ ] Tab order logical
 - [ ] Labels associated with inputs
@@ -522,6 +571,7 @@ npm run test:e2e
 - [ ] Focus visible
 
 ### Browser Compatibility
+
 - [ ] Chrome/Chromium
 - [ ] Firefox
 - [ ] Safari
@@ -534,6 +584,7 @@ npm run test:e2e
 ### "API Connection Failed"
 
 **Solution**:
+
 ```bash
 # Check Express backend is running
 # Verify API_BASE in src/lib/services/api.ts matches backend URL
@@ -544,6 +595,7 @@ npm run test:e2e
 ### "Form not submitting"
 
 **Solution**:
+
 ```javascript
 // Open browser console and check for errors
 // Check Network tab for failed requests
@@ -554,6 +606,7 @@ npm run test:e2e
 ### "Data not persisting"
 
 **Solution**:
+
 ```bash
 # Verify PostgreSQL is running
 # Check database tables were created
@@ -564,6 +617,7 @@ npm run test:e2e
 ### "Responsive layout broken"
 
 **Solution**:
+
 ```bash
 # Check viewport meta tag in src/app.html
 # Verify CSS media queries are correct
@@ -602,12 +656,14 @@ npm run build
 ## Testing Different Scenarios
 
 ### Empty States
+
 - Dashboard with no trips
 - Trip with no flights
 - Trip with no companions
 - No search results
 
 ### Edge Cases
+
 - Very long trip names
 - International characters in form fields
 - Past dates for trips
@@ -615,6 +671,7 @@ npm run build
 - Maximum companions limit
 
 ### Data Validation
+
 - Email format validation
 - Phone number format
 - Number field boundaries
@@ -629,23 +686,29 @@ npm run build
 ## Bug Title
 
 ### Description
+
 What happened
 
 ### Steps to Reproduce
+
 1. Step 1
 2. Step 2
 3. Step 3
 
 ### Expected Behavior
+
 What should happen
 
 ### Actual Behavior
+
 What actually happens
 
 ### Screenshots
+
 [Attach screenshot]
 
 ### System Info
+
 - Browser: Chrome 120
 - OS: Windows 11
 - Device: Desktop

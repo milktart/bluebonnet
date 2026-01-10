@@ -9,18 +9,21 @@
 Complete these items **BEFORE** starting Week 1 development:
 
 ### ✅ Day 1: Team Preparation
+
 - [ ] **Read** [Phase 1 Overview](./PHASE_1_OVERVIEW.md) (30 min)
 - [ ] **Understand** the 12-week timeline and feature migration order
 - [ ] **Review** success criteria and what "done" means
 - [ ] **Assign** a Phase 1 lead developer
 
 ### ✅ Day 2-3: Svelte Training
+
 - [ ] **Learn Svelte basics** using [Svelte Basics Quick Reference](../../LEARNING_RESOURCES/SVELTE_BASICS.md) (4-6 hours)
 - [ ] **Try examples** in Svelte REPL: https://svelte.dev/repl
 - [ ] **Understand** reactivity, components, stores, lifecycle
 - [ ] **Practice** before writing production code
 
 ### ✅ Day 4: Environment Setup
+
 - [ ] **Have Node.js 18+** installed (`node -v`)
 - [ ] **Have npm or pnpm** installed (`npm -v`)
 - [ ] **Have Docker** installed (optional but recommended)
@@ -28,12 +31,14 @@ Complete these items **BEFORE** starting Week 1 development:
 - [ ] **Have VS Code** or preferred editor ready
 
 ### ✅ Day 5: Architecture Review
+
 - [ ] **Review** [PHASE_1_OVERVIEW.md](./PHASE_1_OVERVIEW.md) architecture diagram
 - [ ] **Understand** Svelte + Express separation
 - [ ] **Know** API contracts (Express backend unchanged)
 - [ ] **Review** component structure examples
 
 ### ✅ Before Week 1: Setup Complete
+
 - [ ] Team trained on Svelte ✅
 - [ ] Environment ready ✅
 - [ ] Architecture understood ✅
@@ -49,10 +54,10 @@ Complete these items **BEFORE** starting Week 1 development:
 
 ```bash
 # Create new SvelteKit project
-npm create vite@latest bluebonnet-svelte -- --template svelte
+npm create vite@latest frontend -- --template svelte
 
 # Navigate to project
-cd bluebonnet-svelte
+cd frontend
 
 # Install dependencies
 npm install
@@ -105,10 +110,7 @@ src/
 // Simple fetch wrapper connecting to Express backend
 const API_BASE = 'http://localhost:3000/api';
 
-export async function apiCall(
-  endpoint: string,
-  options?: RequestInit
-) {
+export async function apiCall(endpoint: string, options?: RequestInit) {
   const url = `${API_BASE}${endpoint}`;
   const response = await fetch(url, {
     ...options,
@@ -129,10 +131,11 @@ export async function apiCall(
 export const trips = {
   getAll: () => apiCall('/trips'),
   getOne: (id: string) => apiCall(`/trips/${id}`),
-  create: (data: any) => apiCall('/trips', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  }),
+  create: (data: any) =>
+    apiCall('/trips', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 };
 
 export const flights = {
@@ -197,6 +200,7 @@ export const uiStore = writable({
 ### Week 1 Goal: ✅ Foundation Complete
 
 By end of Week 1:
+
 - ✅ SvelteKit project running
 - ✅ API client connecting to Express
 - ✅ Stores initialized and accessible
@@ -287,6 +291,7 @@ By end of Week 1:
 ### Week 2 Goal: ✅ First Component Working
 
 By end of Week 2:
+
 - ✅ Form component created and tested
 - ✅ Component used in a page
 - ✅ Ready for next components
@@ -296,16 +301,19 @@ By end of Week 2:
 ## 📚 REFERENCE DOCUMENTS
 
 ### For Setup & Configuration
+
 - **[Svelte Basics](../../LEARNING_RESOURCES/SVELTE_BASICS.md)** - Syntax reference (read this!)
 - **[Phase 1 Overview](./PHASE_1_OVERVIEW.md)** - High-level strategy
 - **[Component Specs](../../COMPONENTS/FORM_COMPONENTS.md)** - Component architecture
 
 ### For Implementation
+
 - **[CRUD Pattern](../../PATTERNS/CRUD_OPERATIONS.md)** - How to build forms
 - **[State Management](../../PATTERNS/STATE_MANAGEMENT.md)** - How stores work
 - **[Validation](../../PATTERNS/VALIDATION.md)** - Input validation
 
 ### For Troubleshooting
+
 - **[Troubleshooting](../../TROUBLESHOOTING/SETUP_ISSUES.md)** - Common problems
 - **[Glossary](../../GLOSSARY.md)** - Terminology
 
@@ -329,10 +337,10 @@ npm -v
 
 ```bash
 # Create project
-npm create vite@latest bluebonnet-svelte -- --template svelte
+npm create vite@latest frontend -- --template svelte
 
 # Move into directory
-cd bluebonnet-svelte
+cd frontend
 
 # Install packages
 npm install
@@ -379,16 +387,19 @@ npx tailwindcss init -p
 ### Each Week:
 
 **Monday:** Sprint planning
+
 - Review todo list for week
 - Assign tasks
 - Check dependencies
 
 **Tuesday-Thursday:** Build
+
 - Create components
 - Test with API
 - Update stores
 
 **Friday:** Review & Polish
+
 - Code review
 - Test end-to-end
 - Prepare for next week
@@ -429,17 +440,20 @@ npx tailwindcss init -p
 ## 📊 PROGRESS TRACKING
 
 ### Weeks 1-2: Foundation ✅
+
 - [ ] SvelteKit setup
 - [ ] API client
 - [ ] Stores
 - [ ] First components
 
 ### Weeks 3-4: Core Features ⬜
+
 - [ ] Dashboard page
 - [ ] Trip management
 - [ ] Trip list
 
 ### Weeks 5-8: Travel Items ⬜
+
 - [ ] Flights
 - [ ] Hotels
 - [ ] Events
@@ -447,11 +461,13 @@ npx tailwindcss init -p
 - [ ] Transportation
 
 ### Weeks 9-10: Advanced ⬜
+
 - [ ] Calendar
 - [ ] Maps
 - [ ] Companions
 
 ### Weeks 11-12: Polish ⬜
+
 - [ ] Vouchers
 - [ ] Error handling
 - [ ] Performance
@@ -472,4 +488,3 @@ Good luck! 🎉
 ---
 
 **Questions?** See [Troubleshooting](../../TROUBLESHOOTING/) or [Phase 1 Overview](./PHASE_1_OVERVIEW.md).
-

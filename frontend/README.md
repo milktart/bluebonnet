@@ -5,12 +5,14 @@ A modern, full-featured travel planning application built with SvelteKit, TypeSc
 ## ✨ Features
 
 ### Core Functionality
+
 - 🔐 **User Authentication** - Secure login and registration
 - 🗺️ **Interactive Map** - Leaflet-based visualization
 - 📊 **Dashboard** - Trip overview with filtering
 - 📅 **Trip Planning** - Complete trip management
 
 ### Travel Items (Full CRUD)
+
 - ✈️ **Flights** - Airlines, seats, times
 - 🏨 **Hotels** - Accommodations with dates
 - 🎭 **Events** - Activities and attractions
@@ -19,6 +21,7 @@ A modern, full-featured travel planning application built with SvelteKit, TypeSc
 - 🎫 **Vouchers** - Discount codes
 
 ### Collaboration & UX
+
 - 👥 **Travel Companions** - Invite with permissions
 - 🎨 **Responsive Design** - Mobile, tablet, desktop
 - ⚡ **Loading States** - Visual feedback
@@ -29,6 +32,7 @@ A modern, full-featured travel planning application built with SvelteKit, TypeSc
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js 18+
 - npm or yarn
 
@@ -36,7 +40,7 @@ A modern, full-featured travel planning application built with SvelteKit, TypeSc
 
 ```bash
 git clone <repo-url>
-cd bluebonnet-svelte
+cd frontend
 npm install
 npm run dev
 ```
@@ -78,6 +82,7 @@ npm run test:coverage # Coverage report
 ```
 
 Test coverage includes:
+
 - ✓ API error handling
 - ✓ Form validation
 - ✓ Component rendering
@@ -86,6 +91,7 @@ Test coverage includes:
 ## 🔐 Error Handling
 
 User-friendly messages for:
+
 - 401: Session expired
 - 403: Permission denied
 - 404: Not found
@@ -96,6 +102,7 @@ User-friendly messages for:
 ## 📝 Form Validation
 
 All forms include:
+
 - Required field checks
 - Data type validation
 - Format validation

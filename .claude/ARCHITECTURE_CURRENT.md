@@ -51,9 +51,10 @@ Additional Services:
 
 ---
 
-## 📁 Frontend Structure (bluebonnet-svelte/)
+## 📁 Frontend Structure (frontend/)
 
 ### Routes
+
 ```
 src/routes/
 ├── +layout.svelte           # App shell & header
@@ -71,6 +72,7 @@ src/routes/
 ```
 
 ### Components (33 files)
+
 ```
 src/lib/components/
 ├── Layout Components
@@ -123,6 +125,7 @@ src/lib/components/
 ```
 
 ### State Management
+
 ```
 src/lib/stores/
 ├── authStore.ts            # User authentication
@@ -131,6 +134,7 @@ src/lib/stores/
 ```
 
 ### Services
+
 ```
 src/lib/services/
 └── api.ts                  # Centralized HTTP client
@@ -141,6 +145,7 @@ src/lib/services/
 ```
 
 ### Testing
+
 ```
 src/lib/tests/
 ├── api.test.ts             # API client tests
@@ -153,6 +158,7 @@ src/lib/tests/
 ## 🔌 Backend Structure (bluebonnet-dev/)
 
 ### Routes
+
 ```
 routes/
 ├── auth.js                  # Login/register endpoints
@@ -169,6 +175,7 @@ routes/
 ```
 
 ### Controllers
+
 ```
 controllers/
 ├── authController.js        # Authentication logic
@@ -183,6 +190,7 @@ controllers/
 ```
 
 ### Models (Sequelize ORM)
+
 ```
 models/
 ├── User.js                  # User table
@@ -198,6 +206,7 @@ models/
 ```
 
 ### Middleware
+
 ```
 middleware/
 ├── auth.js                  # Authentication checks
@@ -206,6 +215,7 @@ middleware/
 ```
 
 ### Database
+
 ```
 migrations/                  # Schema version control
 seeders/                     # Initial data
@@ -219,6 +229,7 @@ config/
 ## 🔄 Data Flow - Trip Creation Example
 
 ### 1. User Creates Trip (Frontend)
+
 ```
 User clicks "New Trip" button
     ↓
@@ -234,6 +245,7 @@ Sends POST /api/trips with:
 ```
 
 ### 2. Backend Processes Request
+
 ```
 POST /api/trips route
     ↓
@@ -249,6 +261,7 @@ Returns created trip JSON
 ```
 
 ### 3. Frontend Updates State
+
 ```
 API call succeeds
     ↓
@@ -266,6 +279,7 @@ User sees new trip in list
 ## 🔐 Authentication Flow
 
 ### Login Process
+
 ```
 1. User enters email/password on /login
 2. POST /api/auth/login
@@ -281,6 +295,7 @@ User sees new trip in list
 ```
 
 ### Protected Routes
+
 ```
 - Frontend: SvelteKit's load() functions check authStore
 - Backend: auth middleware checks session validity
@@ -292,6 +307,7 @@ User sees new trip in list
 ## 📊 Database Schema
 
 ### Core Tables
+
 ```sql
 -- Users
 users (id, email, password_hash, firstName, lastName, created_at)
@@ -315,6 +331,7 @@ vouchers (id, tripId, code, discount, category, attachments)
 ```
 
 ### Relationships
+
 ```
 User
 ├── many Trips (owns)
@@ -338,6 +355,7 @@ TravelItem (Flight/Hotel/Event/Transportation/CarRental)
 ## 🌐 API Endpoints
 
 ### Authentication
+
 ```
 POST   /api/auth/login
 POST   /api/auth/register
@@ -346,6 +364,7 @@ GET    /api/auth/me
 ```
 
 ### Trips
+
 ```
 GET    /api/trips              # List all user's trips
 GET    /api/trips/:id          # Get single trip
@@ -355,6 +374,7 @@ DELETE /api/trips/:id          # Delete trip
 ```
 
 ### Travel Items (Flights as example)
+
 ```
 GET    /api/trips/:id/flights  # List trip flights
 POST   /api/trips/:id/flights  # Create flight
@@ -363,9 +383,10 @@ DELETE /api/flights/:id        # Delete flight
 POST   /flights                # Create standalone flight
 ```
 
-*Same pattern for hotels, events, transportation, car-rentals*
+_Same pattern for hotels, events, transportation, car-rentals_
 
 ### Companions
+
 ```
 GET    /api/trips/:id/companions      # List trip companions
 POST   /api/trips/:id/companions      # Invite companion
@@ -373,6 +394,7 @@ DELETE /api/companions/:id            # Remove companion
 ```
 
 ### Vouchers
+
 ```
 GET    /api/trips/:id/vouchers        # List trip vouchers
 POST   /api/vouchers                  # Create voucher
@@ -385,6 +407,7 @@ DELETE /api/vouchers/:id              # Delete voucher
 ## 🔄 Request/Response Pattern
 
 ### All Endpoints Return
+
 ```json
 {
   "success": true,
@@ -402,6 +425,7 @@ OR on error:
 ```
 
 ### Frontend Error Handling
+
 ```javascript
 try {
   const response = await api.post('/trips', tripData);
@@ -417,12 +441,14 @@ try {
 ## 🛠️ Development Setup
 
 ### Prerequisites
+
 - Node.js 18+
 - PostgreSQL 12+
 - Redis (optional, for caching)
 - Docker & Docker Compose (optional)
 
 ### Installation
+
 ```bash
 # Backend
 cd bluebonnet-dev
@@ -432,12 +458,13 @@ npm run db:seed-airports
 npm run dev
 
 # Frontend (separate terminal)
-cd bluebonnet-svelte
+cd frontend
 npm install
 npm run dev
 ```
 
 ### Key Commands
+
 ```
 # Backend
 npm run dev              # Development server (port 3000)
@@ -457,17 +484,20 @@ npm run lint             # Check code
 ## 📈 Performance Characteristics
 
 ### Frontend (SvelteKit)
+
 - **Bundle Size:** ~150-200KB (uncompressed)
 - **Load Time:** < 2 seconds (on modern connection)
 - **Re-renders:** Reactive Svelte components (very fast)
 - **Caching:** LocalStorage for user preferences
 
 ### Backend (Express)
+
 - **Response Time:** < 100ms for most endpoints (with DB)
 - **Concurrency:** Handles 100+ concurrent requests
 - **Database Queries:** Optimized with eager loading
 
 ### Database (PostgreSQL)
+
 - **Query Execution:** < 50ms for indexed queries
 - **Connections:** 20-50 concurrent connections
 - **Backup Strategy:** Daily automated backups
@@ -477,6 +507,7 @@ npm run lint             # Check code
 ## 🚀 Deployment
 
 ### Docker Deployment
+
 ```bash
 # Build and run
 docker-compose up --build
@@ -489,6 +520,7 @@ docker-compose up --build
 ```
 
 ### Production Considerations
+
 - SSL/TLS certificates required
 - Environment variables for secrets
 - Database backups
@@ -502,6 +534,7 @@ docker-compose up --build
 ## 📊 Testing Coverage
 
 ### Frontend Tests
+
 - Component rendering
 - Form validation
 - API integration (mocked)
@@ -509,6 +542,7 @@ docker-compose up --build
 - User interactions
 
 ### Backend Tests
+
 - CRUD operations
 - Authentication
 - Authorization
@@ -516,6 +550,7 @@ docker-compose up --build
 - Error handling
 
 ### Test Tools
+
 ```
 Frontend: Vitest + Testing Library
 Backend: Jest + Supertest
@@ -527,18 +562,21 @@ Coverage: 60%+ target
 ## 🔒 Security Features
 
 ### Authentication
+
 - Bcrypt password hashing (rounds: 10)
 - Session-based auth with Redis
 - CSRF protection (SameSite cookies)
 - Secure cookie flags (HttpOnly, Secure)
 
 ### Authorization
+
 - User owns only their trips
 - Companions can have limited permissions
 - Backend validates all requests
 - Role-based access control ready
 
 ### Data Protection
+
 - SQL injection prevention (Sequelize parameterized queries)
 - XSS protection (Svelte auto-escaping)
 - CORS configured
@@ -581,6 +619,7 @@ Coverage: 60%+ target
 ✅ TypeScript types
 
 ⏳ Pending (Optional):
+
 - Integration tests
 - Accessibility audit (WCAG AA)
 - Performance optimization
