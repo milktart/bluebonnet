@@ -7,6 +7,11 @@ const express = require('express');
 const { body } = require('express-validator');
 const attendeeController = require('../../../controllers/attendeeController');
 const { ensureAuthenticated } = require('../../../middleware/auth');
+const {
+  requireTripViewAccess,
+  requireTripAdmin,
+  requireTripOwnership,
+} = require('../../../middleware/authorization');
 
 const router = express.Router();
 
@@ -27,21 +32,30 @@ const updateRoleValidation = [body('role').isIn(['owner', 'admin', 'attendee'])]
 /**
  * GET /api/v1/trips/:tripId/attendees
  * Get all attendees for a trip
+ * Authorization: Trip owner, admin, or attendee
  */
-router.get('/trips/:tripId/attendees', attendeeController.getTripAttendees);
+router.get('/trips/:tripId/attendees', requireTripViewAccess, attendeeController.getTripAttendees);
 
 /**
  * POST /api/v1/trips/:tripId/attendees
  * Add attendee to trip
+ * Authorization: Trip owner or admin only
  */
-router.post('/trips/:tripId/attendees', addAttendeeValidation, attendeeController.addTripAttendee);
+router.post(
+  '/trips/:tripId/attendees',
+  requireTripAdmin,
+  addAttendeeValidation,
+  attendeeController.addTripAttendee
+);
 
 /**
  * PUT /api/v1/trips/:tripId/attendees/:attendeeId
  * Update attendee role
+ * Authorization: Trip owner only
  */
 router.put(
   '/trips/:tripId/attendees/:attendeeId',
+  requireTripOwnership,
   updateRoleValidation,
   attendeeController.updateAttendeeRole
 );
@@ -49,7 +63,12 @@ router.put(
 /**
  * DELETE /api/v1/trips/:tripId/attendees/:attendeeId
  * Remove attendee from trip
+ * Authorization: Trip owner or admin only
  */
-router.delete('/trips/:tripId/attendees/:attendeeId', attendeeController.removeTripAttendee);
+router.delete(
+  '/trips/:tripId/attendees/:attendeeId',
+  requireTripAdmin,
+  attendeeController.removeTripAttendee
+);
 
 module.exports = router;
