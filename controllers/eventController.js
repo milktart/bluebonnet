@@ -1,8 +1,9 @@
-const { Event, Trip } = require('../models');
+const { Event, Trip, ItemTrip } = require('../models');
 const logger = require('../utils/logger');
 const { parseCompanions } = require('../utils/parseHelper');
 const { sendAsyncResponse } = require('../utils/asyncResponseHelper');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
+const itemTripService = require('../services/itemTripService');
 const {
   verifyTripOwnership,
   geocodeIfChanged,
@@ -66,7 +67,6 @@ exports.createEvent = async (req, res) => {
 
     const event = await Event.create({
       userId: req.user.id,
-      tripId: tripId || null,
       name,
       startDateTime: new Date(startDateTime),
       endDateTime: new Date(finalEndDateTime),
@@ -79,7 +79,17 @@ exports.createEvent = async (req, res) => {
       isConfirmed: isConfirmed === 'true' || isConfirmed === true || isConfirmed === 'on', // Save false if unchecked (undefined)
     });
 
-    // Add companions to this event
+    // Add event to trip via ItemTrip junction table
+    if (tripId) {
+      try {
+        await itemTripService.addItemToTrip('event', event.id, tripId);
+      } catch (e) {
+        logger.error('Error adding event to trip in ItemTrip:', e);
+        // Don't fail the event creation due to ItemTrip errors
+      }
+    }
+
+    // Add companions to this event (legacy system - will be deprecated)
     try {
       if (tripId) {
         const companionIds = parseCompanions(companions);
@@ -210,9 +220,30 @@ exports.updateEvent = async (req, res) => {
       contactPhone: sanitizedContactPhone,
       contactEmail: sanitizedContactEmail,
       description: sanitizedDescription,
-      tripId: newTripId || null,
       isConfirmed: isConfirmed === 'true' || isConfirmed === true || isConfirmed === 'on',
     });
+
+    // Update trip association via ItemTrip if it changed
+    if (newTripId && newTripId !== event.tripId) {
+      try {
+        // Remove from old trip if there was one
+        if (event.tripId) {
+          await itemTripService.removeItemFromTrip('event', event.id, event.tripId);
+        }
+        // Add to new trip
+        await itemTripService.addItemToTrip('event', event.id, newTripId);
+      } catch (e) {
+        logger.error('Error updating event trip association:', e);
+        // Don't fail the update due to ItemTrip errors
+      }
+    } else if (newTripId === null && event.tripId) {
+      // Remove from trip if explicitly setting to null
+      try {
+        await itemTripService.removeItemFromTrip('event', event.id, event.tripId);
+      } catch (e) {
+        logger.error('Error removing event from trip:', e);
+      }
+    }
 
     // Check if this is an async request
     const isAsync =
@@ -253,6 +284,17 @@ exports.deleteEvent = async (req, res) => {
 
     // Store the deleted event in session for potential restoration
     storeDeletedItem(req.session, 'event', event.id, eventData, event.name);
+
+    // Remove from all trips via ItemTrip (replaces old tripId association)
+    try {
+      await itemTripService.removeItemFromAllTrips('event', event.id);
+    } catch (e) {
+      logger.error('Error removing event from ItemTrip records:', e);
+      // Don't fail deletion due to ItemTrip cleanup errors
+    }
+
+    // Remove all item companions (legacy system)
+    await itemCompanionHelper.removeItemCompanions('event', event.id);
 
     await event.destroy();
 
@@ -507,12 +549,30 @@ exports.getEditForm = async (req, res) => {
       isConfirmed: event.isConfirmed,
     };
 
+    // Get trip IDs from ItemTrip if available (new system)
+    let associatedTripIds = [];
+    try {
+      const itemTrips = await ItemTrip.findAll({
+        where: {
+          itemId: event.id,
+          itemType: 'event',
+        },
+        attributes: ['tripId'],
+      });
+      associatedTripIds = itemTrips.map((it) => it.tripId);
+    } catch (e) {
+      logger.error('Error fetching ItemTrip associations:', e);
+    }
+
+    // Use ItemTrip associations if available, otherwise fall back to event.tripId
+    const primaryTripId = associatedTripIds.length > 0 ? associatedTripIds[0] : event.tripId;
+
     // Fetch trip selector data
     const tripSelectorData = await getTripSelectorData(event, req.user.id);
 
     res.json({
       success: true,
-      tripId: event.tripId,
+      tripId: primaryTripId,
       isEditing: true,
       data: formattedData,
       currentTripId: tripSelectorData.currentTripId,

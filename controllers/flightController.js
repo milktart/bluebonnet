@@ -1,8 +1,9 @@
-const { Flight, Trip, VoucherAttachment, Voucher } = require('../models');
+const { Flight, Trip, VoucherAttachment, Voucher, ItemTrip } = require('../models');
 const logger = require('../utils/logger');
 const airportService = require('../services/airportService');
 const { utcToLocal } = require('../utils/timezoneHelper');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
+const itemTripService = require('../services/itemTripService');
 const {
   verifyTripOwnership,
   redirectAfterSuccess,
@@ -163,7 +164,6 @@ exports.createFlight = async (req, res) => {
 
     const flight = await Flight.create({
       userId: req.user.id,
-      tripId: tripId || null,
       airline,
       flightNumber: flightNumber?.toUpperCase(),
       departureDateTime: convertToUTC(departureDateTime, originTimezone),
@@ -180,7 +180,17 @@ exports.createFlight = async (req, res) => {
       seat,
     });
 
-    // Add companions to this flight
+    // Add flight to trip via ItemTrip junction table
+    if (tripId) {
+      try {
+        await itemTripService.addItemToTrip('flight', flight.id, tripId);
+      } catch (e) {
+        logger.error('Error adding flight to trip in ItemTrip:', e);
+        // Don't fail the flight creation due to ItemTrip errors
+      }
+    }
+
+    // Add companions to this flight (legacy system - will be deprecated)
     try {
       if (tripId) {
         let companionIds = [];
@@ -406,10 +416,31 @@ exports.updateFlight = async (req, res) => {
       destinationLng: destResult.coords?.lng,
       pnr,
       seat,
-      tripId: newTripId || null,
     });
 
-    // Update companions for this flight
+    // Update trip association via ItemTrip if it changed
+    if (newTripId && newTripId !== flight.tripId) {
+      try {
+        // Remove from old trip if there was one
+        if (flight.tripId) {
+          await itemTripService.removeItemFromTrip('flight', flight.id, flight.tripId);
+        }
+        // Add to new trip
+        await itemTripService.addItemToTrip('flight', flight.id, newTripId);
+      } catch (e) {
+        logger.error('Error updating flight trip association:', e);
+        // Don't fail the update due to ItemTrip errors
+      }
+    } else if (newTripId === null && flight.tripId) {
+      // Remove from trip if explicitly setting to null
+      try {
+        await itemTripService.removeItemFromTrip('flight', flight.id, flight.tripId);
+      } catch (e) {
+        logger.error('Error removing flight from trip:', e);
+      }
+    }
+
+    // Update companions for this flight (legacy system - will be deprecated)
     // Note: When editing an existing flight, companions are typically managed via
     // the real-time API calls in the UI, not via form submission. We only update
     // companions here if a non-empty array is explicitly provided.
@@ -425,13 +456,17 @@ exports.updateFlight = async (req, res) => {
       // An empty array likely means the companion section failed to load,
       // so we preserve existing companions rather than removing them all
       if (companionIds.length > 0) {
-        await itemCompanionHelper.updateItemCompanions(
-          'flight',
-          flight.id,
-          companionIds,
-          flight.tripId,
-          req.user.id
-        );
+        // Get current trip from ItemTrip if available, otherwise use flight.tripId
+        const currentTripId = newTripId || flight.tripId;
+        if (currentTripId) {
+          await itemCompanionHelper.updateItemCompanions(
+            'flight',
+            flight.id,
+            companionIds,
+            currentTripId,
+            req.user.id
+          );
+        }
       }
     }
 
@@ -482,7 +517,15 @@ exports.deleteFlight = async (req, res) => {
     // Store the deleted flight in session for potential restoration
     storeDeletedItem(req.session, 'flight', flight.id, flightData, flightName);
 
-    // Remove all item companions
+    // Remove from all trips via ItemTrip (replaces old tripId association)
+    try {
+      await itemTripService.removeItemFromAllTrips('flight', flight.id);
+    } catch (e) {
+      logger.error('Error removing flight from ItemTrip records:', e);
+      // Don't fail deletion due to ItemTrip cleanup errors
+    }
+
+    // Remove all item companions (legacy system)
     await itemCompanionHelper.removeItemCompanions('flight', flight.id);
 
     await flight.destroy();
@@ -660,11 +703,36 @@ exports.getEditForm = async (req, res) => {
     // Get available trips for trip selector
     const tripSelectorData = await getTripSelectorData(flight, req.user.id);
 
+    // Get trip IDs from ItemTrip if available (new system)
+    let associatedTripIds = [];
+    try {
+      const itemTrips = await ItemTrip.findAll({
+        where: {
+          itemId: flight.id,
+          itemType: 'flight',
+        },
+        attributes: ['tripId'],
+      });
+      associatedTripIds = itemTrips.map((it) => it.tripId);
+    } catch (e) {
+      logger.error('Error fetching ItemTrip associations:', e);
+    }
+
+    // Use ItemTrip associations if available, otherwise fall back to flight.tripId
+    const primaryTripId = associatedTripIds.length > 0 ? associatedTripIds[0] : flight.tripId;
+
     // Return form data as JSON
+    let tripForResponse = null;
+    if (flight.trip) {
+      tripForResponse = { id: flight.trip.id };
+    } else if (primaryTripId) {
+      tripForResponse = { id: primaryTripId };
+    }
+
     res.json({
       success: true,
-      tripId: flight.tripId || '',
-      trip: flight.trip ? { id: flight.trip.id } : { id: flight.tripId },
+      tripId: primaryTripId || '',
+      trip: tripForResponse,
       isEditing: true,
       isOwner: true,
       data: {

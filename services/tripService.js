@@ -16,12 +16,20 @@ const {
   Event,
   TravelCompanion,
   TripCompanion,
+  TripAttendee,
+  ItemTrip,
   User,
   ItemCompanion,
+  CompanionPermission,
 } = require('../models');
 const logger = require('../utils/logger');
 const cacheService = require('./cacheService');
 const { sortCompanions } = require('../utils/itemCompanionHelper');
+// Note: These services will be used in Phase 3 continuation for getAccessibleTripIds and permission-aware queries
+// const ItemTripService = require('./itemTripService');
+// const AttendeeService = require('./attendeeService');
+// const itemTripService = new ItemTripService();
+// const attendeeService = new AttendeeService();
 
 class TripService extends BaseService {
   constructor() {
@@ -29,7 +37,7 @@ class TripService extends BaseService {
   }
 
   /**
-   * Get common include structure for trips
+   * Get common include structure for trips (legacy - uses TripCompanion)
    * @returns {Array} Sequelize include array
    */
   getTripIncludes() {
@@ -60,6 +68,141 @@ class TripService extends BaseService {
         ],
       },
     ];
+  }
+
+  /**
+   * Get items for a trip using ItemTrip junction table
+   * @param {string} tripId - Trip ID
+   * @returns {Promise<Object>} { flights, hotels, events, transportation, carRentals }
+   */
+  async getTripItemsFromJunction(tripId) {
+    logger.debug(`${this.modelName}: Getting items for trip ${tripId} via junction`);
+
+    // Get all itemIds for this trip from ItemTrip
+    const itemTripRecords = await ItemTrip.findAll({
+      where: { tripId },
+      attributes: ['itemId', 'itemType'],
+      raw: true,
+    });
+
+    // Group by item type
+    const itemsByType = {
+      flight: [],
+      hotel: [],
+      event: [],
+      transportation: [],
+      car_rental: [],
+    };
+
+    itemTripRecords.forEach((record) => {
+      itemsByType[record.itemType].push(record.itemId);
+    });
+
+    // Fetch each item type
+    const [flights, hotels, events, transportation, carRentals] = await Promise.all([
+      itemsByType.flight.length > 0
+        ? Flight.findAll({ where: { id: { [Op.in]: itemsByType.flight } } })
+        : [],
+      itemsByType.hotel.length > 0
+        ? Hotel.findAll({ where: { id: { [Op.in]: itemsByType.hotel } } })
+        : [],
+      itemsByType.event.length > 0
+        ? Event.findAll({ where: { id: { [Op.in]: itemsByType.event } } })
+        : [],
+      itemsByType.transportation.length > 0
+        ? Transportation.findAll({ where: { id: { [Op.in]: itemsByType.transportation } } })
+        : [],
+      itemsByType.car_rental.length > 0
+        ? CarRental.findAll({ where: { id: { [Op.in]: itemsByType.car_rental } } })
+        : [],
+    ]);
+
+    return {
+      flights,
+      hotels,
+      events,
+      transportation,
+      carRentals,
+    };
+  }
+
+  /**
+   * Get trip attendees using TripAttendee model
+   * @param {string} tripId - Trip ID
+   * @returns {Promise<Array>} Array of attendees
+   */
+  async getTripAttendeesForDisplay(tripId) {
+    logger.debug(`${this.modelName}: Getting attendees for trip ${tripId}`);
+
+    const attendees = await TripAttendee.findAll({
+      where: { tripId },
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+          required: false,
+        },
+      ],
+      order: [['role', 'DESC']], // owner first, then admin, then attendee
+    });
+
+    return attendees;
+  }
+
+  /**
+   * Get all accessible trip IDs for a user
+   * Includes: owned trips + attended trips + full-access granted trips
+   * @param {string} userId - User ID
+   * @returns {Promise<Array>} Array of trip IDs
+   */
+  async getAccessibleTripIds(userId) {
+    logger.debug(`${this.modelName}: Getting accessible trip IDs for user ${userId}`);
+
+    // Trips where user is owner
+    const ownedTrips = await Trip.findAll({
+      where: { userId },
+      attributes: ['id'],
+      raw: true,
+    });
+
+    // Trips where user is attendee
+    const attendeeTrips = await TripAttendee.findAll({
+      where: { userId },
+      attributes: ['tripId'],
+      raw: true,
+    });
+
+    // Trips where user has full-access permission (can manage all trips of another user)
+    const fullAccessGrants = await CompanionPermission.findAll({
+      where: {
+        trustedUserId: userId,
+        canManageAllTrips: true,
+      },
+      attributes: ['ownerId'],
+      raw: true,
+    });
+
+    // Get all trips from owners who granted full access
+    let fullAccessTripIds = [];
+    if (fullAccessGrants.length > 0) {
+      const ownerIds = fullAccessGrants.map((g) => g.ownerId);
+      const fullAccessTrips = await Trip.findAll({
+        where: { userId: { [Op.in]: ownerIds } },
+        attributes: ['id'],
+        raw: true,
+      });
+      fullAccessTripIds = fullAccessTrips.map((t) => t.id);
+    }
+
+    // Combine and deduplicate
+    const allTripIds = [
+      ...ownedTrips.map((t) => t.id),
+      ...attendeeTrips.map((a) => a.tripId),
+      ...fullAccessTripIds,
+    ];
+
+    return [...new Set(allTripIds)];
   }
 
   /**

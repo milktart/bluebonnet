@@ -1,8 +1,9 @@
-const { Hotel, Trip } = require('../models');
+const { Hotel, Trip, ItemTrip } = require('../models');
 const logger = require('../utils/logger');
 const { parseCompanions } = require('../utils/parseHelper');
 const { sendAsyncResponse } = require('../utils/asyncResponseHelper');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
+const itemTripService = require('../services/itemTripService');
 const {
   verifyTripOwnership,
   geocodeIfChanged,
@@ -76,7 +77,6 @@ exports.createHotel = async (req, res) => {
     const coords = await geocodeIfChanged(address);
 
     const hotel = await Hotel.create({
-      tripId,
       hotelName,
       address,
       phone,
@@ -89,7 +89,17 @@ exports.createHotel = async (req, res) => {
       userId: req.user.id,
     });
 
-    // Add companions to this hotel
+    // Add hotel to trip via ItemTrip junction table
+    if (tripId) {
+      try {
+        await itemTripService.addItemToTrip('hotel', hotel.id, tripId);
+      } catch (e) {
+        logger.error('Error adding hotel to trip in ItemTrip:', e);
+        // Don't fail the hotel creation due to ItemTrip errors
+      }
+    }
+
+    // Add companions to this hotel (legacy system - will be deprecated)
     try {
       if (tripId) {
         // Parse and validate companions
@@ -213,8 +223,29 @@ exports.updateHotel = async (req, res) => {
       lng: coords?.lng,
       confirmationNumber,
       roomNumber,
-      tripId: newTripId || null,
     });
+
+    // Update trip association via ItemTrip if it changed
+    if (newTripId && newTripId !== hotel.tripId) {
+      try {
+        // Remove from old trip if there was one
+        if (hotel.tripId) {
+          await itemTripService.removeItemFromTrip('hotel', hotel.id, hotel.tripId);
+        }
+        // Add to new trip
+        await itemTripService.addItemToTrip('hotel', hotel.id, newTripId);
+      } catch (e) {
+        logger.error('Error updating hotel trip association:', e);
+        // Don't fail the update due to ItemTrip errors
+      }
+    } else if (newTripId === null && hotel.tripId) {
+      // Remove from trip if explicitly setting to null
+      try {
+        await itemTripService.removeItemFromTrip('hotel', hotel.id, hotel.tripId);
+      } catch (e) {
+        logger.error('Error removing hotel from trip:', e);
+      }
+    }
 
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
@@ -269,6 +300,17 @@ exports.deleteHotel = async (req, res) => {
 
     // Store the deleted hotel in session for potential restoration
     storeDeletedItem(req.session, 'hotel', hotel.id, hotelData, hotel.hotelName);
+
+    // Remove from all trips via ItemTrip (replaces old tripId association)
+    try {
+      await itemTripService.removeItemFromAllTrips('hotel', hotel.id);
+    } catch (e) {
+      logger.error('Error removing hotel from ItemTrip records:', e);
+      // Don't fail deletion due to ItemTrip cleanup errors
+    }
+
+    // Remove all item companions (legacy system)
+    await itemCompanionHelper.removeItemCompanions('hotel', hotel.id);
 
     await hotel.destroy();
 
@@ -428,13 +470,31 @@ exports.getEditForm = async (req, res) => {
     const checkOutDate = formatDateForInput(hotel.checkOutDateTime);
     const checkOutTime = formatTimeForInput(hotel.checkOutDateTime) || '11:00';
 
+    // Get trip IDs from ItemTrip if available (new system)
+    let associatedTripIds = [];
+    try {
+      const itemTrips = await ItemTrip.findAll({
+        where: {
+          itemId: hotel.id,
+          itemType: 'hotel',
+        },
+        attributes: ['tripId'],
+      });
+      associatedTripIds = itemTrips.map((it) => it.tripId);
+    } catch (e) {
+      logger.error('Error fetching ItemTrip associations:', e);
+    }
+
+    // Use ItemTrip associations if available, otherwise fall back to hotel.tripId
+    const primaryTripId = associatedTripIds.length > 0 ? associatedTripIds[0] : hotel.tripId;
+
     // Get available trips for trip selector
     const tripSelectorData = await getTripSelectorData(hotel, req.user.id);
 
     // Return form data as JSON
     res.json({
       success: true,
-      tripId: hotel.tripId || '',
+      tripId: primaryTripId || '',
       isEditing: true,
       data: {
         ...hotel.toJSON(),

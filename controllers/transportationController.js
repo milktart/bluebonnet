@@ -1,9 +1,10 @@
-const { Transportation, Trip } = require('../models');
+const { Transportation, Trip, ItemTrip } = require('../models');
 const logger = require('../utils/logger');
 const { utcToLocal } = require('../utils/timezoneHelper');
 const { parseCompanions } = require('../utils/parseHelper');
 const { sendAsyncResponse } = require('../utils/asyncResponseHelper');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
+const itemTripService = require('../services/itemTripService');
 const {
   verifyTripOwnership,
   geocodeOriginDestination,
@@ -48,7 +49,6 @@ exports.createTransportation = async (req, res) => {
 
     const transportation = await Transportation.create({
       userId: req.user.id,
-      tripId: tripId || null,
       method,
       journeyNumber,
       origin,
@@ -65,7 +65,17 @@ exports.createTransportation = async (req, res) => {
       seat,
     });
 
-    // Add companions to this transportation
+    // Add transportation to trip via ItemTrip junction table
+    if (tripId) {
+      try {
+        await itemTripService.addItemToTrip('transportation', transportation.id, tripId);
+      } catch (e) {
+        logger.error('Error adding transportation to trip in ItemTrip:', e);
+        // Don't fail the transportation creation due to ItemTrip errors
+      }
+    }
+
+    // Add companions to this transportation (legacy system - will be deprecated)
     try {
       if (tripId) {
         const companionIds = parseCompanions(companions);
@@ -202,8 +212,37 @@ exports.updateTransportation = async (req, res) => {
       arrivalDateTime: convertToUTC(arrivalDateTime, destinationTimezone),
       confirmationNumber,
       seat,
-      tripId: newTripId || null,
     });
+
+    // Update trip association via ItemTrip if it changed
+    if (newTripId && newTripId !== transportation.tripId) {
+      try {
+        // Remove from old trip if there was one
+        if (transportation.tripId) {
+          await itemTripService.removeItemFromTrip(
+            'transportation',
+            transportation.id,
+            transportation.tripId
+          );
+        }
+        // Add to new trip
+        await itemTripService.addItemToTrip('transportation', transportation.id, newTripId);
+      } catch (e) {
+        logger.error('Error updating transportation trip association:', e);
+        // Don't fail the update due to ItemTrip errors
+      }
+    } else if (newTripId === null && transportation.tripId) {
+      // Remove from trip if explicitly setting to null
+      try {
+        await itemTripService.removeItemFromTrip(
+          'transportation',
+          transportation.id,
+          transportation.tripId
+        );
+      } catch (e) {
+        logger.error('Error removing transportation from trip:', e);
+      }
+    }
 
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
@@ -257,6 +296,17 @@ exports.deleteTransportation = async (req, res) => {
       transportationData,
       transportationName
     );
+
+    // Remove from all trips via ItemTrip (replaces old tripId association)
+    try {
+      await itemTripService.removeItemFromAllTrips('transportation', transportation.id);
+    } catch (e) {
+      logger.error('Error removing transportation from ItemTrip records:', e);
+      // Don't fail deletion due to ItemTrip cleanup errors
+    }
+
+    // Remove all item companions (legacy system)
+    await itemCompanionHelper.removeItemCompanions('transportation', transportation.id);
 
     await transportation.destroy();
 
@@ -388,13 +438,32 @@ exports.getEditForm = async (req, res) => {
       }
     }
 
+    // Get trip IDs from ItemTrip if available (new system)
+    let associatedTripIds = [];
+    try {
+      const itemTrips = await ItemTrip.findAll({
+        where: {
+          itemId: transportation.id,
+          itemType: 'transportation',
+        },
+        attributes: ['tripId'],
+      });
+      associatedTripIds = itemTrips.map((it) => it.tripId);
+    } catch (e) {
+      logger.error('Error fetching ItemTrip associations:', e);
+    }
+
+    // Use ItemTrip associations if available, otherwise fall back to transportation.tripId
+    const primaryTripId =
+      associatedTripIds.length > 0 ? associatedTripIds[0] : transportation.tripId;
+
     // Get available trips for trip selector
     const tripSelectorData = await getTripSelectorData(transportation, req.user.id);
 
     // Return form data as JSON
     res.json({
       success: true,
-      tripId: transportation.tripId || '',
+      tripId: primaryTripId || '',
       isEditing: true,
       data: {
         ...transportation.toJSON(),

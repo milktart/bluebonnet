@@ -1,8 +1,9 @@
-const { CarRental, Trip } = require('../models');
+const { CarRental, Trip, ItemTrip } = require('../models');
 const logger = require('../utils/logger');
 const { parseCompanions } = require('../utils/parseHelper');
 const { sendAsyncResponse } = require('../utils/asyncResponseHelper');
 const itemCompanionHelper = require('../utils/itemCompanionHelper');
+const itemTripService = require('../services/itemTripService');
 const {
   verifyTripOwnership,
   geocodeOriginDestination,
@@ -47,7 +48,6 @@ exports.createCarRental = async (req, res) => {
       });
 
     const carRental = await CarRental.create({
-      tripId,
       company,
       pickupLocation,
       pickupTimezone,
@@ -63,7 +63,17 @@ exports.createCarRental = async (req, res) => {
       userId: req.user.id,
     });
 
-    // Add companions to this car rental
+    // Add car rental to trip via ItemTrip junction table
+    if (tripId) {
+      try {
+        await itemTripService.addItemToTrip('car_rental', carRental.id, tripId);
+      } catch (e) {
+        logger.error('Error adding car rental to trip in ItemTrip:', e);
+        // Don't fail the car rental creation due to ItemTrip errors
+      }
+    }
+
+    // Add companions to this car rental (legacy system - will be deprecated)
     try {
       if (tripId) {
         const companionIds = parseCompanions(companions);
@@ -187,8 +197,29 @@ exports.updateCarRental = async (req, res) => {
       pickupDateTime: convertToUTC(pickupDateTime, pickupTimezone),
       dropoffDateTime: convertToUTC(dropoffDateTime, dropoffTimezone),
       confirmationNumber,
-      tripId: newTripId || null,
     });
+
+    // Update trip association via ItemTrip if it changed
+    if (newTripId && newTripId !== carRental.tripId) {
+      try {
+        // Remove from old trip if there was one
+        if (carRental.tripId) {
+          await itemTripService.removeItemFromTrip('car_rental', carRental.id, carRental.tripId);
+        }
+        // Add to new trip
+        await itemTripService.addItemToTrip('car_rental', carRental.id, newTripId);
+      } catch (e) {
+        logger.error('Error updating car rental trip association:', e);
+        // Don't fail the update due to ItemTrip errors
+      }
+    } else if (newTripId === null && carRental.tripId) {
+      // Remove from trip if explicitly setting to null
+      try {
+        await itemTripService.removeItemFromTrip('car_rental', carRental.id, carRental.tripId);
+      } catch (e) {
+        logger.error('Error removing car rental from trip:', e);
+      }
+    }
 
     // Check if this is an async request
     const isAsync = req.headers['x-async-request'] === 'true';
@@ -249,6 +280,17 @@ exports.deleteCarRental = async (req, res) => {
 
     // Store the deleted car rental in session for potential restoration
     storeDeletedItem(req.session, 'carRental', carRental.id, carRentalData, carRental.company);
+
+    // Remove from all trips via ItemTrip (replaces old tripId association)
+    try {
+      await itemTripService.removeItemFromAllTrips('car_rental', carRental.id);
+    } catch (e) {
+      logger.error('Error removing car rental from ItemTrip records:', e);
+      // Don't fail deletion due to ItemTrip cleanup errors
+    }
+
+    // Remove all item companions (legacy system)
+    await itemCompanionHelper.removeItemCompanions('car_rental', carRental.id);
 
     await carRental.destroy();
 
@@ -394,12 +436,30 @@ exports.getEditForm = async (req, res) => {
       confirmationNumber: carRental.confirmationNumber,
     };
 
+    // Get trip IDs from ItemTrip if available (new system)
+    let associatedTripIds = [];
+    try {
+      const itemTrips = await ItemTrip.findAll({
+        where: {
+          itemId: carRental.id,
+          itemType: 'car_rental',
+        },
+        attributes: ['tripId'],
+      });
+      associatedTripIds = itemTrips.map((it) => it.tripId);
+    } catch (e) {
+      logger.error('Error fetching ItemTrip associations:', e);
+    }
+
+    // Use ItemTrip associations if available, otherwise fall back to carRental.tripId
+    const primaryTripId = associatedTripIds.length > 0 ? associatedTripIds[0] : carRental.tripId;
+
     // Fetch trip selector data
     const tripSelectorData = await getTripSelectorData(carRental, req.user.id);
 
     res.json({
       success: true,
-      tripId: carRental.tripId,
+      tripId: primaryTripId,
       isEditing: true,
       data: formattedData,
       currentTripId: tripSelectorData.currentTripId,
