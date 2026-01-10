@@ -378,6 +378,31 @@ export const companionsApi = {
 };
 
 /**
+ * Attendees API (Trip Attendee Management)
+ */
+export const attendeesApi = {
+  getByTrip: (tripId: string) =>
+    apiCall(`/v1/trips/${tripId}/attendees`),
+
+  add: (tripId: string, email: string, name: string, role: string = 'attendee') =>
+    apiCall(`/v1/trips/${tripId}/attendees`, {
+      method: 'POST',
+      body: JSON.stringify({ email, name, role }),
+    }),
+
+  updateRole: (tripId: string, attendeeId: string, role: string) =>
+    apiCall(`/v1/trips/${tripId}/attendees/${attendeeId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ role }),
+    }),
+
+  remove: (tripId: string, attendeeId: string) =>
+    apiCall(`/v1/trips/${tripId}/attendees/${attendeeId}`, {
+      method: 'DELETE',
+    }),
+};
+
+/**
  * Item Companions API
  */
 export const itemCompanionsApi = {
