@@ -21,6 +21,7 @@
     ],
     "no-param-reassign": ["error", { "props": false }],
     "import/no-dynamic-require": "off",
+    "import/no-unresolved": "off",
     "global-require": "off",
     "no-await-in-loop": "off",
     "no-restricted-syntax": [
