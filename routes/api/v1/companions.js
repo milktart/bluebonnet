@@ -36,7 +36,6 @@ router.use(ensureAuthenticated);
  * @returns {string} returns[].email - Companion email
  * @returns {boolean} returns[].youInvited - Whether you invited them
  * @returns {boolean} returns[].theyInvited - Whether they invited you
- * @returns {boolean} returns[].canBeAddedByOthers - Whether companion allows being added to trips
  *
  * @throws {401} Unauthorized - User not authenticated
  * @throws {500} Server error - Database error
@@ -55,7 +54,7 @@ router.get('/all', async (req, res) => {
         createdBy: userId,
         [Op.or]: [{ userId: null }, { userId: { [Op.ne]: userId } }],
       },
-      attributes: ['id', 'firstName', 'lastName', 'email', 'canBeAddedByOthers'],
+      attributes: ['id', 'firstName', 'lastName', 'email'],
       raw: true,
     });
 
@@ -65,7 +64,7 @@ router.get('/all', async (req, res) => {
         userId,
         createdBy: { [Op.ne]: userId },
       },
-      attributes: ['id', 'firstName', 'lastName', 'email', 'canBeAddedByOthers'],
+      attributes: ['id', 'firstName', 'lastName', 'email'],
       raw: true,
     });
 
@@ -83,7 +82,6 @@ router.get('/all', async (req, res) => {
           email: companion.email,
           youInvited: true,
           theyInvited: false,
-          canBeAddedByOthers: companion.canBeAddedByOthers,
         });
       } else {
         const existing = companionMap.get(email);
@@ -102,7 +100,6 @@ router.get('/all', async (req, res) => {
           email: profile.email,
           youInvited: false,
           theyInvited: true,
-          canBeAddedByOthers: profile.canBeAddedByOthers,
         });
       } else {
         const existing = companionMap.get(email);
@@ -135,7 +132,6 @@ router.get('/all', async (req, res) => {
  * @returns {string} returns[].id - Relationship ID (TripCompanion)
  * @returns {string} returns[].tripId - Associated trip ID
  * @returns {string} returns[].companionId - Companion ID
- * @returns {boolean} returns[].canEdit - Whether companion can edit trip
  * @returns {string} returns[].permissionSource - How permission was granted
  * @returns {Object} returns[].companion - Companion details
  * @returns {string} returns[].companion.id - Companion ID
@@ -198,7 +194,6 @@ router.get('/trips/:tripId', async (req, res) => {
  * @returns {string} returns.name - Full name
  * @returns {string} [returns.phone] - Phone number if available
  * @returns {string} [returns.avatar] - Avatar URL if available
- * @returns {boolean} returns.canBeAddedByOthers - Whether can be added to trips by others
  * @returns {string} returns.createdAt - Creation timestamp (ISO format)
  * @returns {string} returns.updatedAt - Last update timestamp (ISO format)
  *
@@ -233,14 +228,12 @@ router.get('/:id', async (req, res) => {
  * @param {string} req.params.tripId - Trip ID (UUID)
  * @param {Object} req.body - Request body
  * @param {string} req.body.companionId - Companion ID to add
- * @param {boolean} [req.body.canEdit] - Grant edit permissions (default: false)
  *
  * @returns {Object} 201 Created response with companion relationship
  * @returns {string} returns.id - Companion ID
  * @returns {string} returns.email - Companion email
  * @returns {string} returns.firstName - Companion first name
  * @returns {string} returns.lastName - Companion last name
- * @returns {boolean} returns.canEdit - Edit permission granted
  *
  * @throws {400} Bad request - Invalid companion ID
  * @throws {401} Unauthorized - User not authenticated
@@ -254,13 +247,13 @@ router.get('/:id', async (req, res) => {
 router.post('/trips/:tripId', async (req, res) => {
   try {
     const { tripId } = req.params;
-    const { companionId, canEdit } = req.body;
+    const { companionId } = req.body;
     const { TripCompanion } = require('../../../models');
     const { TravelCompanion } = require('../../../models');
     const { Trip } = require('../../../models');
     const itemCompanionHelper = require('../../../utils/itemCompanionHelper');
 
-    console.log('[Add Companion] Request params:', { tripId, companionId, canEdit });
+    console.log('[Add Companion] Request params:', { tripId, companionId });
 
     // Verify trip belongs to user
     const trip = await Trip.findOne({
@@ -287,7 +280,6 @@ router.post('/trips/:tripId', async (req, res) => {
       const tripCompanion = await TripCompanion.create({
         tripId,
         companionId,
-        canEdit: canEdit || false,
         addedBy: req.user.id,
         canAddItems: false,
         permissionSource: 'explicit',
@@ -305,7 +297,6 @@ router.post('/trips/:tripId', async (req, res) => {
         email: companion.email,
         firstName: companion.firstName,
         lastName: companion.lastName,
-        canEdit: tripCompanion.canEdit,
       };
 
       return apiResponse.created(res, result, 'Companion added successfully');

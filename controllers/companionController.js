@@ -30,7 +30,6 @@ exports.listCompanions = async (req, res) => {
         name: c.name,
         email: c.email,
         phone: c.phone,
-        canEdit: c.canBeAddedByOthers,
         linkedAccount: c.linkedAccount,
         createdAt: c.createdAt,
       })),
@@ -162,7 +161,6 @@ exports.getAllCompanions = async (req, res) => {
         theyInvited: false,
         companionId: companion.id, // ID of the companion record YOU created
         userId: companion.userId, // ID of the user account if they've created one
-        canBeAddedByOthers: companion.canBeAddedByOthers,
       });
     });
 
@@ -173,8 +171,6 @@ exports.getAllCompanions = async (req, res) => {
         // Bidirectional relationship
         companionMap.get(key).theyInvited = true;
         companionMap.get(key).theyInvitedId = profile.id;
-        companionMap.get(key).canBeAddedByOthers =
-          companionMap.get(key).canBeAddedByOthers || profile.canBeAddedByOthers;
       } else {
         // They invited you, but you didn't create a companion for them
         companionMap.set(key, {
@@ -186,7 +182,6 @@ exports.getAllCompanions = async (req, res) => {
           theyInvited: true,
           companionId: profile.id, // ID of the companion record THEY created
           userId: profile.userId, // ID of the user account if they've created one
-          canBeAddedByOthers: profile.canBeAddedByOthers,
         });
       }
     });
@@ -234,7 +229,7 @@ exports.createCompanion = async (req, res) => {
       return res.status(400).json({ success: false, error: errorMsg });
     }
 
-    let { firstName, lastName, name, email, phone, canBeAddedByOthers, canEdit } = req.body;
+    const { firstName, lastName, name, email, phone } = req.body;
     // Check if this is an API request: X-Sidebar-Request header, xhr flag, JSON content-type, or X-Requested-With
     const isAjax =
       req.get('X-Sidebar-Request') === 'true' ||
@@ -242,14 +237,6 @@ exports.createCompanion = async (req, res) => {
       req.get('X-Requested-With') === 'XMLHttpRequest' ||
       req.get('Content-Type')?.includes('application/json');
     const emailLower = email.toLowerCase();
-
-    // Convert string boolean to actual boolean
-    if (typeof canBeAddedByOthers === 'string') {
-      canBeAddedByOthers = canBeAddedByOthers === 'true' || canBeAddedByOthers === '1';
-    }
-    if (typeof canEdit === 'string') {
-      canEdit = canEdit === 'true' || canEdit === '1';
-    }
 
     logger.info('COMPANION_CREATE_REQUEST', {
       isAjax,
@@ -291,15 +278,12 @@ exports.createCompanion = async (req, res) => {
       companionName = emailName;
     }
 
-    const canAddByOthers = canBeAddedByOthers !== undefined ? !!canBeAddedByOthers : !!canEdit;
-
     const companion = await TravelCompanion.create({
       firstName: firstName || null,
       lastName: lastName || null,
       name: companionName,
       email: emailLower,
       phone,
-      canBeAddedByOthers: canAddByOthers,
       createdBy: req.user.id,
       userId: existingUser ? existingUser.id : null,
     });
@@ -319,7 +303,6 @@ exports.createCompanion = async (req, res) => {
           name: companion.name,
           email: companion.email,
           phone: companion.phone,
-          canEdit: companion.canBeAddedByOthers,
           addedAt: companion.createdAt,
         },
       });
@@ -346,7 +329,6 @@ exports.createCompanion = async (req, res) => {
 // Update companion permissions
 exports.updateCompanionPermissions = async (req, res) => {
   try {
-    const { canBeAddedByOthers } = req.body;
     const companionId = req.params.id;
     const isAjax = req.get('X-Sidebar-Request') === 'true' || req.xhr;
 
@@ -365,9 +347,7 @@ exports.updateCompanionPermissions = async (req, res) => {
       return res.status(404).json({ success: false, error: errorMsg });
     }
 
-    await companion.update({
-      canBeAddedByOthers: !!canBeAddedByOthers,
-    });
+    // No longer updating canBeAddedByOthers field
 
     const successMsg = 'Companion permissions updated';
     if (isAjax) {
@@ -404,16 +384,15 @@ exports.searchCompanions = async (req, res) => {
     }
 
     // Search companions that:
-    // 1. User created themselves, OR
-    // 2. Other users created but marked as canBeAddedByOthers=true
-    // 3. Match the search query (name or email)
-    // 4. Exclude the account owner's companion profile
+    // 1. User created themselves
+    // 2. Match the search query (name or email)
+    // 3. Exclude the account owner's companion profile
     const companions = await TravelCompanion.findAll({
       where: {
         [Op.and]: [
-          // Creator filter: user created this OR it's marked as addable by others
+          // Creator filter: user created this
           {
-            [Op.or]: [{ createdBy: userId }, { canBeAddedByOthers: true }],
+            createdBy: userId,
           },
           // Search filter: name or email matches
           {
@@ -511,7 +490,6 @@ exports.getEditCompanion = async (req, res) => {
         name: companion.name,
         email: companion.email,
         phone: companion.phone,
-        canEdit: companion.canBeAddedByOthers,
         linkedAccount: companion.linkedAccount,
       },
     });
@@ -552,7 +530,6 @@ exports.getEditCompanionSidebar = async (req, res) => {
         name: companion.name,
         email: companion.email,
         phone: companion.phone,
-        canEdit: companion.canBeAddedByOthers,
         linkedAccount: companion.linkedAccount,
       },
     });
@@ -583,18 +560,13 @@ exports.updateCompanion = async (req, res) => {
       return res.status(400).json({ success: false, error: errorMsg });
     }
 
-    let { firstName, lastName, name, email, phone, canBeAddedByOthers } = req.body;
+    const { firstName, lastName, name, email, phone } = req.body;
     const companionId = req.params.id;
     const isAjax =
       req.get('X-Sidebar-Request') === 'true' ||
       req.xhr ||
       req.get('X-Requested-With') === 'XMLHttpRequest' ||
       req.get('Content-Type')?.includes('application/json');
-
-    // Convert string boolean to actual boolean
-    if (typeof canBeAddedByOthers === 'string') {
-      canBeAddedByOthers = canBeAddedByOthers === 'true' || canBeAddedByOthers === '1';
-    }
 
     const companion = await TravelCompanion.findOne({
       where: {
@@ -655,7 +627,6 @@ exports.updateCompanion = async (req, res) => {
         name: companionName,
         email: email.toLowerCase(),
         phone,
-        canBeAddedByOthers: !!canBeAddedByOthers,
         userId: existingUser ? existingUser.id : null,
       });
     } else {
@@ -676,7 +647,6 @@ exports.updateCompanion = async (req, res) => {
         lastName: lastName || null,
         name: companionName,
         phone,
-        canBeAddedByOthers: !!canBeAddedByOthers,
       });
     }
 
@@ -692,7 +662,6 @@ exports.updateCompanion = async (req, res) => {
           name: companion.name,
           email: companion.email,
           phone: companion.phone,
-          canEdit: companion.canBeAddedByOthers,
           updatedAt: companion.updatedAt,
         },
       });

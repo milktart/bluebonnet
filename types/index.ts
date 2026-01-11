@@ -259,7 +259,6 @@ export interface TripCompanion {
   id: string;
   tripId: string;
   companionId: string;
-  canEdit: boolean; // Permission to edit trip items
   addedById: string; // User who added this companion to trip
   youInvited?: boolean; // This user invited the companion
   theyInvited?: boolean; // Companion invited this user

@@ -15,8 +15,7 @@
   let loading = false;
   let error: string | null = null;
   let formData = {
-    email: '',
-    canEdit: false
+    email: ''
   };
 
   async function handleAddCompanion() {
@@ -36,7 +35,7 @@
       error = null;
 
       // Add companion to trip via API
-      const newCompanion = await companionsApi.addToTrip(tripId, formData.email, formData.canEdit);
+      const newCompanion = await companionsApi.addToTrip(tripId, formData.email);
 
       companions = [...companions, newCompanion];
 
@@ -45,7 +44,7 @@
       }
 
       // Reset form
-      formData = { email: '', canEdit: false };
+      formData = { email: '' };
       showAddForm = false;
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to add companion';
@@ -75,7 +74,7 @@
 
   function handleCancel() {
     showAddForm = false;
-    formData = { email: '', canEdit: false };
+    formData = { email: '' };
     error = null;
   }
 </script>
@@ -109,20 +108,6 @@
           autocomplete="new-email"
         />
 
-        <div class="permission-option">
-          <label for="can-edit">
-            <input
-              id="can-edit"
-              type="checkbox"
-              bind:checked={formData.canEdit}
-            />
-            Allow editing of trip items
-          </label>
-          <p class="help-text">
-            If unchecked, companion can only view the trip
-          </p>
-        </div>
-
         <div class="form-actions">
           <Button
             variant="primary"
@@ -147,15 +132,11 @@
   {#if companions && companions.length > 0}
     <Grid columns={2} responsive={true} gap="1rem">
       {#each companions as companion (companion.id)}
-        <Card title={companion.email} subtitle={companion.canEdit ? 'Can edit' : 'View only'}>
+        <Card title={companion.email}>
           <div class="companion-info">
             <p>
-              <strong>Permissions:</strong>
-              {#if companion.canEdit}
-                <span class="permission-badge edit">Can edit and delete items</span>
-              {:else}
-                <span class="permission-badge view">View only</span>
-              {/if}
+              <strong>Status:</strong>
+              <span class="permission-badge">Added to trip</span>
             </p>
             {#if companion.addedAt}
               <p>

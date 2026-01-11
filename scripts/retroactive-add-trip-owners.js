@@ -43,7 +43,6 @@ async function runMigration() {
           email: trip.user.email,
           userId: trip.user.id,
           createdBy: trip.user.id,
-          canBeAddedByOthers: true,
         });
       }
 
@@ -59,7 +58,6 @@ async function runMigration() {
         await db.TripCompanion.create({
           tripId: trip.id,
           companionId: ownerCompanion.id,
-          canEdit: true,
           canAddItems: true,
           permissionSource: 'owner',
           addedBy: trip.user.id,

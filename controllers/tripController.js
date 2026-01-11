@@ -865,7 +865,6 @@ exports.createTrip = async (req, res) => {
         email: req.user.email,
         userId: req.user.id,
         createdBy: req.user.id,
-        canBeAddedByOthers: true,
       });
     }
 
@@ -873,7 +872,6 @@ exports.createTrip = async (req, res) => {
     await TripCompanion.create({
       tripId: trip.id,
       companionId: ownerCompanion.id,
-      canEdit: true,
       canAddItems: true,
       permissionSource: 'owner',
       addedBy: req.user.id,
@@ -896,7 +894,6 @@ exports.createTrip = async (req, res) => {
           // Check if companion has a linked account
           let permissionSource = 'explicit';
           let canAddItems = false;
-          let canEdit = !!defaultCompanionEditPermission;
 
           if (companion.userId) {
             // Has linked account - check for manage_travel permission
@@ -910,7 +907,6 @@ exports.createTrip = async (req, res) => {
 
             if (relationship && relationship.permissionLevel === 'manage_travel') {
               permissionSource = 'manage_travel';
-              canEdit = true;
               canAddItems = true;
             }
           }
@@ -918,7 +914,6 @@ exports.createTrip = async (req, res) => {
           await TripCompanion.create({
             tripId: trip.id,
             companionId,
-            canEdit,
             canAddItems,
             permissionSource,
             addedBy: req.user.id,
@@ -1044,9 +1039,6 @@ exports.viewTrip = async (req, res) => {
       });
     }
 
-    // Determine if user can edit this trip
-    const canEdit = isOwner || (companionRecord && companionRecord.canEdit);
-
     // Get current user's travel companion profile (if they're a companion)
     let userCompanionId = null;
     const userItemCompanions = {};
@@ -1105,7 +1097,6 @@ exports.viewTrip = async (req, res) => {
       success: true,
       trip,
       isOwner,
-      canEdit,
       airlines,
       userItemCompanions,
       userCompanionId,
@@ -1300,14 +1291,8 @@ exports.updateTrip = async (req, res) => {
         const companion = await TravelCompanion.findByPk(existingTripCompanion.companionId);
         if (!companion) continue;
 
-        let canEdit = !!defaultCompanionEditPermission;
         let canAddItems = false;
         let { permissionSource } = existingTripCompanion;
-
-        // Check if explicit permission override exists
-        if (permissionsMap[existingTripCompanion.companionId] !== undefined) {
-          canEdit = permissionsMap[existingTripCompanion.companionId];
-        }
 
         // Check manage_travel relationship
         if (companion.userId && existingTripCompanion.permissionSource === 'manage_travel') {
@@ -1320,18 +1305,15 @@ exports.updateTrip = async (req, res) => {
           });
 
           if (relationship && relationship.permissionLevel === 'manage_travel') {
-            canEdit = true;
             canAddItems = true;
           } else {
             // Relationship changed to view_travel
-            canEdit = !!defaultCompanionEditPermission;
             canAddItems = false;
             permissionSource = 'explicit';
           }
         }
 
         await existingTripCompanion.update({
-          canEdit,
           canAddItems,
           permissionSource,
         });
@@ -1346,7 +1328,6 @@ exports.updateTrip = async (req, res) => {
 
         let permissionSource = 'explicit';
         let canAddItems = false;
-        let canEdit = !!defaultCompanionEditPermission;
 
         if (companion.userId) {
           const relationship = await CompanionRelationship.findOne({
@@ -1359,7 +1340,6 @@ exports.updateTrip = async (req, res) => {
 
           if (relationship && relationship.permissionLevel === 'manage_travel') {
             permissionSource = 'manage_travel';
-            canEdit = true;
             canAddItems = true;
           }
         }
@@ -1367,7 +1347,6 @@ exports.updateTrip = async (req, res) => {
         await TripCompanion.create({
           tripId: trip.id,
           companionId,
-          canEdit,
           canAddItems,
           permissionSource,
           addedBy: req.user.id,

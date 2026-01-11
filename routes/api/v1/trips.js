@@ -215,7 +215,6 @@ router.get('/search', async (req, res) => {
  * @returns {string} returns.companions[].id - Companion ID
  * @returns {string} returns.companions[].email - Companion email
  * @returns {string} returns.companions[].firstName - Companion first name
- * @returns {boolean} returns.companions[].canEdit - Edit permission flag
  * @returns {Array} returns.vouchers - Associated vouchers
  * @returns {string} returns.createdAt - Creation timestamp (ISO format)
  * @returns {string} returns.updatedAt - Last update timestamp (ISO format)

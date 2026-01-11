@@ -46,11 +46,6 @@ module.exports = (sequelize, DataTypes) => {
           key: 'id',
         },
       },
-      canBeAddedByOthers: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-        defaultValue: false,
-      },
     },
     {
       tableName: 'travel_companions',

@@ -250,7 +250,6 @@ exports.respondToInvitation = async (req, res) => {
           companionId: companionRecord.id,
         },
         defaults: {
-          canEdit: true, // When user explicitly joins, they get edit permissions
           canAddItems: false,
           permissionSource: 'explicit',
           addedBy: trip.userId,

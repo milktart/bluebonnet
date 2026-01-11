@@ -365,10 +365,10 @@ export const companionsApi = {
   getByTrip: (tripId: string) =>
     apiCall(`/v1/companions/trips/${tripId}`),
 
-  addToTrip: (tripId: string, companionId: string, canEdit: boolean) =>
+  addToTrip: (tripId: string, companionId: string) =>
     apiCall(`/v1/companions/trips/${tripId}`, {
       method: 'POST',
-      body: JSON.stringify({ companionId, canEdit }),
+      body: JSON.stringify({ companionId }),
     }),
 
   removeFromTrip: (tripId: string, companionId: string) =>

@@ -514,17 +514,9 @@ export class CompanionManager {
 
       const result = await response.json();
 
-      if (result.success) {
-        // Reload the companions sidebar to show the updated companion
-        // This ensures fresh data is loaded via the sidebar's loadCompanionData() function
-        if (typeof loadSidebarContent === 'function') {
-          await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
-        }
-      } else {
-        // Reload the companions sidebar on error to ensure consistent state
-        if (typeof loadSidebarContent === 'function') {
-          await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
-        }
+      // Reload the companions sidebar (on success or error to ensure consistent state)
+      if (typeof loadSidebarContent === 'function') {
+        await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
       }
     } catch (error) {
       // Reload the companions sidebar on error to ensure consistent state
@@ -554,17 +546,9 @@ export class CompanionManager {
 
       const result = await response.json();
 
-      if (result.success) {
-        // Reload the companions sidebar to show the newly created companion
-        // This ensures fresh data is loaded via the sidebar's loadCompanionData() function
-        if (typeof loadSidebarContent === 'function') {
-          await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
-        }
-      } else {
-        // Reload the companions sidebar on error to ensure consistent state
-        if (typeof loadSidebarContent === 'function') {
-          await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
-        }
+      // Reload the companions sidebar (on success or error to ensure consistent state)
+      if (typeof loadSidebarContent === 'function') {
+        await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
       }
     } catch (error) {
       // Reload the companions sidebar on error to ensure consistent state
@@ -597,16 +581,9 @@ export class CompanionManager {
 
       const data = await response.json();
 
-      if (data.success) {
-        // Reload the companions sidebar to reflect the deletion
-        if (typeof loadSidebarContent === 'function') {
-          await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
-        }
-      } else {
-        // Reload the companions sidebar on error to ensure consistent state
-        if (typeof loadSidebarContent === 'function') {
-          await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
-        }
+      // Reload the companions sidebar (on success or error to ensure consistent state)
+      if (typeof loadSidebarContent === 'function') {
+        await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
       }
     } catch (error) {
       // Reload the companions sidebar on error to ensure consistent state
@@ -640,16 +617,9 @@ export class CompanionManager {
 
       const data = await response.json();
 
-      if (data.success) {
-        // Reload the companions sidebar to reflect the unlinking
-        if (typeof loadSidebarContent === 'function') {
-          await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
-        }
-      } else {
-        // Reload the companions sidebar on error to ensure consistent state
-        if (typeof loadSidebarContent === 'function') {
-          await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
-        }
+      // Reload the companions sidebar (on success or error to ensure consistent state)
+      if (typeof loadSidebarContent === 'function') {
+        await loadSidebarContent('/account/companions-sidebar', { fullWidth: true });
       }
     } catch (error) {
       // Reload the companions sidebar on error to ensure consistent state
@@ -659,7 +629,7 @@ export class CompanionManager {
     }
   }
 
-  async togglePermission(companionId, canBeAddedByOthers) {
+  async togglePermission(companionId) {
     try {
       const response = await fetch(`/companions/${companionId}/permissions`, {
         method: 'PUT',
@@ -667,7 +637,7 @@ export class CompanionManager {
           'Content-Type': 'application/json',
           'X-Sidebar-Request': 'true',
         },
-        body: JSON.stringify({ canBeAddedByOthers }),
+        body: JSON.stringify({}),
       });
 
       if (!response.ok && response.status !== 404 && response.status !== 500) {
@@ -1047,9 +1017,9 @@ if (typeof window !== 'undefined') {
     }
   };
 
-  window.toggleCompanionPermission = function (companionId, canBeAddedByOthers) {
+  window.toggleCompanionPermission = function (companionId) {
     if (window.companionManagerInstance) {
-      window.companionManagerInstance.togglePermission(companionId, canBeAddedByOthers);
+      window.companionManagerInstance.togglePermission(companionId);
     }
   };
 

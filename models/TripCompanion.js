@@ -23,11 +23,6 @@ module.exports = (sequelize, DataTypes) => {
           key: 'id',
         },
       },
-      canEdit: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-        defaultValue: false, // Trip owner can control if companion can edit trip items
-      },
       addedBy: {
         type: DataTypes.UUID,
         allowNull: false,
@@ -35,11 +30,6 @@ module.exports = (sequelize, DataTypes) => {
           model: 'users',
           key: 'id',
         },
-      },
-      canAddItems: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-        defaultValue: false,
       },
       permissionSource: {
         type: DataTypes.ENUM('owner', 'manage_travel', 'explicit'),

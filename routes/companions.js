@@ -15,7 +15,6 @@ const validateCompanion = [
   body('name').optional().trim(),
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
   body('phone').optional().trim(),
-  body('canBeAddedByOthers').optional().isBoolean(),
 ];
 
 // GET companions list

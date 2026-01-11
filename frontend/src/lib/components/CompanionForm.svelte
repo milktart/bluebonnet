@@ -22,7 +22,6 @@
     firstName: '',
     lastName: '',
     email: '',
-    canEdit: false,
     isTrusted: false
   };
 
@@ -32,7 +31,6 @@
       firstName: companion.firstName || '',
       lastName: companion.lastName || '',
       email: companion.email || '',
-      canEdit: companion.canBeAddedByOthers || false,
       isTrusted: companion.isTrusted || false
     };
   }
@@ -67,8 +65,7 @@
       const submitData = {
         firstName: formData.firstName || undefined,
         lastName: formData.lastName || undefined,
-        email: formData.email,
-        canBeAddedByOthers: formData.canEdit
+        email: formData.email
       };
 
       let response;
@@ -163,21 +160,6 @@
         {#if isEditMode}
           <p class="help-text">Email cannot be changed</p>
         {/if}
-      </div>
-
-      <div class="checkbox-wrapper">
-        <label for="can-edit" class="checkbox-label">
-          <input
-            id="can-edit"
-            type="checkbox"
-            bind:checked={formData.canEdit}
-            disabled={loading}
-          />
-          Allow editing of trip items
-        </label>
-        <p class="checkbox-help-text">
-          If unchecked, companion can only view your trips
-        </p>
       </div>
 
       {#if isEditMode}
