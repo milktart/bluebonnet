@@ -285,6 +285,31 @@ export const settingsApi = {
   },
 
   /**
+   * Update companion permissions (canShareTrips, canManageTrips)
+   */
+  async updateCompanionPermissions(
+    companionId: string,
+    data: { canShareTrips?: boolean; canManageTrips?: boolean }
+  ): Promise<any> {
+    const base = getApiBase();
+    const response = await fetch(`${base}/companions/${companionId}/permissions`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Sidebar-Request': 'true',
+      },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to update permissions: ${response.statusText}`);
+    }
+
+    return response.json();
+  },
+
+  /**
    * Revoke companion access to your profile
    */
   async revokeCompanionAccess(companionId: string): Promise<any> {

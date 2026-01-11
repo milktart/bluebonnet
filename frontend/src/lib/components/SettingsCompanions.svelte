@@ -30,9 +30,8 @@
       loading = true;
       error = null;
 
-      // Fetch companions and trusted permissions separately for better error handling
+      // Fetch companions with their permissions built-in
       let companionsResp = { companions: [] };
-      let trustedResp = { permissions: [] };
 
       try {
         companionsResp = await settingsApi.getAllCompanions();
@@ -41,27 +40,12 @@
         throw new Error(`Failed to fetch companions: ${err instanceof Error ? err.message : String(err)}`);
       }
 
-      try {
-        trustedResp = await settingsApi.getGrantedPermissions();
-      } catch (err) {
-        console.error('[SettingsCompanions] Failed to fetch granted permissions:', err);
-        // Don't fail the whole operation if trusted permissions fail to load
-        console.warn('[SettingsCompanions] Continuing without trusted companion data');
-        trustedResp = { permissions: [] };
-      }
-
+      // Companions now come with permission data:
+      // - canShareTrips: I share my travel with them
+      // - canManageTrips: I let them manage my travel
+      // - theyShareTrips: They share their travel with me
+      // - theyManageTrips: They let me manage their travel
       companions = companionsResp.companions || [];
-      trustedCompanions = Array.isArray(trustedResp) ? trustedResp : trustedResp?.permissions || [];
-
-      // Merge trusted companion info into companions list
-      companions = companions.map(companion => {
-        const trusted = trustedCompanions.find(t => t.trustedUserId === companion.id || t.trustedUser?.id === companion.id);
-        return {
-          ...companion,
-          isTrusted: !!trusted,
-          trustedPermission: trusted
-        };
-      });
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to load companions';
       console.error('[SettingsCompanions] Error in loadCompanions:', error);
@@ -152,8 +136,10 @@
           <tr>
             <th>Name</th>
             <th>Email</th>
-            <th class="center-col">Shares</th>
-            <th class="center-col">Trusted</th>
+            <th class="center-col" title="They share their travel with me">Shares</th>
+            <th class="center-col" title="They can manage my travel">Manages</th>
+            <th class="center-col" title="I share my travel with them">Sharing</th>
+            <th class="center-col" title="I can manage their travel">Managing</th>
             <th class="actions-col"></th>
           </tr>
         </thead>
@@ -163,46 +149,43 @@
               <td class="name-cell">{getDisplayName(companion)}</td>
               <td class="email-cell">{companion.email}</td>
               <td class="center-col">
-                {#if companion.youInvited}
-                  <span class="indicator">✓</span>
+                {#if companion.theyShareTrips}
+                  <span class="indicator" title="This person shares their travel with you">✓</span>
                 {/if}
               </td>
               <td class="center-col">
-                {#if companion.isTrusted}
-                  <span class="indicator trusted">★</span>
+                {#if companion.theyManageTrips}
+                  <span class="indicator" title="This person can manage your travel">✓</span>
+                {/if}
+              </td>
+              <td class="center-col">
+                {#if companion.canShareTrips}
+                  <span class="indicator" title="You share your travel with this person">✓</span>
+                {/if}
+              </td>
+              <td class="center-col">
+                {#if companion.canManageTrips}
+                  <span class="indicator" title="You can manage this person's travel">✓</span>
                 {/if}
               </td>
               <td class="actions-cell">
                 <div class="actions-group">
-                  {#if companion.youInvited}
-                    <button
-                      class="action-btn edit"
-                      title="Edit companion"
-                      on:click={() => handleEditCompanion(companion)}
-                      disabled={loading}
-                    >
-                      <span class="material-symbols-outlined">edit</span>
-                    </button>
-                    <button
-                      class="action-btn delete"
-                      title="Remove companion"
-                      on:click={() => handleRemoveCompanion(companion.companionId)}
-                      disabled={loading}
-                    >
-                      <span class="material-symbols-outlined">delete</span>
-                    </button>
-                  {/if}
-
-                  {#if companion.theyInvited}
-                    <button
-                      class="action-btn revoke"
-                      title="Revoke access"
-                      on:click={() => handleRevokeAccess(companion.companionId)}
-                      disabled={loading}
-                    >
-                      <span class="material-symbols-outlined">block</span>
-                    </button>
-                  {/if}
+                  <button
+                    class="action-btn edit"
+                    title="Edit companion permissions"
+                    on:click={() => handleEditCompanion(companion)}
+                    disabled={loading}
+                  >
+                    <span class="material-symbols-outlined">edit</span>
+                  </button>
+                  <button
+                    class="action-btn delete"
+                    title="Remove companion"
+                    on:click={() => handleRemoveCompanion(companion.id)}
+                    disabled={loading}
+                  >
+                    <span class="material-symbols-outlined">delete</span>
+                  </button>
                 </div>
               </td>
             </tr>
@@ -314,7 +297,7 @@
 
   .center-col {
     text-align: center;
-    width: 80px;
+    width: 70px;
     vertical-align: middle;
   }
 

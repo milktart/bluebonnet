@@ -8,8 +8,11 @@
     firstName?: string;
     lastName?: string;
     email?: string;
-    isTrusted?: boolean;
-    trustedPermission?: any;
+    userId?: string;
+    canShareTrips?: boolean;
+    canManageTrips?: boolean;
+    theyShareTrips?: boolean;
+    theyManageTrips?: boolean;
   } | null = null;
 
   export let onSuccess: ((companion: any) => void) | null = null;
@@ -22,7 +25,8 @@
     firstName: '',
     lastName: '',
     email: '',
-    isTrusted: false
+    canShareTrips: true,
+    canManageTrips: false
   };
 
   // Initialize form data if in edit mode
@@ -31,7 +35,8 @@
       firstName: companion.firstName || '',
       lastName: companion.lastName || '',
       email: companion.email || '',
-      isTrusted: companion.isTrusted || false
+      canShareTrips: companion.canShareTrips !== undefined ? companion.canShareTrips : true,
+      canManageTrips: companion.canManageTrips !== undefined ? companion.canManageTrips : false
     };
   }
 
@@ -65,30 +70,27 @@
       const submitData = {
         firstName: formData.firstName || undefined,
         lastName: formData.lastName || undefined,
-        email: formData.email
+        email: formData.email,
+        canShareTrips: formData.canShareTrips,
+        canManageTrips: formData.canManageTrips
       };
 
       let response;
       if (isEditMode) {
         response = await settingsApi.updateCompanion(companion!.id!, submitData);
 
-        // Handle trusted companion status changes
-        const wasChanged = formData.isTrusted !== (companion?.isTrusted || false);
-        if (wasChanged && companion?.userId) {
+        // Update permissions separately if they changed
+        const shareChanged = formData.canShareTrips !== (companion?.canShareTrips || false);
+        const manageChanged = formData.canManageTrips !== (companion?.canManageTrips || false);
+
+        if ((shareChanged || manageChanged) && companion?.id) {
           try {
-            if (formData.isTrusted) {
-              // Grant trusted access (use userId, not companion id)
-              await settingsApi.grantPermission({
-                trustedUserId: companion.userId,
-                canManageAllTrips: true,
-                canViewAllTrips: true
-              });
-            } else if (companion?.trustedPermission) {
-              // Revoke trusted access
-              await settingsApi.revokePermission(companion.userId);
-            }
+            await settingsApi.updateCompanionPermissions(companion.id, {
+              canShareTrips: formData.canShareTrips,
+              canManageTrips: formData.canManageTrips
+            });
           } catch (permErr) {
-            console.warn('Failed to update trusted status:', permErr);
+            console.warn('Failed to update permissions:', permErr);
             // Don't fail the whole operation if permission update fails
           }
         }
@@ -162,30 +164,57 @@
         {/if}
       </div>
 
-      {#if isEditMode}
-        {#if companion?.userId}
+      <div class="permissions-section">
+        <h3>Permissions</h3>
+        <div class="permission-group">
           <div class="checkbox-wrapper">
-            <label for="is-trusted" class="checkbox-label">
+            <label for="share-trips" class="checkbox-label">
               <input
-                id="is-trusted"
+                id="share-trips"
                 type="checkbox"
-                bind:checked={formData.isTrusted}
+                bind:checked={formData.canShareTrips}
                 disabled={loading}
               />
-              Grant trusted companion access
+              Share my travel with this person
             </label>
             <p class="checkbox-help-text">
-              Trusted companions can manage ALL your trips, not just ones they're invited to
+              They will see all my trips and the items I've added
             </p>
           </div>
-        {:else}
-          <div class="info-box">
-            <p class="info-text">
-              This companion hasn't created an account yet. Once they sign up using their email address, you'll be able to grant them admin access.
+
+          <div class="checkbox-wrapper">
+            <label for="manage-trips" class="checkbox-label">
+              <input
+                id="manage-trips"
+                type="checkbox"
+                bind:checked={formData.canManageTrips}
+                disabled={loading}
+              />
+              Allow them to manage my travel
+            </label>
+            <p class="checkbox-help-text">
+              They can create and edit trips on my account
             </p>
+          </div>
+        </div>
+
+        {#if isEditMode && companion?.userId}
+          <div class="received-permissions">
+            <h4>Permissions they've granted me:</h4>
+            <ul>
+              {#if companion.theyShareTrips}
+                <li>✓ They share their travel with me</li>
+              {/if}
+              {#if companion.theyManageTrips}
+                <li>✓ I can manage their travel</li>
+              {/if}
+              {#if !companion.theyShareTrips && !companion.theyManageTrips}
+                <li>None yet</li>
+              {/if}
+            </ul>
           </div>
         {/if}
-      {/if}
+      </div>
     </div>
 
     <div class="form-buttons">
@@ -251,5 +280,60 @@
     margin: 0;
     font-size: 0.8rem;
     color: #1e40af;
+  }
+
+  .permissions-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+  }
+
+  .permissions-section h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1f2937;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .permission-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .received-permissions {
+    margin-top: 0.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .received-permissions h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #374151;
+    text-transform: uppercase;
+  }
+
+  .received-permissions ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .received-permissions li {
+    font-size: 0.8rem;
+    color: #4b5563;
+    margin: 0;
+    padding: 0;
   }
 </style>
