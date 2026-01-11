@@ -22,6 +22,8 @@
     "db:sync": "node scripts/sync-database.js",
     "db:seed-airports": "node scripts/seed-airports.js",
     "db:verify-migration": "node scripts/verify-migration.js",
+    "db:verify-companion-migration": "node scripts/verify-companion-migration.js",
+    "db:seed-companion-data": "node scripts/seed-companion-data.js",
     "cache:clear": "node scripts/clear-cache.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
