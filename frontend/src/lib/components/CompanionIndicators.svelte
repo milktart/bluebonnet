@@ -1,5 +1,6 @@
 <script lang="ts">
   export let companions: any[] = [];
+  export let excludeUserId: string | null = null;
 
   // Normalize companion object - handle both nested (tc.companion) and direct formats
   function getNormalizedCompanion(comp: any) {
@@ -10,6 +11,16 @@
     }
     // Otherwise, use the object directly
     return comp;
+  }
+
+  function shouldExcludeCompanion(comp: any): boolean {
+    if (!excludeUserId) return false;
+    const normalized = getNormalizedCompanion(comp);
+    return normalized?.userId === excludeUserId;
+  }
+
+  function getFilteredCompanions(): any[] {
+    return companions.filter(comp => !shouldExcludeCompanion(comp));
   }
 
   function getInitials(email: string, name?: string, firstName?: string, lastName?: string): string {
@@ -78,7 +89,7 @@
 </script>
 
 <div class="companion-indicators">
-  {#each sortCompanions(companions) as comp (getNormalizedCompanion(comp)?.id)}
+  {#each sortCompanions(getFilteredCompanions()) as comp (getNormalizedCompanion(comp)?.id)}
     {@const companion = getNormalizedCompanion(comp)}
     {#if companion}
       {@const initials = getInitials(companion.email, companion.name, companion.firstName, companion.lastName)}

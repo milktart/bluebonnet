@@ -1,5 +1,6 @@
 <script lang="ts">
   import { dashboardStore, dashboardStoreActions } from '$lib/stores/dashboardStore';
+  import { authStore } from '$lib/stores/authStore';
   import CompanionIndicators from '$lib/components/CompanionIndicators.svelte';
   import { getTripIcon, getTripCities } from '$lib/utils/dashboardItem';
   import { formatDate, formatTripDateHeader, calculateNights } from '$lib/utils/dashboardFormatters';
@@ -11,6 +12,7 @@
   let highlightedTripId: string | null = null;
   let highlightedItemId: string | null = null;
   let highlightedItemType: string | null = null;
+  let currentUserId: string | null = null;
 
   // Subscribe to store
   const unsubscribe = dashboardStore.subscribe(($store) => {
@@ -20,6 +22,11 @@
     highlightedTripId = $store.highlightedTripId;
     highlightedItemId = $store.highlightedItemId;
     highlightedItemType = $store.highlightedItemType;
+  });
+
+  // Subscribe to auth store for current user
+  const unsubscribeAuth = authStore.subscribe(($auth) => {
+    currentUserId = $auth.user?.id || null;
   });
 
   const handleTripExpand = (tripId: string) => {
@@ -142,7 +149,7 @@
 
       {#if item.data.tripCompanions && item.data.tripCompanions.length > 0}
         <div class="trip-companions">
-          <CompanionIndicators companions={item.data.tripCompanions} />
+          <CompanionIndicators companions={item.data.tripCompanions} excludeUserId={currentUserId} />
         </div>
       {/if}
 
