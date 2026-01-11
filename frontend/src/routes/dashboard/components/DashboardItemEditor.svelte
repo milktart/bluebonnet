@@ -275,6 +275,7 @@
       data={secondarySidebarContent.data}
       tripId={secondarySidebarContent.data?.tripId || ''}
       allTrips={trips}
+      canEdit={secondarySidebarContent.data?.canEdit !== false}
       onClose={closeSecondarySidebar}
       onSave={handleItemSave}
     />

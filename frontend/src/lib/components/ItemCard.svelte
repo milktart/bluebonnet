@@ -9,6 +9,8 @@
   export let isHighlighted: boolean = false;
   export let isUnconfirmed: boolean = false;
   export let showCompanions: boolean = true;
+  export let excludeUserId: string | null = null;
+  export let canEdit: boolean = true;
 
   const dispatch = createEventDispatcher();
 
@@ -189,7 +191,14 @@
 
   {#if showCompanions && item.itemCompanions && item.itemCompanions.length > 0}
     <div class="item-companions">
-      <CompanionIndicators companions={item.itemCompanions} />
+      <CompanionIndicators companions={item.itemCompanions} excludeUserId={excludeUserId} />
+    </div>
+  {/if}
+
+  {#if !canEdit}
+    <div class="read-only-badge" title="This item is shared with you and cannot be edited">
+      <span class="material-symbols-outlined">lock</span>
+      View only
     </div>
   {/if}
 </div>
@@ -314,6 +323,26 @@
     align-items: center;
     justify-content: flex-end;
     flex-shrink: 0;
+  }
+
+  .read-only-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 0.25rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #6b7280;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .read-only-badge :global(.material-symbols-outlined) {
+    font-size: 0.75rem;
+    font-weight: 500;
   }
 
   /* Unconfirmed item styling with diagonal hash pattern */

@@ -2,6 +2,8 @@
   export let companions: any[] = [];
   export let excludeUserId: string | null = null;
 
+  let filteredCompanions: any[] = [];
+
   // Normalize companion object - handle both nested (tc.companion) and direct formats
   function getNormalizedCompanion(comp: any) {
     if (!comp) return null;
@@ -16,11 +18,27 @@
   function shouldExcludeCompanion(comp: any): boolean {
     if (!excludeUserId) return false;
     const normalized = getNormalizedCompanion(comp);
-    return normalized?.userId === excludeUserId;
+    // Check userId on the normalized companion, or on the linkedAccount
+    const companionUserId = normalized?.userId || normalized?.linkedAccount?.id;
+    const shouldExclude = companionUserId === excludeUserId;
+    if (companions.length > 0) {
+      console.log('[CompanionIndicators.shouldExcludeCompanion]', {
+        companionName: normalized?.name,
+        companionUserId,
+        excludeUserId,
+        shouldExclude,
+      });
+    }
+    return shouldExclude;
   }
 
-  function getFilteredCompanions(): any[] {
-    return companions.filter(comp => !shouldExcludeCompanion(comp));
+  $: {
+    filteredCompanions = companions.filter(comp => !shouldExcludeCompanion(comp));
+    if (companions.length > 0) {
+      console.log('[CompanionIndicators] excludeUserId:', excludeUserId);
+      console.log('[CompanionIndicators] companions:', JSON.stringify(companions, null, 2));
+      console.log('[CompanionIndicators] filteredCompanions:', JSON.stringify(filteredCompanions, null, 2));
+    }
   }
 
   function getInitials(email: string, name?: string, firstName?: string, lastName?: string): string {
@@ -89,7 +107,7 @@
 </script>
 
 <div class="companion-indicators">
-  {#each sortCompanions(getFilteredCompanions()) as comp (getNormalizedCompanion(comp)?.id)}
+  {#each sortCompanions(filteredCompanions) as comp (getNormalizedCompanion(comp)?.id)}
     {@const companion = getNormalizedCompanion(comp)}
     {#if companion}
       {@const initials = getInitials(companion.email, companion.name, companion.firstName, companion.lastName)}

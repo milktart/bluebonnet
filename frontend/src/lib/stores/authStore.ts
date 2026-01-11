@@ -27,6 +27,13 @@ const initialState: AuthStoreType = {
 
 export const authStore: Writable<AuthStoreType> = writable(initialState);
 
+// Derived store for current user ID
+import { derived } from 'svelte/store';
+export const currentUserId = derived(authStore, ($authStore) => {
+  const userId = $authStore.user?.id || null;
+  return userId;
+});
+
 /**
  * Auth Store Actions
  */

@@ -24,9 +24,10 @@
     highlightedItemType = $store.highlightedItemType;
   });
 
-  // Subscribe to auth store for current user
-  const unsubscribeAuth = authStore.subscribe(($auth) => {
-    currentUserId = $auth.user?.id || null;
+  // Subscribe to auth store to get current user ID
+  const unsubscribeAuth = authStore.subscribe(($authStore) => {
+    currentUserId = $authStore.user?.id || null;
+    console.log('[DashboardTripsList] Current user ID from authStore:', currentUserId);
   });
 
   const handleTripExpand = (tripId: string) => {
@@ -185,7 +186,7 @@
                       </div>
                       {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
                         <div class="item-companions">
-                          <CompanionIndicators companions={tripItem.itemCompanions} />
+                          <CompanionIndicators companions={tripItem.itemCompanions} excludeUserId={currentUserId} />
                         </div>
                       {/if}
                     </div>
@@ -209,7 +210,7 @@
                       </div>
                       {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
                         <div class="item-companions">
-                          <CompanionIndicators companions={tripItem.itemCompanions} />
+                          <CompanionIndicators companions={tripItem.itemCompanions} excludeUserId={currentUserId} />
                         </div>
                       {/if}
                     </div>
@@ -234,7 +235,7 @@
                       </div>
                       {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
                         <div class="item-companions">
-                          <CompanionIndicators companions={tripItem.itemCompanions} />
+                          <CompanionIndicators companions={tripItem.itemCompanions} excludeUserId={currentUserId} />
                         </div>
                       {/if}
                     </div>
@@ -257,7 +258,7 @@
                       </div>
                       {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
                         <div class="item-companions">
-                          <CompanionIndicators companions={tripItem.itemCompanions} />
+                          <CompanionIndicators companions={tripItem.itemCompanions} excludeUserId={currentUserId} />
                         </div>
                       {/if}
                     </div>
@@ -280,7 +281,7 @@
                       </div>
                       {#if tripItem.itemCompanions && tripItem.itemCompanions.length > 0}
                         <div class="item-companions">
-                          <CompanionIndicators companions={tripItem.itemCompanions} />
+                          <CompanionIndicators companions={tripItem.itemCompanions} excludeUserId={currentUserId} />
                         </div>
                       {/if}
                     </div>

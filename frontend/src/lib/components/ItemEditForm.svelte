@@ -18,6 +18,7 @@
   export let onSave: (updatedItem: TravelItem | Trip) => void = () => {};
   export let isMobile: boolean = false;
   export let containerType: 'modal' | 'sidebar' = 'sidebar';
+  export let canEdit: boolean = true;
 
   let loading = false;
   let error: string | null = null;
@@ -446,7 +447,15 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h3>{config.title}</h3>
+        <div class="header-title-wrapper">
+          <h3>{config.title}</h3>
+          {#if !canEdit}
+            <span class="read-only-badge" title="This item is shared with you and cannot be edited">
+              <span class="material-symbols-outlined">lock</span>
+              View only
+            </span>
+          {/if}
+        </div>
       </div>
       <div class="icon-badge" data-type={itemType}>
         <span class="material-symbols-outlined">{getItemIcon(itemType)}</span>
@@ -1170,5 +1179,34 @@
   .checkbox-group span {
     font-size: 0.85rem;
     color: #111827;
+  }
+
+  .header-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .header-title-wrapper h3 {
+    margin: 0;
+  }
+
+  .read-only-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #6b7280;
+    white-space: nowrap;
+  }
+
+  .read-only-badge :global(.material-symbols-outlined) {
+    font-size: 0.75rem;
+    font-weight: 500;
   }
 </style>

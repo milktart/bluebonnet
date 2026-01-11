@@ -12,6 +12,7 @@
   export let highlightedTripId: string | null = null;
   export let highlightedItemId: string | null = null;
   export let highlightedItemType: string | null = null;
+  export let excludeUserId: string | null = null; // User ID to exclude from companion indicators
   export let onTripExpand: (tripId: string) => void = () => {};
   export let onTripHover: (tripId: string | null) => void = () => {};
   export let onItemHover: (itemType: string | null, itemId: string | null) => void = () => {};
@@ -22,6 +23,7 @@
   // Debug reactive statement
   $: {
     console.log('[ItemsList] expandedTrips updated:', Array.from(expandedTrips));
+    console.log('[ItemsList] excludeUserId prop:', excludeUserId);
   }
 
   function handleTripExpand(tripId: string) {
@@ -133,7 +135,7 @@
 
               {#if item.data.tripCompanions && item.data.tripCompanions.length > 0}
                 <div class="trip-companions">
-                  <CompanionIndicators companions={item.data.tripCompanions} />
+                  <CompanionIndicators companions={item.data.tripCompanions} excludeUserId={excludeUserId} />
                 </div>
               {/if}
 
@@ -152,6 +154,8 @@
                             itemType={tripItem.type}
                             isHighlighted={highlightedItemId === tripItem.id && highlightedItemType === tripItem.type}
                             isUnconfirmed={tripItem.isConfirmed === false}
+                            canEdit={tripItem.canEdit !== false}
+                            {excludeUserId}
                             on:click={(e) => handleItemCardClick(e.detail)}
                             on:mouseenter={(e) => handleItemCardMouseEnter(e.detail)}
                             on:mouseleave={handleItemCardMouseLeave}
@@ -170,6 +174,8 @@
               itemType={item.itemType}
               isHighlighted={highlightedItemId === item.data.id && highlightedItemType === item.itemType}
               isUnconfirmed={item.data.isConfirmed === false}
+              canEdit={item.data.canEdit !== false}
+              {excludeUserId}
               on:click={(e) => handleItemCardClick(e.detail)}
               on:mouseenter={(e) => handleItemCardMouseEnter(e.detail)}
               on:mouseleave={handleItemCardMouseLeave}

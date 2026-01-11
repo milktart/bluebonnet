@@ -127,7 +127,7 @@ router.get('/:id', async (req, res) => {
         {
           model: TravelCompanion,
           as: 'companion',
-          attributes: ['id', 'email', 'firstName', 'lastName', 'name'],
+          attributes: ['id', 'email', 'firstName', 'lastName', 'name', 'userId'],
         },
       ],
     });
@@ -140,6 +140,7 @@ router.get('/:id', async (req, res) => {
       firstName: ic.companion.firstName,
       lastName: ic.companion.lastName,
       name: ic.companion.name,
+      userId: ic.companion.userId,
       inheritedFromTrip: ic.inheritedFromTrip,
     }));
 

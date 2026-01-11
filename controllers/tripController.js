@@ -52,6 +52,7 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
             {
               model: TravelCompanion,
               as: 'companion',
+              attributes: ['id', 'firstName', 'lastName', 'email', 'userId'],
               include: [
                 {
                   model: User,
@@ -66,37 +67,52 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
     });
 
     // Also get trips where the user is a companion (via TravelCompanion)
-    const companionTrips = await Trip.findAll({
-      include: [
-        {
-          model: TripCompanion,
-          as: 'tripCompanions',
-          where: {},
-          required: true,
+    // First, find which trips the user is a companion on
+    const userCompanionRecord = await TravelCompanion.findOne({
+      where: { userId: req.user.id },
+    });
+
+    let companionTrips = [];
+    if (userCompanionRecord) {
+      // Find all trips that have this companion
+      const tripsWithCompanion = await TripCompanion.findAll({
+        where: { companionId: userCompanionRecord.id },
+      });
+
+      const tripIds = tripsWithCompanion.map((tc) => tc.tripId);
+
+      if (tripIds.length > 0) {
+        companionTrips = await Trip.findAll({
+          where: { id: { [Op.in]: tripIds } },
           include: [
             {
-              model: TravelCompanion,
-              as: 'companion',
-              where: { userId: req.user.id },
-              required: true,
+              model: TripCompanion,
+              as: 'tripCompanions',
               include: [
                 {
-                  model: User,
-                  as: 'linkedAccount',
-                  attributes: ['id', 'firstName', 'lastName'],
+                  model: TravelCompanion,
+                  as: 'companion',
+                  attributes: ['id', 'firstName', 'lastName', 'email', 'userId'],
+                  include: [
+                    {
+                      model: User,
+                      as: 'linkedAccount',
+                      attributes: ['id', 'firstName', 'lastName'],
+                    },
+                  ],
                 },
               ],
             },
+            { model: Flight, as: 'flights' },
+            { model: Hotel, as: 'hotels' },
+            { model: Transportation, as: 'transportation' },
+            { model: CarRental, as: 'carRentals' },
+            { model: Event, as: 'events' },
           ],
-        },
-        { model: Flight, as: 'flights' },
-        { model: Hotel, as: 'hotels' },
-        { model: Transportation, as: 'transportation' },
-        { model: CarRental, as: 'carRentals' },
-        { model: Event, as: 'events' },
-      ],
-      order: [['departureDate', 'ASC']],
-    });
+          order: [['departureDate', 'ASC']],
+        });
+      }
+    }
 
     // Merge the two trip lists, removing duplicates (user owns and is companion)
     const tripMap = new Map();
@@ -447,6 +463,7 @@ exports.listTrips = async (req, res, options = {}) => {
           {
             model: TravelCompanion,
             as: 'companion',
+            attributes: ['id', 'firstName', 'lastName', 'email', 'userId'],
             include: [
               {
                 model: User,
@@ -477,39 +494,35 @@ exports.listTrips = async (req, res, options = {}) => {
       raw: true,
     }).then((invitations) => invitations.map((inv) => inv.tripId));
 
-    const companionTrips = await Trip.findAll({
-      where: {
-        // Exclude trips with pending invitations
-        ...(pendingTripIds.length > 0 && {
-          id: {
-            [Op.notIn]: pendingTripIds,
-          },
-        }),
-      },
-      include: [
-        ...tripIncludes,
-        {
-          model: TripCompanion,
-          as: 'tripCompanions',
-          required: true,
-          include: [
-            {
-              model: TravelCompanion,
-              as: 'companion',
-              where: { userId: req.user.id },
-              include: [
-                {
-                  model: User,
-                  as: 'linkedAccount',
-                  attributes: ['id', 'firstName', 'lastName'],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-      order: [['departureDate', 'ASC']],
+    // Get trips where user is a companion
+    let companionTrips = [];
+    const userCompanionRecord2 = await TravelCompanion.findOne({
+      where: { userId: req.user.id },
     });
+
+    if (userCompanionRecord2) {
+      const tripsWithCompanion2 = await TripCompanion.findAll({
+        where: { companionId: userCompanionRecord2.id },
+      });
+
+      const tripIds2 = tripsWithCompanion2.map((tc) => tc.tripId);
+
+      if (tripIds2.length > 0) {
+        companionTrips = await Trip.findAll({
+          where: {
+            id: { [Op.in]: tripIds2 },
+            // Exclude trips with pending invitations
+            ...(pendingTripIds.length > 0 && {
+              id: {
+                [Op.notIn]: pendingTripIds,
+              },
+            }),
+          },
+          include: tripIncludes,
+          order: [['departureDate', 'ASC']],
+        });
+      }
+    }
 
     // Combine and deduplicate trips
     const allTrips = [...ownedTrips, ...companionTrips];

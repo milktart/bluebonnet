@@ -57,6 +57,7 @@ class TripService extends BaseService {
           {
             model: TravelCompanion,
             as: 'companion',
+            attributes: ['id', 'firstName', 'lastName', 'email', 'userId'],
             include: [
               {
                 model: User,
@@ -257,32 +258,30 @@ class TripService extends BaseService {
     }
 
     // Get trips where user is a companion
-    const companionTrips = await Trip.findAll({
-      where: dateFilter,
-      include: [
-        ...tripIncludes,
-        {
-          model: TripCompanion,
-          as: 'tripCompanions',
-          required: true,
-          include: [
-            {
-              model: TravelCompanion,
-              as: 'companion',
-              where: { userId },
-              include: [
-                {
-                  model: User,
-                  as: 'linkedAccount',
-                  attributes: ['id', 'firstName', 'lastName'],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-      order: [['departureDate', orderDirection]],
+    // First find which trips the user is a companion on
+    let companionTrips = [];
+    const userCompanionRecord = await TravelCompanion.findOne({
+      where: { userId },
     });
+
+    if (userCompanionRecord) {
+      const tripsWithCompanion = await TripCompanion.findAll({
+        where: { companionId: userCompanionRecord.id },
+      });
+
+      const tripIds = tripsWithCompanion.map((tc) => tc.tripId);
+
+      if (tripIds.length > 0) {
+        companionTrips = await Trip.findAll({
+          where: {
+            id: { [Op.in]: tripIds },
+            ...dateFilter,
+          },
+          include: tripIncludes,
+          order: [['departureDate', orderDirection]],
+        });
+      }
+    }
 
     // Get standalone items (always fetch them, filter determines which ones)
     let standaloneItems = {};
@@ -362,9 +361,79 @@ class TripService extends BaseService {
       return trip;
     };
 
+    // Process trips to ensure owner is always in tripCompanions
+    const processTripsWithOwner = async (trips) => {
+      return Promise.all(
+        trips.map(async (trip) => {
+          const tripJson = addIsAllDayToTrip(trip.toJSON());
+
+          // Ensure trip owner is included in tripCompanions
+          const ownerInCompanions = tripJson.tripCompanions?.some(
+            (tc) => tc.companion?.userId === trip.userId
+          );
+
+          if (!ownerInCompanions && trip.userId) {
+            // Find the owner's TravelCompanion record
+            let ownerCompanion = await TravelCompanion.findOne({
+              where: { userId: trip.userId },
+              include: [
+                {
+                  model: User,
+                  as: 'linkedAccount',
+                  attributes: ['id', 'firstName', 'lastName'],
+                },
+              ],
+            });
+
+            // If no TravelCompanion exists, fetch the User directly
+            if (!ownerCompanion) {
+              const user = await User.findByPk(trip.userId, {
+                attributes: ['id', 'firstName', 'lastName', 'email'],
+              });
+              if (user) {
+                ownerCompanion = {
+                  id: `virtual-companion-${user.id}`,
+                  userId: user.id,
+                  firstName: user.firstName,
+                  lastName: user.lastName,
+                  email: user.email,
+                  name: `${user.firstName} ${user.lastName}`.trim(),
+                  toJSON: () => ({
+                    id: `virtual-companion-${user.id}`,
+                    userId: user.id,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    email: user.email,
+                    name: `${user.firstName} ${user.lastName}`.trim(),
+                  }),
+                };
+              }
+            }
+
+            if (ownerCompanion) {
+              if (!tripJson.tripCompanions) {
+                tripJson.tripCompanions = [];
+              }
+              // Add owner as first companion
+              tripJson.tripCompanions.unshift({
+                id: `virtual-owner-${trip.userId}`,
+                tripId: trip.id,
+                companionId: ownerCompanion.id,
+                companion: ownerCompanion.toJSON ? ownerCompanion.toJSON() : ownerCompanion,
+                permissionSource: 'owner',
+                canAddItems: true,
+              });
+            }
+          }
+
+          return tripJson;
+        })
+      );
+    };
+
     const result = {
-      ownedTrips: ownedTrips.map((trip) => addIsAllDayToTrip(trip.toJSON())),
-      companionTrips: companionTrips.map((trip) => addIsAllDayToTrip(trip.toJSON())),
+      ownedTrips: await processTripsWithOwner(ownedTrips),
+      companionTrips: await processTripsWithOwner(companionTrips),
       standalone: convertedStandalone,
       pagination,
     };
@@ -381,47 +450,99 @@ class TripService extends BaseService {
   async getStandaloneItems(userId, dateFilter = {}) {
     logger.debug(`${this.modelName}: Getting standalone items for user ${userId}`);
 
+    // Get the user's TravelCompanion record to find items shared with them
+    let userCompanionId = null;
+    const userCompanionRecord = await TravelCompanion.findOne({
+      where: { userId },
+    });
+    if (userCompanionRecord) {
+      userCompanionId = userCompanionRecord.id;
+    }
+
+    // Helper function to get shared item IDs for a given item type
+    const getSharedItemIds = async (itemType) => {
+      if (!userCompanionId) return [];
+      const sharedCompanions = await ItemCompanion.findAll({
+        attributes: ['itemId'],
+        where: {
+          companionId: userCompanionId,
+          itemType,
+        },
+      });
+      return sharedCompanions.map((ic) => ic.itemId);
+    };
+
+    // Build OR condition for owned OR shared items
+    const buildWhereCondition = (sharedIds) => {
+      const orConditions = [{ userId }];
+      if (sharedIds && sharedIds.length > 0) {
+        orConditions.push({ id: { [Op.in]: sharedIds } });
+      }
+      return {
+        tripId: null,
+        [Op.or]: orConditions,
+      };
+    };
+
+    // Get shared item IDs for each type (in parallel for performance)
+    const [
+      flightSharedIds,
+      hotelSharedIds,
+      transportationSharedIds,
+      carRentalSharedIds,
+      eventSharedIds,
+    ] = await Promise.all([
+      getSharedItemIds('flight'),
+      getSharedItemIds('hotel'),
+      getSharedItemIds('transportation'),
+      getSharedItemIds('car_rental'),
+      getSharedItemIds('event'),
+    ]);
+
     const flights = await Flight.findAll({
       where: {
-        userId,
-        tripId: null,
-        ...(dateFilter.departureDate && { departureDateTime: dateFilter.departureDate }),
+        ...buildWhereCondition(flightSharedIds),
+        ...(dateFilter.departureDate && {
+          departureDateTime: { [Op.gte]: dateFilter.departureDate },
+        }),
       },
       order: [['departureDateTime', 'ASC']],
     });
 
     const hotels = await Hotel.findAll({
       where: {
-        userId,
-        tripId: null,
-        ...(dateFilter.departureDate && { checkOutDateTime: dateFilter.departureDate }),
+        ...buildWhereCondition(hotelSharedIds),
+        ...(dateFilter.departureDate && {
+          checkOutDateTime: { [Op.gte]: dateFilter.departureDate },
+        }),
       },
       order: [['checkInDateTime', 'ASC']],
     });
 
     const transportation = await Transportation.findAll({
       where: {
-        userId,
-        tripId: null,
-        ...(dateFilter.departureDate && { departureDateTime: dateFilter.departureDate }),
+        ...buildWhereCondition(transportationSharedIds),
+        ...(dateFilter.departureDate && {
+          departureDateTime: { [Op.gte]: dateFilter.departureDate },
+        }),
       },
       order: [['departureDateTime', 'ASC']],
     });
 
     const carRentals = await CarRental.findAll({
       where: {
-        userId,
-        tripId: null,
-        ...(dateFilter.departureDate && { dropoffDateTime: dateFilter.departureDate }),
+        ...buildWhereCondition(carRentalSharedIds),
+        ...(dateFilter.departureDate && {
+          dropoffDateTime: { [Op.gte]: dateFilter.departureDate },
+        }),
       },
       order: [['pickupDateTime', 'ASC']],
     });
 
     const events = await Event.findAll({
       where: {
-        userId,
-        tripId: null,
-        ...(dateFilter.departureDate && { startDateTime: dateFilter.departureDate }),
+        ...buildWhereCondition(eventSharedIds),
+        ...(dateFilter.departureDate && { startDateTime: { [Op.gte]: dateFilter.departureDate } }),
       },
       order: [['startDateTime', 'ASC']],
     });
@@ -445,7 +566,7 @@ class TripService extends BaseService {
             {
               model: TravelCompanion,
               as: 'companion',
-              attributes: ['id', 'email', 'firstName', 'lastName', 'name'],
+              attributes: ['id', 'email', 'firstName', 'lastName', 'name', 'userId'],
             },
           ],
         });
@@ -457,6 +578,9 @@ class TripService extends BaseService {
 
         // Create a map of itemId -> companions for quick lookup
         const companionsByItemId = {};
+        // Also create a map of itemId -> if it's shared with current user
+        const sharedItemsMap = {};
+
         companions.forEach((ic) => {
           if (!companionsByItemId[ic.itemId]) {
             companionsByItemId[ic.itemId] = [];
@@ -467,13 +591,27 @@ class TripService extends BaseService {
             firstName: ic.companion?.firstName,
             lastName: ic.companion?.lastName,
             name: ic.companion?.name,
+            userId: ic.companion?.userId,
             inheritedFromTrip: ic.inheritedFromTrip,
           });
+
+          // Mark if this item is shared with the current user
+          if (ic.companionId === userCompanionId) {
+            sharedItemsMap[ic.itemId] = true;
+          }
         });
 
-        // Attach companions to each item
+        // Attach companions to each item and add permission metadata
         items.forEach((item) => {
           item.itemCompanions = companionsByItemId[item.id] || [];
+
+          // Add permission flags
+          const isItemOwner = item.userId === userId;
+          const isSharedWithUser = sharedItemsMap[item.id];
+
+          item.canEdit = isItemOwner;
+          item.canDelete = isItemOwner;
+          item.isShared = isSharedWithUser && !isItemOwner;
         });
       } catch (error) {
         // Log error but don't fail - companions loading is not critical
@@ -483,6 +621,10 @@ class TripService extends BaseService {
           if (!item.itemCompanions) {
             item.itemCompanions = [];
           }
+          // Add default permission flags even on error
+          item.canEdit = item.userId === userId;
+          item.canDelete = item.userId === userId;
+          item.isShared = false;
         });
       }
     };
@@ -536,6 +678,65 @@ class TripService extends BaseService {
     // Convert to plain JSON object to ensure associated items are serialized
     const tripData = trip.toJSON();
 
+    // Ensure trip owner is included in tripCompanions
+    // (some older trips may not have the owner in the trip_companions table)
+    const ownerInCompanions = tripData.tripCompanions?.some(
+      (tc) => tc.companion?.userId === trip.userId
+    );
+    if (!ownerInCompanions && trip.userId) {
+      // Find or create a TravelCompanion record for the owner
+      let ownerCompanion = await TravelCompanion.findOne({
+        where: { userId: trip.userId },
+        include: [
+          {
+            model: User,
+            as: 'linkedAccount',
+            attributes: ['id', 'firstName', 'lastName'],
+          },
+        ],
+      });
+
+      // If no TravelCompanion exists, fetch the User directly
+      if (!ownerCompanion) {
+        const user = await User.findByPk(trip.userId, {
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        });
+        if (user) {
+          ownerCompanion = {
+            id: `virtual-companion-${user.id}`,
+            userId: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            name: `${user.firstName} ${user.lastName}`.trim(),
+            toJSON: () => ({
+              id: `virtual-companion-${user.id}`,
+              userId: user.id,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              email: user.email,
+              name: `${user.firstName} ${user.lastName}`.trim(),
+            }),
+          };
+        }
+      }
+
+      if (ownerCompanion) {
+        // Add owner as a virtual trip companion
+        if (!tripData.tripCompanions) {
+          tripData.tripCompanions = [];
+        }
+        tripData.tripCompanions.unshift({
+          id: `virtual-owner-${trip.userId}`,
+          tripId: trip.id,
+          companionId: ownerCompanion.id,
+          companion: ownerCompanion.toJSON ? ownerCompanion.toJSON() : ownerCompanion,
+          permissionSource: 'owner',
+          canAddItems: true,
+        });
+      }
+    }
+
     // Load item companions for all items in the trip (polymorphic relationship)
     // Note: ItemCompanion uses itemType and itemId fields, not Sequelize associations
     const loadAndTransformItemCompanions = async (items, itemType) => {
@@ -555,7 +756,7 @@ class TripService extends BaseService {
           {
             model: TravelCompanion,
             as: 'companion',
-            attributes: ['id', 'email', 'firstName', 'lastName', 'name'],
+            attributes: ['id', 'email', 'firstName', 'lastName', 'name', 'userId'],
           },
         ],
       });
@@ -572,13 +773,25 @@ class TripService extends BaseService {
           firstName: ic.companion?.firstName,
           lastName: ic.companion?.lastName,
           name: ic.companion?.name,
+          userId: ic.companion?.userId,
           inheritedFromTrip: ic.inheritedFromTrip,
         });
       });
 
-      // Attach companions to each item
+      // Attach companions to each item and add permission metadata
       items.forEach((item) => {
         item.itemCompanions = companionsByItemId[item.id] || [];
+
+        // Add permission flags
+        // For trip items: owner can edit, companions can only view
+        const isItemOwner = item.userId === userId;
+        const isCompanionAttendeeThroughItem = item.itemCompanions?.some(
+          (ic) => ic.userId === userId
+        );
+
+        item.canEdit = isItemOwner;
+        item.canDelete = isItemOwner;
+        item.isShared = !isItemOwner && isCompanionAttendeeThroughItem;
       });
     };
 

@@ -2,7 +2,7 @@
   import { goto, pushState } from '$app/navigation';
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
-  import { authStore } from '$lib/stores/authStore';
+  import { authStore, authStoreActions } from '$lib/stores/authStore';
   import { tripsApi, flightsApi, hotelsApi, transportationApi, carRentalsApi, eventsApi } from '$lib/services/api';
   import { dataService, setupDataSyncListener } from '$lib/services/dataService';
   import { dashboardStore, dashboardStoreActions } from '$lib/stores/dashboardStore';
@@ -40,7 +40,8 @@
   let calendarExplicitlyClosed = false;
   // Track which tripId was last auto-expanded to avoid re-expanding
   let lastAutoExpandedTripId: string | null = null;
-
+  // Current logged-in user ID
+  let currentUserId: string | null = null;
 
   let trips: any[] = [];
   let standaloneItems: any = { flights: [], hotels: [], transportation: [], carRentals: [], events: [] };
@@ -274,6 +275,35 @@
   }
 
   onMount(async () => {
+    // First, verify session and populate auth store with current user
+    try {
+      console.log('[Dashboard] Verifying session...');
+      const sessionResponse = await fetch('/auth/verify-session', {
+        credentials: 'include'
+      });
+
+      if (sessionResponse.ok) {
+        const sessionData = await sessionResponse.json();
+        console.log('[Dashboard] Session verified:', sessionData);
+        if (sessionData.authenticated && sessionData.user) {
+          console.log('[Dashboard] Setting user in auth store:', sessionData.user);
+          authStoreActions.setUser(sessionData.user);
+          currentUserId = sessionData.user.id;
+          console.log('[Dashboard] currentUserId set to:', currentUserId);
+        }
+      } else {
+        console.warn('[Dashboard] Session verification failed');
+      }
+    } catch (err) {
+      console.error('[Dashboard] Error verifying session:', err);
+    }
+
+    // Subscribe to auth store for reactive updates
+    const unsubscribeAuth = authStore.subscribe(($authStore) => {
+      currentUserId = $authStore.user?.id || null;
+      console.log('[Dashboard] currentUserId updated from authStore:', currentUserId);
+    });
+
     // Initialize store synchronization
     syncStoreState();
 
@@ -810,6 +840,7 @@
           {highlightedTripId}
           {highlightedItemId}
           {highlightedItemType}
+          excludeUserId={currentUserId}
           onTripExpand={handleItemsListTripExpand}
           onTripHover={handleItemsListTripHover}
           onItemHover={handleItemsListItemHover}
@@ -817,6 +848,9 @@
           onTripCardClick={handleItemsListTripEdit}
           onEditIconClick={handleEditTripIcon}
         />
+        {#if currentUserId}
+          <div style="display:none" data-debug-exclude-user-id={currentUserId}></div>
+        {/if}
       {/if}
     </div>
   </div>
@@ -996,6 +1030,7 @@
             {highlightedTripId}
             {highlightedItemId}
             {highlightedItemType}
+            excludeUserId={currentUserId}
             onTripExpand={handleItemsListTripExpand}
             onTripHover={handleItemsListTripHover}
             onItemHover={handleItemsListItemHover}

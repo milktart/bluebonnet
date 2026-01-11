@@ -84,6 +84,13 @@ router.get('/', async (req, res) => {
       if (!tripIds.has(trip.id)) {
         tripIds.add(trip.id);
         trips.push(trip);
+        console.log(
+          `[API v1/trips] Trip ${trip.id} has ${trip.tripCompanions?.length || 0} companions:`,
+          trip.tripCompanions?.map((tc) => ({
+            name: tc.companion?.name,
+            userId: tc.companion?.userId,
+          }))
+        );
       }
     });
 
