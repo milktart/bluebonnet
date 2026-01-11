@@ -29,33 +29,26 @@ const updatePermissionValidation = [
  * GET /api/v1/user/companion-permissions
  * Get all full-access permissions granted by current user
  */
-router.get('/user/companion-permissions', companionPermissionController.getGrantedPermissions);
+router.get('/', companionPermissionController.getGrantedPermissions);
 
 /**
  * GET /api/v1/user/companion-permissions/received
  * Get all full-access permissions granted to current user
  */
-router.get(
-  '/user/companion-permissions/received',
-  companionPermissionController.getReceivedPermissions
-);
+router.get('/received', companionPermissionController.getReceivedPermissions);
 
 /**
  * POST /api/v1/user/companion-permissions
  * Grant full-access permission to another user
  */
-router.post(
-  '/user/companion-permissions',
-  grantPermissionValidation,
-  companionPermissionController.grantPermission
-);
+router.post('/', grantPermissionValidation, companionPermissionController.grantPermission);
 
 /**
  * PUT /api/v1/user/companion-permissions/:trustedUserId
  * Update permission level for a user
  */
 router.put(
-  '/user/companion-permissions/:trustedUserId',
+  '/:trustedUserId',
   param('trustedUserId').isUUID(),
   updatePermissionValidation,
   companionPermissionController.updatePermission
@@ -66,7 +59,7 @@ router.put(
  * Revoke full-access permission
  */
 router.delete(
-  '/user/companion-permissions/:trustedUserId',
+  '/:trustedUserId',
   param('trustedUserId').isUUID(),
   companionPermissionController.revokePermission
 );

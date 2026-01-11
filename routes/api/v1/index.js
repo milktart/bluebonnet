@@ -44,7 +44,7 @@ router.use('/car-rentals', carRentalsRoutes);
 router.use('/companions', companionsRoutes);
 router.use('/item-companions', itemCompanionsRoutes);
 router.use('/attendees', attendeesRoutes);
-router.use('/companion-permissions', companionPermissionsRoutes);
+router.use('/user/companion-permissions', companionPermissionsRoutes);
 router.use('/item-trips', itemTripsRoutes);
 router.use('/vouchers', vouchersRoutes);
 router.use('/airports', airportsRoutes);
