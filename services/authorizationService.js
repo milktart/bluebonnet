@@ -135,30 +135,53 @@ class AuthorizationService {
   }
 
   /**
-   * Check full-access permission
+   * Check full-access permission (companion-based permissions)
    * @param {string} userId - User requesting access
    * @param {string} ownerId - Owner of the trips
    * @param {string} type - Permission type ('view' or 'manage')
    * @returns {Promise<boolean>} True if permission granted
+   *
+   * New Permission Model:
+   * - canShareTrips: Owner shares their trips with user (user can view owner's trips)
+   * - canManageTrips: Owner allows user to manage their trips (user can edit owner's trips)
    */
   async hasFullAccessTo(userId, ownerId, type = 'manage') {
     try {
       if (userId === ownerId) return true; // User always has access to own trips
 
-      const permission = await CompanionPermission.findOne({
+      // Find if ownerId has added userId as a companion
+      const { TravelCompanion } = require('../models');
+
+      // Get companions created by the owner
+      const ownerCompanions = await TravelCompanion.findAll({
         where: {
-          ownerId,
-          trustedUserId: userId,
+          createdBy: ownerId,
+          userId,
         },
+        include: [
+          {
+            model: CompanionPermission,
+            as: 'permissions',
+            where: {
+              grantedBy: ownerId,
+            },
+          },
+        ],
       });
+
+      if (ownerCompanions.length === 0) return false;
+
+      // Get the permission from the first matching companion
+      const companion = ownerCompanions[0];
+      const permission = companion.permissions && companion.permissions[0];
 
       if (!permission) return false;
 
       if (type === 'view') {
-        return permission.canViewAllTrips || permission.canManageAllTrips;
+        return permission.canShareTrips || permission.canManageTrips;
       }
       if (type === 'manage') {
-        return permission.canManageAllTrips;
+        return permission.canManageTrips;
       }
 
       return false;
@@ -290,13 +313,19 @@ class AuthorizationService {
   }
 
   /**
-   * Get all trips user can access (owned, attending, or full-access)
+   * Get all trips user can access (owned, attending, or shared by companions)
    * @param {string} userId - User ID
    * @returns {Promise<Array>} Array of trip IDs
+   *
+   * New Permission Model:
+   * - User can access trips they own
+   * - User can access trips they attend (TripAttendee)
+   * - User can access trips from companions who granted canShareTrips permission
    */
   async getAccessibleTrips(userId) {
     try {
       const tripIds = new Set();
+      const { TravelCompanion } = require('../models');
 
       // Get trips user owns
       const ownedTrips = await Trip.findAll({
@@ -312,18 +341,27 @@ class AuthorizationService {
       });
       attendedTrips.forEach((a) => tripIds.add(a.tripId));
 
-      // Get trips from users who granted full-access
-      const fullAccessGrants = await CompanionPermission.findAll({
+      // Get trips from companions who granted canShareTrips permission
+      // Find all companions created by other users that match this userId
+      const companionRecords = await TravelCompanion.findAll({
         where: {
-          trustedUserId: userId,
-          canViewAllTrips: true,
+          userId,
         },
-        attributes: ['ownerId'],
+        include: [
+          {
+            model: CompanionPermission,
+            as: 'permissions',
+            where: {
+              canShareTrips: true,
+            },
+          },
+        ],
       });
 
-      for (const grant of fullAccessGrants) {
+      // Get all trips from the creators of these companions
+      for (const companion of companionRecords) {
         const trips = await Trip.findAll({
-          where: { userId: grant.ownerId },
+          where: { userId: companion.createdBy },
           attributes: ['id'],
         });
         trips.forEach((t) => tripIds.add(t.id));
