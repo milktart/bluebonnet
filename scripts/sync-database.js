@@ -14,9 +14,9 @@ async function syncDatabase() {
     // Handle companion_permissions table specially
     // If it exists with old schema, migrate data before sync
     try {
-      const tables = await sequelize.showAllTables();
+      const tables = await sequelize.getQueryInterface().showAllTables();
       if (tables.includes('companion_permissions')) {
-        const columns = await sequelize.describeTable('companion_permissions');
+        const columns = await sequelize.getQueryInterface().describeTable('companion_permissions');
 
         // If old schema exists (has ownerId and trustedUserId), migrate it
         if (columns.ownerId && columns.trustedUserId) {
