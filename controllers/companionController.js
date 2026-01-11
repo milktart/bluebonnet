@@ -161,6 +161,7 @@ exports.getAllCompanions = async (req, res) => {
         youInvited: true,
         theyInvited: false,
         companionId: companion.id, // ID of the companion record YOU created
+        userId: companion.userId, // ID of the user account if they've created one
         canBeAddedByOthers: companion.canBeAddedByOthers,
       });
     });
@@ -184,6 +185,7 @@ exports.getAllCompanions = async (req, res) => {
           youInvited: false,
           theyInvited: true,
           companionId: profile.id, // ID of the companion record THEY created
+          userId: profile.userId, // ID of the user account if they've created one
           canBeAddedByOthers: profile.canBeAddedByOthers,
         });
       }

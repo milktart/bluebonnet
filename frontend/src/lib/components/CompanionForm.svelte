@@ -77,18 +77,18 @@
 
         // Handle trusted companion status changes
         const wasChanged = formData.isTrusted !== (companion?.isTrusted || false);
-        if (wasChanged && companion?.id) {
+        if (wasChanged && companion?.userId) {
           try {
             if (formData.isTrusted) {
-              // Grant trusted access
+              // Grant trusted access (use userId, not companion id)
               await settingsApi.grantPermission({
-                trustedUserId: companion.id,
+                trustedUserId: companion.userId,
                 canManageAllTrips: true,
                 canViewAllTrips: true
               });
             } else if (companion?.trustedPermission) {
               // Revoke trusted access
-              await settingsApi.revokePermission(companion.id);
+              await settingsApi.revokePermission(companion.userId);
             }
           } catch (permErr) {
             console.warn('Failed to update trusted status:', permErr);
@@ -181,20 +181,28 @@
       </div>
 
       {#if isEditMode}
-        <div class="checkbox-wrapper">
-          <label for="is-trusted" class="checkbox-label">
-            <input
-              id="is-trusted"
-              type="checkbox"
-              bind:checked={formData.isTrusted}
-              disabled={loading}
-            />
-            Grant trusted companion access
-          </label>
-          <p class="checkbox-help-text">
-            Trusted companions can manage ALL your trips, not just ones they're invited to
-          </p>
-        </div>
+        {#if companion?.userId}
+          <div class="checkbox-wrapper">
+            <label for="is-trusted" class="checkbox-label">
+              <input
+                id="is-trusted"
+                type="checkbox"
+                bind:checked={formData.isTrusted}
+                disabled={loading}
+              />
+              Grant trusted companion access
+            </label>
+            <p class="checkbox-help-text">
+              Trusted companions can manage ALL your trips, not just ones they're invited to
+            </p>
+          </div>
+        {:else}
+          <div class="info-box">
+            <p class="info-text">
+              This companion hasn't created an account yet. Once they sign up using their email address, you'll be able to grant them admin access.
+            </p>
+          </div>
+        {/if}
       {/if}
     </div>
 
@@ -248,5 +256,18 @@
     margin: 0;
     font-size: 0.75rem;
     color: #6b7280;
+  }
+
+  .info-box {
+    padding: 0.75rem;
+    background-color: #eff6ff;
+    border-left: 3px solid #3b82f6;
+    border-radius: 0.375rem;
+  }
+
+  .info-text {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #1e40af;
   }
 </style>
