@@ -5,6 +5,7 @@
   import '$lib/styles/form-styles.css';
 
   let companions: any[] = [];
+  let trustedCompanions: any[] = [];
   let loading = true;
   let error: string | null = null;
   let successMessage: string | null = null;
@@ -28,8 +29,22 @@
     try {
       loading = true;
       error = null;
-      const response = await settingsApi.getAllCompanions();
-      companions = response.companions || [];
+      const [companionsResp, trustedResp] = await Promise.all([
+        settingsApi.getAllCompanions(),
+        settingsApi.getGrantedPermissions()
+      ]);
+      companions = companionsResp.companions || [];
+      trustedCompanions = Array.isArray(trustedResp) ? trustedResp : trustedResp?.permissions || [];
+
+      // Merge trusted companion info into companions list
+      companions = companions.map(companion => {
+        const trusted = trustedCompanions.find(t => t.trustedUserId === companion.id || t.trustedUser?.id === companion.id);
+        return {
+          ...companion,
+          isTrusted: !!trusted,
+          trustedPermission: trusted
+        };
+      });
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to load companions';
     } finally {
@@ -119,8 +134,8 @@
           <tr>
             <th>Name</th>
             <th>Email</th>
-            <th class="center-col">You Invited</th>
-            <th class="center-col">They Invited</th>
+            <th class="center-col">Shares</th>
+            <th class="center-col">Trusted</th>
             <th class="actions-col"></th>
           </tr>
         </thead>
@@ -135,8 +150,8 @@
                 {/if}
               </td>
               <td class="center-col">
-                {#if companion.theyInvited}
-                  <span class="indicator">✓</span>
+                {#if companion.isTrusted}
+                  <span class="indicator trusted">★</span>
                 {/if}
               </td>
               <td class="actions-cell">
@@ -295,6 +310,12 @@
     justify-content: center;
     font-weight: bold;
     font-size: 0.9rem;
+  }
+
+  .indicator.trusted {
+    background-color: #fef08a;
+    color: #854d0e;
+    font-size: 0.85rem;
   }
 
   .actions-col {

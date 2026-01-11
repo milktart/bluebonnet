@@ -8,6 +8,8 @@
     firstName?: string;
     lastName?: string;
     email?: string;
+    isTrusted?: boolean;
+    trustedPermission?: any;
   } | null = null;
 
   export let onSuccess: ((companion: any) => void) | null = null;
@@ -20,7 +22,8 @@
     firstName: '',
     lastName: '',
     email: '',
-    canEdit: false
+    canEdit: false,
+    isTrusted: false
   };
 
   // Initialize form data if in edit mode
@@ -29,7 +32,8 @@
       firstName: companion.firstName || '',
       lastName: companion.lastName || '',
       email: companion.email || '',
-      canEdit: companion.canBeAddedByOthers || false
+      canEdit: companion.canBeAddedByOthers || false,
+      isTrusted: companion.isTrusted || false
     };
   }
 
@@ -70,6 +74,27 @@
       let response;
       if (isEditMode) {
         response = await settingsApi.updateCompanion(companion!.id!, submitData);
+
+        // Handle trusted companion status changes
+        const wasChanged = formData.isTrusted !== (companion?.isTrusted || false);
+        if (wasChanged && companion?.id) {
+          try {
+            if (formData.isTrusted) {
+              // Grant trusted access
+              await settingsApi.grantPermission({
+                trustedUserId: companion.id,
+                canManageAllTrips: true,
+                canViewAllTrips: true
+              });
+            } else if (companion?.trustedPermission) {
+              // Revoke trusted access
+              await settingsApi.revokePermission(companion.id);
+            }
+          } catch (permErr) {
+            console.warn('Failed to update trusted status:', permErr);
+            // Don't fail the whole operation if permission update fails
+          }
+        }
       } else {
         response = await settingsApi.createCompanion(submitData);
       }
@@ -154,6 +179,23 @@
           If unchecked, companion can only view your trips
         </p>
       </div>
+
+      {#if isEditMode}
+        <div class="checkbox-wrapper">
+          <label for="is-trusted" class="checkbox-label">
+            <input
+              id="is-trusted"
+              type="checkbox"
+              bind:checked={formData.isTrusted}
+              disabled={loading}
+            />
+            Grant trusted companion access
+          </label>
+          <p class="checkbox-help-text">
+            Trusted companions can manage ALL your trips, not just ones they're invited to
+          </p>
+        </div>
+      {/if}
     </div>
 
     <div class="form-buttons">

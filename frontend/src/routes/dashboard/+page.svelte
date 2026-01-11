@@ -165,7 +165,7 @@
     const sidebarEl = document.getElementById('secondary-sidebar');
     if (sidebarEl) {
       // Apply full-width to certain content types
-      const shouldBeFullWidth = ['calendar', 'settings-vouchers', 'settings-companions', 'settings-trusted-companions', 'settings-backup', 'settings-users', 'settings-airports'].includes(
+      const shouldBeFullWidth = ['calendar', 'settings-vouchers', 'settings-companions', 'settings-backup', 'settings-users', 'settings-airports'].includes(
         secondarySidebarContent.type
       );
 
@@ -824,7 +824,7 @@
     <div
       slot="secondary"
       class="secondary-content"
-      class:full-width={secondarySidebarContent?.type === 'calendar' || secondarySidebarContent?.type === 'settings-vouchers' || secondarySidebarContent?.type === 'settings-companions' || secondarySidebarContent?.type === 'settings-trusted-companions' || secondarySidebarContent?.type === 'settings-backup'}
+      class:full-width={secondarySidebarContent?.type === 'calendar' || secondarySidebarContent?.type === 'settings-vouchers' || secondarySidebarContent?.type === 'settings-companions' || secondarySidebarContent?.type === 'settings-backup'}
     >
       <DashboardItemEditor
         {secondarySidebarContent}

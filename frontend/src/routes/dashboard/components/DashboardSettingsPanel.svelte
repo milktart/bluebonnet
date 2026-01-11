@@ -25,7 +25,6 @@
         'settings-backup': 'backup',
         'settings-vouchers': 'vouchers',
         'settings-companions': 'companions',
-        'settings-trusted-companions': 'trusted-companions',
         'settings-users': 'users',
         'settings-airports': 'airports'
       };
@@ -70,13 +69,6 @@
       >
         <span class="material-symbols-outlined">people</span>
         <span>Travel Companions</span>
-      </button>
-      <button
-        class="settings-item"
-        on:click={() => handleSettingClick('settings-trusted-companions', {})}
-      >
-        <span class="material-symbols-outlined">verified_user</span>
-        <span>Trusted Companions</span>
       </button>
     </div>
     {#if user?.isAdmin}
