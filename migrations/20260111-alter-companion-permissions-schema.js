@@ -4,99 +4,9 @@ module.exports = {
   up: async (queryInterface, Sequelize) => {
     const transaction = await queryInterface.sequelize.transaction();
     try {
-      // Backup existing data if the table exists
+      // Check if table exists
       const tables = await queryInterface.showAllTables();
-      if (tables.includes('companion_permissions')) {
-        // Check if old schema exists (has ownerId and trustedUserId)
-        const columns = await queryInterface.describeTable('companion_permissions');
-        if (columns.ownerId && columns.trustedUserId) {
-          // Old schema exists - need to migrate
-          // 1. Create temporary table with new schema
-          await queryInterface.createTable(
-            'companion_permissions_new',
-            {
-              id: {
-                type: Sequelize.UUID,
-                defaultValue: Sequelize.UUIDV4,
-                primaryKey: true,
-              },
-              companionId: {
-                type: Sequelize.UUID,
-                allowNull: false,
-                references: {
-                  model: 'travel_companions',
-                  key: 'id',
-                },
-                onDelete: 'CASCADE',
-              },
-              grantedBy: {
-                type: Sequelize.UUID,
-                allowNull: false,
-                references: {
-                  model: 'users',
-                  key: 'id',
-                },
-                onDelete: 'CASCADE',
-              },
-              canShareTrips: {
-                type: Sequelize.BOOLEAN,
-                allowNull: false,
-                defaultValue: false,
-              },
-              canManageTrips: {
-                type: Sequelize.BOOLEAN,
-                allowNull: false,
-                defaultValue: false,
-              },
-              createdAt: {
-                type: Sequelize.DATE,
-                allowNull: false,
-                defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
-              },
-              updatedAt: {
-                type: Sequelize.DATE,
-                allowNull: false,
-                defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
-              },
-            },
-            { transaction }
-          );
-
-          // 2. Migrate data: Map trustedUserId to a companion record
-          // For each permission, find or create a TravelCompanion for the trustedUser
-          // with ownerId as createdBy
-          await queryInterface.sequelize.query(
-            `INSERT INTO companion_permissions_new (id, "companionId", "grantedBy", "canShareTrips", "canManageTrips", "createdAt", "updatedAt")
-             SELECT
-               gen_random_uuid() as id,
-               tc.id as "companionId",
-               cp."ownerId" as "grantedBy",
-               cp."canViewAllTrips" as "canShareTrips",
-               cp."canManageAllTrips" as "canManageTrips",
-               cp."createdAt",
-               cp."updatedAt"
-             FROM companion_permissions cp
-             JOIN travel_companions tc ON tc."userId" = cp."trustedUserId" AND tc."createdBy" = cp."ownerId"`,
-            { transaction }
-          );
-
-          // 3. Drop old table
-          await queryInterface.dropTable('companion_permissions', { transaction });
-
-          // 4. Rename new table to old name
-          await queryInterface.renameTable('companion_permissions_new', 'companion_permissions', {
-            transaction,
-          });
-
-          // 5. Add indexes
-          await queryInterface.addIndex('companion_permissions', ['companionId'], { transaction });
-          await queryInterface.addIndex('companion_permissions', ['grantedBy'], { transaction });
-          await queryInterface.addIndex('companion_permissions', ['companionId', 'grantedBy'], {
-            unique: true,
-            transaction,
-          });
-        }
-      } else {
+      if (!tables.includes('companion_permissions')) {
         // Table doesn't exist - create it with new schema
         await queryInterface.createTable(
           'companion_permissions',
@@ -155,7 +65,107 @@ module.exports = {
           unique: true,
           transaction,
         });
+
+        await transaction.commit();
+        return;
       }
+
+      // Table exists - check schema
+      const columns = await queryInterface.describeTable('companion_permissions');
+
+      // If table already has new schema, we're done
+      if (columns.companionId && !columns.ownerId) {
+        await transaction.commit();
+        return;
+      }
+
+      // Table has old schema or mixed schema - need to migrate
+      // 1. Create temporary table with new schema
+      await queryInterface.createTable(
+        'companion_permissions_new',
+        {
+          id: {
+            type: Sequelize.UUID,
+            defaultValue: Sequelize.UUIDV4,
+            primaryKey: true,
+          },
+          companionId: {
+            type: Sequelize.UUID,
+            allowNull: false,
+            references: {
+              model: 'travel_companions',
+              key: 'id',
+            },
+            onDelete: 'CASCADE',
+          },
+          grantedBy: {
+            type: Sequelize.UUID,
+            allowNull: false,
+            references: {
+              model: 'users',
+              key: 'id',
+            },
+            onDelete: 'CASCADE',
+          },
+          canShareTrips: {
+            type: Sequelize.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
+          },
+          canManageTrips: {
+            type: Sequelize.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
+          },
+          createdAt: {
+            type: Sequelize.DATE,
+            allowNull: false,
+            defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
+          },
+          updatedAt: {
+            type: Sequelize.DATE,
+            allowNull: false,
+            defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
+          },
+        },
+        { transaction }
+      );
+
+      // 2. Migrate data if old schema exists and has data
+      if (columns.ownerId && columns.trustedUserId) {
+        // Old schema - map to new schema
+        await queryInterface.sequelize.query(
+          `INSERT INTO companion_permissions_new (id, "companionId", "grantedBy", "canShareTrips", "canManageTrips", "createdAt", "updatedAt")
+           SELECT
+             gen_random_uuid() as id,
+             tc.id as "companionId",
+             cp."ownerId" as "grantedBy",
+             cp."canViewAllTrips" as "canShareTrips",
+             cp."canManageAllTrips" as "canManageTrips",
+             cp."createdAt",
+             cp."updatedAt"
+           FROM companion_permissions cp
+           JOIN travel_companions tc ON tc."userId" = cp."trustedUserId" AND tc."createdBy" = cp."ownerId"`,
+          { transaction }
+        );
+      }
+      // If mixed or partially new schema, don't migrate old data (likely empty)
+
+      // 3. Drop old table
+      await queryInterface.dropTable('companion_permissions', { transaction });
+
+      // 4. Rename new table to old name
+      await queryInterface.renameTable('companion_permissions_new', 'companion_permissions', {
+        transaction,
+      });
+
+      // 5. Add indexes
+      await queryInterface.addIndex('companion_permissions', ['companionId'], { transaction });
+      await queryInterface.addIndex('companion_permissions', ['grantedBy'], { transaction });
+      await queryInterface.addIndex('companion_permissions', ['companionId', 'grantedBy'], {
+        unique: true,
+        transaction,
+      });
 
       await transaction.commit();
     } catch (error) {
@@ -165,9 +175,15 @@ module.exports = {
   },
 
   down: async (queryInterface, Sequelize) => {
-    // For down migration, we'll keep the old schema
+    // For down migration, restore the old schema
     const transaction = await queryInterface.sequelize.transaction();
     try {
+      const tables = await queryInterface.showAllTables();
+      if (!tables.includes('companion_permissions')) {
+        await transaction.commit();
+        return;
+      }
+
       // Create old table structure
       await queryInterface.createTable(
         'companion_permissions_old',
