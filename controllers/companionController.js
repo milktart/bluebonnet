@@ -266,6 +266,16 @@ exports.updateCompanionPermissions = async (req, res) => {
       },
     });
 
+    logger.debug('PERMISSION_FINDORCREATE', {
+      companionId,
+      permissionId: permission.id,
+      created,
+      beforeCanShareTrips: permission.canShareTrips,
+      beforeCanManageTrips: permission.canManageTrips,
+      requestCanShareTrips: canShareTrips,
+      requestCanManageTrips: canManageTrips,
+    });
+
     // Prepare the final values
     let finalCanShareTrips = permission.canShareTrips;
     let finalCanManageTrips = permission.canManageTrips;
@@ -280,6 +290,13 @@ exports.updateCompanionPermissions = async (req, res) => {
         finalCanManageTrips = canManageTrips;
       }
 
+      logger.debug('ABOUT_TO_UPDATE_PERMISSION', {
+        companionId,
+        permissionId: permission.id,
+        finalCanShareTrips,
+        finalCanManageTrips,
+      });
+
       await permission.update({
         canShareTrips: finalCanShareTrips,
         canManageTrips: finalCanManageTrips,
@@ -287,6 +304,14 @@ exports.updateCompanionPermissions = async (req, res) => {
 
       logger.debug('PERMISSION_UPDATED', {
         companionId,
+        permissionId: permission.id,
+        canShareTrips: finalCanShareTrips,
+        canManageTrips: finalCanManageTrips,
+      });
+    } else {
+      logger.debug('PERMISSION_CREATED_NEW', {
+        companionId,
+        permissionId: permission.id,
         canShareTrips: finalCanShareTrips,
         canManageTrips: finalCanManageTrips,
       });
