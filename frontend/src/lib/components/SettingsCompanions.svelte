@@ -29,10 +29,27 @@
     try {
       loading = true;
       error = null;
-      const [companionsResp, trustedResp] = await Promise.all([
-        settingsApi.getAllCompanions(),
-        settingsApi.getGrantedPermissions()
-      ]);
+
+      // Fetch companions and trusted permissions separately for better error handling
+      let companionsResp = { companions: [] };
+      let trustedResp = { permissions: [] };
+
+      try {
+        companionsResp = await settingsApi.getAllCompanions();
+      } catch (err) {
+        console.error('[SettingsCompanions] Failed to fetch companions:', err);
+        throw new Error(`Failed to fetch companions: ${err instanceof Error ? err.message : String(err)}`);
+      }
+
+      try {
+        trustedResp = await settingsApi.getGrantedPermissions();
+      } catch (err) {
+        console.error('[SettingsCompanions] Failed to fetch granted permissions:', err);
+        // Don't fail the whole operation if trusted permissions fail to load
+        console.warn('[SettingsCompanions] Continuing without trusted companion data');
+        trustedResp = { permissions: [] };
+      }
+
       companions = companionsResp.companions || [];
       trustedCompanions = Array.isArray(trustedResp) ? trustedResp : trustedResp?.permissions || [];
 
@@ -47,6 +64,7 @@
       });
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to load companions';
+      console.error('[SettingsCompanions] Error in loadCompanions:', error);
     } finally {
       loading = false;
     }
