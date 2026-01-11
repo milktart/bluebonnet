@@ -249,7 +249,7 @@
   }
 
   .table-wrapper {
-    overflow-x: auto;
+    overflow-x: hidden;
     border: 1px solid #e0e0e0;
     border-radius: 0.425rem;
   }
@@ -259,6 +259,7 @@
     border-collapse: collapse;
     background-color: white;
     font-size: 0.75rem;
+    table-layout: fixed;
   }
 
   .companions-table thead {
@@ -313,7 +314,7 @@
 
   .center-col {
     text-align: center;
-    width: 120px;
+    width: 80px;
     vertical-align: middle;
   }
 
@@ -337,7 +338,7 @@
   }
 
   .actions-col {
-    width: 200px;
+    width: 100px;
     text-align: center;
   }
 
