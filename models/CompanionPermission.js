@@ -7,7 +7,16 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
       },
-      ownerId: {
+      companionId: {
+        type: DataTypes.UUID,
+        allowNull: false,
+        references: {
+          model: 'travel_companions',
+          key: 'id',
+        },
+        onDelete: 'CASCADE',
+      },
+      grantedBy: {
         type: DataTypes.UUID,
         allowNull: false,
         references: {
@@ -16,21 +25,12 @@ module.exports = (sequelize, DataTypes) => {
         },
         onDelete: 'CASCADE',
       },
-      trustedUserId: {
-        type: DataTypes.UUID,
-        allowNull: false,
-        references: {
-          model: 'users',
-          key: 'id',
-        },
-        onDelete: 'CASCADE',
-      },
-      canManageAllTrips: {
+      canShareTrips: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false,
       },
-      canViewAllTrips: {
+      canManageTrips: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false,
@@ -41,28 +41,28 @@ module.exports = (sequelize, DataTypes) => {
       timestamps: true,
       indexes: [
         {
-          fields: ['ownerId'],
+          fields: ['companionId'],
         },
         {
-          fields: ['trustedUserId'],
+          fields: ['grantedBy'],
         },
         {
           unique: true,
-          fields: ['ownerId', 'trustedUserId'],
+          fields: ['companionId', 'grantedBy'],
         },
       ],
     }
   );
 
   CompanionPermission.associate = (models) => {
-    CompanionPermission.belongsTo(models.User, {
-      foreignKey: 'ownerId',
-      as: 'owner',
+    CompanionPermission.belongsTo(models.TravelCompanion, {
+      foreignKey: 'companionId',
+      as: 'companion',
     });
 
     CompanionPermission.belongsTo(models.User, {
-      foreignKey: 'trustedUserId',
-      as: 'trustedUser',
+      foreignKey: 'grantedBy',
+      as: 'grantedByUser',
     });
   };
 

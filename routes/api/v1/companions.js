@@ -219,6 +219,37 @@ router.get('/:id', async (req, res) => {
 });
 
 /**
+ * PUT /api/v1/companions/:id/permissions
+ * Update companion permissions (canShareTrips, canManageTrips)
+ *
+ * @param {string} req.params.id - Companion ID (UUID)
+ * @param {Object} req.body - Request body
+ * @param {boolean} [req.body.canShareTrips] - Whether to share trips with companion
+ * @param {boolean} [req.body.canManageTrips] - Whether to allow companion to manage trips
+ *
+ * @returns {Object} 200 OK response
+ * @returns {boolean} returns.success - Always true
+ * @returns {Object} returns.data - Updated permission data
+ * @returns {string} returns.data.companionId - Companion ID
+ * @returns {boolean} returns.data.canShareTrips - Share trips flag
+ * @returns {boolean} returns.data.canManageTrips - Manage trips flag
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {404} Not found - Companion not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in and be the companion creator
+ */
+router.put('/:id/permissions', async (req, res) => {
+  try {
+    const companionController = require('../../../controllers/companionController');
+    return companionController.updateCompanionPermissions(req, res);
+  } catch (error) {
+    return apiResponse.internalError(res, 'Failed to update permissions', error);
+  }
+});
+
+/**
  * POST /api/v1/companions/trips/:tripId
  * Add a companion to a trip
  *

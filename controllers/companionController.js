@@ -1,6 +1,6 @@
 const { Op } = require('sequelize');
 const { validationResult } = require('express-validator');
-const { TravelCompanion, User } = require('../models');
+const { TravelCompanion, User, CompanionPermission } = require('../models');
 const logger = require('../utils/logger');
 
 // Get all companions for current user
@@ -114,7 +114,7 @@ exports.getAllCompanions = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Get companions created by user
+    // Get companions created by user with their permissions
     const companionsCreated = await TravelCompanion.findAll({
       where: {
         createdBy: userId,
@@ -125,6 +125,12 @@ exports.getAllCompanions = async (req, res) => {
           model: User,
           as: 'linkedAccount',
           attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
+        {
+          model: CompanionPermission,
+          as: 'permissions',
+          where: { grantedBy: userId },
+          required: false,
         },
       ],
       order: [['name', 'ASC']],
@@ -142,6 +148,12 @@ exports.getAllCompanions = async (req, res) => {
           as: 'creator',
           attributes: ['id', 'firstName', 'lastName', 'email'],
         },
+        {
+          model: CompanionPermission,
+          as: 'permissions',
+          where: { grantedBy: { [Op.ne]: userId } },
+          required: false,
+        },
       ],
       order: [['name', 'ASC']],
     });
@@ -152,36 +164,43 @@ exports.getAllCompanions = async (req, res) => {
     // Add companions created by user
     companionsCreated.forEach((companion) => {
       const key = companion.email.toLowerCase();
+      const permission = companion.permissions?.[0];
       companionMap.set(key, {
         id: companion.id,
         firstName: companion.firstName,
         lastName: companion.lastName,
         email: companion.email,
-        youInvited: true,
-        theyInvited: false,
+        userId: companion.userId,
+        canShareTrips: permission?.canShareTrips || false,
+        canManageTrips: permission?.canManageTrips || false,
+        theyShareTrips: false, // Will be set if they're also in our companion profiles
+        theyManageTrips: false,
         companionId: companion.id, // ID of the companion record YOU created
-        userId: companion.userId, // ID of the user account if they've created one
       });
     });
 
-    // Add profiles (people who added you)
+    // Add profiles (people who added you) and mark what they grant us
     companionProfiles.forEach((profile) => {
       const key = profile.email.toLowerCase();
+      const permission = profile.permissions?.[0];
+
       if (companionMap.has(key)) {
-        // Bidirectional relationship
-        companionMap.get(key).theyInvited = true;
-        companionMap.get(key).theyInvitedId = profile.id;
+        // Bidirectional relationship - update with their permissions
+        companionMap.get(key).theyShareTrips = permission?.canShareTrips || false;
+        companionMap.get(key).theyManageTrips = permission?.canManageTrips || false;
       } else {
-        // They invited you, but you didn't create a companion for them
+        // They added you, but you haven't added them - create entry with their permissions
         companionMap.set(key, {
           id: profile.id,
           firstName: profile.firstName,
           lastName: profile.lastName,
           email: profile.email,
-          youInvited: false,
-          theyInvited: true,
+          userId: profile.userId,
+          canShareTrips: false,
+          canManageTrips: false,
+          theyShareTrips: permission?.canShareTrips || false,
+          theyManageTrips: permission?.canManageTrips || false,
           companionId: profile.id, // ID of the companion record THEY created
-          userId: profile.userId, // ID of the user account if they've created one
         });
       }
     });
@@ -195,6 +214,81 @@ exports.getAllCompanions = async (req, res) => {
   } catch (error) {
     logger.error('GET_ALL_COMPANIONS_ERROR', { error: error.message, stack: error.stack });
     res.status(500).json({ success: false, error: 'Error loading companions' });
+  }
+};
+
+// Update companion permissions (canShareTrips, canManageTrips)
+exports.updateCompanionPermissions = async (req, res) => {
+  try {
+    const { companionId } = req.params;
+    const { canShareTrips, canManageTrips } = req.body;
+    const isAjax =
+      req.get('X-Sidebar-Request') === 'true' ||
+      req.xhr ||
+      req.get('X-Requested-With') === 'XMLHttpRequest' ||
+      req.get('Content-Type')?.includes('application/json');
+
+    // Verify companion exists and user created it
+    const companion = await TravelCompanion.findOne({
+      where: {
+        id: companionId,
+        createdBy: req.user.id,
+      },
+    });
+
+    if (!companion) {
+      const errorMsg = 'Companion not found';
+      if (isAjax) {
+        return res.status(404).json({ success: false, error: errorMsg });
+      }
+      return res.status(404).json({ success: false, error: errorMsg });
+    }
+
+    // Update or create permission record
+    const [permission] = await CompanionPermission.findOrCreate({
+      where: {
+        companionId,
+        grantedBy: req.user.id,
+      },
+      defaults: {
+        canShareTrips: canShareTrips || false,
+        canManageTrips: canManageTrips || false,
+      },
+    });
+
+    if (permission.changed().length > 0) {
+      await permission.update({
+        canShareTrips: canShareTrips !== undefined ? canShareTrips : permission.canShareTrips,
+        canManageTrips: canManageTrips !== undefined ? canManageTrips : permission.canManageTrips,
+      });
+    }
+
+    const successMsg = 'Companion permissions updated';
+    if (isAjax) {
+      return res.json({
+        success: true,
+        message: successMsg,
+        data: {
+          companionId: permission.companionId,
+          canShareTrips: permission.canShareTrips,
+          canManageTrips: permission.canManageTrips,
+        },
+      });
+    }
+
+    res.json({ success: true, message: successMsg });
+  } catch (error) {
+    logger.error('UPDATE_COMPANION_PERMISSIONS_ERROR', { error: error.message });
+    const errorMsg = 'Error updating companion permissions';
+    const isAjax =
+      req.get('X-Sidebar-Request') === 'true' ||
+      req.xhr ||
+      req.get('Content-Type')?.includes('application/json');
+
+    if (isAjax) {
+      return res.status(500).json({ success: false, error: errorMsg });
+    }
+    res.status(500).json({ success: false, error: errorMsg });
   }
 };
 
@@ -229,7 +323,7 @@ exports.createCompanion = async (req, res) => {
       return res.status(400).json({ success: false, error: errorMsg });
     }
 
-    const { firstName, lastName, name, email, phone } = req.body;
+    const { firstName, lastName, name, email, phone, canShareTrips, canManageTrips } = req.body;
     // Check if this is an API request: X-Sidebar-Request header, xhr flag, JSON content-type, or X-Requested-With
     const isAjax =
       req.get('X-Sidebar-Request') === 'true' ||
@@ -238,22 +332,29 @@ exports.createCompanion = async (req, res) => {
       req.get('Content-Type')?.includes('application/json');
     const emailLower = email.toLowerCase();
 
+    // Default permissions: share trips by default, don't manage by default
+    const share = canShareTrips !== undefined ? canShareTrips : true;
+    const manage = canManageTrips !== undefined ? canManageTrips : false;
+
     logger.info('COMPANION_CREATE_REQUEST', {
       isAjax,
       firstName,
       lastName,
       email: emailLower,
+      canShareTrips: share,
+      canManageTrips: manage,
     });
 
-    // Check if companion with this email already exists (globally unique)
+    // Check if companion with this email already exists for this user
     const existingCompanion = await TravelCompanion.findOne({
       where: {
         email: emailLower,
+        createdBy: req.user.id,
       },
     });
 
     if (existingCompanion) {
-      const errorMsg = 'A companion with this email address already exists';
+      const errorMsg = 'You already have a companion with this email address';
       if (isAjax) {
         return res.status(400).json({ success: false, error: errorMsg });
       }
@@ -288,6 +389,45 @@ exports.createCompanion = async (req, res) => {
       userId: existingUser ? existingUser.id : null,
     });
 
+    // Create companion permission record
+    await CompanionPermission.create({
+      companionId: companion.id,
+      grantedBy: req.user.id,
+      canShareTrips: share,
+      canManageTrips: manage,
+    });
+
+    // Also create a reverse companion record if the companion is a registered user
+    if (existingUser) {
+      const reverseCompanion = await TravelCompanion.findOne({
+        where: {
+          email: emailLower,
+          createdBy: existingUser.id,
+          userId: req.user.id,
+        },
+      });
+
+      if (!reverseCompanion) {
+        const newReverseCompanion = await TravelCompanion.create({
+          firstName: req.user.firstName || null,
+          lastName: req.user.lastName || null,
+          name: req.user.firstName || req.user.email.split('@')[0],
+          email: req.user.email,
+          phone: null,
+          createdBy: existingUser.id,
+          userId: req.user.id,
+        });
+
+        // Create default permissions for reverse companion (no permissions yet)
+        await CompanionPermission.create({
+          companionId: newReverseCompanion.id,
+          grantedBy: existingUser.id,
+          canShareTrips: false,
+          canManageTrips: false,
+        });
+      }
+    }
+
     const successMsg = existingUser
       ? 'Travel companion added and linked to existing account'
       : 'Travel companion added successfully';
@@ -303,6 +443,9 @@ exports.createCompanion = async (req, res) => {
           name: companion.name,
           email: companion.email,
           phone: companion.phone,
+          userId: companion.userId,
+          canShareTrips: share,
+          canManageTrips: manage,
           addedAt: companion.createdAt,
         },
       });

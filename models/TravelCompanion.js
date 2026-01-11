@@ -78,6 +78,12 @@ module.exports = (sequelize, DataTypes) => {
       as: 'linkedAccount',
     });
 
+    // One-to-many relationship with companion permissions
+    TravelCompanion.hasMany(models.CompanionPermission, {
+      foreignKey: 'companionId',
+      as: 'permissions',
+    });
+
     // Many-to-many relationship with trips through junction table
     TravelCompanion.belongsToMany(models.Trip, {
       through: models.TripCompanion,
