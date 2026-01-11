@@ -65,6 +65,51 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
       ],
     });
 
+    // Also get trips where the user is a companion (via TravelCompanion)
+    const companionTrips = await Trip.findAll({
+      include: [
+        {
+          model: TripCompanion,
+          as: 'tripCompanions',
+          where: {},
+          required: true,
+          include: [
+            {
+              model: TravelCompanion,
+              as: 'companion',
+              where: { userId: req.user.id },
+              required: true,
+              include: [
+                {
+                  model: User,
+                  as: 'linkedAccount',
+                  attributes: ['id', 'firstName', 'lastName'],
+                },
+              ],
+            },
+          ],
+        },
+        { model: Flight, as: 'flights' },
+        { model: Hotel, as: 'hotels' },
+        { model: Transportation, as: 'transportation' },
+        { model: CarRental, as: 'carRentals' },
+        { model: Event, as: 'events' },
+      ],
+      order: [['departureDate', 'ASC']],
+    });
+
+    // Merge the two trip lists, removing duplicates (user owns and is companion)
+    const tripMap = new Map();
+    ownedTrips.forEach((trip) => tripMap.set(trip.id, trip));
+    companionTrips.forEach((trip) => {
+      if (!tripMap.has(trip.id)) {
+        tripMap.set(trip.id, trip);
+      }
+    });
+    const allTrips = Array.from(tripMap.values()).sort(
+      (a, b) => new Date(a.departureDate) - new Date(b.departureDate)
+    );
+
     // Get standalone items (not attached to any trip) and filter by end date
     const standaloneFlights = [];
     const standaloneHotels = [];
@@ -261,7 +306,7 @@ exports.getPrimarySidebarContent = async (req, res, options = {}) => {
       return itemWithTimezone;
     });
 
-    const enrichedTrips = ownedTrips.map((trip) => {
+    const enrichedTrips = allTrips.map((trip) => {
       const tripData = trip.dataValues ? { ...trip.dataValues } : trip;
       if (tripData.flights) {
         tripData.flights = tripData.flights.map((flight) => {
