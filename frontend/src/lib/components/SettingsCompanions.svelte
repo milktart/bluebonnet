@@ -176,7 +176,7 @@
                 <div class="actions-group">
                   {#if companion.youInvited}
                     <button
-                      class="action-btn edit-btn"
+                      class="action-btn edit"
                       title="Edit companion"
                       on:click={() => handleEditCompanion(companion)}
                       disabled={loading}
@@ -184,7 +184,7 @@
                       <span class="material-symbols-outlined">edit</span>
                     </button>
                     <button
-                      class="action-btn delete-btn"
+                      class="action-btn delete"
                       title="Remove companion"
                       on:click={() => handleRemoveCompanion(companion.companionId)}
                       disabled={loading}
@@ -195,7 +195,7 @@
 
                   {#if companion.theyInvited}
                     <button
-                      class="action-btn revoke-btn"
+                      class="action-btn revoke"
                       title="Revoke access"
                       on:click={() => handleRevokeAccess(companion.companionId)}
                       disabled={loading}
@@ -376,34 +376,32 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 500;
-    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
   }
 
-  .edit-btn {
+  .action-btn.edit {
     background-color: #e3f2fd;
     color: #1976d2;
   }
 
-  .edit-btn:hover:not(:disabled) {
+  .action-btn.edit:hover:not(:disabled) {
     background-color: #bbdefb;
   }
 
-  .delete-btn {
+  .action-btn.delete {
     background-color: #ffebee;
     color: #c62828;
   }
 
-  .delete-btn:hover:not(:disabled) {
+  .action-btn.delete:hover:not(:disabled) {
     background-color: #ffcdd2;
   }
 
-  .revoke-btn {
+  .action-btn.revoke {
     background-color: #fce4ec;
     color: #ad1457;
   }
 
-  .revoke-btn:hover:not(:disabled) {
+  .action-btn.revoke:hover:not(:disabled) {
     background-color: #f8bbd0;
   }
 
