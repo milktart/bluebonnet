@@ -287,6 +287,10 @@
   .name-cell {
     font-weight: 500;
     color: #1f2937;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .email-cell {
