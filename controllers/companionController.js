@@ -523,45 +523,6 @@ exports.createCompanion = async (req, res) => {
   }
 };
 
-// Update companion permissions
-exports.updateCompanionPermissions = async (req, res) => {
-  try {
-    const companionId = req.params.id;
-    const isAjax = req.get('X-Sidebar-Request') === 'true' || req.xhr;
-
-    const companion = await TravelCompanion.findOne({
-      where: {
-        id: companionId,
-        createdBy: req.user.id,
-      },
-    });
-
-    if (!companion) {
-      const errorMsg = 'Companion not found';
-      if (isAjax) {
-        return res.status(404).json({ success: false, error: errorMsg });
-      }
-      return res.status(404).json({ success: false, error: errorMsg });
-    }
-
-    // No longer updating canBeAddedByOthers field
-
-    const successMsg = 'Companion permissions updated';
-    if (isAjax) {
-      return res.json({ success: true, message: successMsg });
-    }
-
-    res.json({ success: true, message: successMsg });
-  } catch (error) {
-    logger.error(error);
-    const errorMsg = 'Error updating companion permissions';
-    if (req.get('X-Sidebar-Request') === 'true' || req.xhr) {
-      return res.status(500).json({ success: false, error: errorMsg });
-    }
-    res.status(500).json({ success: false, error: errorMsg });
-  }
-};
-
 // API endpoint for autocomplete search
 exports.searchCompanions = async (req, res) => {
   logger.info('COMPANION_SEARCH_ENDPOINT_HIT', {
