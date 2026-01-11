@@ -223,7 +223,7 @@ exports.getAllCompanions = async (req, res) => {
 // Update companion permissions (canShareTrips, canManageTrips)
 exports.updateCompanionPermissions = async (req, res) => {
   try {
-    const { companionId } = req.params;
+    const companionId = req.params.id;
     const { canShareTrips, canManageTrips } = req.body;
     const isAjax =
       req.get('X-Sidebar-Request') === 'true' ||
