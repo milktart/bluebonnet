@@ -248,18 +248,19 @@ exports.updateCompanionPermissions = async (req, res) => {
     }
 
     // Update or create permission record
-    const [permission] = await CompanionPermission.findOrCreate({
+    const [permission, created] = await CompanionPermission.findOrCreate({
       where: {
         companionId,
         grantedBy: req.user.id,
       },
       defaults: {
-        canShareTrips: canShareTrips || false,
-        canManageTrips: canManageTrips || false,
+        canShareTrips: canShareTrips !== undefined ? canShareTrips : false,
+        canManageTrips: canManageTrips !== undefined ? canManageTrips : false,
       },
     });
 
-    if (permission.changed().length > 0) {
+    // If record already existed, update it with new values
+    if (!created) {
       await permission.update({
         canShareTrips: canShareTrips !== undefined ? canShareTrips : permission.canShareTrips,
         canManageTrips: canManageTrips !== undefined ? canManageTrips : permission.canManageTrips,
