@@ -403,6 +403,17 @@ This document outlines the comprehensive testing plan for the new travel compani
 - **Description:** When Alice adds Bob, Bob should see Alice in their list
 - **Solution:** Auto-create reverse companion record with (canShareTrips=false, canManageTrips=false)
 
+### Issue 4: Migration fails when running db:sync on existing databases
+
+- **Status:** ✅ FIXED
+- **Description:** "column companionId contains null values" error during Docker build
+- **Root Cause:** db:sync tries to alter table before migration runs, causing NOT NULL constraint violation
+- **Fix:** Updated migration to detect schema state and handle gracefully:
+  - New databases: Create fresh table
+  - Existing old schema: Migrate data
+  - Mixed/new schema: Skip (already migrated)
+- **Migration:** 20260111-alter-companion-permissions-schema.js
+
 ---
 
 ## Regression Testing
