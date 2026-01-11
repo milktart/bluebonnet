@@ -231,6 +231,13 @@ exports.updateCompanionPermissions = async (req, res) => {
       req.get('X-Requested-With') === 'XMLHttpRequest' ||
       req.get('Content-Type')?.includes('application/json');
 
+    logger.debug('UPDATE_COMPANION_PERMISSIONS', {
+      companionId,
+      canShareTrips,
+      canManageTrips,
+      userId: req.user.id,
+    });
+
     // Verify companion exists and user created it
     const companion = await TravelCompanion.findOne({
       where: {
@@ -259,11 +266,29 @@ exports.updateCompanionPermissions = async (req, res) => {
       },
     });
 
+    // Prepare the final values
+    let finalCanShareTrips = permission.canShareTrips;
+    let finalCanManageTrips = permission.canManageTrips;
+
     // If record already existed, update it with new values
     if (!created) {
+      // Update the final values with what was requested
+      if (canShareTrips !== undefined) {
+        finalCanShareTrips = canShareTrips;
+      }
+      if (canManageTrips !== undefined) {
+        finalCanManageTrips = canManageTrips;
+      }
+
       await permission.update({
-        canShareTrips: canShareTrips !== undefined ? canShareTrips : permission.canShareTrips,
-        canManageTrips: canManageTrips !== undefined ? canManageTrips : permission.canManageTrips,
+        canShareTrips: finalCanShareTrips,
+        canManageTrips: finalCanManageTrips,
+      });
+
+      logger.debug('PERMISSION_UPDATED', {
+        companionId,
+        canShareTrips: finalCanShareTrips,
+        canManageTrips: finalCanManageTrips,
       });
     }
 
@@ -274,8 +299,8 @@ exports.updateCompanionPermissions = async (req, res) => {
         message: successMsg,
         data: {
           companionId: permission.companionId,
-          canShareTrips: permission.canShareTrips,
-          canManageTrips: permission.canManageTrips,
+          canShareTrips: finalCanShareTrips,
+          canManageTrips: finalCanManageTrips,
         },
       });
     }
