@@ -181,7 +181,9 @@ exports.getAllCompanions = async (req, res) => {
 
     // Add profiles (people who added you) and mark what they grant us
     companionProfiles.forEach((profile) => {
-      const key = profile.email.toLowerCase();
+      // Use the creator's email as key (the person who added you)
+      const creatorEmail = profile.creator?.email || profile.email;
+      const key = creatorEmail.toLowerCase();
       const permission = profile.permissions?.[0];
 
       if (companionMap.has(key)) {
@@ -189,13 +191,14 @@ exports.getAllCompanions = async (req, res) => {
         companionMap.get(key).theyShareTrips = permission?.canShareTrips || false;
         companionMap.get(key).theyManageTrips = permission?.canManageTrips || false;
       } else {
-        // They added you, but you haven't added them - create entry with their permissions
+        // They added you, but you haven't added them - create entry with their info
+        // Use the creator's name (who created this companion record)
         companionMap.set(key, {
           id: profile.id,
-          firstName: profile.firstName,
-          lastName: profile.lastName,
-          email: profile.email,
-          userId: profile.userId,
+          firstName: profile.creator?.firstName || profile.firstName,
+          lastName: profile.creator?.lastName || profile.lastName,
+          email: creatorEmail,
+          userId: profile.creator?.id || profile.userId,
           canShareTrips: false,
           canManageTrips: false,
           theyShareTrips: permission?.canShareTrips || false,
