@@ -449,12 +449,6 @@
         </button>
         <div class="header-title-wrapper">
           <h3>{config.title}</h3>
-          {#if !canEdit}
-            <span class="read-only-badge" title="This item is shared with you and cannot be edited">
-              <span class="material-symbols-outlined">lock</span>
-              View only
-            </span>
-          {/if}
         </div>
       </div>
       <div class="icon-badge" data-type={itemType}>
