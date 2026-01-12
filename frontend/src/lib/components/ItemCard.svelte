@@ -194,13 +194,6 @@
       <CompanionIndicators companions={item.itemCompanions} excludeUserId={excludeUserId} />
     </div>
   {/if}
-
-  {#if !canEdit}
-    <div class="read-only-badge" title="This item is shared with you and cannot be edited">
-      <span class="material-symbols-outlined">lock</span>
-      View only
-    </div>
-  {/if}
 </div>
 
 <style>

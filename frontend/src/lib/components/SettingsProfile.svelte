@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
   import { settingsApi } from '$lib/services/settings';
   import { authStoreActions } from '$lib/stores/authStore';
+  import { dashboardStoreActions } from '$lib/stores/dashboardStore';
   import '$lib/styles/form-styles.css';
 
   export let data: any = null; // User data passed from parent
@@ -15,6 +17,16 @@
   };
 
   let originalEmail = data?.email || '';
+
+  // Update form data whenever the data prop changes
+  $: if (data) {
+    formData = {
+      firstName: data.firstName || '',
+      lastName: data.lastName || '',
+      email: data.email || ''
+    };
+    originalEmail = data.email || '';
+  }
 
   function validateForm(): boolean {
     error = null;
@@ -77,7 +89,7 @@
     }
   }
 
-  function handleCancel() {
+  async function handleCancel() {
     // Reset form to original values
     formData = {
       firstName: data?.firstName || '',
@@ -85,6 +97,10 @@
       email: data?.email || ''
     };
     error = null;
+
+    // Close secondary sidebar and navigate to /settings
+    dashboardStoreActions.closeSecondarySidebar();
+    await goto('/settings');
   }
 </script>
 

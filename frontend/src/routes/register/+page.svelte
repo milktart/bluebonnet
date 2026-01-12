@@ -49,8 +49,6 @@
     try {
       // Use relative URL for auth - works with proxies
       const registerUrl = '/auth/register';
-      console.log('[Register DEBUG] Attempting register at:', registerUrl);
-      console.log('[Register DEBUG] Form data:', { firstName, lastName, email });
 
       const response = await fetch(registerUrl, {
         method: 'POST',
@@ -65,17 +63,14 @@
         credentials: 'include'
       });
 
-      console.log('[Register DEBUG] Response status:', response.status);
-      console.log('[Register DEBUG] Response headers:', {
+      console.log({
         contentType: response.headers.get('content-type'),
         ok: response.ok
       });
 
       const data = await response.json();
-      console.log('[Register DEBUG] Full response data:', data);
 
       if (!response.ok) {
-        console.log('[Register ERROR] Response not OK');
         throw new Error(data.message || 'Registration failed');
       }
 
@@ -93,11 +88,9 @@
           window.location.href = '/login';
         }, 1500);
       } else {
-        console.log('[Register ERROR] Response success flag is false:', data);
         error = data.message || 'Registration failed';
       }
     } catch (err) {
-      console.log('[Register CATCH] Error caught:', err);
       error = err instanceof Error ? err.message : 'Registration failed';
     } finally {
       loading = false;

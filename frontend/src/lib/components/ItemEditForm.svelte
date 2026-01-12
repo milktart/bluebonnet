@@ -961,6 +961,7 @@
       <div class="form-group">
         <ItemCompanionsForm
           companions={selectedCompanions}
+          canEdit={canEdit}
           onCompanionsUpdate={(companions) => {
             selectedCompanions = companions;
 
@@ -1017,19 +1018,27 @@
       />
     {/if}
 
-    <div class="form-buttons">
-      <button type="submit" disabled={loading} class="submit-btn">
-        {isEditing ? 'Update' : 'Add'}
-      </button>
-      <button type="button" on:click={onClose} disabled={loading} class="cancel-btn">
-        Cancel
-      </button>
-    </div>
+    {#if canEdit}
+      <div class="form-buttons">
+        <button type="submit" disabled={loading} class="submit-btn">
+          {isEditing ? 'Update' : 'Add'}
+        </button>
+        <button type="button" on:click={onClose} disabled={loading} class="cancel-btn">
+          Cancel
+        </button>
+      </div>
 
-    {#if isEditing}
-      <button type="button" on:click={handleDelete} disabled={loading} class="delete-btn">
-        Delete
-      </button>
+      {#if isEditing}
+        <button type="button" on:click={handleDelete} disabled={loading} class="delete-btn">
+          Delete
+        </button>
+      {/if}
+    {:else}
+      <div class="form-buttons">
+        <button type="button" on:click={onClose} class="cancel-btn">
+          Close
+        </button>
+      </div>
     {/if}
   </form>
 </div>

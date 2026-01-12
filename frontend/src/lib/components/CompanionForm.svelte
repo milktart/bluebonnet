@@ -13,6 +13,9 @@
     canManageTrips?: boolean;
     theyShareTrips?: boolean;
     theyManageTrips?: boolean;
+    hasLinkedUser?: boolean;
+    linkedUserFirstName?: string;
+    linkedUserLastName?: string;
   } | null = null;
 
   export let onSuccess: ((companion: any) => void) | null = null;
@@ -20,6 +23,7 @@
 
   let loading = false;
   let error: string | null = null;
+  let nameFieldsLocked = false;
 
   let formData = {
     firstName: '',
@@ -31,9 +35,16 @@
 
   // Initialize form data if in edit mode
   $: if (companion) {
+    const hasLinkedUser = companion.hasLinkedUser || companion.userId;
+    nameFieldsLocked = hasLinkedUser;
+
     formData = {
-      firstName: companion.firstName || '',
-      lastName: companion.lastName || '',
+      firstName: hasLinkedUser && companion.linkedUserFirstName
+        ? companion.linkedUserFirstName
+        : (companion.firstName || ''),
+      lastName: hasLinkedUser && companion.linkedUserLastName
+        ? companion.linkedUserLastName
+        : (companion.lastName || ''),
       email: companion.email || '',
       canShareTrips: companion.canShareTrips !== undefined ? companion.canShareTrips : true,
       canManageTrips: companion.canManageTrips !== undefined ? companion.canManageTrips : false
@@ -41,6 +52,27 @@
   }
 
   const isEditMode = !!companion?.id;
+
+  async function checkEmailForExistingUser() {
+    if (!isEditMode && formData.email.trim()) {
+      try {
+        // Call the API to check if a user account exists with this email
+        const response = await settingsApi.checkEmailForUser(formData.email);
+        if (response.hasUser && response.user) {
+          // Found a user account with this email
+          nameFieldsLocked = true;
+          formData.firstName = response.user.firstName || '';
+          formData.lastName = response.user.lastName || '';
+        } else {
+          // No user account found, unlock fields
+          nameFieldsLocked = false;
+        }
+      } catch (err) {
+        // If check fails, just unlock the fields and let user enter manually
+        nameFieldsLocked = false;
+      }
+    }
+  }
 
   async function handleSubmit() {
     try {
@@ -90,7 +122,6 @@
               canManageTrips: formData.canManageTrips
             });
           } catch (permErr) {
-            console.warn('Failed to update permissions:', permErr);
             // Don't fail the whole operation if permission update fails
           }
         }
@@ -132,7 +163,7 @@
             type="text"
             bind:value={formData.firstName}
             placeholder="John"
-            disabled={loading}
+            disabled={loading || nameFieldsLocked}
           />
         </div>
 
@@ -144,7 +175,7 @@
             bind:value={formData.lastName}
             placeholder="D"
             maxlength="1"
-            disabled={loading}
+            disabled={loading || nameFieldsLocked}
           />
         </div>
       </div>
@@ -155,6 +186,7 @@
           id="email"
           type="email"
           bind:value={formData.email}
+          on:blur={checkEmailForExistingUser}
           placeholder="companion@example.com"
           required
           disabled={loading || isEditMode}

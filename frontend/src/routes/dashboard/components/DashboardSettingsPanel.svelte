@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { dashboardStoreActions } from '$lib/stores/dashboardStore';
+  import { dashboardStore, dashboardStoreActions } from '$lib/stores/dashboardStore';
   import { authStore } from '$lib/stores/authStore';
 
   let user: any = null;
@@ -8,11 +8,15 @@
   // Subscribe to auth store to get user data
   const unsubscribe = authStore.subscribe(($auth) => {
     user = $auth.user;
-    console.log('[SettingsPanel] Auth store updated, user:', user);
-    if (user) {
-      console.log('[SettingsPanel] user.isAdmin:', user.isAdmin);
-    }
   });
+
+  // Update profile data in sidebar if it's open and user data changes
+  $: if (user && $dashboardStore.secondarySidebarContent?.type === 'settings-profile') {
+    dashboardStoreActions.openSecondarySidebar({
+      type: 'settings-profile',
+      data: user
+    });
+  }
 
   const handleSettingClick = async (type: string, data: any = {}) => {
     dashboardStoreActions.openSecondarySidebar({ type, data });

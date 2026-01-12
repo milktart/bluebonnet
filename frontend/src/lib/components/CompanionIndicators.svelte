@@ -20,25 +20,11 @@
     const normalized = getNormalizedCompanion(comp);
     // Check userId on the normalized companion, or on the linkedAccount
     const companionUserId = normalized?.userId || normalized?.linkedAccount?.id;
-    const shouldExclude = companionUserId === excludeUserId;
-    if (companions.length > 0) {
-      console.log('[CompanionIndicators.shouldExcludeCompanion]', {
-        companionName: normalized?.name,
-        companionUserId,
-        excludeUserId,
-        shouldExclude,
-      });
-    }
-    return shouldExclude;
+    return companionUserId === excludeUserId;
   }
 
   $: {
     filteredCompanions = companions.filter(comp => !shouldExcludeCompanion(comp));
-    if (companions.length > 0) {
-      console.log('[CompanionIndicators] excludeUserId:', excludeUserId);
-      console.log('[CompanionIndicators] companions:', JSON.stringify(companions, null, 2));
-      console.log('[CompanionIndicators] filteredCompanions:', JSON.stringify(filteredCompanions, null, 2));
-    }
   }
 
   function getInitials(email: string, name?: string, firstName?: string, lastName?: string): string {

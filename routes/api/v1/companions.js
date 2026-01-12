@@ -284,8 +284,6 @@ router.post('/trips/:tripId', async (req, res) => {
     const { Trip } = require('../../../models');
     const itemCompanionHelper = require('../../../utils/itemCompanionHelper');
 
-    console.log('[Add Companion] Request params:', { tripId, companionId });
-
     // Verify trip belongs to user
     const trip = await Trip.findOne({
       where: { id: tripId, userId: req.user.id },
@@ -301,11 +299,6 @@ router.post('/trips/:tripId', async (req, res) => {
       return apiResponse.notFound(res, 'Companion not found');
     }
 
-    console.log('[Add Companion] Found companion:', {
-      companionId: companion.id,
-      email: companion.email,
-    });
-
     // Add companion to trip
     try {
       const tripCompanion = await TripCompanion.create({
@@ -316,11 +309,8 @@ router.post('/trips/:tripId', async (req, res) => {
         permissionSource: 'explicit',
       });
 
-      console.log('[Add Companion] Successfully created TripCompanion:', tripCompanion.dataValues);
-
       // Auto-add companion to all existing items in the trip
       await itemCompanionHelper.addCompanionToAllItems(companionId, tripId, req.user.id);
-      console.log('[Add Companion] Successfully added companion to all items in trip');
 
       // Return the companion data with trip-specific info
       const result = {
@@ -334,18 +324,11 @@ router.post('/trips/:tripId', async (req, res) => {
     } catch (createError) {
       // Check if this is a unique constraint violation (duplicate companion)
       if (createError.name === 'SequelizeUniqueConstraintError') {
-        console.log('[Add Companion] Duplicate companion for trip:', { tripId, companionId });
         return apiResponse.conflict(res, `${companion.email} is already added to this trip`);
       }
       throw createError;
     }
   } catch (error) {
-    console.error('[Add Companion Error]', {
-      message: error.message,
-      name: error.name,
-      validationErrors: error.errors,
-      stack: error.stack,
-    });
     return apiResponse.internalError(res, 'Failed to add companion', error);
   }
 });

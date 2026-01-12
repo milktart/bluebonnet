@@ -4,7 +4,6 @@
  * Phase 3 - Service Layer Pattern
  * Phase 6 - Performance (Caching)
  */
-
 const { Op } = require('sequelize');
 const BaseService = require('./BaseService');
 const {
@@ -30,7 +29,6 @@ const { sortCompanions } = require('../utils/itemCompanionHelper');
 // const AttendeeService = require('./attendeeService');
 // const itemTripService = new ItemTripService();
 // const attendeeService = new AttendeeService();
-
 class TripService extends BaseService {
   constructor() {
     super(Trip, 'Trip');
@@ -42,8 +40,6 @@ class TripService extends BaseService {
    */
   getTripIncludes() {
     // Using a method instead of static to allow potential future customization per instance
-    logger.debug(`${this.modelName}: Building trip includes`);
-
     return [
       { model: Flight, as: 'flights' },
       { model: Hotel, as: 'hotels' },
@@ -77,15 +73,12 @@ class TripService extends BaseService {
    * @returns {Promise<Object>} { flights, hotels, events, transportation, carRentals }
    */
   async getTripItemsFromJunction(tripId) {
-    logger.debug(`${this.modelName}: Getting items for trip ${tripId} via junction`);
-
     // Get all itemIds for this trip from ItemTrip
     const itemTripRecords = await ItemTrip.findAll({
       where: { tripId },
       attributes: ['itemId', 'itemType'],
       raw: true,
     });
-
     // Group by item type
     const itemsByType = {
       flight: [],
@@ -94,11 +87,9 @@ class TripService extends BaseService {
       transportation: [],
       car_rental: [],
     };
-
     itemTripRecords.forEach((record) => {
       itemsByType[record.itemType].push(record.itemId);
     });
-
     // Fetch each item type
     const [flights, hotels, events, transportation, carRentals] = await Promise.all([
       itemsByType.flight.length > 0
@@ -117,7 +108,6 @@ class TripService extends BaseService {
         ? CarRental.findAll({ where: { id: { [Op.in]: itemsByType.car_rental } } })
         : [],
     ]);
-
     return {
       flights,
       hotels,
@@ -133,8 +123,6 @@ class TripService extends BaseService {
    * @returns {Promise<Array>} Array of attendees
    */
   async getTripAttendeesForDisplay(tripId) {
-    logger.debug(`${this.modelName}: Getting attendees for trip ${tripId}`);
-
     const attendees = await TripAttendee.findAll({
       where: { tripId },
       include: [
@@ -147,7 +135,6 @@ class TripService extends BaseService {
       ],
       order: [['role', 'DESC']], // owner first, then admin, then attendee
     });
-
     return attendees;
   }
 
@@ -158,22 +145,18 @@ class TripService extends BaseService {
    * @returns {Promise<Array>} Array of trip IDs
    */
   async getAccessibleTripIds(userId) {
-    logger.debug(`${this.modelName}: Getting accessible trip IDs for user ${userId}`);
-
     // Trips where user is owner
     const ownedTrips = await Trip.findAll({
       where: { userId },
       attributes: ['id'],
       raw: true,
     });
-
     // Trips where user is attendee
     const attendeeTrips = await TripAttendee.findAll({
       where: { userId },
       attributes: ['tripId'],
       raw: true,
     });
-
     // Trips where user has full-access permission (can manage all trips of another user)
     const fullAccessGrants = await CompanionPermission.findAll({
       where: {
@@ -183,7 +166,6 @@ class TripService extends BaseService {
       attributes: ['ownerId'],
       raw: true,
     });
-
     // Get all trips from owners who granted full access
     let fullAccessTripIds = [];
     if (fullAccessGrants.length > 0) {
@@ -195,14 +177,12 @@ class TripService extends BaseService {
       });
       fullAccessTripIds = fullAccessTrips.map((t) => t.id);
     }
-
     // Combine and deduplicate
     const allTripIds = [
       ...ownedTrips.map((t) => t.id),
       ...attendeeTrips.map((a) => a.tripId),
       ...fullAccessTripIds,
     ];
-
     return [...new Set(allTripIds)];
   }
 
@@ -217,14 +197,11 @@ class TripService extends BaseService {
    */
   async getUserTrips(userId, options = {}) {
     const { filter = 'upcoming', page = 1, limit = 20 } = options;
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
     // Build date filter
     let dateFilter = {};
     let orderDirection = 'ASC';
-
     if (filter === 'upcoming') {
       dateFilter = { departureDate: { [Op.gte]: today } };
       orderDirection = 'ASC'; // Soonest first
@@ -232,23 +209,18 @@ class TripService extends BaseService {
       dateFilter = { returnDate: { [Op.lt]: today } };
       orderDirection = 'DESC'; // Most recent first
     }
-
     const tripIncludes = this.getTripIncludes();
-
     // Get owned trips (with pagination for past trips)
     const ownedTripsQuery = {
       where: { userId, ...dateFilter },
       order: [['departureDate', orderDirection]],
       include: tripIncludes,
     };
-
     if (filter === 'past') {
       ownedTripsQuery.limit = limit;
       ownedTripsQuery.offset = (page - 1) * limit;
     }
-
     const ownedTrips = await Trip.findAll(ownedTripsQuery);
-
     // Get total count for pagination (past trips only)
     let totalCount = 0;
     if (filter === 'past') {
@@ -256,21 +228,17 @@ class TripService extends BaseService {
         where: { userId, ...dateFilter },
       });
     }
-
     // Get trips where user is a companion
     // First find which trips the user is a companion on
     let companionTrips = [];
     const userCompanionRecord = await TravelCompanion.findOne({
       where: { userId },
     });
-
     if (userCompanionRecord) {
       const tripsWithCompanion = await TripCompanion.findAll({
         where: { companionId: userCompanionRecord.id },
       });
-
       const tripIds = tripsWithCompanion.map((tc) => tc.tripId);
-
       if (tripIds.length > 0) {
         companionTrips = await Trip.findAll({
           where: {
@@ -282,11 +250,9 @@ class TripService extends BaseService {
         });
       }
     }
-
     // Get standalone items (always fetch them, filter determines which ones)
     let standaloneItems = {};
     standaloneItems = await this.getStandaloneItems(userId, dateFilter);
-
     // Calculate pagination metadata
     const pagination = {
       currentPage: page,
@@ -295,7 +261,6 @@ class TripService extends BaseService {
       hasNextPage: filter === 'past' && page < Math.ceil(totalCount / limit),
       hasPrevPage: filter === 'past' && page > 1,
     };
-
     // Convert trips to plain JSON objects to ensure associated items are serialized
     // Also convert standalone items to JSON to include itemCompanions
     // Must manually include itemCompanions since it's a custom property not in the model schema
@@ -303,26 +268,41 @@ class TripService extends BaseService {
       flights: standaloneItems.flights.map((item) => {
         const json = item.toJSON();
         json.itemCompanions = item.itemCompanions || [];
+        json.canEdit = item.canEdit;
+        json.canDelete = item.canDelete;
+        json.isShared = item.isShared;
         return json;
       }),
       hotels: standaloneItems.hotels.map((item) => {
         const json = item.toJSON();
         json.itemCompanions = item.itemCompanions || [];
+        json.canEdit = item.canEdit;
+        json.canDelete = item.canDelete;
+        json.isShared = item.isShared;
         return json;
       }),
       transportation: standaloneItems.transportation.map((item) => {
         const json = item.toJSON();
         json.itemCompanions = item.itemCompanions || [];
+        json.canEdit = item.canEdit;
+        json.canDelete = item.canDelete;
+        json.isShared = item.isShared;
         return json;
       }),
       carRentals: standaloneItems.carRentals.map((item) => {
         const json = item.toJSON();
         json.itemCompanions = item.itemCompanions || [];
+        json.canEdit = item.canEdit;
+        json.canDelete = item.canDelete;
+        json.isShared = item.isShared;
         return json;
       }),
       events: standaloneItems.events.map((item) => {
         const json = item.toJSON();
         json.itemCompanions = item.itemCompanions || [];
+        json.canEdit = item.canEdit;
+        json.canDelete = item.canDelete;
+        json.isShared = item.isShared;
         // Determine if event is all-day based on time values (use UTC since dates are ISO strings)
         if (json.startDateTime && json.endDateTime) {
           const startDate = new Date(json.startDateTime);
@@ -339,7 +319,6 @@ class TripService extends BaseService {
         return json;
       }),
     };
-
     // Helper function to add isAllDay flag to events
     const addIsAllDayToTrip = (trip) => {
       if (trip.events && Array.isArray(trip.events)) {
@@ -360,18 +339,15 @@ class TripService extends BaseService {
       }
       return trip;
     };
-
     // Process trips to ensure owner is always in tripCompanions
     const processTripsWithOwner = async (trips) => {
       return Promise.all(
         trips.map(async (trip) => {
           const tripJson = addIsAllDayToTrip(trip.toJSON());
-
           // Ensure trip owner is included in tripCompanions
           const ownerInCompanions = tripJson.tripCompanions?.some(
             (tc) => tc.companion?.userId === trip.userId
           );
-
           if (!ownerInCompanions && trip.userId) {
             // Find the owner's TravelCompanion record
             let ownerCompanion = await TravelCompanion.findOne({
@@ -384,7 +360,6 @@ class TripService extends BaseService {
                 },
               ],
             });
-
             // If no TravelCompanion exists, fetch the User directly
             if (!ownerCompanion) {
               const user = await User.findByPk(trip.userId, {
@@ -409,7 +384,6 @@ class TripService extends BaseService {
                 };
               }
             }
-
             if (ownerCompanion) {
               if (!tripJson.tripCompanions) {
                 tripJson.tripCompanions = [];
@@ -425,19 +399,16 @@ class TripService extends BaseService {
               });
             }
           }
-
           return tripJson;
         })
       );
     };
-
     const result = {
       ownedTrips: await processTripsWithOwner(ownedTrips),
       companionTrips: await processTripsWithOwner(companionTrips),
       standalone: convertedStandalone,
       pagination,
     };
-
     return result;
   }
 
@@ -448,8 +419,6 @@ class TripService extends BaseService {
    * @returns {Promise<Object>} { flights, hotels, transportation, carRentals, events }
    */
   async getStandaloneItems(userId, dateFilter = {}) {
-    logger.debug(`${this.modelName}: Getting standalone items for user ${userId}`);
-
     // Get the user's TravelCompanion record to find items shared with them
     let userCompanionId = null;
     const userCompanionRecord = await TravelCompanion.findOne({
@@ -458,7 +427,6 @@ class TripService extends BaseService {
     if (userCompanionRecord) {
       userCompanionId = userCompanionRecord.id;
     }
-
     // Helper function to get shared item IDs for a given item type
     const getSharedItemIds = async (itemType) => {
       if (!userCompanionId) return [];
@@ -471,7 +439,6 @@ class TripService extends BaseService {
       });
       return sharedCompanions.map((ic) => ic.itemId);
     };
-
     // Build OR condition for owned OR shared items
     const buildWhereCondition = (sharedIds) => {
       const orConditions = [{ userId }];
@@ -483,7 +450,6 @@ class TripService extends BaseService {
         [Op.or]: orConditions,
       };
     };
-
     // Get shared item IDs for each type (in parallel for performance)
     const [
       flightSharedIds,
@@ -498,7 +464,6 @@ class TripService extends BaseService {
       getSharedItemIds('car_rental'),
       getSharedItemIds('event'),
     ]);
-
     const flights = await Flight.findAll({
       where: {
         ...buildWhereCondition(flightSharedIds),
@@ -508,7 +473,6 @@ class TripService extends BaseService {
       },
       order: [['departureDateTime', 'ASC']],
     });
-
     const hotels = await Hotel.findAll({
       where: {
         ...buildWhereCondition(hotelSharedIds),
@@ -518,7 +482,6 @@ class TripService extends BaseService {
       },
       order: [['checkInDateTime', 'ASC']],
     });
-
     const transportation = await Transportation.findAll({
       where: {
         ...buildWhereCondition(transportationSharedIds),
@@ -528,7 +491,6 @@ class TripService extends BaseService {
       },
       order: [['departureDateTime', 'ASC']],
     });
-
     const carRentals = await CarRental.findAll({
       where: {
         ...buildWhereCondition(carRentalSharedIds),
@@ -538,7 +500,6 @@ class TripService extends BaseService {
       },
       order: [['pickupDateTime', 'ASC']],
     });
-
     const events = await Event.findAll({
       where: {
         ...buildWhereCondition(eventSharedIds),
@@ -546,16 +507,13 @@ class TripService extends BaseService {
       },
       order: [['startDateTime', 'ASC']],
     });
-
     // Load item companions for standalone items (same pattern as getTripWithDetails)
     const loadAndTransformItemCompanions = async (items, itemType) => {
       if (!Array.isArray(items) || items.length === 0) {
         return;
       }
-
       try {
         const itemIds = items.map((item) => item.id);
-
         // Fetch all companions for these items
         const companions = await ItemCompanion.findAll({
           where: {
@@ -570,17 +528,14 @@ class TripService extends BaseService {
             },
           ],
         });
-
         // Handle case where companions might be undefined (e.g., in tests)
         if (!Array.isArray(companions)) {
           return;
         }
-
         // Create a map of itemId -> companions for quick lookup
         const companionsByItemId = {};
         // Also create a map of itemId -> if it's shared with current user
         const sharedItemsMap = {};
-
         companions.forEach((ic) => {
           if (!companionsByItemId[ic.itemId]) {
             companionsByItemId[ic.itemId] = [];
@@ -594,28 +549,23 @@ class TripService extends BaseService {
             userId: ic.companion?.userId,
             inheritedFromTrip: ic.inheritedFromTrip,
           });
-
           // Mark if this item is shared with the current user
           if (ic.companionId === userCompanionId) {
             sharedItemsMap[ic.itemId] = true;
           }
         });
-
         // Attach companions to each item and add permission metadata
         items.forEach((item) => {
           item.itemCompanions = companionsByItemId[item.id] || [];
-
           // Add permission flags
           const isItemOwner = item.userId === userId;
           const isSharedWithUser = sharedItemsMap[item.id];
-
           item.canEdit = isItemOwner;
           item.canDelete = isItemOwner;
           item.isShared = isSharedWithUser && !isItemOwner;
         });
       } catch (error) {
         // Log error but don't fail - companions loading is not critical
-        logger.debug(`Error loading item companions for type ${itemType}:`, error);
         // Ensure items have empty companions array
         items.forEach((item) => {
           if (!item.itemCompanions) {
@@ -628,7 +578,6 @@ class TripService extends BaseService {
         });
       }
     };
-
     // Load companions for all standalone item types in parallel
     await Promise.all([
       loadAndTransformItemCompanions(flights, 'flight'),
@@ -637,7 +586,6 @@ class TripService extends BaseService {
       loadAndTransformItemCompanions(carRentals, 'car_rental'),
       loadAndTransformItemCompanions(events, 'event'),
     ]);
-
     return { flights, hotels, transportation, carRentals, events };
   }
 
@@ -648,36 +596,29 @@ class TripService extends BaseService {
    * @returns {Promise<Object|null>}
    */
   async getTripWithDetails(tripId, userId) {
-    logger.debug('getTripWithDetails - Starting', { tripId, userId });
     const trip = await Trip.findByPk(tripId, {
       include: this.getTripIncludes(),
     });
-
     if (!trip) {
       logger.warn('Trip not found:', { tripId });
       return null;
     }
-
     // Verify ownership or companion access
     const isOwner = trip.userId === userId;
     const isCompanion = trip.tripCompanions?.some((tc) => tc.companion?.userId === userId);
-
     if (!isOwner && !isCompanion) {
       logger.warn('Trip access denied:', { tripId, userId });
       return null;
     }
-
-    logger.debug('getTripWithDetails - Trip found, converting to JSON', {
+    console.log({
       tripId,
       tripName: trip.name,
       flightCount: trip.flights?.length || 0,
       hotelCount: trip.hotels?.length || 0,
       eventCount: trip.events?.length || 0,
     });
-
     // Convert to plain JSON object to ensure associated items are serialized
     const tripData = trip.toJSON();
-
     // Ensure trip owner is included in tripCompanions
     // (some older trips may not have the owner in the trip_companions table)
     const ownerInCompanions = tripData.tripCompanions?.some(
@@ -695,7 +636,6 @@ class TripService extends BaseService {
           },
         ],
       });
-
       // If no TravelCompanion exists, fetch the User directly
       if (!ownerCompanion) {
         const user = await User.findByPk(trip.userId, {
@@ -720,7 +660,6 @@ class TripService extends BaseService {
           };
         }
       }
-
       if (ownerCompanion) {
         // Add owner as a virtual trip companion
         if (!tripData.tripCompanions) {
@@ -736,16 +675,13 @@ class TripService extends BaseService {
         });
       }
     }
-
     // Load item companions for all items in the trip (polymorphic relationship)
     // Note: ItemCompanion uses itemType and itemId fields, not Sequelize associations
     const loadAndTransformItemCompanions = async (items, itemType) => {
       if (!Array.isArray(items) || items.length === 0) {
         return;
       }
-
       const itemIds = items.map((item) => item.id);
-
       // Fetch all companions for these items
       const companions = await ItemCompanion.findAll({
         where: {
@@ -760,7 +696,6 @@ class TripService extends BaseService {
           },
         ],
       });
-
       // Create a map of itemId -> companions for quick lookup
       const companionsByItemId = {};
       companions.forEach((ic) => {
@@ -777,24 +712,20 @@ class TripService extends BaseService {
           inheritedFromTrip: ic.inheritedFromTrip,
         });
       });
-
       // Attach companions to each item and add permission metadata
       items.forEach((item) => {
         item.itemCompanions = companionsByItemId[item.id] || [];
-
         // Add permission flags
         // For trip items: owner can edit, companions can only view
         const isItemOwner = item.userId === userId;
         const isCompanionAttendeeThroughItem = item.itemCompanions?.some(
           (ic) => ic.userId === userId
         );
-
         item.canEdit = isItemOwner;
         item.canDelete = isItemOwner;
         item.isShared = !isItemOwner && isCompanionAttendeeThroughItem;
       });
     };
-
     // Load companions for all item types in parallel
     await Promise.all([
       loadAndTransformItemCompanions(tripData.flights, 'flight'),
@@ -803,7 +734,6 @@ class TripService extends BaseService {
       loadAndTransformItemCompanions(tripData.carRentals, 'car_rental'),
       loadAndTransformItemCompanions(tripData.events, 'event'),
     ]);
-
     // Add isAllDay flag to all events (use UTC since dates are ISO strings)
     if (tripData.events && Array.isArray(tripData.events)) {
       tripData.events.forEach((event) => {
@@ -821,9 +751,8 @@ class TripService extends BaseService {
         }
       });
     }
-
     // Debug: Log companions attached to items
-    logger.debug('getTripWithDetails - Companions loaded', {
+    console.log({
       tripId,
       tripName: tripData.name,
       flightsWithCompanions:
@@ -833,7 +762,6 @@ class TripService extends BaseService {
       eventsWithCompanions:
         tripData.events?.filter((e) => e.itemCompanions?.length > 0).length || 0,
     });
-
     return tripData;
   }
 
@@ -848,14 +776,11 @@ class TripService extends BaseService {
       ...data,
       userId,
     };
-
     const trip = await this.create(tripData);
     logger.info('Trip created:', { tripId: trip.id, userId });
-
     // Invalidate user caches
     await cacheService.invalidateUserTrips(userId);
     await cacheService.invalidateTripStats(userId);
-
     return trip;
   }
 
@@ -868,19 +793,15 @@ class TripService extends BaseService {
    */
   async updateTrip(tripId, data, userId) {
     const trip = await this.findByIdAndVerifyOwnership(tripId, userId);
-
     if (!trip) {
       return null;
     }
-
     await this.update(trip, data);
     logger.info('Trip updated:', { tripId, userId });
-
     // Invalidate caches
     await cacheService.invalidateUserTrips(userId);
     await cacheService.invalidateTripDetails(tripId);
     await cacheService.invalidateTripStats(userId);
-
     return trip;
   }
 
@@ -892,29 +813,23 @@ class TripService extends BaseService {
    */
   async deleteTrip(tripId, userId) {
     const trip = await this.findByIdAndVerifyOwnership(tripId, userId);
-
     if (!trip) {
       return false;
     }
-
     // Delete all associated item companions
     await ItemCompanion.destroy({
       where: { tripId },
     });
-
     // Delete all trip companions
     await TripCompanion.destroy({
       where: { tripId },
     });
-
     await this.delete(trip);
     logger.info('Trip deleted:', { tripId, userId });
-
     // Invalidate caches
     await cacheService.invalidateUserTrips(userId);
     await cacheService.invalidateTripDetails(tripId);
     await cacheService.invalidateTripStats(userId);
-
     return true;
   }
 
@@ -927,15 +842,10 @@ class TripService extends BaseService {
     // Try to get from cache first
     const cached = await cacheService.getCachedTripStats(userId);
     if (cached) {
-      logger.debug('Cache HIT: Trip statistics', { userId });
       return cached;
     }
-
-    logger.debug('Cache MISS: Trip statistics', { userId });
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
     const [totalTrips, upcomingTrips, pastTrips, activeTrips] = await Promise.all([
       this.count({ userId }),
       this.count({ userId, departureDate: { [Op.gte]: today } }),
@@ -946,17 +856,14 @@ class TripService extends BaseService {
         returnDate: { [Op.gte]: today },
       }),
     ]);
-
     const result = {
       totalTrips,
       upcomingTrips,
       pastTrips,
       activeTrips,
     };
-
     // Cache the result
     await cacheService.cacheTripStats(userId, result);
-
     return result;
   }
 
@@ -969,9 +876,6 @@ class TripService extends BaseService {
    */
   async searchTrips(userId, query, limit = 10) {
     const searchTerm = query.toLowerCase().trim();
-
-    logger.debug(`${this.modelName}: Searching trips for user ${userId} with query: ${query}`);
-
     const trips = await this.model.findAll({
       where: {
         userId,
@@ -983,7 +887,6 @@ class TripService extends BaseService {
       limit,
       order: [['departureDate', 'DESC']],
     });
-
     return trips;
   }
 
@@ -995,8 +898,6 @@ class TripService extends BaseService {
    * @throws {Error} If trip not found
    */
   async getTripData(tripId, userId) {
-    logger.debug(`${this.modelName}: Getting trip data for API`, { tripId, userId });
-
     const trip = await Trip.findOne({
       where: { id: tripId, userId },
       include: [
@@ -1018,13 +919,11 @@ class TripService extends BaseService {
         },
       ],
     });
-
     if (!trip) {
       const error = new Error('Trip not found');
       error.status = 404;
       throw error;
     }
-
     return trip;
   }
 
@@ -1037,23 +936,20 @@ class TripService extends BaseService {
    * @throws {Error} If trip not found or unauthorized
    */
   async getTripCompanions(tripId, userId, userEmail) {
-    logger.debug(`${this.modelName}: Getting trip companions for API`, {
+    console.log({
       tripId,
       userId,
       userEmail,
     });
-
     // Verify user owns the trip
     const trip = await Trip.findOne({
       where: { id: tripId, userId },
     });
-
     if (!trip) {
       const error = new Error('Trip not found');
       error.status = 404;
       throw error;
     }
-
     // Fetch companions for this trip
     const companions = await TripCompanion.findAll({
       where: { tripId },
@@ -1065,8 +961,7 @@ class TripService extends BaseService {
         },
       ],
     });
-
-    logger.debug(`${this.modelName}: Raw TripCompanion records`, {
+    console.log({
       count: companions.length,
       companions: companions.map((tc) => ({
         id: tc.id,
@@ -1076,7 +971,6 @@ class TripService extends BaseService {
           : 'NULL',
       })),
     });
-
     // Transform to simpler format and filter null companions
     const companionList = companions
       .filter((tc) => tc.companion !== null)
@@ -1085,21 +979,16 @@ class TripService extends BaseService {
         name: tc.companion.name,
         email: tc.companion.email,
       }));
-
-    logger.debug(`${this.modelName}: Mapped companion list`, {
+    console.log({
       count: companionList.length,
       selfEmail: userEmail,
     });
-
     // Sort companions: self first, then alphabetically by first name
     const sortedCompanionList = sortCompanions(companionList, userEmail);
-
-    logger.debug(`${this.modelName}: Final sorted list`, {
+    console.log({
       count: sortedCompanionList.length,
     });
-
     return sortedCompanionList;
   }
 }
-
 module.exports = new TripService();

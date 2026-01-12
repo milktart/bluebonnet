@@ -61,20 +61,12 @@ router.use(ensureAuthenticated);
 router.get('/', async (req, res) => {
   try {
     const { filter = 'upcoming', page = 1, limit = 20 } = req.query;
-    console.log('[API v1/trips] GET / - userId:', req.user.id, 'filter:', filter);
 
     const result = await tripService.getUserTrips(req.user.id, {
       filter,
       page: parseInt(page, 10),
       limit: parseInt(limit, 10),
     });
-
-    console.log(
-      '[API v1/trips] Retrieved trips - owned:',
-      result.ownedTrips.length,
-      'companions:',
-      result.companionTrips.length
-    );
 
     // Combine owned and companion trips, removing duplicates
     const tripIds = new Set();
@@ -84,21 +76,11 @@ router.get('/', async (req, res) => {
       if (!tripIds.has(trip.id)) {
         tripIds.add(trip.id);
         trips.push(trip);
-        console.log(
-          `[API v1/trips] Trip ${trip.id} has ${trip.tripCompanions?.length || 0} companions:`,
-          trip.tripCompanions?.map((tc) => ({
-            name: tc.companion?.name,
-            userId: tc.companion?.userId,
-          }))
-        );
       }
     });
 
-    console.log('[API v1/trips] Combined trips (after deduplication):', trips.length);
-
     // If past trips with pagination, return paginated response
     if (filter === 'past' && result.pagination.totalPages > 1) {
-      console.log('[API v1/trips] Returning paginated response');
       return apiResponse.paginated(
         res,
         trips,
@@ -107,7 +89,6 @@ router.get('/', async (req, res) => {
       );
     }
 
-    console.log('[API v1/trips] Returning success response with', trips.length, 'trips');
     return apiResponse.success(
       res,
       {
@@ -117,7 +98,6 @@ router.get('/', async (req, res) => {
       `Retrieved ${trips.length} ${filter} trips`
     );
   } catch (error) {
-    console.error('[API v1/trips] Error:', error.message, error.stack);
     return apiResponse.internalError(res, 'Failed to retrieve trips', error);
   }
 });

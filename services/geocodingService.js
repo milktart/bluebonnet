@@ -3,11 +3,9 @@ const http = require('http');
 const https = require('https');
 const { version } = require('../package.json');
 const logger = require('../utils/logger');
-
 // Configuration
 const NOMINATIM_BASE_URL = process.env.NOMINATIM_BASE_URL || 'https://nominatim.openstreetmap.org';
 const GEOCODING_TIMEOUT = parseInt(process.env.GEOCODING_TIMEOUT, 10) || 5000; // Reduced from 10s
-const MIN_REQUEST_INTERVAL = parseInt(process.env.GEOCODING_RATE_LIMIT, 10) || 100; // Reduced from 1000ms
 const USER_AGENT = `TravelPlannerApp/${version}`;
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 100; // ms
@@ -17,7 +15,6 @@ const SUCCESS_CACHE_TTL = 24 * 60 * 60 * 1000; // Cache successes for 24 hours
 const MAX_CONCURRENT_REQUESTS = 2; // Limit concurrent requests to Nominatim
 const CIRCUIT_BREAKER_THRESHOLD = 10; // Failed requests before circuit opens
 const CIRCUIT_BREAKER_TIMEOUT = 30000; // How long before circuit tries again (30s)
-
 // Connection pooling for HTTP/HTTPS
 const httpAgent = new http.Agent({
   keepAlive: true,
@@ -26,7 +23,6 @@ const httpAgent = new http.Agent({
   timeout: 30000,
   freeSocketTimeout: 30000,
 });
-
 const httpsAgent = new https.Agent({
   keepAlive: true,
   maxSockets: 5,
@@ -34,19 +30,14 @@ const httpsAgent = new https.Agent({
   timeout: 30000,
   freeSocketTimeout: 30000,
 });
-
 // Cache with TTL support
 const geocodeCache = new Map();
-
 // Circuit breaker state
 let circuitState = 'closed'; // 'closed', 'open', 'half-open'
 let failureCount = 0;
 let lastCircuitOpenTime = 0;
-
 // Request queue management
 let concurrentRequests = 0;
-const requestQueue = [];
-
 /**
  * Check circuit breaker state and potentially reset it
  */
@@ -60,7 +51,6 @@ function updateCircuitBreaker() {
     }
   }
 }
-
 /**
  * Get cache entry with TTL validation
  */
@@ -68,10 +58,8 @@ function getCachedResult(key) {
   if (!geocodeCache.has(key)) {
     return null;
   }
-
   const entry = geocodeCache.get(key);
   if (!entry) return null;
-
   // Check if cache entry is still valid
   if (entry.timestamp) {
     const ttl = entry.success ? SUCCESS_CACHE_TTL : FAILURE_CACHE_TTL;
@@ -80,10 +68,8 @@ function getCachedResult(key) {
       return null;
     }
   }
-
   return entry.data;
 }
-
 /**
  * Set cache entry with metadata
  */
@@ -94,7 +80,6 @@ function setCacheEntry(key, data, success = true) {
     success,
   });
 }
-
 /**
  * Queue request with concurrency control
  */
@@ -103,7 +88,6 @@ async function executeWithConcurrencyControl(fn) {
   while (concurrentRequests >= MAX_CONCURRENT_REQUESTS) {
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
-
   concurrentRequests += 1;
   try {
     return await fn();
@@ -111,12 +95,11 @@ async function executeWithConcurrencyControl(fn) {
     concurrentRequests -= 1;
   }
 }
-
 /**
  * Retry logic with exponential backoff
  */
 async function executeWithRetry(fn, location) {
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
     try {
       const result = await fn();
       // Reset circuit breaker on success
@@ -128,7 +111,6 @@ async function executeWithRetry(fn, location) {
       return result;
     } catch (error) {
       const isLastAttempt = attempt === MAX_RETRIES;
-
       // Log retry
       if (!isLastAttempt) {
         const delay = Math.min(INITIAL_RETRY_DELAY * 2 ** (attempt - 1), MAX_RETRY_DELAY);
@@ -142,7 +124,6 @@ async function executeWithRetry(fn, location) {
           `Geocoding failed after ${MAX_RETRIES} attempts for "${location}":`,
           error.message
         );
-
         // Update circuit breaker
         failureCount += 1;
         if (failureCount >= CIRCUIT_BREAKER_THRESHOLD && circuitState === 'closed') {
@@ -150,13 +131,11 @@ async function executeWithRetry(fn, location) {
           circuitState = 'open';
           lastCircuitOpenTime = Date.now();
         }
-
         throw error;
       }
     }
   }
 }
-
 /**
  * Geocode a location name to coordinates using Nominatim (OpenStreetMap)
  * @param {string} locationName - The location to geocode
@@ -166,19 +145,15 @@ async function geocodeLocation(locationName) {
   if (!locationName || typeof locationName !== 'string') {
     return null;
   }
-
   const trimmedLocation = locationName.trim();
   if (!trimmedLocation) {
     return null;
   }
-
   // Check cache first (including expired entries)
   const cached = getCachedResult(trimmedLocation);
   if (cached !== null) {
-    logger.debug(`Geocoding cache hit for: ${trimmedLocation}`);
     return cached;
   }
-
   // Check circuit breaker
   updateCircuitBreaker();
   if (circuitState === 'open') {
@@ -187,10 +162,7 @@ async function geocodeLocation(locationName) {
     setCacheEntry(trimmedLocation, null, false);
     return null;
   }
-
   try {
-    logger.debug(`Geocoding: ${trimmedLocation}`);
-
     let result = null;
     await executeWithConcurrencyControl(async () => {
       result = await executeWithRetry(async () => {
@@ -208,7 +180,6 @@ async function geocodeLocation(locationName) {
           httpAgent,
           httpsAgent,
         });
-
         if (response.data && response.data.length > 0) {
           const geoResult = response.data[0];
           const coords = {
@@ -218,12 +189,9 @@ async function geocodeLocation(locationName) {
           logger.info(`Geocoded ${trimmedLocation} to:`, coords);
           return coords;
         }
-
-        logger.debug(`No geocoding results for: ${trimmedLocation}`);
         return null;
       }, trimmedLocation);
     });
-
     // Cache the result
     setCacheEntry(trimmedLocation, result, result !== null);
     return result;
@@ -234,7 +202,6 @@ async function geocodeLocation(locationName) {
     return null;
   }
 }
-
 /**
  * Clear the geocoding cache
  */
@@ -242,14 +209,12 @@ function clearCache() {
   geocodeCache.clear();
   logger.info('Geocoding cache cleared');
 }
-
 /**
  * Get cache size
  */
 function getCacheSize() {
   return geocodeCache.size;
 }
-
 /**
  * Reverse geocode coordinates to get location info including country
  * @param {number} lat - Latitude
@@ -260,14 +225,11 @@ async function reverseGeocode(lat, lng) {
   if (!lat || !lng) {
     return null;
   }
-
   const cacheKey = `reverse_${lat}_${lng}`;
   const cached = getCachedResult(cacheKey);
   if (cached !== null) {
-    logger.debug(`Reverse geocoding cache hit for: ${lat}, ${lng}`);
     return cached;
   }
-
   // Check circuit breaker
   updateCircuitBreaker();
   if (circuitState === 'open') {
@@ -275,10 +237,7 @@ async function reverseGeocode(lat, lng) {
     setCacheEntry(cacheKey, null, false);
     return null;
   }
-
   try {
-    logger.debug(`Reverse geocoding: ${lat}, ${lng}`);
-
     let result = null;
     await executeWithConcurrencyControl(async () => {
       result = await executeWithRetry(async () => {
@@ -296,7 +255,6 @@ async function reverseGeocode(lat, lng) {
           httpAgent,
           httpsAgent,
         });
-
         if (response.data && response.data.address) {
           const countryCode = response.data.address.country_code?.toUpperCase();
           const geoResult = {
@@ -306,12 +264,9 @@ async function reverseGeocode(lat, lng) {
           logger.info(`Reverse geocoded (${lat}, ${lng}) to country: ${countryCode}`);
           return geoResult;
         }
-
-        logger.debug(`No reverse geocoding results for: ${lat}, ${lng}`);
         return null;
       }, `${lat},${lng}`);
     });
-
     setCacheEntry(cacheKey, result, result !== null);
     return result;
   } catch (error) {
@@ -320,7 +275,6 @@ async function reverseGeocode(lat, lng) {
     return null;
   }
 }
-
 /**
  * Infer timezone from latitude/longitude
  * Uses reverse geocoding to get country, then looks up timezone
@@ -332,7 +286,6 @@ async function inferTimezone(lat, lng) {
   if (!lat || !lng) {
     return null;
   }
-
   try {
     const geoData = await reverseGeocode(lat, lng);
     return geoData?.timezone || null;
@@ -341,7 +294,6 @@ async function inferTimezone(lat, lng) {
     return null;
   }
 }
-
 /**
  * Map country code to timezone
  * For US, uses latitude/longitude to determine the correct timezone
@@ -355,7 +307,6 @@ function getTimezoneForCountry(countryCode, lat, lng) {
   if (countryCode === 'US' && lng !== undefined) {
     return getUSTimezone(lat, lng);
   }
-
   // Country code to primary timezone mapping
   const countryTimezones = {
     // Americas (non-US)
@@ -366,7 +317,6 @@ function getTimezoneForCountry(countryCode, lat, lng) {
     CL: 'America/Santiago',
     CO: 'America/Bogota',
     PE: 'America/Lima',
-
     // Europe
     GB: 'Europe/London',
     IE: 'Europe/Dublin',
@@ -385,7 +335,6 @@ function getTimezoneForCountry(countryCode, lat, lng) {
     PL: 'Europe/Warsaw',
     CZ: 'Europe/Prague',
     RU: 'Europe/Moscow',
-
     // Asia
     JP: 'Asia/Tokyo',
     CN: 'Asia/Shanghai',
@@ -398,28 +347,23 @@ function getTimezoneForCountry(countryCode, lat, lng) {
     ID: 'Asia/Jakarta',
     VN: 'Asia/Ho_Chi_Minh',
     HK: 'Asia/Hong_Kong',
-
     // Middle East
     AE: 'Asia/Dubai',
     SA: 'Asia/Riyadh',
     IL: 'Asia/Jerusalem',
     TR: 'Europe/Istanbul',
-
     // Africa
     ZA: 'Africa/Johannesburg',
     EG: 'Africa/Cairo',
     NG: 'Africa/Lagos',
     KE: 'Africa/Nairobi',
-
     // Oceania
     AU: 'Australia/Sydney',
     NZ: 'Pacific/Auckland',
   };
-
   if (countryCode && countryTimezones[countryCode]) {
     return countryTimezones[countryCode];
   }
-
   // Fallback: estimate timezone from longitude
   if (lng !== undefined) {
     const estimatedOffset = Math.round(lng / 15);
@@ -429,10 +373,8 @@ function getTimezoneForCountry(countryCode, lat, lng) {
       return `UTC${sign}${hours}`;
     }
   }
-
   return 'UTC';
 }
-
 /**
  * Determine US timezone based on latitude and longitude
  * Uses longitude to determine which US timezone zone the coordinate falls into
@@ -442,7 +384,6 @@ function getTimezoneForCountry(countryCode, lat, lng) {
  */
 function getUSTimezone(lat, lng) {
   let timezone = null;
-
   // Handle special cases: Alaska and Hawaii
   if (lat < 30 && lng < -150) {
     // Hawaii (roughly south of 30°N and west of 150°W)
@@ -450,34 +391,29 @@ function getUSTimezone(lat, lng) {
   } else if (lat > 50 && lng < -130) {
     // Alaska (roughly north of 50°N and west of 130°W)
     timezone = 'America/Anchorage';
-  } else {
+  } else if (lng > -85) {
     // Continental US timezones based on longitude
     // Longitude ranges (approximate):
     // Eastern: > -85°
     // Central: -90° to -85°
     // Mountain: -105° to -90°
     // Pacific: -125° to -105°
-
-    if (lng > -85) {
-      // Eastern Time
-      timezone = 'America/New_York';
-    } else if (lng > -90) {
-      // Central Time
-      timezone = 'America/Chicago';
-    } else if (lng > -105) {
-      // Mountain Time
-      timezone = 'America/Denver';
-    } else {
-      // Pacific Time (and anything further west in continental US)
-      timezone = 'America/Los_Angeles';
-    }
+    // Eastern Time
+    timezone = 'America/New_York';
+  } else if (lng > -90) {
+    // Central Time
+    timezone = 'America/Chicago';
+  } else if (lng > -105) {
+    // Mountain Time
+    timezone = 'America/Denver';
+  } else {
+    // Pacific Time (and anything further west in continental US)
+    timezone = 'America/Los_Angeles';
   }
-
   // Log the timezone inference for debugging
   logger.info(`US timezone inference: (${lat}, ${lng}) -> ${timezone}`);
   return timezone;
 }
-
 /**
  * Get diagnostic information about the geocoding service
  */
@@ -493,7 +429,6 @@ function getDiagnostics() {
     circuitBreakerThreshold: CIRCUIT_BREAKER_THRESHOLD,
   };
 }
-
 module.exports = {
   geocodeLocation,
   reverseGeocode,

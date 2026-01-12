@@ -20,14 +20,7 @@
   export let onTripCardClick: (trip: any, event: Event) => void = () => {};
   export let onEditIconClick: (trip: any, event: Event) => void = () => {};
 
-  // Debug reactive statement
-  $: {
-    console.log('[ItemsList] expandedTrips updated:', Array.from(expandedTrips));
-    console.log('[ItemsList] excludeUserId prop:', excludeUserId);
-  }
-
   function handleTripExpand(tripId: string) {
-    console.log('[ItemsList.handleTripExpand] Called with tripId:', tripId, 'isExpanded:', expandedTrips.has(tripId));
     onTripExpand(tripId);
   }
 

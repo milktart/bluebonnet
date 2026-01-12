@@ -80,9 +80,6 @@
       error = $store.error;
       const oldExpandedTrips = expandedTrips;
       expandedTrips = $store.expandedTrips;
-      if (oldExpandedTrips !== expandedTrips) {
-        console.log('[syncStoreState] expandedTrips changed:', Array.from(oldExpandedTrips), '->', Array.from(expandedTrips));
-      }
       mapData = $store.mapData;
       highlightedTripId = $store.highlightedTripId;
       highlightedItemId = $store.highlightedItemId;
@@ -115,43 +112,27 @@
 
   // Auto-expand trip when tripIdToExpand prop is set
   $: if (tripIdToExpand && $dashboardStore.trips.length > 0) {
-    console.log('[Dashboard] Auto-expand check for:', tripIdToExpand);
-    console.log('[Dashboard] lastAutoExpandedTripId:', lastAutoExpandedTripId);
-    console.log('[Dashboard] expandedTrips:', Array.from($dashboardStore.expandedTrips));
-
     // Only auto-expand if this is a NEW trip (different from last time)
     if (tripIdToExpand !== lastAutoExpandedTripId) {
-      console.log('[Dashboard] New trip ID - will auto-expand');
       lastAutoExpandedTripId = tripIdToExpand;
 
       if (!$dashboardStore.expandedTrips.has(tripIdToExpand)) {
-        console.log('[Dashboard] Trip not expanded - auto-expanding');
         dashboardStoreActions.toggleTripExpanded(tripIdToExpand);
-      } else {
-        console.log('[Dashboard] Trip already expanded - skipping');
       }
-    } else {
-      console.log('[Dashboard] Same trip ID as before - skipping auto-expand');
     }
 
     // On mobile: set selected item to show trip detail view
     if (typeof window !== 'undefined' && window.innerWidth < 640) {
       const selectedTrip = $dashboardStore.trips.find((t) => t.id === tripIdToExpand);
       if (selectedTrip && mobileSelectedItem?.id !== tripIdToExpand) {
-        console.log('[Dashboard] Setting mobile selected item to trip:', tripIdToExpand);
         mobileSelectedItem = selectedTrip;
         mobileSelectedItemType = 'trip';
       }
     }
   }
 
-  $: if (tripIdToExpand && $dashboardStore.trips.length === 0) {
-    console.log('[Dashboard] tripIdToExpand is set but trips not loaded yet:', tripIdToExpand);
-  }
-
   // Clear lastAutoExpandedTripId when navigating away from trip detail
   $: if (!tripIdToExpand && lastAutoExpandedTripId) {
-    console.log('[Dashboard] Navigating away from trip - clearing lastAutoExpandedTripId');
     lastAutoExpandedTripId = null;
   }
 
@@ -276,31 +257,24 @@
   onMount(async () => {
     // First, verify session and populate auth store with current user
     try {
-      console.log('[Dashboard] Verifying session...');
       const sessionResponse = await fetch('/auth/verify-session', {
         credentials: 'include'
       });
 
       if (sessionResponse.ok) {
         const sessionData = await sessionResponse.json();
-        console.log('[Dashboard] Session verified:', sessionData);
         if (sessionData.authenticated && sessionData.user) {
-          console.log('[Dashboard] Setting user in auth store:', sessionData.user);
           authStoreActions.setUser(sessionData.user);
           currentUserId = sessionData.user.id;
-          console.log('[Dashboard] currentUserId set to:', currentUserId);
         }
-      } else {
-        console.warn('[Dashboard] Session verification failed');
       }
     } catch (err) {
-      console.error('[Dashboard] Error verifying session:', err);
+      // Session verification failed, continue anyway
     }
 
     // Subscribe to auth store for reactive updates
     const unsubscribeAuth = authStore.subscribe(($authStore) => {
       currentUserId = $authStore.user?.id || null;
-      console.log('[Dashboard] currentUserId updated from authStore:', currentUserId);
     });
 
     // Initialize store synchronization
@@ -522,8 +496,14 @@
   function handleTabChange(tab: 'upcoming' | 'past') {
     dashboardStoreActions.setActiveTab(tab);
     dashboardStoreActions.closeSecondarySidebar();
+    dashboardStoreActions.closeTertiarySidebar();
+    dashboardStoreActions.setActiveView('trips');
     filterTrips();
     updateMapData();
+    // Update URL to /dashboard when switching tabs
+    if (typeof window !== 'undefined') {
+      pushState('/dashboard', {});
+    }
   }
 
   async function handleDeleteTrip(tripId: string, event: Event) {
@@ -583,9 +563,7 @@
   }
 
   function toggleTripExpanded(tripId: string) {
-    console.log('[toggleTripExpanded] Calling dashboardStoreActions.toggleTripExpanded with tripId:', tripId);
     dashboardStoreActions.toggleTripExpanded(tripId);
-    console.log('[toggleTripExpanded] After dashboardStoreActions call');
   }
 
   function handleTripHover(tripId: string) {
@@ -604,27 +582,34 @@
     dashboardStoreActions.setHighlightedItem(null, null);
   }
 
-  async function handleItemClick(type: string, itemType: string | null, data: any) {
+  function handleItemClick(type: string, itemType: string | null, data: any) {
     dashboardStoreActions.openSecondarySidebar({ type, itemType: itemType || undefined, data });
     if (typeof window !== 'undefined' && data?.id && itemType) {
-      await goto(`/item/${data.id}`);
+      pushState(`/item/${data.id}`, {});
     }
   }
 
   function closeSecondarySidebar() {
-    console.log('[closeSecondarySidebar] Closing sidebar, type:', secondarySidebarContent?.type);
     if (secondarySidebarContent?.type === 'calendar') {
       calendarExplicitlyClosed = true;
       // Update URL when closing calendar
       if (typeof window !== 'undefined') {
-        console.log('[closeSecondarySidebar] Closing calendar - updating URL to /dashboard');
         pushState('/dashboard', {});
       }
     } else if (secondarySidebarContent?.type === 'trip' && secondarySidebarContent?.data?.id) {
       // Update URL when closing trip edit form - go back to dashboard
       if (typeof window !== 'undefined') {
-        console.log('[closeSecondarySidebar] Closing trip edit form - updating URL to /dashboard');
         pushState('/dashboard', {});
+      }
+    } else if (['flight', 'hotel', 'transportation', 'carRental', 'event'].includes(secondarySidebarContent?.type)) {
+      // Update URL when closing standalone item edit form - go back to dashboard
+      if (typeof window !== 'undefined') {
+        pushState('/dashboard', {});
+      }
+    } else if (['settings-profile', 'settings-security', 'settings-backup', 'settings-vouchers', 'settings-companions', 'settings-users', 'settings-airports'].includes(secondarySidebarContent?.type)) {
+      // Update URL when closing settings submenu - go back to settings main menu
+      if (typeof window !== 'undefined') {
+        pushState('/settings', {});
       }
     }
     dashboardStoreActions.closeSecondarySidebar();
@@ -647,23 +632,16 @@
 
   // ItemsList component handlers
   function handleItemsListTripExpand(tripId: string) {
-    console.log('[handleItemsListTripExpand] Called with tripId:', tripId);
-    console.log('[handleItemsListTripExpand] expandedTrips before:', Array.from(expandedTrips));
     const isCurrentlyExpanded = expandedTrips.has(tripId);
-    console.log('[handleItemsListTripExpand] isCurrentlyExpanded:', isCurrentlyExpanded);
-
     toggleTripExpanded(tripId);
-    console.log('[handleItemsListTripExpand] After toggleTripExpanded');
 
     // Update URL based on new state (without navigation)
     if (typeof window !== 'undefined') {
       if (isCurrentlyExpanded) {
         // Was expanded, now collapsed - update URL to dashboard
-        console.log('[handleItemsListTripExpand] Collapsed - updating URL to /dashboard');
         pushState('/dashboard', {});
       } else {
         // Was collapsed, now expanded - update URL to trip detail
-        console.log('[handleItemsListTripExpand] Expanded - updating URL to /trip/' + tripId);
         pushState(`/trip/${tripId}`, {});
       }
     }
@@ -733,12 +711,10 @@
 
   function handleEditTripIcon(trip: any, event: Event) {
     event.stopPropagation();
-    console.log('[handleEditTripIcon] Opening edit form for trip:', trip.id);
     // Open edit form in sidebar (both desktop and mobile)
     dashboardStoreActions.openSecondarySidebar({ type: 'trip', itemType: 'trip', data: trip });
     if (typeof window !== 'undefined') {
       // Update URL without navigation using pushState
-      console.log('[handleEditTripIcon] Updating URL to /trip/' + trip.id + '/edit');
       pushState(`/trip/${trip.id}/edit`, {});
     }
   }
@@ -805,7 +781,12 @@
           class="tab-btn settings-btn"
           class:active={activeView === 'settings'}
           title="Settings"
-          on:click={() => dashboardStoreActions.setActiveView('settings')}
+          on:click={() => {
+            dashboardStoreActions.setActiveView('settings');
+            if (typeof window !== 'undefined') {
+              pushState('/settings', {});
+            }
+          }}
         >
           <span class="material-symbols-outlined" style="font-size: 1.1rem;">settings</span>
         </button>

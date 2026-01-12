@@ -550,15 +550,6 @@ exports.listTrips = async (req, res, options = {}) => {
     allFlights.forEach((f) => {
       const arrivalDate = new Date(f.arrivalDateTime || f.departureDateTime);
       const isUpcoming = arrivalDate >= today;
-      console.log('[listTrips] Flight categorization:', {
-        flightNumber: f.flightNumber,
-        arrivalDateTime: f.arrivalDateTime,
-        departureDateTime: f.departureDateTime,
-        arrivalDate: arrivalDate.toISOString(),
-        today: today.toISOString(),
-        isUpcoming,
-        willBePast: !isUpcoming,
-      });
       if (isUpcoming) {
         standaloneFlights.push(f);
       } else {
@@ -803,13 +794,6 @@ exports.listTrips = async (req, res, options = {}) => {
       req.get('Content-Type')?.includes('application/json') ||
       req.get('X-Requested-With') === 'XMLHttpRequest' ||
       req.accepts('json') === 'json';
-
-    logger.info('LIST_TRIPS_RESPONSE', {
-      isApiRequest,
-      contentType: req.get('Content-Type'),
-      xRequestedWith: req.get('X-Requested-With'),
-      accepts: req.accepts(),
-    });
 
     if (isApiRequest) {
       return res.json({

@@ -252,12 +252,10 @@ async function getOrSet(key, fetchFn, ttl = 3600) {
   // Try to get from cache
   const cached = await get(key);
   if (cached !== null) {
-    logger.debug('Cache HIT', { key });
     return cached;
   }
 
   // Cache miss - fetch data
-  logger.debug('Cache MISS', { key });
   const data = await fetchFn();
 
   // Cache the result

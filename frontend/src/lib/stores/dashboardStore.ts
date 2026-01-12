@@ -348,16 +348,12 @@ export const dashboardStoreActions = {
    * Toggle trip expansion (show/hide items)
    */
   toggleTripExpanded(tripId: string) {
-    console.log('[dashboardStoreActions.toggleTripExpanded] Called with tripId:', tripId);
     dashboardStore.update((state) => {
       const newExpanded = new Set(state.expandedTrips);
-      console.log('[dashboardStoreActions.toggleTripExpanded] Current expandedTrips:', Array.from(newExpanded));
       if (newExpanded.has(tripId)) {
         newExpanded.delete(tripId);
-        console.log('[dashboardStoreActions.toggleTripExpanded] Deleted from set, new expandedTrips:', Array.from(newExpanded));
       } else {
         newExpanded.add(tripId);
-        console.log('[dashboardStoreActions.toggleTripExpanded] Added to set, new expandedTrips:', Array.from(newExpanded));
       }
       return {
         ...state,

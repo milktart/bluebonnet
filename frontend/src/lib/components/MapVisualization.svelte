@@ -315,12 +315,12 @@
 
   // Reactive update: populate map when tripData changes
   $: if (leafletLoaded && mapInstance && tripData && hasAnyItems(tripData)) {
-    populateMapWithData().catch(err => console.error('[MapVisualization DEBUG] populateMapWithData error:', err));
+    populateMapWithData();
   }
 
   // Reactive update: highlight trip items when highlightedTripId changes
   $: if (leafletLoaded && mapInstance && highlightedTripId && !highlightedItemId) {
-    highlightTripOnMap(highlightedTripId).catch(err => console.error('[MapVisualization DEBUG] highlightTripOnMap error:', err));
+    highlightTripOnMap(highlightedTripId);
   } else if (!highlightedTripId && !highlightedItemId && leafletLoaded && mapInstance) {
     clearAllAnimations();
   }
@@ -328,7 +328,7 @@
   // Reactive update: highlight individual item when highlightedItemId changes
   $: if (leafletLoaded && mapInstance && highlightedItemId && highlightedItemType) {
     clearAllAnimations();
-    highlightMapMarker(highlightedItemType, highlightedItemId).catch(err => console.error('[MapVisualization DEBUG] highlightMapMarker error:', err));
+    highlightMapMarker(highlightedItemType, highlightedItemId);
   }
 
   // Populate existing map instance with data
@@ -672,7 +672,6 @@
   onMount(async () => {
 
     if (!mapContainer) {
-      console.error('[MapVisualization DEBUG] mapContainer is null!');
       return () => {
         if (mapInstance) mapInstance.remove();
       };
@@ -698,7 +697,6 @@
       L.tileLayer(tileUrl, { attribution: '', maxZoom: 18, minZoom: 1 }).addTo(mapInstance);
 
     } catch (error) {
-      console.error('[MapVisualization DEBUG] Error initializing empty map:', error);
     }
 
     leafletLoaded = true;

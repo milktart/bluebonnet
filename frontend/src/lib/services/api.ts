@@ -11,21 +11,17 @@ function getApiBase(): string {
     const protocol = window.location.protocol;
     const port = window.location.port;
 
-    console.log('[API DEBUG] getApiBase called:', { hostname, protocol, port });
 
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       // Local development - use localhost:3000 (local node server)
       const url = `${protocol}//localhost:3000/api`;
-      console.log('[API DEBUG] Using localhost, URL:', url);
       return url;
     } else {
       // Remote access or Docker (proxied domain, etc.) - use relative URL
       // The proxy/nginx handles port mapping, so don't include port in URL
-      console.log('[API DEBUG] Using relative URL for remote access');
       return '/api';
     }
   }
-  console.log('[API DEBUG] SSR fallback URL');
   return 'http://localhost:3000/api'; // Fallback for SSR
 }
 

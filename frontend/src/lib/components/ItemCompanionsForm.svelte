@@ -4,6 +4,7 @@
   import Alert from './Alert.svelte';
 
   export let companions: any[] = [];
+  export let canEdit: boolean = true;
   export let onCompanionsUpdate: ((companions: any[]) => void) | null = null;
   export let onAddCompanion: ((companion: any) => Promise<any>) | null = null;
   export let onRemoveCompanion: ((companionId: string) => Promise<void>) | null = null;
@@ -160,55 +161,57 @@
     <Alert type="error" message={error} dismissible />
   {/if}
 
-  <!-- Search Input -->
-  <div class="search-container">
-    <div class="search-box">
-      <input
-        type="text"
-        placeholder="Search companions by name or email..."
-        bind:value={searchInput}
-        on:input={searchCompanions}
-        on:focus={() => {
-          if (searchInput.trim()) showResults = true;
-        }}
-        disabled={loading}
-        class="search-input"
-      />
-      {#if searchInput}
-        <button
-          class="clear-btn"
-          on:click={() => {
-            searchInput = '';
-            searchResults = [];
-            showResults = false;
+  <!-- Search Input (only show if canEdit) -->
+  {#if canEdit}
+    <div class="search-container">
+      <div class="search-box">
+        <input
+          type="text"
+          placeholder="Search companions by name or email..."
+          bind:value={searchInput}
+          on:input={searchCompanions}
+          on:focus={() => {
+            if (searchInput.trim()) showResults = true;
           }}
           disabled={loading}
-        >
-          ✕
-        </button>
-      {/if}
-    </div>
-
-    <!-- Search Results Dropdown -->
-    {#if showResults && searchResults.length > 0}
-      <div class="search-results">
-        {#each searchResults as result (result.id)}
+          class="search-input"
+        />
+        {#if searchInput}
           <button
-            class="result-item"
-            on:click={() => handleSelectCompanion(result)}
+            class="clear-btn"
+            on:click={() => {
+              searchInput = '';
+              searchResults = [];
+              showResults = false;
+            }}
             disabled={loading}
           >
-            <span class="result-name">{getCompanionDisplayName(result)}</span>
-            <span class="result-email">{result.email}</span>
+            ✕
           </button>
-        {/each}
+        {/if}
       </div>
-    {:else if showResults && searchInput.trim() && searchResults.length === 0}
-      <div class="search-results empty">
-        <p>No companions found</p>
-      </div>
-    {/if}
-  </div>
+
+      <!-- Search Results Dropdown -->
+      {#if showResults && searchResults.length > 0}
+        <div class="search-results">
+          {#each searchResults as result (result.id)}
+            <button
+              class="result-item"
+              on:click={() => handleSelectCompanion(result)}
+              disabled={loading}
+            >
+              <span class="result-name">{getCompanionDisplayName(result)}</span>
+              <span class="result-email">{result.email}</span>
+            </button>
+          {/each}
+        </div>
+      {:else if showResults && searchInput.trim() && searchResults.length === 0}
+        <div class="search-results empty">
+          <p>No companions found</p>
+        </div>
+      {/if}
+    </div>
+  {/if}
 
   <!-- Companions List -->
   {#if companions && companions.length > 0}

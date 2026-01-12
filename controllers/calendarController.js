@@ -236,7 +236,7 @@ exports.getCalendarSidebar = async (req, res) => {
         tripData.transportation = enrichItemsWithTimezone(tripData.transportation);
       }
       // DEBUG: Log events structure
-      logger.debug(`Trip ${trip.id} events:`, {
+      console.log({
         hasEvents: !!tripData.events,
         eventsCount: tripData.events ? tripData.events.length : 0,
         firstEvent: tripData.events && tripData.events.length > 0 ? tripData.events[0] : 'none',
@@ -259,17 +259,15 @@ exports.getCalendarSidebar = async (req, res) => {
     };
 
     // DEBUG: Log events
-    logger.debug('=== EVENTS DEBUG ===');
-    logger.debug('Number of trips:', uniqueTrips.length);
     uniqueTrips.forEach((trip, idx) => {
-      logger.debug(`Trip ${idx} (${trip.id}):`, {
+      console.log({
         hasEvents: !!trip.events,
         eventsProperty: typeof trip.events,
         eventsLength: trip.events ? trip.events.length : 0,
       });
       if (trip.events && trip.events.length > 0) {
         trip.events.forEach((event, eventIdx) => {
-          logger.debug(`  Event ${eventIdx}:`, {
+          console.log({
             id: event.id,
             name: event.name,
             startDateTime: event.startDateTime,
@@ -277,16 +275,15 @@ exports.getCalendarSidebar = async (req, res) => {
         });
       }
     });
-    logger.debug('Standalone events count:', standaloneEvents.length);
     standaloneEvents.forEach((event, idx) => {
-      logger.debug(`Standalone Event ${idx}:`, {
+      console.log({
         id: event.id,
         name: event.name,
         startDateTime: event.startDateTime,
       });
     });
 
-    logger.debug('Calendar data prepared:', {
+    console.log({
       tripsCount: calendarData.trips.length,
       standaloneFlightsCount: calendarData.standaloneFlights.length,
       standaloneHotelsCount: calendarData.standaloneHotels.length,
@@ -296,9 +293,8 @@ exports.getCalendarSidebar = async (req, res) => {
     });
 
     // Debug: log trip details
-    logger.debug('=== CALENDAR CONTROLLER TRIPS ===');
     calendarData.trips.forEach((trip) => {
-      logger.debug('Calendar Trip:', {
+      console.log({
         id: trip.id,
         name: trip.name,
         departureDate: trip.departureDate,

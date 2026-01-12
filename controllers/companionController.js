@@ -165,6 +165,7 @@ exports.getAllCompanions = async (req, res) => {
     companionsCreated.forEach((companion) => {
       const key = companion.email.toLowerCase();
       const permission = companion.permissions?.[0];
+      const linkedUser = companion.linkedAccount;
       companionMap.set(key, {
         id: companion.id,
         firstName: companion.firstName,
@@ -176,6 +177,9 @@ exports.getAllCompanions = async (req, res) => {
         theyShareTrips: false, // Will be set if they're also in our companion profiles
         theyManageTrips: false,
         companionId: companion.id, // ID of the companion record YOU created
+        hasLinkedUser: !!linkedUser,
+        linkedUserFirstName: linkedUser?.firstName || null,
+        linkedUserLastName: linkedUser?.lastName || null,
       });
     });
 
@@ -193,6 +197,7 @@ exports.getAllCompanions = async (req, res) => {
       } else {
         // They added you, but you haven't added them - create entry with their info
         // Use the creator's name (who created this companion record)
+        const creatorUser = profile.creator;
         companionMap.set(key, {
           id: profile.id,
           firstName: profile.creator?.firstName || profile.firstName,
@@ -204,6 +209,9 @@ exports.getAllCompanions = async (req, res) => {
           theyShareTrips: permission?.canShareTrips || false,
           theyManageTrips: permission?.canManageTrips || false,
           companionId: profile.id, // ID of the companion record THEY created
+          hasLinkedUser: !!creatorUser,
+          linkedUserFirstName: creatorUser?.firstName || null,
+          linkedUserLastName: creatorUser?.lastName || null,
         });
       }
     });
@@ -231,7 +239,7 @@ exports.updateCompanionPermissions = async (req, res) => {
       req.get('X-Requested-With') === 'XMLHttpRequest' ||
       req.get('Content-Type')?.includes('application/json');
 
-    logger.debug('UPDATE_COMPANION_PERMISSIONS', {
+    console.log({
       companionId,
       canShareTrips,
       canManageTrips,
@@ -266,7 +274,7 @@ exports.updateCompanionPermissions = async (req, res) => {
       },
     });
 
-    logger.debug('PERMISSION_FINDORCREATE', {
+    console.log({
       companionId,
       permissionId: permission.id,
       created,
@@ -290,7 +298,7 @@ exports.updateCompanionPermissions = async (req, res) => {
         finalCanManageTrips = canManageTrips;
       }
 
-      logger.debug('ABOUT_TO_UPDATE_PERMISSION', {
+      console.log({
         companionId,
         permissionId: permission.id,
         finalCanShareTrips,
@@ -302,14 +310,14 @@ exports.updateCompanionPermissions = async (req, res) => {
         canManageTrips: finalCanManageTrips,
       });
 
-      logger.debug('PERMISSION_UPDATED', {
+      console.log({
         companionId,
         permissionId: permission.id,
         canShareTrips: finalCanShareTrips,
         canManageTrips: finalCanManageTrips,
       });
     } else {
-      logger.debug('PERMISSION_CREATED_NEW', {
+      console.log({
         companionId,
         permissionId: permission.id,
         canShareTrips: finalCanShareTrips,
@@ -501,6 +509,8 @@ exports.createCompanion = async (req, res) => {
           canShareTrips: share,
           canManageTrips: manage,
           addedAt: companion.createdAt,
+          linkedUserFirstName: existingUser ? existingUser.firstName : null,
+          linkedUserLastName: existingUser ? existingUser.lastName : null,
         },
       });
     }
@@ -614,6 +624,41 @@ exports.searchCompanions = async (req, res) => {
   } catch (error) {
     logger.error('COMPANION_SEARCH_ERROR', { query: q, error: error.message, stack: error.stack });
     res.status(500).json({ error: 'Search failed' });
+  }
+};
+
+// Check if an email has a linked user account
+exports.checkEmailForUser = async (req, res) => {
+  const { email } = req.query;
+  try {
+    if (!email || !email.trim()) {
+      return res.json({ hasUser: false, user: null });
+    }
+
+    const emailLower = email.toLowerCase().trim();
+
+    // Search for user with this email
+    const user = await User.findOne({
+      where: { email: emailLower },
+      attributes: ['id', 'firstName', 'lastName', 'email'],
+    });
+
+    if (user) {
+      return res.json({
+        hasUser: true,
+        user: {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+        },
+      });
+    }
+
+    res.json({ hasUser: false, user: null });
+  } catch (error) {
+    logger.error('CHECK_EMAIL_ERROR', { email, error: error.message });
+    res.status(500).json({ hasUser: false, error: 'Check failed' });
   }
 };
 

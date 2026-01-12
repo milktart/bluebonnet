@@ -630,5 +630,39 @@ export const settingsApi = {
     }
 
     return response.json();
+  },
+
+  /**
+   * Search for companions by email or name
+   */
+  async searchCompanions(query: string): Promise<any> {
+    const base = getAccountBase();
+    const response = await fetch(`${base}/companions/api/search?q=${encodeURIComponent(query)}`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to search companions: ${response.statusText}`);
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Check if an email has an existing user account
+   */
+  async checkEmailForUser(email: string): Promise<any> {
+    const base = getAccountBase();
+    const response = await fetch(`${base}/companions/api/check-email?email=${encodeURIComponent(email)}`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to check email: ${response.statusText}`);
+    }
+
+    return response.json();
   }
 };

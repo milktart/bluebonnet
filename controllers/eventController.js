@@ -361,7 +361,7 @@ exports.getEventSidebar = async (req, res) => {
 
     // DEBUG: Log to console
     const d = new Date(event.startDateTime);
-    console.log(`[Event Sidebar] Event ${event.id}:`, {
+    console.log({
       rawDateTime: event.startDateTime,
       dateObj: d,
       utcHours: d.getUTCHours(),
@@ -525,7 +525,7 @@ exports.getEditForm = async (req, res) => {
 
     // DEBUG: Log to console
     const d = new Date(event.startDateTime);
-    console.log(`[Event Edit Form] Event ${event.id}:`, {
+    console.log({
       rawDateTime: event.startDateTime,
       dateObj: d,
       utcHours: d.getUTCHours(),

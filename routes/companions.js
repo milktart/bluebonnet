@@ -67,4 +67,7 @@ router.put('/:id/unlink', companionController.unlinkCompanion);
 // API endpoint for autocomplete search
 router.get('/api/search', companionController.searchCompanions);
 
+// API endpoint to check if email has a linked user account
+router.get('/api/check-email', companionController.checkEmailForUser);
+
 module.exports = router;

@@ -27,7 +27,6 @@
     try {
       // Use relative URL for auth - works with proxies
       const loginUrl = '/auth/login';
-      console.log('[Login DEBUG] Attempting login at:', loginUrl);
 
       const response = await fetch(loginUrl, {
         method: 'POST',
@@ -42,14 +41,10 @@
       }
 
       const data = await response.json();
-      console.log('[Login] Response data:', data);
       if (data.success) {
         // Use the user data from login response to populate auth store
-        console.log('[Login] User data:', data.user);
         if (data.user) {
-          console.log('[Login] Calling authStoreActions.login with user:', data.user);
           authStoreActions.login(data.user, '');
-          console.log('[Login] User saved to auth store');
         }
         success = 'Login successful, redirecting...';
         setTimeout(() => {

@@ -7,8 +7,6 @@
   // Pass the trip ID we want to expand to the dashboard via props
   let initialTripIdToExpand = data?.trip?.id || null;
 
-  console.log('[TripDetail Layout] Data received:', data);
-  console.log('[TripDetail Layout] tripIdToExpand:', initialTripIdToExpand);
 </script>
 
 <svelte:component this={Dashboard} tripIdToExpand={initialTripIdToExpand} />
