@@ -24,7 +24,6 @@
   import AirportForm from '$lib/components/AirportForm.svelte';
   import CompanionIndicators from '$lib/components/CompanionIndicators.svelte';
   import DashboardHeader from './components/DashboardHeader.svelte';
-  import DashboardTripsList from './components/DashboardTripsList.svelte';
   import DashboardSettingsPanel from './components/DashboardSettingsPanel.svelte';
   import DashboardItemEditor from './components/DashboardItemEditor.svelte';
   import ItemsList from '$lib/components/ItemsList.svelte';

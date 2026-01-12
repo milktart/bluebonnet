@@ -113,16 +113,20 @@
 }
 
 .trip-nights {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.2rem;
+  gap: 0.25rem;
   font-size: 0.65rem;
   color: #4b5563;
   white-space: nowrap;
+  margin-right: 0.2rem;
+  background-color: #d5d5d590;
+  padding: 0.25rem;
+  border-radius: 5px;
 }
 
 .nights-icon {
-  font-size: 0.7rem !important;
+  font-size: 0.65rem !important;
   color: #6b7280;
 }
 

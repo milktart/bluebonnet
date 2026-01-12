@@ -94,10 +94,6 @@
                       {getTripIcon(item.data.purpose)}
                     </span>
                   </div>
-                  <div class="trip-nights">
-                    <span class="material-symbols-outlined nights-icon">moon_stars</span>
-                    <span class="nights-number">{calculateNights(item.data.departureDate, item.data.returnDate)}</span>
-                  </div>
                 </div>
 
                 <div class="trip-info">
@@ -112,6 +108,10 @@
                     </button>
                   </div>
                   <p class="trip-dates">
+                    <span class="trip-nights">
+                      <span class="nights-number">{calculateNights(item.data.departureDate, item.data.returnDate)}</span>
+                      <span class="material-symbols-outlined nights-icon">moon_stars</span>
+                    </span>
                     {formatDate(item.data.departureDate)} - {formatDate(item.data.returnDate || item.data.departureDate)}
                   </p>
                   {#if getTripCities(item.data)}
