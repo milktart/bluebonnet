@@ -67,6 +67,11 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   Hotel.associate = (models) => {
+    Hotel.belongsTo(models.User, {
+      foreignKey: 'userId',
+      as: 'user',
+    });
+
     Hotel.belongsTo(models.Trip, {
       foreignKey: 'tripId',
       as: 'trip',

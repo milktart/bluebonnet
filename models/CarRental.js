@@ -79,6 +79,11 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   CarRental.associate = (models) => {
+    CarRental.belongsTo(models.User, {
+      foreignKey: 'userId',
+      as: 'user',
+    });
+
     CarRental.belongsTo(models.Trip, {
       foreignKey: 'tripId',
       as: 'trip',

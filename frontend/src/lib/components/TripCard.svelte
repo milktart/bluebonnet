@@ -11,6 +11,7 @@
   export let companions: number = 0;
   export let companionList: any[] = [];
   export let itemCount: number = 0;
+  export let excludeUserId: string | null = null;
   export let onEdit: (() => void) | null = null;
   export let onDelete: (() => void) | null = null;
   export let onView: (() => void) | null = null;
@@ -39,7 +40,7 @@
 <Card title={title} subtitle={destination} clickable={!!onView}>
   {#if companionList && companionList.length > 0}
     <div slot="indicators">
-      <CompanionIndicators companions={companionList} />
+      <CompanionIndicators companions={companionList} {excludeUserId} />
     </div>
   {/if}
   <div class="trip-info">

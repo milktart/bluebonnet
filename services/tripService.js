@@ -41,11 +41,61 @@ class TripService extends BaseService {
   getTripIncludes() {
     // Using a method instead of static to allow potential future customization per instance
     return [
-      { model: Flight, as: 'flights' },
-      { model: Hotel, as: 'hotels' },
-      { model: Transportation, as: 'transportation' },
-      { model: CarRental, as: 'carRentals' },
-      { model: Event, as: 'events' },
+      {
+        model: Flight,
+        as: 'flights',
+        include: [
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'firstName', 'lastName', 'email'],
+          },
+        ],
+      },
+      {
+        model: Hotel,
+        as: 'hotels',
+        include: [
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'firstName', 'lastName', 'email'],
+          },
+        ],
+      },
+      {
+        model: Transportation,
+        as: 'transportation',
+        include: [
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'firstName', 'lastName', 'email'],
+          },
+        ],
+      },
+      {
+        model: CarRental,
+        as: 'carRentals',
+        include: [
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'firstName', 'lastName', 'email'],
+          },
+        ],
+      },
+      {
+        model: Event,
+        as: 'events',
+        include: [
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'firstName', 'lastName', 'email'],
+          },
+        ],
+      },
       {
         model: TripCompanion,
         as: 'tripCompanions',
@@ -471,6 +521,13 @@ class TripService extends BaseService {
           departureDateTime: { [Op.gte]: dateFilter.departureDate },
         }),
       },
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
+      ],
       order: [['departureDateTime', 'ASC']],
     });
     const hotels = await Hotel.findAll({
@@ -480,6 +537,13 @@ class TripService extends BaseService {
           checkOutDateTime: { [Op.gte]: dateFilter.departureDate },
         }),
       },
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
+      ],
       order: [['checkInDateTime', 'ASC']],
     });
     const transportation = await Transportation.findAll({
@@ -489,6 +553,13 @@ class TripService extends BaseService {
           departureDateTime: { [Op.gte]: dateFilter.departureDate },
         }),
       },
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
+      ],
       order: [['departureDateTime', 'ASC']],
     });
     const carRentals = await CarRental.findAll({
@@ -498,6 +569,13 @@ class TripService extends BaseService {
           dropoffDateTime: { [Op.gte]: dateFilter.departureDate },
         }),
       },
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
+      ],
       order: [['pickupDateTime', 'ASC']],
     });
     const events = await Event.findAll({
@@ -505,6 +583,13 @@ class TripService extends BaseService {
         ...buildWhereCondition(eventSharedIds),
         ...(dateFilter.departureDate && { startDateTime: { [Op.gte]: dateFilter.departureDate } }),
       },
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
+      ],
       order: [['startDateTime', 'ASC']],
     });
     // Load item companions for standalone items (same pattern as getTripWithDetails)
@@ -557,6 +642,29 @@ class TripService extends BaseService {
         // Attach companions to each item and add permission metadata
         items.forEach((item) => {
           item.itemCompanions = companionsByItemId[item.id] || [];
+
+          // Add the item owner as the first companion if they have user data
+          if (item.user && item.userId) {
+            const ownerCompanion = {
+              id: item.user.id,
+              email: item.user.email,
+              firstName: item.user.firstName,
+              lastName: item.user.lastName,
+              name:
+                item.user.firstName && item.user.lastName
+                  ? `${item.user.firstName} ${item.user.lastName}`
+                  : item.user.email,
+              userId: item.user.id,
+              isOwner: true,
+              inheritedFromTrip: false,
+            };
+            // Only add owner if not already in companions list
+            const ownerExists = item.itemCompanions.some((c) => c.userId === item.userId);
+            if (!ownerExists) {
+              item.itemCompanions.unshift(ownerCompanion);
+            }
+          }
+
           // Add permission flags
           const isItemOwner = item.userId === userId;
           const isSharedWithUser = sharedItemsMap[item.id];
@@ -715,6 +823,29 @@ class TripService extends BaseService {
       // Attach companions to each item and add permission metadata
       items.forEach((item) => {
         item.itemCompanions = companionsByItemId[item.id] || [];
+
+        // Add the item owner as the first companion if they have user data
+        if (item.user && item.userId) {
+          const ownerCompanion = {
+            id: item.user.id,
+            email: item.user.email,
+            firstName: item.user.firstName,
+            lastName: item.user.lastName,
+            name:
+              item.user.firstName && item.user.lastName
+                ? `${item.user.firstName} ${item.user.lastName}`
+                : item.user.email,
+            userId: item.user.id,
+            isOwner: true,
+            inheritedFromTrip: false,
+          };
+          // Only add owner if not already in companions list
+          const ownerExists = item.itemCompanions.some((c) => c.userId === item.userId);
+          if (!ownerExists) {
+            item.itemCompanions.unshift(ownerCompanion);
+          }
+        }
+
         // Add permission flags
         // For trip items: owner can edit, companions can only view
         const isItemOwner = item.userId === userId;
