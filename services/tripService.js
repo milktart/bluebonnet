@@ -15,7 +15,6 @@ const {
   Event,
   TravelCompanion,
   TripCompanion,
-  TripAttendee,
   ItemTrip,
   User,
   ItemCompanion,
@@ -164,75 +163,6 @@ class TripService extends BaseService {
       transportation,
       carRentals,
     };
-  }
-
-  /**
-   * Get trip attendees using TripAttendee model
-   * @param {string} tripId - Trip ID
-   * @returns {Promise<Array>} Array of attendees
-   */
-  async getTripAttendeesForDisplay(tripId) {
-    const attendees = await TripAttendee.findAll({
-      where: { tripId },
-      include: [
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'firstName', 'lastName', 'email'],
-          required: false,
-        },
-      ],
-      order: [['role', 'DESC']], // owner first, then admin, then attendee
-    });
-    return attendees;
-  }
-
-  /**
-   * Get all accessible trip IDs for a user
-   * Includes: owned trips + attended trips + full-access granted trips
-   * @param {string} userId - User ID
-   * @returns {Promise<Array>} Array of trip IDs
-   */
-  async getAccessibleTripIds(userId) {
-    // Trips where user is owner
-    const ownedTrips = await Trip.findAll({
-      where: { userId },
-      attributes: ['id'],
-      raw: true,
-    });
-    // Trips where user is attendee
-    const attendeeTrips = await TripAttendee.findAll({
-      where: { userId },
-      attributes: ['tripId'],
-      raw: true,
-    });
-    // Trips where user has full-access permission (can manage all trips of another user)
-    const fullAccessGrants = await CompanionPermission.findAll({
-      where: {
-        trustedUserId: userId,
-        canManageAllTrips: true,
-      },
-      attributes: ['ownerId'],
-      raw: true,
-    });
-    // Get all trips from owners who granted full access
-    let fullAccessTripIds = [];
-    if (fullAccessGrants.length > 0) {
-      const ownerIds = fullAccessGrants.map((g) => g.ownerId);
-      const fullAccessTrips = await Trip.findAll({
-        where: { userId: { [Op.in]: ownerIds } },
-        attributes: ['id'],
-        raw: true,
-      });
-      fullAccessTripIds = fullAccessTrips.map((t) => t.id);
-    }
-    // Combine and deduplicate
-    const allTripIds = [
-      ...ownedTrips.map((t) => t.id),
-      ...attendeeTrips.map((a) => a.tripId),
-      ...fullAccessTripIds,
-    ];
-    return [...new Set(allTripIds)];
   }
 
   /**

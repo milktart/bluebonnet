@@ -21,7 +21,6 @@ db.CarRental = require('./CarRental')(sequelize, Sequelize);
 db.Event = require('./Event')(sequelize, Sequelize);
 db.TravelCompanion = require('./TravelCompanion')(sequelize, Sequelize);
 db.TripCompanion = require('./TripCompanion')(sequelize, Sequelize);
-db.TripAttendee = require('./TripAttendee')(sequelize, Sequelize);
 db.CompanionRelationship = require('./CompanionRelationship')(sequelize);
 db.TripInvitation = require('./TripInvitation')(sequelize);
 db.ItemCompanion = require('./ItemCompanion')(sequelize);
