@@ -6,6 +6,7 @@
 const express = require('express');
 const apiResponse = require('../../../utils/apiResponse');
 const { ensureAuthenticated } = require('../../../middleware/auth');
+const { getItemPermissions } = require('../../../utils/itemPermissionHelper');
 
 const router = express.Router();
 
@@ -199,35 +200,11 @@ router.get('/:id', async (req, res) => {
       inheritedFromTrip: ic.inheritedFromTrip,
     }));
 
-    // Set canEdit flag: allow if user is item creator, trip owner, or trip companion with edit permission
+    // Set canEdit flag using centralized permission helper
     const userId = req.user?.id;
-    const isItemOwner = hotel.userId === userId;
-    let canEditTrip = false;
-
-    if (hotel.tripId) {
-      // Check if user is trip owner
-      const isTripOwner = hotel.trip?.userId === userId;
-      if (isTripOwner) {
-        canEditTrip = true;
-      } else {
-        // Check if user is a trip companion with canEdit permission
-        const tripCompanion = await TripCompanion.findOne({
-          where: { tripId: hotel.tripId },
-          include: [
-            {
-              model: TravelCompanion,
-              as: 'companion',
-              where: { userId },
-              required: true,
-            },
-          ],
-        });
-        canEditTrip = tripCompanion?.canEdit === true;
-      }
-    }
-
-    hotelData.canEdit = isItemOwner || canEditTrip;
-    hotelData.canDelete = isItemOwner || canEditTrip;
+    const permissions = await getItemPermissions(hotel, userId);
+    hotelData.canEdit = permissions.canEdit;
+    hotelData.canDelete = permissions.canDelete;
 
     // Get trip companions if item is part of a trip
     const tripCompanions = await loadTripCompanions(hotel.tripId, hotel.trip);
