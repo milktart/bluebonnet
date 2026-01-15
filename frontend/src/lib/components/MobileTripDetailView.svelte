@@ -7,6 +7,7 @@
   import { formatTripDateHeader, formatDateTime, formatTimeOnly, formatDateOnly, formatDate, calculateNights, capitalize } from '$lib/utils/dashboardFormatters';
   import { getCityName, getTransportIcon } from '$lib/utils/dashboardItem';
   import CompanionIndicators from './CompanionIndicators.svelte';
+  import { currentUserId } from '$lib/stores/authStore';
   import '$lib/styles/form-styles.css';
 
   export let tripData: any = null;
@@ -174,7 +175,7 @@
                     </div>
                     {#if selectedItem.tripCompanions && selectedItem.tripCompanions.length > 0}
                       <div class="trip-companions-mobile">
-                        <CompanionIndicators companions={selectedItem.tripCompanions} />
+                        <CompanionIndicators companions={selectedItem.tripCompanions} excludeUserId={$currentUserId} />
                       </div>
                     {/if}
                   </div>
