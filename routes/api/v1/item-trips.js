@@ -7,15 +7,11 @@ const express = require('express');
 const { body, param } = require('express-validator');
 const itemTripController = require('../../../controllers/itemTripController');
 const { ensureAuthenticated } = require('../../../middleware/auth');
-const { attachAuthService } = require('../../../middleware/authorization');
 
 const router = express.Router();
 
 // All item-trip routes require authentication
 router.use(ensureAuthenticated);
-
-// Attach authorization service for item-trip checks
-router.use(attachAuthService);
 
 // Validation middleware
 const itemTypeValidation = [
