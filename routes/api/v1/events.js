@@ -31,10 +31,10 @@ async function loadTripCompanions(tripId, trip) {
   });
 
   // Add trip owner as first companion if not already in list
-  const tripOwnerInList = tripCompanionRecords.some(tc => tc.companion?.userId === trip.userId);
+  const tripOwnerInList = tripCompanionRecords.some((tc) => tc.companion?.userId === trip.userId);
   if (!tripOwnerInList && trip.userId) {
     const owner = await User.findByPk(trip.userId, {
-      attributes: ['id', 'firstName', 'lastName', 'email']
+      attributes: ['id', 'firstName', 'lastName', 'email'],
     });
     if (owner) {
       tripCompanions.push({
@@ -44,20 +44,22 @@ async function loadTripCompanions(tripId, trip) {
         lastName: owner.lastName,
         name: `${owner.firstName} ${owner.lastName}`.trim(),
         userId: owner.id,
-        isOwner: true
+        isOwner: true,
       });
     }
   }
 
   // Add other trip companions
-  tripCompanions.push(...tripCompanionRecords.map(tc => ({
-    id: tc.companion.id,
-    email: tc.companion.email,
-    firstName: tc.companion.firstName,
-    lastName: tc.companion.lastName,
-    name: tc.companion.name,
-    userId: tc.companion.userId,
-  })));
+  tripCompanions.push(
+    ...tripCompanionRecords.map((tc) => ({
+      id: tc.companion.id,
+      email: tc.companion.email,
+      firstName: tc.companion.firstName,
+      lastName: tc.companion.lastName,
+      name: tc.companion.name,
+      userId: tc.companion.userId,
+    }))
+  );
 
   return tripCompanions;
 }
@@ -160,9 +162,9 @@ router.get('/trips/:tripId', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
-    const { Event, Trip, TripCompanion, TravelCompanion, ItemCompanion } = require('../../../models');
+    const { Event, Trip, TravelCompanion, ItemCompanion } = require('../../../models');
     const event = await Event.findByPk(req.params.id, {
-      include: [{ model: Trip, as: 'trip', required: false }]
+      include: [{ model: Trip, as: 'trip', required: false }],
     });
 
     if (!event) {
@@ -445,12 +447,18 @@ router.post('/trips/:tripId', async (req, res) => {
  */
 router.put('/:id', async (req, res) => {
   try {
-    const { Event } = require('../../../models');
-    const event = await Event.findByPk(req.params.id);
+    const { Event, Trip } = require('../../../models');
+    const { requireItemEditPermission } = require('../../../utils/itemPermissionHelper');
+    const event = await Event.findByPk(req.params.id, {
+      include: [{ model: Trip, as: 'trip', required: false }],
+    });
 
     if (!event) {
       return apiResponse.notFound(res, 'Event not found');
     }
+
+    // Check permission to edit
+    await requireItemEditPermission(event, req.user.id, 'event');
 
     // Transform form data to match model
     const eventData = { ...req.body };
@@ -497,6 +505,9 @@ router.put('/:id', async (req, res) => {
 
     return apiResponse.success(res, updated, 'Event updated successfully');
   } catch (error) {
+    if (error.statusCode === 403) {
+      return apiResponse.forbidden(res, error.message);
+    }
     return apiResponse.internalError(res, 'Failed to update event', error);
   }
 });
@@ -520,17 +531,26 @@ router.put('/:id', async (req, res) => {
  */
 router.delete('/:id', async (req, res) => {
   try {
-    const { Event } = require('../../../models');
-    const event = await Event.findByPk(req.params.id);
+    const { Event, Trip } = require('../../../models');
+    const { requireItemEditPermission } = require('../../../utils/itemPermissionHelper');
+    const event = await Event.findByPk(req.params.id, {
+      include: [{ model: Trip, as: 'trip', required: false }],
+    });
 
     if (!event) {
       return apiResponse.notFound(res, 'Event not found');
     }
 
+    // Check permission to delete
+    await requireItemEditPermission(event, req.user.id, 'event');
+
     await event.destroy();
 
     return apiResponse.noContent(res);
   } catch (error) {
+    if (error.statusCode === 403) {
+      return apiResponse.forbidden(res, error.message);
+    }
     return apiResponse.internalError(res, 'Failed to delete event', error);
   }
 });

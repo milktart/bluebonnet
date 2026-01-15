@@ -57,6 +57,21 @@
     }
   }
 
+  $: if (companions) {
+    console.log('[CompanionsFormSection] companions prop changed:', {
+      type,
+      entityId,
+      companionCount: companions?.length,
+      companions: companions.map((c) => ({
+        id: c.id,
+        email: c.companion?.email || c.email,
+        canEdit: c.canEdit,
+        canEditPath: c.canEdit,
+        rawData: c
+      }))
+    });
+  }
+
   onMount(() => {
     loadCompanions();
   });
@@ -219,7 +234,7 @@
       if (!companion) return;
 
       const newCanEdit = !companion.canEdit;
-      await companionsApi.updatePermissions(entityId, companionId, newCanEdit);
+      await companionsApi.updatePermissions(entityId, companionId, { canEdit: newCanEdit });
 
       companion.canEdit = newCanEdit;
       companions = companions;

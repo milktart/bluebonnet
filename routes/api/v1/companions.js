@@ -97,11 +97,20 @@ router.get('/trips/:tripId', async (req, res) => {
 
     const companions = await TripCompanion.findAll({
       where: { tripId },
+      attributes: [
+        'id',
+        'tripId',
+        'companionId',
+        'canView',
+        'canEdit',
+        'canManageCompanions',
+        'permissionSource',
+      ],
       include: [
         {
           model: TravelCompanion,
           as: 'companion',
-          attributes: ['id', 'name', 'email', 'phone'],
+          attributes: ['id', 'name', 'email', 'phone', 'firstName', 'lastName', 'userId'],
         },
       ],
     });
@@ -174,7 +183,6 @@ router.get('/:id', async (req, res) => {
  */
 router.put('/:id/permissions', async (req, res) => {
   try {
-    const companionController = require('../../../controllers/companionController');
     return companionController.updateCompanionPermissions(req, res);
   } catch (error) {
     return apiResponse.internalError(res, 'Failed to update permissions', error);
@@ -296,7 +304,6 @@ router.put('/trips/:tripId/:companionId/permissions', async (req, res) => {
     const { TripCompanion } = require('../../../models');
     const { TravelCompanion } = require('../../../models');
     const { Trip } = require('../../../models');
-    const apiResponse = require('../../../utils/apiResponse');
 
     // Verify trip belongs to user
     const trip = await Trip.findOne({

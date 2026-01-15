@@ -30,7 +30,7 @@
     lastName: '',
     email: '',
     canShareTrips: true,
-    canManageTrips: false
+    theyManageTrips: false
   };
 
   // Initialize form data if in edit mode
@@ -47,7 +47,7 @@
         : (companion.lastName || ''),
       email: companion.email || '',
       canShareTrips: companion.canShareTrips !== undefined ? companion.canShareTrips : true,
-      canManageTrips: companion.canManageTrips !== undefined ? companion.canManageTrips : false
+      theyManageTrips: companion.theyManageTrips !== undefined ? companion.theyManageTrips : false
     };
   }
 
@@ -104,7 +104,7 @@
         lastName: formData.lastName || undefined,
         email: formData.email,
         canShareTrips: formData.canShareTrips,
-        canManageTrips: formData.canManageTrips
+        theyManageTrips: formData.theyManageTrips
       };
 
       let response;
@@ -130,14 +130,30 @@
 
         // Always update permissions if they changed
         const shareChanged = formData.canShareTrips !== (companion?.canShareTrips || false);
-        const manageChanged = formData.canManageTrips !== (companion?.canManageTrips || false);
+        const manageChanged = formData.theyManageTrips !== (companion?.theyManageTrips || false);
 
         if ((shareChanged || manageChanged) && companion?.id) {
+          console.log('[CompanionForm] Updating permissions:', {
+            companionId: companion.id,
+            shareChanged,
+            manageChanged,
+            payload: {
+              canShareTrips: formData.canShareTrips,
+              theyManageTrips: formData.theyManageTrips
+            }
+          });
           await settingsApi.updateCompanionPermissions(companion.id, {
             canShareTrips: formData.canShareTrips,
-            canManageTrips: formData.canManageTrips
+            theyManageTrips: formData.theyManageTrips
           });
+          console.log('[CompanionForm] Permission update completed successfully');
           permissionsUpdated = true;
+        } else {
+          console.log('[CompanionForm] No permission changes detected:', {
+            shareChanged,
+            manageChanged,
+            companion: companion?.id
+          });
         }
       } else {
         response = await settingsApi.createCompanion(submitData);
@@ -150,7 +166,7 @@
           onSuccess({
             ...companion,
             canShareTrips: formData.canShareTrips,
-            canManageTrips: formData.canManageTrips
+            theyManageTrips: formData.theyManageTrips
           });
         }
       } else if (response) {
@@ -246,7 +262,8 @@
               <input
                 id="manage-trips"
                 type="checkbox"
-                bind:checked={formData.canManageTrips}
+                bind:checked={formData.theyManageTrips}
+                on:change={() => console.log('[CompanionForm] theyManageTrips changed to:', formData.theyManageTrips)}
                 disabled={loading}
               />
               Allow them to manage my travel

@@ -158,8 +158,8 @@ exports.getAllCompanions = async (req, res) => {
           as: 'permissions',
           where: {
             [Op.or]: [
-              { grantedBy: { [Op.ne]: userId } },  // Permissions others granted to us
-              { grantedBy: userId },               // Permissions we granted back
+              { grantedBy: { [Op.ne]: userId } }, // Permissions others granted to us
+              { grantedBy: userId }, // Permissions we granted back
             ],
           },
           required: false,
@@ -182,12 +182,14 @@ exports.getAllCompanions = async (req, res) => {
         lastName: companion.lastName,
         email: companion.email,
         userId: companion.userId,
-        canView: permission?.canView ?? true,
-        canEdit: permission?.canEdit || false,
-        canManageCompanions: permission?.canManageCompanions || false,
-        theyCanView: true, // Will be set if they're also in our companion profiles
-        theyCanEdit: false,
-        theyCanManageCompanions: false,
+        // canShareTrips: What WE grant them - they can view OUR trips
+        canShareTrips: permission?.canView ?? true,
+        // canManageTrips: What THEY grant us - we can manage THEIR trips (we don't know yet if they added us)
+        canManageTrips: false, // Will be set if they're also in our companion profiles (when they added us)
+        // theyShareTrips: What THEY grant us - they can view OUR trips (we don't know yet)
+        theyShareTrips: false, // Will be set if they're also in our companion profiles
+        // theyManageTrips: What WE grant them - they can manage OUR trips
+        theyManageTrips: permission?.canEdit || false,
         companionId: companion.id, // ID of the companion record YOU created
         hasLinkedUser: !!linkedUser,
         linkedUserFirstName: linkedUser?.firstName || null,
@@ -202,8 +204,8 @@ exports.getAllCompanions = async (req, res) => {
       const key = creatorEmail.toLowerCase();
 
       // Separate permissions: what they granted us vs what we granted them
-      let theyGrantPermission = null;  // grantedBy = creator (what they grant to us)
-      let weGrantPermission = null;    // grantedBy = current user (what we grant to them)
+      let theyGrantPermission = null; // grantedBy = creator (what they grant to us)
+      let weGrantPermission = null; // grantedBy = current user (what we grant to them)
 
       if (profile.permissions && profile.permissions.length > 0) {
         profile.permissions.forEach((perm) => {
@@ -219,13 +221,12 @@ exports.getAllCompanions = async (req, res) => {
         // Bidirectional relationship - merge permissions from both directions
         // KEEP the original companion ID (the one we created) - don't overwrite with reverse ID
         const existingEntry = companionMap.get(key);
-        existingEntry.theyCanView = theyGrantPermission?.canView ?? true;
-        existingEntry.theyCanEdit = theyGrantPermission?.canEdit || false;
-        existingEntry.theyCanManageCompanions = theyGrantPermission?.canManageCompanions || false;
-        // Update with our permissions too
-        existingEntry.canView = weGrantPermission?.canView ?? true;
-        existingEntry.canEdit = weGrantPermission?.canEdit || false;
-        existingEntry.canManageCompanions = weGrantPermission?.canManageCompanions || false;
+        // theyShareTrips: Can THEY view OUR trips? (on their companion record - what they allowed us)
+        existingEntry.theyShareTrips = theyGrantPermission?.canView ?? true;
+        // theyManageTrips: Can THEY manage OUR trips? (already set correctly from our companion record)
+        // Note: Don't override - it's already set from the permission we granted them
+        // canManageTrips: Can WE manage THEIR trips? (on their companion record - what they allowed us)
+        existingEntry.canManageTrips = theyGrantPermission?.canEdit || false;
       } else {
         // They added you, but you haven't added them - create entry with their info
         // Use the creator's name (who created this companion record)
@@ -236,12 +237,14 @@ exports.getAllCompanions = async (req, res) => {
           lastName: profile.creator?.lastName || profile.lastName,
           email: creatorEmail,
           userId: profile.creator?.id || profile.userId,
-          canView: weGrantPermission?.canView ?? true,
-          canEdit: weGrantPermission?.canEdit || false,
-          canManageCompanions: weGrantPermission?.canManageCompanions || false,
-          theyCanView: theyGrantPermission?.canView ?? true,
-          theyCanEdit: theyGrantPermission?.canEdit || false,
-          theyCanManageCompanions: theyGrantPermission?.canManageCompanions || false,
+          // canShareTrips: What WE grant them to view OUR trips - they decided to add us, now we decide (default true)
+          canShareTrips: weGrantPermission?.canView ?? true,
+          // canManageTrips: Can WE manage THEIR trips? (permission they granted us in their companion record - canEdit)
+          canManageTrips: theyGrantPermission?.canEdit || false,
+          // theyShareTrips: Can they view OUR trips? (permission they granted us in their companion record - canView)
+          theyShareTrips: theyGrantPermission?.canView ?? true,
+          // theyManageTrips: Can they manage OUR trips? (we haven't granted them permission yet - false)
+          theyManageTrips: weGrantPermission?.canEdit || false,
           companionId: profile.id, // ID of the companion record THEY created
           hasLinkedUser: !!creatorUser,
           linkedUserFirstName: creatorUser?.firstName || null,
@@ -258,17 +261,36 @@ exports.getAllCompanions = async (req, res) => {
   }
 };
 
-// Update companion permissions (canView, canEdit, canManageCompanions)
+// Update companion permissions (canShareTrips, theyManageTrips)
 exports.updateCompanionPermissions = async (req, res) => {
   try {
     const companionId = req.params.id;
-    const { canView = true, canEdit = false, canManageCompanions = false } = req.body;
+    // Accept both field name formats for backward compatibility
+    let { canShareTrips } = req.body;
+    if (canShareTrips === undefined) {
+      canShareTrips = req.body.canView !== undefined ? req.body.canView : true;
+    }
+    let { theyManageTrips } = req.body;
+    if (theyManageTrips === undefined) {
+      if (req.body.canManageTrips !== undefined) {
+        theyManageTrips = req.body.canManageTrips;
+      } else {
+        theyManageTrips = req.body.canEdit !== undefined ? req.body.canEdit : false;
+      }
+    }
+
+    logger.info('UPDATE_COMPANION_PERMISSIONS', {
+      companionId,
+      userId: req.user.id,
+      requestBody: req.body,
+      parsedValues: { canShareTrips, theyManageTrips },
+    });
+
     const isAjax =
       req.get('X-Sidebar-Request') === 'true' ||
       req.xhr ||
       req.get('X-Requested-With') === 'XMLHttpRequest' ||
       req.get('Content-Type')?.includes('application/json');
-
 
     // Verify companion exists and user has permission to update it
     // A user can update permissions if:
@@ -278,8 +300,8 @@ exports.updateCompanionPermissions = async (req, res) => {
       where: {
         id: companionId,
         [Op.or]: [
-          { createdBy: req.user.id },  // User created this companion
-          { userId: req.user.id },     // This companion record represents the current user
+          { createdBy: req.user.id }, // User created this companion
+          { userId: req.user.id }, // This companion record represents the current user
         ],
       },
     });
@@ -293,24 +315,25 @@ exports.updateCompanionPermissions = async (req, res) => {
     }
 
     // Update or create permission record
+    // Map friendly names (canShareTrips, theyManageTrips) to database fields (canView, canEdit)
     const [permission, created] = await CompanionPermission.findOrCreate({
       where: {
         companionId,
         grantedBy: req.user.id,
       },
       defaults: {
-        canView,
-        canEdit,
-        canManageCompanions,
+        canView: canShareTrips,
+        canEdit: theyManageTrips,
+        canManageCompanions: false, // Keep default false, not used in current UI
       },
     });
 
     // If record already existed, update it with new values
     if (!created) {
       await permission.update({
-        canView,
-        canEdit,
-        canManageCompanions,
+        canView: canShareTrips,
+        canEdit: theyManageTrips,
+        canManageCompanions: false,
       });
     }
 
@@ -321,9 +344,8 @@ exports.updateCompanionPermissions = async (req, res) => {
         message: successMsg,
         data: {
           companionId: permission.companionId,
-          canView: permission.canView,
-          canEdit: permission.canEdit,
-          canManageCompanions: permission.canManageCompanions,
+          canShareTrips: permission.canView,
+          theyManageTrips: permission.canEdit,
         },
       });
     }
@@ -442,11 +464,13 @@ exports.createCompanion = async (req, res) => {
     });
 
     // Create companion permission record
+    // Map frontend field names (canShareTrips, canManageTrips) to database field names (canView, canEdit)
     await CompanionPermission.create({
       companionId: companion.id,
       grantedBy: req.user.id,
-      canShareTrips: share,
-      canManageTrips: manage,
+      canView: share, // canShareTrips -> canView
+      canEdit: manage, // canManageTrips (they manage our trips) -> canEdit
+      canManageCompanions: false,
     });
 
     // Also create a reverse companion record if the companion is a registered user

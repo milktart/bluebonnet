@@ -13,7 +13,6 @@
  */
 
 const { TripCompanion, TravelCompanion } = require('../models');
-const { Op } = require('sequelize');
 
 /**
  * Get permission flags for an item
@@ -43,18 +42,22 @@ async function getItemPermissions(item, userId) {
       canEditTrip = true;
     } else {
       // Check if user is a trip companion with canEdit permission
+      // Need to find TripCompanion where the associated TravelCompanion's userId matches current user
       const tripCompanion = await TripCompanion.findOne({
         where: { tripId: item.tripId },
         include: [
           {
             model: TravelCompanion,
             as: 'companion',
-            where: { userId },
             required: true,
+            where: { userId }, // Match TravelCompanion.userId to current user
           },
         ],
       });
-      canEditTrip = tripCompanion?.canEdit === true;
+
+      if (tripCompanion) {
+        canEditTrip = tripCompanion.canEdit === true;
+      }
     }
   }
 
