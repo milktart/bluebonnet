@@ -1236,6 +1236,7 @@
     flex-direction: column;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    padding-bottom: 1rem;
   }
 
   .trips-content::-webkit-scrollbar {

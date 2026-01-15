@@ -272,7 +272,7 @@
     border: 1px solid #e5e7eb;
     top: 2.5vh;
     bottom: 2.5vh;
-    padding: 1.2rem;
+    padding: 1.2rem 1.2rem .2rem;
   }
 
   /* Primary sidebar - left side */

@@ -2,6 +2,7 @@
   import { carRentalsApi } from '$lib/services/api';
   import { tripStoreActions } from '$lib/stores/tripStore';
   import { dataService } from '$lib/services/dataService';
+  import { validateCarRental, getFirstError } from '$lib/utils/validation';
   import TextInput from './TextInput.svelte';
   import Textarea from './Textarea.svelte';
   import DateTimePicker from './DateTimePicker.svelte';
@@ -43,19 +44,10 @@
 
   async function handleSubmit() {
     try {
-      // Validation
-      if (!formData.company.trim()) {
-        error = 'Rental company is required';
-        return;
-      }
-
-      if (!formData.pickupDate) {
-        error = 'Pickup date is required';
-        return;
-      }
-
-      if (!formData.dropoffDate) {
-        error = 'Dropoff date is required';
+      // Unified validation using validation utilities
+      const validation = validateCarRental(formData);
+      if (!validation.isValid) {
+        error = getFirstError(validation.errors);
         return;
       }
 

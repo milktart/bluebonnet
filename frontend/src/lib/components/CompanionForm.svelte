@@ -108,31 +108,58 @@
       };
 
       let response;
-      if (isEditMode) {
-        response = await settingsApi.updateCompanion(companion!.id!, submitData);
+      let permissionsUpdated = false;
 
-        // Update permissions separately if they changed
+      if (isEditMode) {
+        // In edit mode, we primarily update permissions
+        // Only try to update companion details if they changed (for companions we created)
+        const detailsChanged =
+          (formData.firstName !== (companion?.firstName || '')) ||
+          (formData.lastName !== (companion?.lastName || ''));
+
+        if (detailsChanged && !companion?.theyShareTrips && !companion?.theyManageTrips) {
+          // Only update details if we created this companion (no "they" permissions)
+          try {
+            response = await settingsApi.updateCompanion(companion!.id!, submitData);
+          } catch (updateErr) {
+            // If we can't update the companion (because we didn't create it),
+            // that's okay - we'll just update permissions
+            // Silently continue
+          }
+        }
+
+        // Always update permissions if they changed
         const shareChanged = formData.canShareTrips !== (companion?.canShareTrips || false);
         const manageChanged = formData.canManageTrips !== (companion?.canManageTrips || false);
 
         if ((shareChanged || manageChanged) && companion?.id) {
-          try {
-            await settingsApi.updateCompanionPermissions(companion.id, {
-              canShareTrips: formData.canShareTrips,
-              canManageTrips: formData.canManageTrips
-            });
-          } catch (permErr) {
-            // Don't fail the whole operation if permission update fails
-          }
+          await settingsApi.updateCompanionPermissions(companion.id, {
+            canShareTrips: formData.canShareTrips,
+            canManageTrips: formData.canManageTrips
+          });
+          permissionsUpdated = true;
         }
       } else {
         response = await settingsApi.createCompanion(submitData);
       }
 
-      const resultCompanion = response.data || response.companion || response;
+      // Handle success callback
+      if (isEditMode && permissionsUpdated && !response) {
+        // This was a permission-only update, return updated companion
+        if (onSuccess) {
+          onSuccess({
+            ...companion,
+            canShareTrips: formData.canShareTrips,
+            canManageTrips: formData.canManageTrips
+          });
+        }
+      } else if (response) {
+        // This was a companion create/update with response data
+        const resultCompanion = response.data || response.companion || response;
 
-      if (onSuccess) {
-        onSuccess(resultCompanion);
+        if (onSuccess) {
+          onSuccess(resultCompanion);
+        }
       }
     } catch (err) {
       error = err instanceof Error ? err.message : (isEditMode ? 'Failed to update companion' : 'Failed to add companion');

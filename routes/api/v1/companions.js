@@ -6,6 +6,8 @@
 const express = require('express');
 const apiResponse = require('../../../utils/apiResponse');
 const { ensureAuthenticated } = require('../../../middleware/auth');
+const companionController = require('../../../controllers/companionController');
+const companionCascadeManager = require('../../../services/CompanionCascadeManager');
 
 const router = express.Router();
 
@@ -23,100 +25,30 @@ router.use(ensureAuthenticated);
 
 /**
  * GET /api/v1/companions/all
- * Get all available companions for the current user
+ * Get all available companions for the current user with full relationship and permission data
  *
  * Returns companions created by user + companion profiles (where user was added by others)
- * Combines both directions of companion relationships with flags indicating direction
+ * Includes bidirectional permission information and linked account details
  *
  * @returns {Object} 200 OK response with companions array
- * @returns {Array} returns - Array of companion objects
- * @returns {string} returns[].id - Companion ID (UUID)
- * @returns {string} returns[].firstName - Companion first name
- * @returns {string} returns[].lastName - Companion last name
- * @returns {string} returns[].email - Companion email
- * @returns {boolean} returns[].youInvited - Whether you invited them
- * @returns {boolean} returns[].theyInvited - Whether they invited you
+ * @returns {Array} companions - Array of companion objects with full relationship data
+ * @returns {string} companions[].id - Companion ID (UUID)
+ * @returns {string} companions[].firstName - Companion first name
+ * @returns {string} companions[].lastName - Companion last name
+ * @returns {string} companions[].email - Companion email
+ * @returns {string} companions[].userId - Linked user ID (if companion has registered account)
+ * @returns {boolean} companions[].canShareTrips - Whether you allow them to view your trips
+ * @returns {boolean} companions[].canManageTrips - Whether you allow them to edit your trips
+ * @returns {boolean} companions[].theyShareTrips - Whether they allow you to view their trips
+ * @returns {boolean} companions[].theyManageTrips - Whether they allow you to edit their trips
+ * @returns {boolean} companions[].hasLinkedUser - Whether companion has created an account
  *
  * @throws {401} Unauthorized - User not authenticated
  * @throws {500} Server error - Database error
  *
  * @requires authentication - User must be logged in
  */
-router.get('/all', async (req, res) => {
-  try {
-    const { TravelCompanion } = require('../../../models');
-    const { Op } = require('sequelize');
-    const userId = req.user.id;
-
-    // Fetch companions created by user
-    const companionsCreated = await TravelCompanion.findAll({
-      where: {
-        createdBy: userId,
-        [Op.or]: [{ userId: null }, { userId: { [Op.ne]: userId } }],
-      },
-      attributes: ['id', 'firstName', 'lastName', 'email'],
-      raw: true,
-    });
-
-    // Fetch companion profiles (where user was added by others)
-    const companionProfiles = await TravelCompanion.findAll({
-      where: {
-        userId,
-        createdBy: { [Op.ne]: userId },
-      },
-      attributes: ['id', 'firstName', 'lastName', 'email'],
-      raw: true,
-    });
-
-    // Build combined list with direction indicators
-    const companionMap = new Map();
-
-    // Add created companions
-    companionsCreated.forEach((companion) => {
-      const { email } = companion;
-      if (!companionMap.has(email)) {
-        companionMap.set(email, {
-          id: companion.id,
-          firstName: companion.firstName,
-          lastName: companion.lastName,
-          email: companion.email,
-          youInvited: true,
-          theyInvited: false,
-        });
-      } else {
-        const existing = companionMap.get(email);
-        existing.youInvited = true;
-      }
-    });
-
-    // Add companion profiles
-    companionProfiles.forEach((profile) => {
-      const { email } = profile;
-      if (!companionMap.has(email)) {
-        companionMap.set(email, {
-          id: profile.id,
-          firstName: profile.firstName,
-          lastName: profile.lastName,
-          email: profile.email,
-          youInvited: false,
-          theyInvited: true,
-        });
-      } else {
-        const existing = companionMap.get(email);
-        existing.theyInvited = true;
-      }
-    });
-
-    const companionsList = Array.from(companionMap.values());
-    return apiResponse.success(
-      res,
-      companionsList,
-      `Retrieved ${companionsList.length} companions`
-    );
-  } catch (error) {
-    return apiResponse.internalError(res, 'Failed to retrieve companions', error);
-  }
-});
+router.get('/all', companionController.getAllCompanions);
 
 /**
  * GET /api/v1/companions/trips/:tripId
@@ -282,7 +214,6 @@ router.post('/trips/:tripId', async (req, res) => {
     const { TripCompanion } = require('../../../models');
     const { TravelCompanion } = require('../../../models');
     const { Trip } = require('../../../models');
-    const itemCompanionHelper = require('../../../utils/itemCompanionHelper');
 
     // Verify trip belongs to user
     const trip = await Trip.findOne({
@@ -310,7 +241,7 @@ router.post('/trips/:tripId', async (req, res) => {
       });
 
       // Auto-add companion to all existing items in the trip
-      await itemCompanionHelper.addCompanionToAllItems(companionId, tripId, req.user.id);
+      await companionCascadeManager.cascadeAddToAllItems(companionId, tripId, req.user.id);
 
       // Return the companion data with trip-specific info
       const result = {
@@ -330,6 +261,98 @@ router.post('/trips/:tripId', async (req, res) => {
     }
   } catch (error) {
     return apiResponse.internalError(res, 'Failed to add companion', error);
+  }
+});
+
+/**
+ * PUT /api/v1/companions/trips/:tripId/:companionId/permissions
+ * Update a companion's permissions for a trip
+ *
+ * @param {string} req.params.tripId - Trip ID (UUID)
+ * @param {string} req.params.companionId - Companion ID to update
+ * @param {Object} req.body - Request body
+ * @param {boolean} req.body.canView - Whether companion can view the trip
+ * @param {boolean} req.body.canEdit - Whether companion can edit the trip
+ * @param {boolean} req.body.canManageCompanions - Whether companion can manage companions on the trip
+ *
+ * @returns {Object} 200 OK response with updated companion
+ * @returns {string} returns.id - Companion ID
+ * @returns {string} returns.email - Companion email
+ * @returns {boolean} returns.canView - Updated canView status
+ * @returns {boolean} returns.canEdit - Updated canEdit status
+ * @returns {boolean} returns.canManageCompanions - Updated canManageCompanions status
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {403} Forbidden - User does not own the trip
+ * @throws {404} Not found - Trip, companion, or trip companion relationship not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
+ */
+router.put('/trips/:tripId/:companionId/permissions', async (req, res) => {
+  try {
+    const { tripId, companionId } = req.params;
+    const { canView = true, canEdit = false, canManageCompanions = false } = req.body;
+    const { TripCompanion } = require('../../../models');
+    const { TravelCompanion } = require('../../../models');
+    const { Trip } = require('../../../models');
+    const apiResponse = require('../../../utils/apiResponse');
+
+    // Verify trip belongs to user
+    const trip = await Trip.findOne({
+      where: { id: tripId, userId: req.user.id },
+    });
+
+    if (!trip) {
+      return apiResponse.forbidden(res, 'Access denied');
+    }
+
+    // Find and update the trip companion relationship
+    const tripCompanion = await TripCompanion.findOne({
+      where: { tripId, companionId },
+      include: [
+        {
+          model: TravelCompanion,
+          as: 'companion',
+          attributes: ['id', 'email', 'firstName', 'lastName'],
+        },
+      ],
+    });
+
+    if (!tripCompanion) {
+      return apiResponse.notFound(res, 'Trip companion not found');
+    }
+
+    const wasCanEdit = tripCompanion.canEdit;
+
+    // Update the permissions
+    await tripCompanion.update({ canView, canEdit, canManageCompanions });
+
+    // If promoting to edit, add companion to all existing items in the trip
+    if (!wasCanEdit && canEdit) {
+      await companionCascadeManager.cascadeAddToAllItems(companionId, tripId, req.user.id, {
+        canEdit: true,
+      });
+    }
+    // If demoting from edit, remove companion from all items in the trip
+    else if (wasCanEdit && !canEdit) {
+      await companionCascadeManager.cascadeRemoveFromAllItems(companionId, tripId);
+    }
+
+    // Return the updated companion with permission
+    const result = {
+      id: tripCompanion.companion.id,
+      email: tripCompanion.companion.email,
+      firstName: tripCompanion.companion.firstName,
+      lastName: tripCompanion.companion.lastName,
+      canView: tripCompanion.canView,
+      canEdit: tripCompanion.canEdit,
+      canManageCompanions: tripCompanion.canManageCompanions,
+    };
+
+    return apiResponse.success(res, result, 'Permission updated successfully');
+  } catch (error) {
+    return apiResponse.internalError(res, 'Failed to update permissions', error);
   }
 });
 
@@ -357,7 +380,6 @@ router.delete('/trips/:tripId/:companionId', async (req, res) => {
     const { tripId, companionId } = req.params;
     const { TripCompanion } = require('../../../models');
     const { Trip } = require('../../../models');
-    const itemCompanionHelper = require('../../../utils/itemCompanionHelper');
 
     // Verify trip belongs to user
     const trip = await Trip.findOne({
@@ -378,7 +400,7 @@ router.delete('/trips/:tripId/:companionId', async (req, res) => {
     }
 
     // Auto-remove companion from all items in trip (those inherited from trip level)
-    await itemCompanionHelper.removeCompanionFromAllItems(companionId, tripId);
+    await companionCascadeManager.cascadeRemoveFromAllItems(companionId, tripId);
 
     return apiResponse.noContent(res);
   } catch (error) {

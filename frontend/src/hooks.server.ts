@@ -1,5 +1,37 @@
-import type { Handle } from '@sveltejs/kit';
+import type { Handle, HandleFetch } from '@sveltejs/kit';
 import { redirect } from '@sveltejs/kit';
+
+/**
+ * Handle fetch - Intercept server-side fetch calls and proxy to backend
+ * This allows server-side load functions to use relative URLs like /api/v1/flights/:id
+ * Those URLs are converted to http://localhost:3000/api/v1/flights/:id
+ */
+export const handleFetch: HandleFetch = async ({ request, fetch, event }) => {
+  const url = new URL(request.url);
+
+  // If the request is for /api or /auth routes, proxy to backend
+  if (url.pathname.startsWith('/api') || url.pathname.startsWith('/auth')) {
+    // Construct backend URL
+    const backendUrl = `http://localhost:3000${url.pathname}${url.search}`;
+
+    // Get all cookies from the incoming request
+    const cookies = event.request.headers.get('cookie') || '';
+
+    // Create new request with backend URL, preserving headers and adding cookies
+    const backendRequest = new Request(backendUrl, {
+      method: request.method,
+      headers: {
+        ...Object.fromEntries(request.headers.entries()),
+        'cookie': cookies,
+      },
+      body: request.body,
+    });
+
+    return fetch(backendRequest);
+  }
+
+  return fetch(request);
+};
 
 export const handle: Handle = async ({ event, resolve }) => {
   // For dashboard route, ensure authentication

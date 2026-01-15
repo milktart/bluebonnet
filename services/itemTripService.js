@@ -233,6 +233,54 @@ class ItemTripService extends BaseService {
 
     return result > 0;
   }
+
+  /**
+   * Update item's trip assignment (handles both adding and removing from trips)
+   * This replaces the duplicated pattern in controllers:
+   *   if (newTripId && oldTripId !== newTripId) { remove old, add new }
+   * @param {string} itemType - Type of item
+   * @param {string} itemId - Item ID
+   * @param {string|null} newTripId - New trip ID (null if making standalone)
+   * @param {string|null} oldTripId - Old trip ID (null if was standalone)
+   * @returns {Promise<Object>} Result with added/removed flags
+   * @example
+   * // When updating a flight's trip assignment
+   * await itemTripService.updateItemTrip('flight', flightId, newTripId, oldTripId);
+   */
+  async updateItemTrip(itemType, itemId, newTripId, oldTripId) {
+    const changes = { added: false, removed: false };
+
+    try {
+      // Remove from old trip if provided and different from new
+      if (oldTripId && oldTripId !== newTripId) {
+        const removed = await this.removeItemFromTrip(itemType, itemId, oldTripId);
+        if (removed) {
+          changes.removed = true;
+        }
+      }
+
+      // Add to new trip if provided
+      if (newTripId) {
+        const added = await this.addItemToTrip(itemType, itemId, newTripId);
+        if (added) {
+          changes.added = true;
+        }
+      }
+
+      logger.info(`${this.modelName}: Trip assignment updated`, {
+        itemType,
+        itemId,
+        oldTripId,
+        newTripId,
+        ...changes,
+      });
+
+      return changes;
+    } catch (error) {
+      logger.error(`${this.modelName}: Error updating trip assignment`, error);
+      throw error;
+    }
+  }
 }
 
 module.exports = ItemTripService;

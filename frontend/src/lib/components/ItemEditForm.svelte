@@ -1,6 +1,7 @@
 <script lang="ts">
   import { tripsApi, flightsApi, hotelsApi, eventsApi, transportationApi, carRentalsApi, itemCompanionsApi } from '$lib/services/api';
   import { tripStore } from '$lib/stores/tripStore';
+  import { authStore } from '$lib/stores/authStore';
   import { dataService } from '$lib/services/dataService';
   import { utcToLocalTimeString } from '$lib/utils/timezoneUtils';
   import { getFormConfigs } from '$lib/utils/formConfigs';
@@ -174,8 +175,42 @@
     const initialized = initializeFormData(data);
     formData = initialized;
     selectedTripId = data?.tripId || '';
-    // Initialize companions if available (itemCompanions from API response)
-    selectedCompanions = data?.itemCompanions || data?.travelCompanions || [];
+    // Initialize companions: prioritize tripCompanions (from direct item endpoint) over itemCompanions
+    let companions = data?.tripCompanions || data?.itemCompanions || data?.travelCompanions || [];
+
+    // For non-trip items, add the item owner to the companions list if not already there
+    if (itemType !== 'trip' && data?.userId && !canEdit) {
+      // User is viewing an item they don't own - owner should be in the list
+      // Owner is included in the companions returned from the backend
+      selectedCompanions = companions;
+    } else if (itemType !== 'trip' && data?.userId && canEdit) {
+      // User is the owner viewing their own item - add themselves to the list
+      const currentUser = $authStore.user;
+      const ownerId = data.userId;
+      const ownerName = data.ownerName || currentUser?.firstName || currentUser?.email || 'Unknown';
+
+      // Check if owner is already in the companions list
+      const ownerAlreadyListed = companions.some(c => (c.userId || c.id) === ownerId);
+
+      if (!ownerAlreadyListed && currentUser?.id === ownerId) {
+        // Add the current user (owner) to the beginning of the companions list
+        selectedCompanions = [
+          {
+            id: ownerId,
+            userId: ownerId,
+            firstName: currentUser.firstName || '',
+            lastName: currentUser.lastName || '',
+            email: currentUser.email || '',
+            name: ownerName
+          },
+          ...companions
+        ];
+      } else {
+        selectedCompanions = companions;
+      }
+    } else {
+      selectedCompanions = companions;
+    }
   }
 
   // Auto-lookup airline when flight number changes (for flights)
@@ -308,8 +343,24 @@
       // Save companions for the item if any were selected
       if (selectedCompanions && selectedCompanions.length > 0 && result && result.id) {
         try {
-          const companionIds = selectedCompanions.map(c => c.id);
-          await itemCompanionsApi.update(itemType, result.id, companionIds);
+          // Filter to only include actual companion records (exclude owner if they don't have a companionId)
+          // The owner (userId === currentUser.id and no companionId) should not be saved as a companion
+          const currentUserId = $authStore.user?.id;
+          const companionIds = selectedCompanions
+            .filter(c => {
+              // Exclude the owner if they don't have a companionId (not a TravelCompanion record)
+              if (c.userId === currentUserId && !c.companionId && c.isOwner) {
+                return false;
+              }
+              return true;
+            })
+            .map(c => c.companionId || c.id)
+            .filter(Boolean);
+
+          console.log('[ItemEditForm] Saving companions:', { itemType, itemId: result.id, companionIds, selectedCompanions, currentUserId });
+          if (companionIds.length > 0) {
+            await itemCompanionsApi.update(itemType, result.id, companionIds);
+          }
 
           // After saving companions, fetch the complete item with companions to ensure data consistency
           if (itemType === 'flight') {
@@ -466,7 +517,7 @@
       {#if showTripSelector}
         <div class="form-group">
           <label for="tripSelector">Trip</label>
-          <select id="tripSelector" bind:value={selectedTripId}>
+          <select id="tripSelector" bind:value={selectedTripId} disabled={!canEdit}>
             <option value="">Standalone Item</option>
             {#each upcomingTrips as trip (trip.id)}
               <option value={trip.id}>{trip.name}</option>
@@ -486,6 +537,7 @@
               bind:value={formData.flightNumber}
               on:blur={handleFlightNumberChange}
               placeholder="KL668"
+              disabled={!canEdit}
             />
           </div>
           <div class="form-group" style="grid-column: span 2;">
@@ -507,6 +559,7 @@
               id="origin"
               bind:value={formData.origin}
               placeholder="AUS"
+              disabled={!canEdit}
               onSelect={(airport) => {
                 formData.origin = airport.iata;
               }}
@@ -518,6 +571,7 @@
               id="destination"
               bind:value={formData.destination}
               placeholder="AMS"
+              disabled={!canEdit}
               onSelect={(airport) => {
                 formData.destination = airport.iata;
               }}
@@ -529,11 +583,11 @@
         <div class="form-row cols-2">
           <div class="form-group">
             <label for="departureDate">Departure Date</label>
-            <input type="date" id="departureDate" name="departureDate" bind:value={formData.departureDate} />
+            <input type="date" id="departureDate" name="departureDate" bind:value={formData.departureDate} disabled={!canEdit} />
           </div>
           <div class="form-group">
             <label for="arrivalDate">Arrival Date</label>
-            <input type="date" id="arrivalDate" name="arrivalDate" bind:value={formData.arrivalDate} />
+            <input type="date" id="arrivalDate" name="arrivalDate" bind:value={formData.arrivalDate} disabled={!canEdit} />
           </div>
         </div>
 
@@ -541,11 +595,11 @@
         <div class="form-row cols-2">
           <div class="form-group">
             <label for="departureTime">Departure Time</label>
-            <input type="text" id="departureTime" name="departureTime" bind:value={formData.departureTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
+            <input type="text" id="departureTime" name="departureTime" bind:value={formData.departureTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} disabled={!canEdit} />
           </div>
           <div class="form-group">
             <label for="arrivalTime">Arrival Time</label>
-            <input type="text" id="arrivalTime" name="arrivalTime" bind:value={formData.arrivalTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
+            <input type="text" id="arrivalTime" name="arrivalTime" bind:value={formData.arrivalTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} disabled={!canEdit} />
           </div>
         </div>
 
@@ -553,35 +607,35 @@
         <div class="form-row cols-3">
           <div class="form-group" style="grid-column: span 2;">
             <label for="pnr">PNR</label>
-            <input type="text" id="pnr" name="pnr" bind:value={formData.pnr} placeholder="ABC123D" />
+            <input type="text" id="pnr" name="pnr" bind:value={formData.pnr} placeholder="ABC123D" disabled={!canEdit} />
           </div>
           <div class="form-group">
             <label for="seat">Seat</label>
-            <input type="text" id="seat" name="seat" bind:value={formData.seat} placeholder="4A" />
+            <input type="text" id="seat" name="seat" bind:value={formData.seat} placeholder="4A" disabled={!canEdit} />
           </div>
         </div>
       {:else if itemType === 'hotel'}
         <!-- Hotel Name (full-width) -->
         <div class="form-group">
           <label for="name">Hotel Name</label>
-          <input type="text" id="name" name="name" bind:value={formData.name} placeholder="W Bangkok" required />
+          <input type="text" id="name" name="name" bind:value={formData.name} placeholder="W Bangkok" required disabled={!canEdit} />
         </div>
 
         <!-- Address (full-width) -->
         <div class="form-group">
           <label for="address">Address</label>
-          <textarea id="address" name="address" bind:value={formData.address} placeholder="Full address" />
+          <textarea id="address" name="address" bind:value={formData.address} placeholder="Full address" disabled={!canEdit} />
         </div>
 
         <!-- Check-in & Check-out Dates (2-col) -->
         <div class="form-row cols-2">
           <div class="form-group">
             <label for="checkInDate">Check-in Date</label>
-            <input type="date" id="checkInDate" name="checkInDate" bind:value={formData.checkInDate} required />
+            <input type="date" id="checkInDate" name="checkInDate" bind:value={formData.checkInDate} required disabled={!canEdit} />
           </div>
           <div class="form-group">
             <label for="checkOutDate">Check-out Date</label>
-            <input type="date" id="checkOutDate" name="checkOutDate" bind:value={formData.checkOutDate} required />
+            <input type="date" id="checkOutDate" name="checkOutDate" bind:value={formData.checkOutDate} required disabled={!canEdit} />
           </div>
         </div>
 
@@ -589,30 +643,30 @@
         <div class="form-row cols-2">
           <div class="form-group">
             <label for="checkInTime">Check-in Time</label>
-            <input type="text" id="checkInTime" name="checkInTime" bind:value={formData.checkInTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
+            <input type="text" id="checkInTime" name="checkInTime" bind:value={formData.checkInTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} disabled={!canEdit} />
           </div>
           <div class="form-group">
             <label for="checkOutTime">Check-out Time</label>
-            <input type="text" id="checkOutTime" name="checkOutTime" bind:value={formData.checkOutTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
+            <input type="text" id="checkOutTime" name="checkOutTime" bind:value={formData.checkOutTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} disabled={!canEdit} />
           </div>
         </div>
 
         <!-- Confirmation Number (full-width) -->
         <div class="form-group">
           <label for="confirmationNumber">Confirmation Number</label>
-          <input type="text" id="confirmationNumber" name="confirmationNumber" bind:value={formData.confirmationNumber} />
+          <input type="text" id="confirmationNumber" name="confirmationNumber" bind:value={formData.confirmationNumber} disabled={!canEdit} />
         </div>
 
         <!-- Notes (full-width) -->
         <div class="form-group">
           <label for="notes">Notes</label>
-          <textarea id="notes" name="notes" bind:value={formData.notes} placeholder="Additional information" />
+          <textarea id="notes" name="notes" bind:value={formData.notes} placeholder="Additional information" disabled={!canEdit} />
         </div>
       {:else if itemType === 'transportation'}
         <!-- Method (full-width) -->
         <div class="form-group">
           <label for="method">Method</label>
-          <select id="method" name="method" bind:value={formData.method} required>
+          <select id="method" name="method" bind:value={formData.method} required disabled={!canEdit}>
             <option value="">Select Method</option>
             {#each config.fields.find(f => f.name === 'method')?.options || [] as option}
               {#if typeof option === 'object' && option.value}
@@ -628,11 +682,11 @@
         <div class="form-row cols-2">
           <div class="form-group">
             <label for="origin">From</label>
-            <input type="text" id="origin" name="origin" bind:value={formData.origin} required />
+            <input type="text" id="origin" name="origin" bind:value={formData.origin} required disabled={!canEdit} />
           </div>
           <div class="form-group">
             <label for="destination">To</label>
-            <input type="text" id="destination" name="destination" bind:value={formData.destination} required />
+            <input type="text" id="destination" name="destination" bind:value={formData.destination} required disabled={!canEdit} />
           </div>
         </div>
 
@@ -640,11 +694,11 @@
         <div class="form-row cols-2">
           <div class="form-group">
             <label for="departureDate">Departure Date</label>
-            <input type="date" id="departureDate" name="departureDate" bind:value={formData.departureDate} required />
+            <input type="date" id="departureDate" name="departureDate" bind:value={formData.departureDate} required disabled={!canEdit} />
           </div>
           <div class="form-group">
             <label for="arrivalDate">Arrival Date</label>
-            <input type="date" id="arrivalDate" name="arrivalDate" bind:value={formData.arrivalDate} required />
+            <input type="date" id="arrivalDate" name="arrivalDate" bind:value={formData.arrivalDate} required disabled={!canEdit} />
           </div>
         </div>
 
@@ -652,23 +706,23 @@
         <div class="form-row cols-2">
           <div class="form-group">
             <label for="departureTime">Departure Time</label>
-            <input type="text" id="departureTime" name="departureTime" bind:value={formData.departureTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
+            <input type="text" id="departureTime" name="departureTime" bind:value={formData.departureTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} disabled={!canEdit} />
           </div>
           <div class="form-group">
             <label for="arrivalTime">Arrival Time</label>
-            <input type="text" id="arrivalTime" name="arrivalTime" bind:value={formData.arrivalTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
+            <input type="text" id="arrivalTime" name="arrivalTime" bind:value={formData.arrivalTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} disabled={!canEdit} />
           </div>
         </div>
 
         <!-- Booking Reference & Notes -->
         <div class="form-group">
           <label for="bookingReference">Booking Reference</label>
-          <input type="text" id="bookingReference" name="bookingReference" bind:value={formData.bookingReference} />
+          <input type="text" id="bookingReference" name="bookingReference" bind:value={formData.bookingReference} disabled={!canEdit} />
         </div>
 
         <div class="form-group">
           <label for="notes">Notes</label>
-          <textarea id="notes" name="notes" bind:value={formData.notes} placeholder="Additional information" />
+          <textarea id="notes" name="notes" bind:value={formData.notes} placeholder="Additional information" disabled={!canEdit} />
         </div>
 
       {:else if itemType === 'carRental'}
@@ -676,11 +730,11 @@
         <div class="form-row cols-2">
           <div class="form-group">
             <label for="company">Company</label>
-            <input type="text" id="company" name="company" bind:value={formData.company} required />
+            <input type="text" id="company" name="company" bind:value={formData.company} required disabled={!canEdit} />
           </div>
           <div class="form-group">
             <label for="pickupLocation">Pickup Location</label>
-            <input type="text" id="pickupLocation" name="pickupLocation" bind:value={formData.pickupLocation} required />
+            <input type="text" id="pickupLocation" name="pickupLocation" bind:value={formData.pickupLocation} required disabled={!canEdit} />
           </div>
         </div>
 
@@ -688,11 +742,11 @@
         <div class="form-row cols-2">
           <div class="form-group">
             <label for="pickupDate">Pickup Date</label>
-            <input type="date" id="pickupDate" name="pickupDate" bind:value={formData.pickupDate} required />
+            <input type="date" id="pickupDate" name="pickupDate" bind:value={formData.pickupDate} required disabled={!canEdit} />
           </div>
           <div class="form-group">
             <label for="dropoffDate">Dropoff Date</label>
-            <input type="date" id="dropoffDate" name="dropoffDate" bind:value={formData.dropoffDate} required />
+            <input type="date" id="dropoffDate" name="dropoffDate" bind:value={formData.dropoffDate} required disabled={!canEdit} />
           </div>
         </div>
 
@@ -700,47 +754,47 @@
         <div class="form-row cols-2">
           <div class="form-group">
             <label for="pickupTime">Pickup Time</label>
-            <input type="text" id="pickupTime" name="pickupTime" bind:value={formData.pickupTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
+            <input type="text" id="pickupTime" name="pickupTime" bind:value={formData.pickupTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} disabled={!canEdit} />
           </div>
           <div class="form-group">
             <label for="dropoffTime">Dropoff Time</label>
-            <input type="text" id="dropoffTime" name="dropoffTime" bind:value={formData.dropoffTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
+            <input type="text" id="dropoffTime" name="dropoffTime" bind:value={formData.dropoffTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} disabled={!canEdit} />
           </div>
         </div>
 
         <!-- Dropoff Location -->
         <div class="form-group">
           <label for="dropoffLocation">Dropoff Location</label>
-          <input type="text" id="dropoffLocation" name="dropoffLocation" bind:value={formData.dropoffLocation} required />
+          <input type="text" id="dropoffLocation" name="dropoffLocation" bind:value={formData.dropoffLocation} required disabled={!canEdit} />
         </div>
 
         <!-- Confirmation & Notes -->
         <div class="form-group">
           <label for="confirmationNumber">Confirmation Number</label>
-          <input type="text" id="confirmationNumber" name="confirmationNumber" bind:value={formData.confirmationNumber} />
+          <input type="text" id="confirmationNumber" name="confirmationNumber" bind:value={formData.confirmationNumber} disabled={!canEdit} />
         </div>
 
         <div class="form-group">
           <label for="notes">Notes</label>
-          <textarea id="notes" name="notes" bind:value={formData.notes} placeholder="Additional information" />
+          <textarea id="notes" name="notes" bind:value={formData.notes} placeholder="Additional information" disabled={!canEdit} />
         </div>
 
       {:else if itemType === 'event'}
         <!-- Event Name & Location (full-width) -->
         <div class="form-group">
           <label for="name">Event Name</label>
-          <input type="text" id="name" name="name" bind:value={formData.name} required />
+          <input type="text" id="name" name="name" bind:value={formData.name} required disabled={!canEdit} />
         </div>
 
         <div class="form-group">
           <label for="location">Location</label>
-          <input type="text" id="location" name="location" bind:value={formData.location} required />
+          <input type="text" id="location" name="location" bind:value={formData.location} required disabled={!canEdit} />
         </div>
 
         <!-- All Day Checkbox -->
         <div class="form-group checkbox-group">
           <label for="allDay">
-            <input type="checkbox" id="allDay" name="allDay" bind:checked={formData.allDay} />
+            <input type="checkbox" id="allDay" name="allDay" bind:checked={formData.allDay} disabled={!canEdit} />
             <span>All Day Event</span>
           </label>
         </div>
@@ -750,11 +804,11 @@
           <div class="form-row cols-2">
             <div class="form-group">
               <label for="startDate">Start Date</label>
-              <input type="date" id="startDate" name="startDate" bind:value={formData.startDate} required />
+              <input type="date" id="startDate" name="startDate" bind:value={formData.startDate} required disabled={!canEdit} />
             </div>
             <div class="form-group">
               <label for="endDate">End Date</label>
-              <input type="date" id="endDate" name="endDate" bind:value={formData.endDate} />
+              <input type="date" id="endDate" name="endDate" bind:value={formData.endDate} disabled={!canEdit} />
             </div>
           </div>
         {:else}
@@ -762,11 +816,11 @@
           <div class="form-row cols-2">
             <div class="form-group">
               <label for="startDate">Start Date</label>
-              <input type="date" id="startDate" name="startDate" bind:value={formData.startDate} required />
+              <input type="date" id="startDate" name="startDate" bind:value={formData.startDate} required disabled={!canEdit} />
             </div>
             <div class="form-group">
               <label for="endDate">End Date</label>
-              <input type="date" id="endDate" name="endDate" bind:value={formData.endDate} />
+              <input type="date" id="endDate" name="endDate" bind:value={formData.endDate} disabled={!canEdit} />
             </div>
           </div>
 
@@ -774,11 +828,11 @@
           <div class="form-row cols-2">
             <div class="form-group">
               <label for="startTime">Start Time</label>
-              <input type="text" id="startTime" name="startTime" bind:value={formData.startTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
+              <input type="text" id="startTime" name="startTime" bind:value={formData.startTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} disabled={!canEdit} />
             </div>
             <div class="form-group">
               <label for="endTime">End Time</label>
-              <input type="text" id="endTime" name="endTime" bind:value={formData.endTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} />
+              <input type="text" id="endTime" name="endTime" bind:value={formData.endTime} placeholder="HH:MM" maxlength="5" on:keyup={formatTimeInput} disabled={!canEdit} />
             </div>
           </div>
         {/if}
@@ -786,13 +840,13 @@
         <!-- Ticket Number -->
         <div class="form-group">
           <label for="ticketNumber">Ticket Number</label>
-          <input type="text" id="ticketNumber" name="ticketNumber" bind:value={formData.ticketNumber} />
+          <input type="text" id="ticketNumber" name="ticketNumber" bind:value={formData.ticketNumber} disabled={!canEdit} />
         </div>
 
         <!-- Description -->
         <div class="form-group">
           <label for="description">Description</label>
-          <textarea id="description" name="description" bind:value={formData.description} placeholder="Event details" />
+          <textarea id="description" name="description" bind:value={formData.description} placeholder="Event details" disabled={!canEdit} />
         </div>
 
       {:else}
@@ -810,6 +864,7 @@
                     name={field.name}
                     bind:value={formData[field.name]}
                     required={field.required}
+                    disabled={!canEdit}
                   />
                 </div>
                 {#if config.fields.some(f => f.name === 'returnDate')}
@@ -823,6 +878,7 @@
                           name={returnField.name}
                           bind:value={formData[returnField.name]}
                           required={returnField.required}
+                          disabled={!canEdit}
                         />
                       </div>
                     {/if}
@@ -842,6 +898,7 @@
                     placeholder={field.placeholder}
                     required={field.required}
                     readonly={field.readonly}
+                    disabled={!canEdit}
                     class={field.readonly ? 'readonly' : ''}
                   />
                 {:else if field.type === 'date'}
@@ -851,6 +908,7 @@
                     name={field.name}
                     bind:value={formData[field.name]}
                     required={field.required}
+                    disabled={!canEdit}
                   />
                 {:else if field.type === 'time'}
                   <input
@@ -861,6 +919,7 @@
                     placeholder={field.placeholder}
                     maxlength="5"
                     on:keyup={formatTimeInput}
+                    disabled={!canEdit}
                   />
                 {:else if field.type === 'select'}
                   <select
@@ -868,6 +927,7 @@
                     name={field.name}
                     bind:value={formData[field.name]}
                     required={field.required}
+                    disabled={!canEdit}
                   >
                     <option value="">Select {field.label}</option>
                     {#each field.options as option}
@@ -884,6 +944,7 @@
                     name={field.name}
                     bind:value={formData[field.name]}
                     placeholder={field.placeholder}
+                    disabled={!canEdit}
                   />
                 {/if}
               </div>
@@ -904,6 +965,7 @@
                   placeholder={field.placeholder}
                   required={field.required}
                   readonly={field.readonly}
+                  disabled={!canEdit}
                   class={field.readonly ? 'readonly' : ''}
                 />
               {:else if field.type === 'date'}
@@ -913,6 +975,7 @@
                   name={field.name}
                   bind:value={formData[field.name]}
                   required={field.required}
+                  disabled={!canEdit}
                 />
               {:else if field.type === 'time'}
                 <input
@@ -923,6 +986,7 @@
                   placeholder={field.placeholder}
                   maxlength="5"
                   on:keyup={formatTimeInput}
+                  disabled={!canEdit}
                 />
               {:else if field.type === 'select'}
                 <select
@@ -930,6 +994,7 @@
                   name={field.name}
                   bind:value={formData[field.name]}
                   required={field.required}
+                  disabled={!canEdit}
                 >
                   <option value="">Select {field.label}</option>
                   {#each field.options as option}
@@ -942,6 +1007,7 @@
                   name={field.name}
                   bind:value={formData[field.name]}
                   placeholder={field.placeholder}
+                  disabled={!canEdit}
                 />
               {/if}
             </div>
@@ -954,23 +1020,53 @@
     {#if showTripSelector}
       <div class="form-group">
         <ItemCompanionsForm
+          itemId={data?.id || ''}
+          tripId={data?.tripId || null}
           companions={selectedCompanions}
           canEdit={canEdit}
+          currentUserId={$authStore.user?.id || null}
+          itemOwnerId={data?.userId || null}
+          tripOwnerId={allTrips.find(t => t.id === data?.tripId)?.userId || null}
+          isStandaloneItem={!data?.tripId}
           onCompanionsUpdate={(companions) => {
             selectedCompanions = companions;
 
             // For existing items in a trip, immediately save companions to trigger auto-propagation
             if (isEditing && data?.id && selectedTripId) {
-              const companionIds = companions.map(c => c.id);
-              itemCompanionsApi.update(itemType, data.id, companionIds).catch((err) => {
-                // Error saving - silently continue
-              });
+              const tripOwnerId = allTrips.find(t => t.id === selectedTripId)?.userId;
+              const companionIds = companions
+                .filter(c => {
+                  // Only include companions with a companionId (valid TravelCompanion records)
+                  // Exclude the item owner (they don't need to be in the companion list)
+                  return c.companionId;
+                })
+                .map(c => c.companionId)
+                .filter(Boolean);
+
+              if (companionIds.length > 0 || companions.length === 0) {
+                itemCompanionsApi.update(itemType, data.id, companionIds).catch((err) => {
+                  console.error('[ItemEditForm] Error saving companions:', err);
+                  // Error saving - silently continue
+                });
+              }
             } else if (isEditing && data?.id && !selectedTripId) {
               // Standalone item - also save companions
-              const companionIds = companions.map(c => c.id);
-              itemCompanionsApi.update(itemType, data.id, companionIds).catch((err) => {
-                // Error saving - silently continue
-              });
+              const itemOwnerId = data.userId;
+              const companionIds = companions
+                .filter(c => {
+                  // Always exclude the item owner - they don't need a companion record
+                  const companionUserId = c.userId || c.id;
+                  return companionUserId !== itemOwnerId && c.companionId;
+                })
+                .map(c => c.companionId)
+                .filter(Boolean);
+
+              if (companionIds.length > 0 || companions.length === 0) {
+                itemCompanionsApi.update(itemType, data.id, companionIds).catch((err) => {
+                  console.error('[ItemEditForm] Error saving companions:', err);
+                  // Error saving - silently continue
+                });
+              }
             }
           }}
           onAddCompanion={null}
@@ -983,6 +1079,7 @@
     {#if itemType === 'trip' && isEditing && data?.id}
       <TripCompanionsForm
         tripId={data.id}
+        tripOwnerId={data.userId}
         companions={data.tripCompanions || []}
         onCompanionsUpdate={async (companions) => {
           if (data) {

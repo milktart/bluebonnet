@@ -315,7 +315,9 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    flex-shrink: 0;
+    position: absolute;
+    top: 0.45rem;
+    right: 0.45rem;
   }
 
   .read-only-badge {

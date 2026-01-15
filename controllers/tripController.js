@@ -17,8 +17,9 @@ const {
 const logger = require('../utils/logger');
 const airportService = require('../services/airportService');
 const { formatInTimezone } = require('../utils/timezoneHelper');
-const itemCompanionHelper = require('../utils/itemCompanionHelper');
+const { sendAsyncOrRedirect } = require('../utils/asyncResponseHandler');
 const versionInfo = require('../utils/version');
+const companionCascadeManager = require('../services/CompanionCascadeManager');
 
 /**
  * Get primary sidebar content for dashboard (AJAX endpoint for refresh)
@@ -916,12 +917,8 @@ exports.createTrip = async (req, res) => {
             addedBy: req.user.id,
           });
 
-          // If manage_travel, automatically add items and create trip companion record
-          // If view_travel, send trip invitation instead
-          if (companion.userId && permissionSource === 'manage_travel') {
-            // Auto-add to all trip items (will be created later)
-          } else if (companion.userId) {
-            // Send trip invitation for view_travel
+          // Send trip invitation for view_travel companions
+          if (companion.userId && permissionSource !== 'manage_travel') {
             const invitation = await TripInvitation.create({
               tripId: trip.id,
               invitedUserId: companion.userId,
@@ -947,17 +944,20 @@ exports.createTrip = async (req, res) => {
       }
     }
 
-    // Return success response with trip data
-    res.json({
+    // Centralized async/redirect response handling
+    return sendAsyncOrRedirect(req, res, {
       success: true,
+      data: trip,
       message: 'Trip created successfully',
-      trip,
+      redirectUrl: `/dashboard`,
     });
   } catch (error) {
-    logger.error('Error creating trip:', error);
-    res.status(500).json({
+    logger.error('ERROR in createTrip:', error);
+    return sendAsyncOrRedirect(req, res, {
       success: false,
-      message: 'Error creating trip',
+      error: error.message || 'Error creating trip',
+      status: 500,
+      redirectUrl: '/dashboard',
     });
   }
 };
@@ -1036,6 +1036,12 @@ exports.viewTrip = async (req, res) => {
       });
     }
 
+    // Check if user is a trip admin (owner or companion with canEdit)
+    const isAdmin = isOwner || (companionRecord && companionRecord.canEdit);
+
+    // Debug logging
+    logger.info(`Trip ${trip.id}: isOwner=${isOwner}, companionRecord=${companionRecord ? 'found' : 'not found'}, canEdit=${companionRecord?.canEdit}, isAdmin=${isAdmin}`);
+
     // Get current user's travel companion profile (if they're a companion)
     let userCompanionId = null;
     const userItemCompanions = {};
@@ -1071,6 +1077,20 @@ exports.viewTrip = async (req, res) => {
       });
     }
 
+    // Convert Sequelize model to plain object
+    let tripData = trip.toJSON ? trip.toJSON() : trip;
+
+    // Mark all items as editable if user is the owner or a trip admin
+    if (isAdmin) {
+      // Add canEdit: true to all items
+      tripData.flights?.forEach((f) => { f.canEdit = true; });
+      tripData.hotels?.forEach((h) => { h.canEdit = true; });
+      tripData.transportation?.forEach((t) => { t.canEdit = true; });
+      tripData.carRentals?.forEach((c) => { c.canEdit = true; });
+      tripData.events?.forEach((e) => { e.canEdit = true; });
+      logger.info(`Trip ${trip.id}: Marked ${tripData.flights?.length || 0} flights, ${tripData.hotels?.length || 0} hotels as editable`);
+    }
+
     // Get airline data for form lookup
     const airlines = airportService.getAllAirlines();
 
@@ -1092,8 +1112,9 @@ exports.viewTrip = async (req, res) => {
 
     res.json({
       success: true,
-      trip,
+      trip: tripData,
       isOwner,
+      isAdmin,
       airlines,
       userItemCompanions,
       userCompanionId,
@@ -1223,9 +1244,10 @@ exports.updateTrip = async (req, res) => {
     });
 
     if (!trip) {
-      return res.status(404).json({
-        success: false,
-        message: 'Trip not found',
+      return sendAsyncOrRedirect(req, res, {
+        error: 'Trip not found',
+        status: 404,
+        redirectUrl: '/dashboard',
       });
     }
 
@@ -1350,7 +1372,7 @@ exports.updateTrip = async (req, res) => {
         });
 
         // Auto-add this companion to all existing items in the trip
-        await itemCompanionHelper.addCompanionToAllItems(companionId, trip.id, req.user.id);
+        await companionCascadeManager.cascadeAddToAllItems(companionId, trip.id, req.user.id);
 
         // Send invitation for view_travel companions
         if (companion.userId && permissionSource !== 'manage_travel') {
@@ -1386,16 +1408,22 @@ exports.updateTrip = async (req, res) => {
       }
     }
 
-    res.json({
+    logger.info('Trip updated successfully:', { tripId: req.params.id });
+
+    // Centralized async/redirect response handling
+    return sendAsyncOrRedirect(req, res, {
       success: true,
+      data: trip,
       message: 'Trip updated successfully',
-      trip,
+      redirectUrl: `/dashboard`,
     });
   } catch (error) {
-    logger.error(error);
-    res.status(500).json({
+    logger.error('ERROR in updateTrip:', error);
+    return sendAsyncOrRedirect(req, res, {
       success: false,
-      message: 'Error updating trip',
+      error: error.message || 'Error updating trip',
+      status: 500,
+      redirectUrl: '/dashboard',
     });
   }
 };
@@ -1407,22 +1435,30 @@ exports.deleteTrip = async (req, res) => {
     });
 
     if (!trip) {
-      return res.status(404).json({
-        success: false,
-        message: 'Trip not found',
+      return sendAsyncOrRedirect(req, res, {
+        error: 'Trip not found',
+        status: 404,
+        redirectUrl: '/dashboard',
       });
     }
 
     await trip.destroy();
-    res.json({
+
+    logger.info('Trip deleted successfully:', { tripId: req.params.id });
+
+    // Centralized async/redirect response handling
+    return sendAsyncOrRedirect(req, res, {
       success: true,
       message: 'Trip deleted successfully',
+      redirectUrl: '/dashboard',
     });
   } catch (error) {
-    logger.error(error);
-    res.status(500).json({
+    logger.error('ERROR in deleteTrip:', error);
+    return sendAsyncOrRedirect(req, res, {
       success: false,
-      message: 'Error deleting trip',
+      error: 'Error deleting trip',
+      status: 500,
+      redirectUrl: '/dashboard',
     });
   }
 };

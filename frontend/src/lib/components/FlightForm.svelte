@@ -2,6 +2,7 @@
   import { flightsApi } from '$lib/services/api';
   import { tripStoreActions } from '$lib/stores/tripStore';
   import { dataService } from '$lib/services/dataService';
+  import { validateFlight, getFirstError } from '$lib/utils/validation';
   import TextInput from './TextInput.svelte';
   import Textarea from './Textarea.svelte';
   import DateTimePicker from './DateTimePicker.svelte';
@@ -61,19 +62,10 @@
 
   async function handleSubmit() {
     try {
-      // Validation
-      if (!formData.origin.trim()) {
-        error = 'Origin airport is required';
-        return;
-      }
-
-      if (!formData.destination.trim()) {
-        error = 'Destination airport is required';
-        return;
-      }
-
-      if (!formData.departureDate) {
-        error = 'Departure date is required';
+      // Unified validation using validation utilities
+      const validation = validateFlight(formData);
+      if (!validation.isValid) {
+        error = getFirstError(validation.errors);
         return;
       }
 

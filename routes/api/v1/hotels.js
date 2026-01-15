@@ -9,6 +9,58 @@ const { ensureAuthenticated } = require('../../../middleware/auth');
 
 const router = express.Router();
 
+/**
+ * Helper function to load trip companions with trip owner listed first
+ */
+async function loadTripCompanions(tripId, trip) {
+  if (!tripId || !trip) return [];
+
+  const { TripCompanion, TravelCompanion, User } = require('../../../models');
+  const tripCompanions = [];
+
+  const tripCompanionRecords = await TripCompanion.findAll({
+    where: { tripId },
+    include: [
+      {
+        model: TravelCompanion,
+        as: 'companion',
+        attributes: ['id', 'email', 'firstName', 'lastName', 'name', 'userId'],
+      },
+    ],
+  });
+
+  // Add trip owner as first companion if not already in list
+  const tripOwnerInList = tripCompanionRecords.some(tc => tc.companion?.userId === trip.userId);
+  if (!tripOwnerInList && trip.userId) {
+    const owner = await User.findByPk(trip.userId, {
+      attributes: ['id', 'firstName', 'lastName', 'email']
+    });
+    if (owner) {
+      tripCompanions.push({
+        id: owner.id,
+        email: owner.email,
+        firstName: owner.firstName,
+        lastName: owner.lastName,
+        name: `${owner.firstName} ${owner.lastName}`.trim(),
+        userId: owner.id,
+        isOwner: true
+      });
+    }
+  }
+
+  // Add other trip companions
+  tripCompanions.push(...tripCompanionRecords.map(tc => ({
+    id: tc.companion.id,
+    email: tc.companion.email,
+    firstName: tc.companion.firstName,
+    lastName: tc.companion.lastName,
+    name: tc.companion.name,
+    userId: tc.companion.userId,
+  })));
+
+  return tripCompanions;
+}
+
 // Handle CORS preflight requests
 router.options('*', (req, res) => {
   res.header('Access-Control-Allow-Origin', req.get('Origin') || '*');
@@ -113,8 +165,10 @@ router.get('/trips/:tripId', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
-    const { Hotel, TravelCompanion, ItemCompanion } = require('../../../models');
-    const hotel = await Hotel.findByPk(req.params.id);
+    const { Hotel, Trip, TripCompanion, TravelCompanion, ItemCompanion } = require('../../../models');
+    const hotel = await Hotel.findByPk(req.params.id, {
+      include: [{ model: Trip, as: 'trip', required: false }]
+    });
 
     if (!hotel) {
       return apiResponse.notFound(res, 'Hotel not found');
@@ -136,6 +190,7 @@ router.get('/:id', async (req, res) => {
     const hotelData = hotel.toJSON();
     hotelData.itemCompanions = itemCompanions.map((ic) => ({
       id: ic.companion.id,
+      companionId: ic.companion.id,
       email: ic.companion.email,
       firstName: ic.companion.firstName,
       lastName: ic.companion.lastName,
@@ -143,6 +198,42 @@ router.get('/:id', async (req, res) => {
       userId: ic.companion.userId,
       inheritedFromTrip: ic.inheritedFromTrip,
     }));
+
+    // Set canEdit flag: allow if user is item creator, trip owner, or trip companion with edit permission
+    const userId = req.user?.id;
+    const isItemOwner = hotel.userId === userId;
+    let canEditTrip = false;
+
+    if (hotel.tripId) {
+      // Check if user is trip owner
+      const isTripOwner = hotel.trip?.userId === userId;
+      if (isTripOwner) {
+        canEditTrip = true;
+      } else {
+        // Check if user is a trip companion with canEdit permission
+        const tripCompanion = await TripCompanion.findOne({
+          where: { tripId: hotel.tripId },
+          include: [
+            {
+              model: TravelCompanion,
+              as: 'companion',
+              where: { userId },
+              required: true,
+            },
+          ],
+        });
+        canEditTrip = tripCompanion?.canEdit === true;
+      }
+    }
+
+    hotelData.canEdit = isItemOwner || canEditTrip;
+    hotelData.canDelete = isItemOwner || canEditTrip;
+
+    // Get trip companions if item is part of a trip
+    const tripCompanions = await loadTripCompanions(hotel.tripId, hotel.trip);
+    if (tripCompanions.length > 0) {
+      hotelData.tripCompanions = tripCompanions;
+    }
 
     return apiResponse.success(res, hotelData, 'Hotel retrieved successfully');
   } catch (error) {

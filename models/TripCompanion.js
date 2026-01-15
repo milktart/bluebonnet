@@ -36,6 +36,26 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: 'explicit',
       },
+      canView: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+      },
+      canEdit: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      canManageCompanions: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      inheritedFromTrip: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
     },
     {
       tableName: 'trip_companions',

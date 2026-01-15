@@ -1,15 +1,15 @@
 const { CarRental, Trip, ItemTrip } = require('../models');
 const logger = require('../utils/logger');
-const { parseCompanions } = require('../utils/parseHelper');
-const { sendAsyncResponse } = require('../utils/asyncResponseHelper');
-const itemCompanionHelper = require('../utils/itemCompanionHelper');
+const itemCompanionService = require('../services/itemCompanionService');
 const itemTripService = require('../services/itemTripService');
+const { sendAsyncOrRedirect } = require('../utils/asyncResponseHandler');
 const {
   verifyTripOwnership,
   geocodeOriginDestination,
   redirectAfterSuccess,
   redirectAfterError,
-  verifyResourceOwnershipViaTrip,
+  verifyResourceOwnership,
+  verifyTripItemEditAccess,
   convertToUTC,
 } = require('./helpers/resourceController');
 const { utcToLocal } = require('../utils/timezoneHelper');
@@ -31,12 +31,15 @@ exports.createCarRental = async (req, res) => {
       companions,
     } = req.body;
 
-    // Verify trip ownership if tripId provided (for trip-associated items)
-    // If no tripId, this is a standalone item (allowed without trip)
+    // Verify trip ownership if tripId provided
     if (tripId) {
       const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
       if (!trip) {
-        return sendAsyncResponse(res, false, null, 'Trip not found', null, req);
+        return sendAsyncOrRedirect(req, res, {
+          error: 'Trip not found',
+          status: 403,
+          redirectUrl: '/',
+        });
       }
     }
 
@@ -69,52 +72,31 @@ exports.createCarRental = async (req, res) => {
         await itemTripService.addItemToTrip('car_rental', carRental.id, tripId);
       } catch (e) {
         logger.error('Error adding car rental to trip in ItemTrip:', e);
-        // Don't fail the car rental creation due to ItemTrip errors
       }
     }
 
-    // Add companions to this car rental (legacy system - will be deprecated)
+    // Handle companions - unified method
     try {
-      if (tripId) {
-        const companionIds = parseCompanions(companions);
-
-        // If companions were provided and not empty, use them; otherwise use fallback
-        if (companionIds.length > 0) {
-          await itemCompanionHelper.updateItemCompanions(
-            'car_rental',
-            carRental.id,
-            companionIds,
-            tripId,
-            req.user.id
-          );
-        } else {
-          // Fallback: auto-add trip-level companions
-          await itemCompanionHelper.autoAddTripCompanions(
-            'car_rental',
-            carRental.id,
-            tripId,
-            req.user.id
-          );
-        }
-      }
+      await itemCompanionService.handleItemCompanions('car_rental', carRental.id, companions, tripId, req.user.id);
     } catch (e) {
       logger.error('Error managing companions for car rental:', e);
-      // Don't fail the car rental creation due to companion errors
     }
 
-    // Send response (handles both async and traditional form submission)
-    return sendAsyncResponse(
-      res,
-      true,
-      carRental,
-      'Car rental added successfully',
-      tripId,
-      req,
-      'carRentals'
-    );
+    // Centralized async/redirect response handling
+    return sendAsyncOrRedirect(req, res, {
+      success: true,
+      data: carRental,
+      message: 'Car rental added successfully',
+      redirectUrl: tripId ? `/trips/${tripId}` : '/dashboard',
+    });
   } catch (error) {
-    logger.error(error);
-    return sendAsyncResponse(res, false, null, 'Error adding car rental', req.params.tripId, req);
+    logger.error('ERROR in createCarRental:', error);
+    return sendAsyncOrRedirect(req, res, {
+      success: false,
+      error: error.message || 'Error adding car rental',
+      status: 500,
+      redirectUrl: req.params.tripId ? `/trips/${req.params.tripId}` : '/dashboard',
+    });
   }
 };
 
@@ -137,39 +119,28 @@ exports.updateCarRental = async (req, res) => {
       include: [{ model: Trip, as: 'trip' }],
     });
 
-    // Verify ownership
-    // For standalone items, check if user owns it; for trip items, check if user owns the trip
-    if (!carRental) {
-      const isAsync = req.headers['x-async-request'] === 'true';
-      if (isAsync) {
-        return res.status(403).json({ success: false, error: 'Car rental not found' });
-      }
-      return redirectAfterError(res, req, null, 'Car rental not found');
-    }
-    if (carRental.tripId) {
-      // Trip-associated car rental - verify trip ownership
-      if (!verifyResourceOwnershipViaTrip(carRental, req.user.id)) {
-        const isAsync = req.headers['x-async-request'] === 'true';
-        if (isAsync) {
-          return res.status(403).json({ success: false, error: 'Car rental not found' });
-        }
-        return redirectAfterError(res, req, null, 'Car rental not found');
-      }
-    } else if (carRental.userId !== req.user.id) {
-      // Standalone car rental - verify direct ownership
-      const isAsync = req.headers['x-async-request'] === 'true';
-      if (isAsync) {
-        return res.status(403).json({ success: false, error: 'Car rental not found' });
-      }
-      return redirectAfterError(res, req, null, 'Car rental not found');
+    // Verify ownership - check if user is item owner OR trip owner OR trip admin with canEdit permission
+    const isItemOwner = verifyResourceOwnership(carRental, req.user.id);
+    const { TripCompanion } = require('../models');
+    const canEditTrip = carRental.tripId ? await verifyTripItemEditAccess(carRental.tripId, req.user.id, Trip, TripCompanion) : false;
+
+    if (!isItemOwner && !canEditTrip) {
+      return sendAsyncOrRedirect(req, res, {
+        error: 'Car rental not found',
+        status: 403,
+        redirectUrl: '/',
+      });
     }
 
     // Verify trip edit access if changing trip association
     if (newTripId && newTripId !== carRental.tripId) {
       const hasAccess = await verifyTripEditAccess(newTripId, req.user.id);
       if (!hasAccess) {
-        const isAsync = req.headers['x-async-request'] === 'true';
-        return res.status(403).json({ success: false, error: 'Cannot attach to this trip' });
+        return sendAsyncOrRedirect(req, res, {
+          error: 'Cannot attach to this trip',
+          status: 403,
+          redirectUrl: '/',
+        });
       }
     }
 
@@ -200,44 +171,36 @@ exports.updateCarRental = async (req, res) => {
     });
 
     // Update trip association via ItemTrip if it changed
-    if (newTripId && newTripId !== carRental.tripId) {
-      try {
-        // Remove from old trip if there was one
+    try {
+      if (newTripId && newTripId !== carRental.tripId) {
         if (carRental.tripId) {
           await itemTripService.removeItemFromTrip('car_rental', carRental.id, carRental.tripId);
         }
-        // Add to new trip
         await itemTripService.addItemToTrip('car_rental', carRental.id, newTripId);
-      } catch (e) {
-        logger.error('Error updating car rental trip association:', e);
-        // Don't fail the update due to ItemTrip errors
-      }
-    } else if (newTripId === null && carRental.tripId) {
-      // Remove from trip if explicitly setting to null
-      try {
+      } else if (newTripId === null && carRental.tripId) {
         await itemTripService.removeItemFromTrip('car_rental', carRental.id, carRental.tripId);
-      } catch (e) {
-        logger.error('Error removing car rental from trip:', e);
       }
+    } catch (e) {
+      logger.error('Error updating car rental trip association:', e);
     }
 
-    // Check if this is an async request
-    const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.json({ success: true, message: 'Car rental updated successfully' });
-    }
+    logger.info('Car rental updated successfully:', { carRentalId: req.params.id });
 
-    redirectAfterSuccess(
-      res,
-      req,
-      carRental.tripId,
-      'carRentals',
-      'Car rental updated successfully'
-    );
+    // Centralized async/redirect response handling
+    return sendAsyncOrRedirect(req, res, {
+      success: true,
+      data: carRental,
+      message: 'Car rental updated successfully',
+      redirectUrl: newTripId || carRental.tripId ? `/trips/${newTripId || carRental.tripId}` : '/dashboard',
+    });
   } catch (error) {
-    logger.error(error);
-    const isAsync = req.headers['x-async-request'] === 'true';
-    return res.status(500).json({ success: false, error: 'Error updating car rental' });
+    logger.error('ERROR in updateCarRental:', error);
+    return sendAsyncOrRedirect(req, res, {
+      success: false,
+      error: error.message || 'Error updating car rental',
+      status: 500,
+      redirectUrl: '/dashboard',
+    });
   }
 };
 
@@ -248,31 +211,17 @@ exports.deleteCarRental = async (req, res) => {
       include: [{ model: Trip, as: 'trip' }],
     });
 
-    // Verify ownership
-    // For standalone items, check if user owns it; for trip items, check if user owns the trip
-    if (!carRental) {
-      const isAsync = req.headers['x-async-request'] === 'true';
-      if (isAsync) {
-        return res.status(403).json({ success: false, error: 'Car rental not found' });
-      }
-      return redirectAfterError(res, req, null, 'Car rental not found');
-    }
-    if (carRental.tripId) {
-      // Trip-associated car rental - verify trip ownership
-      if (!verifyResourceOwnershipViaTrip(carRental, req.user.id)) {
-        const isAsync = req.headers['x-async-request'] === 'true';
-        if (isAsync) {
-          return res.status(403).json({ success: false, error: 'Car rental not found' });
-        }
-        return redirectAfterError(res, req, null, 'Car rental not found');
-      }
-    } else if (carRental.userId !== req.user.id) {
-      // Standalone car rental - verify direct ownership
-      const isAsync = req.headers['x-async-request'] === 'true';
-      if (isAsync) {
-        return res.status(403).json({ success: false, error: 'Car rental not found' });
-      }
-      return redirectAfterError(res, req, null, 'Car rental not found');
+    // Verify ownership - check if user is item owner OR trip owner OR trip admin with canEdit permission
+    const isItemOwner = verifyResourceOwnership(carRental, req.user.id);
+    const { TripCompanion } = require('../models');
+    const canEditTrip = carRental.tripId ? await verifyTripItemEditAccess(carRental.tripId, req.user.id, Trip, TripCompanion) : false;
+
+    if (!isItemOwner && !canEditTrip) {
+      return sendAsyncOrRedirect(req, res, {
+        error: 'Car rental not found',
+        status: 403,
+        redirectUrl: '/',
+      });
     }
 
     const { tripId } = carRental;
@@ -281,34 +230,30 @@ exports.deleteCarRental = async (req, res) => {
     // Store the deleted car rental in session for potential restoration
     storeDeletedItem(req.session, 'carRental', carRental.id, carRentalData, carRental.company);
 
-    // Remove from all trips via ItemTrip (replaces old tripId association)
+    // Remove from all trips via ItemTrip
     try {
       await itemTripService.removeItemFromAllTrips('car_rental', carRental.id);
     } catch (e) {
       logger.error('Error removing car rental from ItemTrip records:', e);
-      // Don't fail deletion due to ItemTrip cleanup errors
     }
-
-    // Remove all item companions (legacy system)
-    await itemCompanionHelper.removeItemCompanions('car_rental', carRental.id);
 
     await carRental.destroy();
 
-    // Check if this is an async request
-    const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.json({
-        success: true,
-        message: 'Car rental deleted successfully',
-        itemId: carRental.id,
-      });
-    }
-
-    redirectAfterSuccess(res, req, tripId, 'carRentals', 'Car rental deleted successfully');
+    // Centralized async/redirect response handling
+    return sendAsyncOrRedirect(req, res, {
+      success: true,
+      message: 'Car rental deleted successfully',
+      data: { itemId: carRental.id },
+      redirectUrl: tripId ? `/trips/${tripId}` : '/dashboard',
+    });
   } catch (error) {
-    logger.error(error);
-    const isAsync = req.headers['x-async-request'] === 'true';
-    return res.status(500).json({ success: false, error: 'Error deleting car rental' });
+    logger.error('ERROR in deleteCarRental:', error);
+    return sendAsyncOrRedirect(req, res, {
+      success: false,
+      error: 'Error deleting car rental',
+      status: 500,
+      redirectUrl: '/dashboard',
+    });
   }
 };
 

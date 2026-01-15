@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { currentUserId } from '$lib/stores/authStore';
+
   export let companions: any[] = [];
   export let excludeUserId: string | null = null;
 
@@ -67,6 +69,12 @@
     return colors[charCode % colors.length];
   }
 
+  function getTooltipText(companion: any): string {
+    const isCurrentUser = (companion.userId || companion.id) === $currentUserId;
+    const suffix = isCurrentUser ? ' (me)' : '';
+    return companion.email + suffix;
+  }
+
   function sortCompanions(comps: any[]): any[] {
     // Sort in reverse alphabetical order by first name, then last name
     // (since flex-direction: row-reverse will flip the visual order)
@@ -101,7 +109,7 @@
       <div
         class="companion-circle"
         style="border-color: {color}; color: {color}"
-        title={companion.email}
+        title={getTooltipText(companion)}
       >
         {initials}
       </div>
@@ -121,17 +129,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 16px;
-    height: 16px;
+    width: 1.05rem;
+    height: 1.05rem;
     border-radius: 50%;
-    font-size: 0.45rem;
+    font-size: 0.48rem;
     font-weight: 700;
     border: 1.5px solid;
     background-color: transparent;
     cursor: pointer;
     transition: all 0.2s ease;
     flex-shrink: 0;
-    padding: 1px 0 0 0.5px;
+    padding: 0.5px 0 0 0.5px;
   }
 
   .companion-circle:first-child {

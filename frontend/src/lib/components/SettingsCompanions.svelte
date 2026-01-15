@@ -31,7 +31,7 @@
       error = null;
 
       // Fetch companions with their permissions built-in
-      let companionsResp = { companions: [] };
+      let companionsResp: any = { data: [] };
 
       try {
         companionsResp = await settingsApi.getAllCompanions();
@@ -45,7 +45,8 @@
       // - canManageTrips: I let them manage my travel
       // - theyShareTrips: They share their travel with me
       // - theyManageTrips: They let me manage their travel
-      companions = companionsResp.companions || [];
+      // Handle both API response formats (with data property) and raw array
+      companions = Array.isArray(companionsResp) ? companionsResp : (companionsResp.data || companionsResp.companions || []);
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to load companions';
       console.error('[SettingsCompanions] Error in loadCompanions:', error);

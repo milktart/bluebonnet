@@ -147,6 +147,87 @@ class ItemCompanionService {
   }
 
   /**
+   * Handle companion assignment for a newly created or updated item
+   * This is the unified method called from all controllers to avoid duplication
+   * @param {string} itemType - Type of item (flight, hotel, event, transportation, carRental)
+   * @param {string} itemId - UUID of the item
+   * @param {Array<string>|string} companions - Companion IDs (can be array, JSON string, or single ID)
+   * @param {string} tripId - Optional trip ID (for auto-adding trip companions)
+   * @param {string} userId - UUID of user making the change
+   * @returns {Promise<void>}
+   * @example
+   * // Called from controller after item creation:
+   * await itemCompanionService.handleItemCompanions('flight', flight.id, req.body.companions, tripId, req.user.id);
+   */
+  async handleItemCompanions(itemType, itemId, companions, tripId, userId) {
+    try {
+      // Parse companions input - could be array, JSON string, or single value
+      let companionIds = [];
+
+      if (companions) {
+        try {
+          if (typeof companions === 'string') {
+            // Try to parse as JSON
+            companionIds = JSON.parse(companions);
+          } else if (Array.isArray(companions)) {
+            companionIds = companions;
+          } else {
+            companionIds = [companions];
+          }
+
+          // Ensure it's an array and filter out empty values
+          companionIds = Array.isArray(companionIds)
+            ? companionIds.filter((c) => c)
+            : [];
+        } catch (e) {
+          logger.warn('Error parsing companions, using empty array:', e);
+          companionIds = [];
+        }
+      }
+
+      // If companions explicitly provided, use them
+      if (companionIds.length > 0) {
+        await this.updateItemCompanions(itemId, itemType, companionIds, userId);
+      } else if (tripId) {
+        // Otherwise, auto-add all trip-level companions
+        const tripCompanions = await ItemCompanion.sequelize.models.TripCompanion.findAll({
+          where: { tripId },
+          attributes: ['companionId'],
+        });
+
+        const tripCompanionIds = tripCompanions.map((tc) => tc.companionId);
+
+        if (tripCompanionIds.length > 0) {
+          // Create ItemCompanion records with inheritedFromTrip flag
+          const itemCompanionRecords = tripCompanionIds.map((companionId) => ({
+            itemType,
+            itemId,
+            companionId,
+            status: 'attending',
+            addedBy: userId,
+            inheritedFromTrip: true,
+          }));
+
+          await ItemCompanion.bulkCreate(itemCompanionRecords, {
+            ignoreDuplicates: true,
+          });
+        }
+      }
+
+      logger.info('handleItemCompanions - Success', {
+        itemType,
+        itemId,
+        companionCount: companionIds.length,
+        tripId,
+      });
+    } catch (error) {
+      logger.error('ItemCompanionService.handleItemCompanions - Error:', error);
+      // Don't throw - companion errors shouldn't fail item creation
+      // Log for debugging but continue silently
+    }
+  }
+
+  /**
    * Get the Sequelize model for a given item type
    * @private
    * @param {string} itemType - Type of item

@@ -5,7 +5,6 @@
  */
 
 const AuthorizationService = require('../services/authorizationService');
-const { TripAttendee, Trip } = require('../models');
 const logger = require('../utils/logger');
 
 const authService = new AuthorizationService();

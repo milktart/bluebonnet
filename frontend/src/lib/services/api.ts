@@ -371,30 +371,11 @@ export const companionsApi = {
     apiCall(`/v1/companions/trips/${tripId}/${companionId}`, {
       method: 'DELETE',
     }),
-};
 
-/**
- * Attendees API (Trip Attendee Management)
- */
-export const attendeesApi = {
-  getByTrip: (tripId: string) =>
-    apiCall(`/v1/trips/${tripId}/attendees`),
-
-  add: (tripId: string, email: string, name: string, role: string = 'attendee') =>
-    apiCall(`/v1/trips/${tripId}/attendees`, {
-      method: 'POST',
-      body: JSON.stringify({ email, name, role }),
-    }),
-
-  updateRole: (tripId: string, attendeeId: string, role: string) =>
-    apiCall(`/v1/trips/${tripId}/attendees/${attendeeId}`, {
+  updatePermissions: (tripId: string, companionId: string, permissions: { canView?: boolean; canEdit?: boolean; canManageCompanions?: boolean }) =>
+    apiCall(`/v1/companions/trips/${tripId}/${companionId}/permissions`, {
       method: 'PUT',
-      body: JSON.stringify({ role }),
-    }),
-
-  remove: (tripId: string, attendeeId: string) =>
-    apiCall(`/v1/trips/${tripId}/attendees/${attendeeId}`, {
-      method: 'DELETE',
+      body: JSON.stringify(permissions),
     }),
 };
 

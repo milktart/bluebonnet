@@ -2,6 +2,7 @@
   import { hotelsApi } from '$lib/services/api';
   import { tripStoreActions } from '$lib/stores/tripStore';
   import { dataService } from '$lib/services/dataService';
+  import { validateHotel, getFirstError } from '$lib/utils/validation';
   import TextInput from './TextInput.svelte';
   import Textarea from './Textarea.svelte';
   import DateTimePicker from './DateTimePicker.svelte';
@@ -33,19 +34,10 @@
 
   async function handleSubmit() {
     try {
-      // Validation
-      if (!formData.hotelName.trim()) {
-        error = 'Hotel name is required';
-        return;
-      }
-
-      if (!formData.address.trim()) {
-        error = 'Address is required';
-        return;
-      }
-
-      if (!formData.checkInDate) {
-        error = 'Check-in date is required';
+      // Unified validation using validation utilities
+      const validation = validateHotel(formData);
+      if (!validation.isValid) {
+        error = getFirstError(validation.errors);
         return;
       }
 

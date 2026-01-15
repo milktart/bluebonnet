@@ -2,6 +2,7 @@
   import { eventsApi } from '$lib/services/api';
   import { tripStoreActions } from '$lib/stores/tripStore';
   import { dataService } from '$lib/services/dataService';
+  import { validateEvent, getFirstError } from '$lib/utils/validation';
   import TextInput from './TextInput.svelte';
   import Textarea from './Textarea.svelte';
   import DateTimePicker from './DateTimePicker.svelte';
@@ -65,14 +66,10 @@
 
   async function handleSubmit() {
     try {
-      // Validation
-      if (!formData.name.trim()) {
-        error = 'Event name is required';
-        return;
-      }
-
-      if (!formData.startDate) {
-        error = 'Event date is required';
+      // Unified validation using validation utilities
+      const validation = validateEvent(formData);
+      if (!validation.isValid) {
+        error = getFirstError(validation.errors);
         return;
       }
 

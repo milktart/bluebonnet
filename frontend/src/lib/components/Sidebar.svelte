@@ -43,7 +43,7 @@
     width: 250px;
     background: #f8f9fa;
     border-right: 1px solid #e0e0e0;
-    padding: 1rem 0;
+    padding: 1.2rem 1.2rem .2rem;
     max-height: calc(100vh - 64px);
     overflow-y: auto;
   }

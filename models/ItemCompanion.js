@@ -45,6 +45,21 @@ module.exports = (sequelize) => {
         allowNull: false,
         defaultValue: false,
       },
+      canView: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+      },
+      canEdit: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      canManageCompanions: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
       createdAt: {
         type: DataTypes.DATE,
         allowNull: false,

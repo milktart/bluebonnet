@@ -4,6 +4,7 @@
 
   export let value = '';
   export let placeholder = '';
+  export let disabled = false;
   export let onSelect = (airport) => {};
 
   let searchResults = [];
@@ -106,6 +107,7 @@
     type="text"
     bind:value
     {placeholder}
+    {disabled}
     on:input={handleInput}
     on:keydown={handleKeyDown}
     on:focus={() => value.length >= 2 && searchResults.length > 0 && (showResults = true)}
@@ -168,6 +170,12 @@
     outline: none;
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  input:disabled {
+    background-color: #f3f4f6;
+    color: #6b7280;
+    cursor: not-allowed;
   }
 
   .loading-indicator {

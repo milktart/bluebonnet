@@ -25,12 +25,17 @@ module.exports = (sequelize, DataTypes) => {
         },
         onDelete: 'CASCADE',
       },
-      canShareTrips: {
+      canView: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+      },
+      canEdit: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false,
       },
-      canManageTrips: {
+      canManageCompanions: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false,

@@ -291,7 +291,7 @@ export const settingsApi = {
     companionId: string,
     data: { canShareTrips?: boolean; canManageTrips?: boolean }
   ): Promise<any> {
-    const base = getApiBase();
+    const base = getAccountBase();
     const response = await fetch(`${base}/companions/${companionId}/permissions`, {
       method: 'PUT',
       headers: {

@@ -231,3 +231,162 @@ export function validateByType(
       return { isValid: true, errors: [] };
   }
 }
+
+/**
+ * Enhanced validation utilities for common patterns
+ */
+
+// Compare two dates
+export function isDateBefore(date1: string, date2: string): boolean {
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+  return d1 < d2;
+}
+
+export function isDateAfter(date1: string, date2: string): boolean {
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+  return d1 > d2;
+}
+
+export function isDateEqual(date1: string, date2: string): boolean {
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+  return d1.getTime() === d2.getTime();
+}
+
+// URL validation
+export function isValidUrl(url: string): boolean {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Phone number validation (simple international format)
+export function isValidPhone(phone: string): boolean {
+  // Accepts various formats: +1-212-555-0123, 212-555-0123, +44 20 7946 0958, etc.
+  const phoneRegex = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/;
+  return phoneRegex.test(phone.replace(/\s/g, ''));
+}
+
+// Numeric validation
+export function isNumeric(value: unknown): boolean {
+  if (typeof value === 'number') return !isNaN(value);
+  if (typeof value === 'string') return !isNaN(parseFloat(value)) && value.trim() !== '';
+  return false;
+}
+
+// Length validation
+export function hasMinLength(value: string, minLength: number): boolean {
+  return value.trim().length >= minLength;
+}
+
+export function hasMaxLength(value: string, maxLength: number): boolean {
+  return value.length <= maxLength;
+}
+
+export function hasLengthBetween(value: string, min: number, max: number): boolean {
+  const length = value.trim().length;
+  return length >= min && length <= max;
+}
+
+/**
+ * Field-level validation builder
+ * Allows composing validation rules
+ */
+export interface ValidationRule {
+  validate: (value: unknown) => boolean;
+  message: string;
+}
+
+export function createValidationRules(rules: ValidationRule[]) {
+  return {
+    validate: (value: unknown): ValidationError | null => {
+      for (const rule of rules) {
+        if (!rule.validate(value)) {
+          return { field: '', message: rule.message };
+        }
+      }
+      return null;
+    }
+  };
+}
+
+// Common validation rule presets
+export const validationRules = {
+  required: {
+    validate: isRequired,
+    message: 'This field is required'
+  },
+  email: {
+    validate: isValidEmail,
+    message: 'Please enter a valid email address'
+  },
+  url: {
+    validate: isValidUrl,
+    message: 'Please enter a valid URL'
+  },
+  phone: {
+    validate: isValidPhone,
+    message: 'Please enter a valid phone number'
+  },
+  date: {
+    validate: (v) => isValidDate(v as string),
+    message: 'Please enter a valid date'
+  },
+  time: {
+    validate: (v) => isValidTime(v as string),
+    message: 'Please enter a valid time (HH:MM)'
+  },
+  numeric: {
+    validate: isNumeric,
+    message: 'Please enter a valid number'
+  }
+};
+
+/**
+ * Form-level validation with multiple fields
+ */
+export function validateFields(
+  data: Record<string, unknown>,
+  schema: Record<string, ValidationRule[]>
+): Record<string, string> {
+  const errors: Record<string, string> = {};
+
+  for (const [field, rules] of Object.entries(schema)) {
+    for (const rule of rules) {
+      if (!rule.validate(data[field])) {
+        errors[field] = rule.message;
+        break; // Show first error only
+      }
+    }
+  }
+
+  return errors;
+}
+
+/**
+ * Check if form has validation errors
+ */
+export function hasErrors(errors: Record<string, string> | ValidationError[]): boolean {
+  if (Array.isArray(errors)) {
+    return errors.length > 0;
+  }
+  return Object.keys(errors).length > 0;
+}
+
+/**
+ * Get first error message from field errors
+ */
+export function getFirstError(
+  errors: Record<string, string> | ValidationError[]
+): string | null {
+  if (Array.isArray(errors)) {
+    return errors.length > 0 ? errors[0].message : null;
+  }
+  const keys = Object.keys(errors);
+  return keys.length > 0 ? errors[keys[0]] : null;
+}

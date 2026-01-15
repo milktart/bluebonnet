@@ -69,23 +69,36 @@ async function geocodeOriginDestination({
 }
 
 /**
- * Verify resource ownership (for resources that belong directly to a user)
- * @param {Object} resource - Resource object with userId
+ * Verify resource ownership (unified approach for both direct and trip-based ownership)
+ * Checks if user owns the resource directly OR owns the trip the resource belongs to
+ * @param {Object} resource - Resource object with userId and/or trip association
  * @param {string} currentUserId - Current user's ID
- * @returns {boolean} - True if user owns the resource
+ * @returns {boolean} - True if user owns the resource or its parent trip
  */
 function verifyResourceOwnership(resource, currentUserId) {
-  if (!resource) return false;
+  if (!resource || !currentUserId) return false;
 
-  // Convert both to strings for comparison
-  const resourceUserId = String(resource.userId || '');
-  const userId = String(currentUserId || '');
+  // Convert both to strings for comparison (UUIDs can be objects or strings)
+  const userId = String(currentUserId);
 
-  return resourceUserId === userId;
+  // Check direct ownership (for standalone items)
+  if (resource.userId) {
+    const resourceUserId = String(resource.userId);
+    if (resourceUserId === userId) return true;
+  }
+
+  // Check trip ownership (for trip-based items)
+  if (resource.trip && resource.trip.userId) {
+    const tripUserId = String(resource.trip.userId);
+    if (tripUserId === userId) return true;
+  }
+
+  return false;
 }
 
 /**
- * Verify resource ownership through trip (for resources that belong to a trip)
+ * Verify resource ownership through trip (legacy - kept for backward compatibility)
+ * @deprecated Use verifyResourceOwnership instead (now handles both cases)
  * @param {Object} resource - Resource object with trip association
  * @param {string} currentUserId - Current user's ID
  * @returns {boolean} - True if user owns the trip that owns the resource
@@ -93,11 +106,53 @@ function verifyResourceOwnership(resource, currentUserId) {
 function verifyResourceOwnershipViaTrip(resource, currentUserId) {
   if (!resource || !resource.trip) return false;
 
-  // Convert both to strings for comparison (UUIDs can be objects or strings)
+  // Convert both to strings for comparison
   const tripUserId = String(resource.trip.userId || '');
   const userId = String(currentUserId || '');
 
   return tripUserId === userId;
+}
+
+/**
+ * Verify if user can edit items in a trip (as trip owner or companion admin)
+ * @param {string} tripId - Trip ID
+ * @param {string} currentUserId - Current user's ID
+ * @param {Object} Trip - Trip model
+ * @param {Object} TripCompanion - TripCompanion model
+ * @returns {Promise<boolean>} - True if user can edit items in this trip
+ */
+async function verifyTripItemEditAccess(tripId, currentUserId, Trip, TripCompanion) {
+  if (!tripId || !currentUserId) return false;
+
+  const userId = String(currentUserId);
+  const tripIdStr = String(tripId);
+
+  // Check if user is the trip owner
+  const trip = await Trip.findOne({
+    where: { id: tripIdStr, userId },
+  });
+
+  if (trip) return true;
+
+  // Check if user is a companion with canEdit permission
+  const { TravelCompanion } = require('../../models');
+  const tripCompanion = await TripCompanion.findOne({
+    where: { tripId: tripIdStr },
+    include: [
+      {
+        model: TravelCompanion,
+        as: 'companion',
+        where: { userId },
+        required: true,
+      },
+    ],
+  });
+
+  if (tripCompanion && tripCompanion.canEdit) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -160,6 +215,7 @@ module.exports = {
   geocodeOriginDestination,
   verifyResourceOwnership,
   verifyResourceOwnershipViaTrip,
+  verifyTripItemEditAccess,
   convertToUTC,
   geocodeWithAirportFallback,
 };

@@ -2,6 +2,7 @@
   import { transportationApi } from '$lib/services/api';
   import { tripStoreActions } from '$lib/stores/tripStore';
   import { dataService } from '$lib/services/dataService';
+  import { validateTransportation, getFirstError } from '$lib/utils/validation';
   import TextInput from './TextInput.svelte';
   import Textarea from './Textarea.svelte';
   import DateTimePicker from './DateTimePicker.svelte';
@@ -45,19 +46,10 @@
 
   async function handleSubmit() {
     try {
-      // Validation
-      if (!formData.fromLocation.trim()) {
-        error = 'Departure location is required';
-        return;
-      }
-
-      if (!formData.toLocation.trim()) {
-        error = 'Arrival location is required';
-        return;
-      }
-
-      if (!formData.departureTime) {
-        error = 'Departure time is required';
+      // Unified validation using validation utilities
+      const validation = validateTransportation(formData);
+      if (!validation.isValid) {
+        error = getFirstError(validation.errors);
         return;
       }
 

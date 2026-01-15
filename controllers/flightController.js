@@ -2,13 +2,16 @@ const { Flight, Trip, VoucherAttachment, Voucher, ItemTrip } = require('../model
 const logger = require('../utils/logger');
 const airportService = require('../services/airportService');
 const { utcToLocal } = require('../utils/timezoneHelper');
-const itemCompanionHelper = require('../utils/itemCompanionHelper');
 const itemTripService = require('../services/itemTripService');
+const itemCompanionService = require('../services/itemCompanionService');
+const { sendAsyncOrRedirect } = require('../utils/asyncResponseHandler');
+const { combineDateTimeFields, sanitizeTimezones } = require('../utils/dateTimeParser');
 const {
   verifyTripOwnership,
   redirectAfterSuccess,
   redirectAfterError,
   verifyResourceOwnership,
+  verifyTripItemEditAccess,
   convertToUTC,
   geocodeWithAirportFallback,
 } = require('./helpers/resourceController');
@@ -86,10 +89,6 @@ exports.createFlight = async (req, res) => {
     const { tripId } = req.params;
     const {
       flightNumber,
-      departureDate,
-      departureTime,
-      arrivalDate,
-      arrivalTime,
       pnr,
       seat,
       companions,
@@ -104,23 +103,15 @@ exports.createFlight = async (req, res) => {
       destinationTimezone,
     } = req.body;
 
-    // Handle both combined and separate date/time fields
-    if (!departureDateTime && departureDate && departureTime) {
-      departureDateTime = `${departureDate}T${departureTime}`;
-    }
-    if (!arrivalDateTime && arrivalDate && arrivalTime) {
-      arrivalDateTime = `${arrivalDate}T${arrivalTime}`;
-    }
-
     // Verify trip ownership if tripId provided
     if (tripId) {
       const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
       if (!trip) {
-        const isAsync = req.headers['x-async-request'] === 'true';
-        if (isAsync) {
-          return res.status(403).json({ success: false, error: 'Trip not found' });
-        }
-        return redirectAfterError(res, req, null, 'Trip not found');
+        return sendAsyncOrRedirect(req, res, {
+          error: 'Trip not found',
+          status: 403,
+          redirectUrl: '/',
+        });
       }
     }
 
@@ -132,21 +123,14 @@ exports.createFlight = async (req, res) => {
       }
     }
 
-    // Sanitize timezone inputs (handle "undefined" string from forms)
-    if (
-      !originTimezone ||
-      originTimezone === 'undefined' ||
-      (typeof originTimezone === 'string' && originTimezone.trim() === '')
-    ) {
-      originTimezone = null;
-    }
-    if (
-      !destinationTimezone ||
-      destinationTimezone === 'undefined' ||
-      (typeof destinationTimezone === 'string' && destinationTimezone.trim() === '')
-    ) {
-      destinationTimezone = null;
-    }
+    // Centralized datetime and timezone handling
+    let data = { departureDateTime, arrivalDateTime, originTimezone, destinationTimezone, ...req.body };
+    data = combineDateTimeFields(data, ['departure', 'arrival']);
+    data = sanitizeTimezones(data, ['originTimezone', 'destinationTimezone']);
+    departureDateTime = data.departureDateTime;
+    arrivalDateTime = data.arrivalDateTime;
+    originTimezone = data.originTimezone;
+    destinationTimezone = data.destinationTimezone;
 
     // Geocode origin and destination with airport fallback
     const originResult = await geocodeWithAirportFallback(origin, airportService, originTimezone);
@@ -190,59 +174,27 @@ exports.createFlight = async (req, res) => {
       }
     }
 
-    // Add companions to this flight (legacy system - will be deprecated)
-    try {
-      if (tripId) {
-        let companionIds = [];
+    // Handle companions - unified method
+    await itemCompanionService.handleItemCompanions('flight', flight.id, companions, tripId, req.user.id);
 
-        // Try to parse companions if provided
-        if (companions) {
-          try {
-            companionIds = typeof companions === 'string' ? JSON.parse(companions) : companions;
-            companionIds = Array.isArray(companionIds) ? companionIds : [];
-          } catch (e) {
-            logger.error('Error parsing companions:', e);
-            companionIds = [];
-          }
-        }
-
-        // If companions were provided and not empty, use them; otherwise use fallback
-        if (companionIds.length > 0) {
-          await itemCompanionHelper.updateItemCompanions(
-            'flight',
-            flight.id,
-            companionIds,
-            tripId,
-            req.user.id
-          );
-        } else {
-          // Fallback: auto-add trip-level companions
-          await itemCompanionHelper.autoAddTripCompanions('flight', flight.id, tripId, req.user.id);
-        }
-      }
-    } catch (e) {
-      logger.error('Error managing companions for flight:', e);
-      // Don't fail the flight creation due to companion errors
-    }
-
-    // Check if this is an async request
-    const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.json({ success: true, data: flight, message: 'Flight added successfully' });
-    }
-
-    redirectAfterSuccess(res, req, tripId, 'flights', 'Flight added successfully');
+    // Centralized async/redirect response handling
+    return sendAsyncOrRedirect(req, res, {
+      success: true,
+      data: flight,
+      message: 'Flight added successfully',
+      redirectUrl: tripId ? `/trips/${tripId}` : '/dashboard',
+    });
   } catch (error) {
     logger.error('ERROR in createFlight:', error);
     logger.error('Request body:', req.body);
     logger.error('Request params:', req.params);
-    const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res
-        .status(500)
-        .json({ success: false, error: error.message || 'Error adding flight' });
-    }
-    redirectAfterError(res, req, req.params.tripId, 'Error adding flight');
+
+    return sendAsyncOrRedirect(req, res, {
+      success: false,
+      error: error.message || 'Error adding flight',
+      status: 500,
+      redirectUrl: req.params.tripId ? `/trips/${req.params.tripId}` : '/dashboard',
+    });
   }
 };
 
@@ -269,37 +221,33 @@ exports.updateFlight = async (req, res) => {
       destinationTimezone,
     } = req.body;
 
-    // Handle both combined and separate date/time fields
-    if (!departureDateTime && departureDate && departureTime) {
-      departureDateTime = `${departureDate}T${departureTime}`;
-    }
-    if (!arrivalDateTime && arrivalDate && arrivalTime) {
-      arrivalDateTime = `${arrivalDate}T${arrivalTime}`;
-    }
-
     // Find flight with trip
     const flight = await Flight.findByPk(req.params.id, {
       include: [{ model: Trip, as: 'trip', required: false }],
     });
 
-    // Verify ownership
-    if (!verifyResourceOwnership(flight, req.user.id)) {
-      const isAsync = req.headers['x-async-request'] === 'true';
-      if (isAsync) {
-        return res.status(403).json({ success: false, error: 'Flight not found' });
-      }
-      return redirectAfterError(res, req, null, 'Flight not found');
+    // Verify ownership - check if user is item creator OR trip owner OR trip admin with canEdit permission
+    const isItemOwner = verifyResourceOwnership(flight, req.user.id);
+    const { TripCompanion } = require('../models');
+    const canEditTrip = flight.tripId ? await verifyTripItemEditAccess(flight.tripId, req.user.id, Trip, TripCompanion) : false;
+
+    if (!isItemOwner && !canEditTrip) {
+      return sendAsyncOrRedirect(req, res, {
+        error: 'Flight not found',
+        status: 403,
+        redirectUrl: '/',
+      });
     }
 
     // Verify trip edit access if changing trips
     if (newTripId && newTripId !== flight.tripId) {
       const hasAccess = await verifyTripEditAccess(newTripId, req.user.id);
       if (!hasAccess) {
-        const isAsync = req.headers['x-async-request'] === 'true';
-        if (isAsync) {
-          return res.status(403).json({ success: false, error: 'Cannot attach to this trip' });
-        }
-        return redirectAfterError(res, req, null, 'Cannot attach to this trip');
+        return sendAsyncOrRedirect(req, res, {
+          error: 'Cannot attach to this trip',
+          status: 403,
+          redirectUrl: '/',
+        });
       }
     }
 
@@ -311,21 +259,14 @@ exports.updateFlight = async (req, res) => {
       }
     }
 
-    // Sanitize timezone inputs (handle "undefined" string from forms)
-    if (
-      !originTimezone ||
-      originTimezone === 'undefined' ||
-      (typeof originTimezone === 'string' && originTimezone.trim() === '')
-    ) {
-      originTimezone = null;
-    }
-    if (
-      !destinationTimezone ||
-      destinationTimezone === 'undefined' ||
-      (typeof destinationTimezone === 'string' && destinationTimezone.trim() === '')
-    ) {
-      destinationTimezone = null;
-    }
+    // Centralized datetime and timezone handling
+    let data = { departureDateTime, arrivalDateTime, departureDate, departureTime, arrivalDate, arrivalTime, originTimezone, destinationTimezone, ...req.body };
+    data = combineDateTimeFields(data, ['departure', 'arrival']);
+    data = sanitizeTimezones(data, ['originTimezone', 'destinationTimezone']);
+    departureDateTime = data.departureDateTime;
+    arrivalDateTime = data.arrivalDateTime;
+    originTimezone = data.originTimezone;
+    destinationTimezone = data.destinationTimezone;
 
     // Geocode origin and destination if they changed
     let originResult;
@@ -381,26 +322,6 @@ exports.updateFlight = async (req, res) => {
       };
     }
 
-    // Debug logging
-    logger.info('Update flight - input data:', {
-      flightId: req.params.id,
-      airline,
-      flightNumber,
-      origin,
-      destination,
-      departureDateTime,
-      arrivalDateTime,
-      originTimezone,
-      destinationTimezone,
-    });
-
-    logger.info('Update flight - converted data:', {
-      departureDateTime: convertToUTC(departureDateTime, originTimezone),
-      arrivalDateTime: convertToUTC(arrivalDateTime, destinationTimezone),
-      originResult: { coords: originResult.coords, timezone: originResult.timezone },
-      destResult: { coords: destResult.coords, timezone: destResult.timezone },
-    });
-
     await flight.update({
       airline,
       flightNumber: flightNumber?.toUpperCase(),
@@ -419,66 +340,48 @@ exports.updateFlight = async (req, res) => {
     });
 
     // Update trip association via ItemTrip if it changed
-    if (newTripId && newTripId !== flight.tripId) {
-      try {
+    try {
+      if (newTripId && newTripId !== flight.tripId) {
         // Remove from old trip if there was one
         if (flight.tripId) {
           await itemTripService.removeItemFromTrip('flight', flight.id, flight.tripId);
         }
         // Add to new trip
         await itemTripService.addItemToTrip('flight', flight.id, newTripId);
-      } catch (e) {
-        logger.error('Error updating flight trip association:', e);
-        // Don't fail the update due to ItemTrip errors
-      }
-    } else if (newTripId === null && flight.tripId) {
-      // Remove from trip if explicitly setting to null
-      try {
+      } else if (newTripId === null && flight.tripId) {
+        // Remove from trip if explicitly setting to null
         await itemTripService.removeItemFromTrip('flight', flight.id, flight.tripId);
-      } catch (e) {
-        logger.error('Error removing flight from trip:', e);
       }
+    } catch (e) {
+      logger.error('Error updating flight trip association:', e);
+      // Don't fail the update due to ItemTrip errors
     }
 
-    // Update companions for this flight (legacy system - will be deprecated)
+    // Update companions for this flight
     // Note: When editing an existing flight, companions are typically managed via
     // the real-time API calls in the UI, not via form submission. We only update
     // companions here if a non-empty array is explicitly provided.
     if (companions) {
-      let companionIds = [];
       try {
-        companionIds = typeof companions === 'string' ? JSON.parse(companions) : companions;
-      } catch (e) {
-        companionIds = Array.isArray(companions) ? companions : [];
-      }
-
-      // Only update companions if a non-empty array is provided
-      // An empty array likely means the companion section failed to load,
-      // so we preserve existing companions rather than removing them all
-      if (companionIds.length > 0) {
-        // Get current trip from ItemTrip if available, otherwise use flight.tripId
         const currentTripId = newTripId || flight.tripId;
         if (currentTripId) {
-          await itemCompanionHelper.updateItemCompanions(
-            'flight',
-            flight.id,
-            companionIds,
-            currentTripId,
-            req.user.id
-          );
+          await itemCompanionService.handleItemCompanions('flight', flight.id, companions, currentTripId, req.user.id);
         }
+      } catch (e) {
+        logger.error('Error updating flight companions:', e);
+        // Don't fail the update due to companion errors
       }
     }
 
     logger.info('Flight updated successfully:', { flightId: req.params.id });
 
-    // Check if this is an async request
-    const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.json({ success: true, data: flight, message: 'Flight updated successfully' });
-    }
-
-    redirectAfterSuccess(res, req, flight.tripId, 'flights', 'Flight updated successfully');
+    // Centralized async/redirect response handling
+    return sendAsyncOrRedirect(req, res, {
+      success: true,
+      data: flight,
+      message: 'Flight updated successfully',
+      redirectUrl: newTripId || flight.tripId ? `/trips/${newTripId || flight.tripId}` : '/dashboard',
+    });
   } catch (error) {
     logger.error('ERROR in updateFlight:', {
       message: error.message,
@@ -487,10 +390,15 @@ exports.updateFlight = async (req, res) => {
       flightId: req.params.id,
       requestBody: req.body,
     });
-    const isAsync = req.headers['x-async-request'] === 'true';
     const errorMessage = error.message || 'Error updating flight';
     logger.error('Returning error response:', errorMessage);
-    return res.status(500).json({ success: false, error: errorMessage });
+
+    return sendAsyncOrRedirect(req, res, {
+      success: false,
+      error: errorMessage,
+      status: 500,
+      redirectUrl: '/dashboard',
+    });
   }
 };
 
@@ -501,13 +409,17 @@ exports.deleteFlight = async (req, res) => {
       include: [{ model: Trip, as: 'trip', required: false }],
     });
 
-    // Verify ownership
-    if (!verifyResourceOwnership(flight, req.user.id)) {
-      const isAsync = req.headers['x-async-request'] === 'true';
-      if (isAsync) {
-        return res.status(403).json({ success: false, error: 'Flight not found' });
-      }
-      return redirectAfterError(res, req, null, 'Flight not found');
+    // Verify ownership - check if user is item creator OR trip owner OR trip admin with canEdit permission
+    const isItemOwner = verifyResourceOwnership(flight, req.user.id);
+    const { TripCompanion } = require('../models');
+    const canEditTrip = flight.tripId ? await verifyTripItemEditAccess(flight.tripId, req.user.id, Trip, TripCompanion) : false;
+
+    if (!isItemOwner && !canEditTrip) {
+      return sendAsyncOrRedirect(req, res, {
+        error: 'Flight not found',
+        status: 403,
+        redirectUrl: '/',
+      });
     }
 
     const { tripId } = flight;
@@ -517,7 +429,7 @@ exports.deleteFlight = async (req, res) => {
     // Store the deleted flight in session for potential restoration
     storeDeletedItem(req.session, 'flight', flight.id, flightData, flightName);
 
-    // Remove from all trips via ItemTrip (replaces old tripId association)
+    // Remove from all trips via ItemTrip
     try {
       await itemTripService.removeItemFromAllTrips('flight', flight.id);
     } catch (e) {
@@ -525,22 +437,23 @@ exports.deleteFlight = async (req, res) => {
       // Don't fail deletion due to ItemTrip cleanup errors
     }
 
-    // Remove all item companions (legacy system)
-    await itemCompanionHelper.removeItemCompanions('flight', flight.id);
-
     await flight.destroy();
 
-    // Check if this is an async request
-    const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.json({ success: true, message: 'Flight deleted successfully', itemId: flight.id });
-    }
-
-    redirectAfterSuccess(res, req, tripId, 'flights', 'Flight deleted successfully');
+    // Centralized async/redirect response handling
+    return sendAsyncOrRedirect(req, res, {
+      success: true,
+      message: 'Flight deleted successfully',
+      data: { itemId: flight.id },
+      redirectUrl: tripId ? `/trips/${tripId}` : '/dashboard',
+    });
   } catch (error) {
-    logger.error(error);
-    const isAsync = req.headers['x-async-request'] === 'true';
-    return res.status(500).json({ success: false, error: 'Error deleting flight' });
+    logger.error('ERROR in deleteFlight:', error);
+    return sendAsyncOrRedirect(req, res, {
+      success: false,
+      error: 'Error deleting flight',
+      status: 500,
+      redirectUrl: '/dashboard',
+    });
   }
 };
 

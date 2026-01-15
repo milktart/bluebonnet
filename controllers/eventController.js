@@ -1,18 +1,17 @@
 const { Event, Trip, ItemTrip } = require('../models');
 const logger = require('../utils/logger');
-const { parseCompanions } = require('../utils/parseHelper');
-const { sendAsyncResponse } = require('../utils/asyncResponseHelper');
-const itemCompanionHelper = require('../utils/itemCompanionHelper');
+const itemCompanionService = require('../services/itemCompanionService');
 const itemTripService = require('../services/itemTripService');
+const { sendAsyncOrRedirect } = require('../utils/asyncResponseHandler');
 const {
   verifyTripOwnership,
   geocodeIfChanged,
   redirectAfterSuccess,
   redirectAfterError,
   verifyResourceOwnership,
+  verifyTripItemEditAccess,
 } = require('./helpers/resourceController');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
-const { formatDate, formatTime } = require('../utils/dateFormatter');
 const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
 
 exports.createEvent = async (req, res) => {
@@ -23,7 +22,6 @@ exports.createEvent = async (req, res) => {
       location,
       contactPhone,
       contactEmail,
-      // Support for separate date/time fields from dashboard form
       startDate,
       startTime,
       endDate,
@@ -36,12 +34,10 @@ exports.createEvent = async (req, res) => {
 
     // Convert separate date/time fields to datetime strings if provided
     if (startDate && !startDateTime) {
-      // For all-day events without times, use midnight start
       const time = startTime || '00:00';
       startDateTime = `${startDate}T${time}`;
     }
     if (endDate && !endDateTime) {
-      // For all-day events without times, use 23:59 end
       const time = endTime || '23:59';
       endDateTime = `${endDate}T${time}`;
     }
@@ -50,17 +46,21 @@ exports.createEvent = async (req, res) => {
     if (tripId) {
       const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
       if (!trip) {
-        return sendAsyncResponse(res, false, null, 'Trip not found', null, req);
+        return sendAsyncOrRedirect(req, res, {
+          error: 'Trip not found',
+          status: 403,
+          redirectUrl: '/',
+        });
       }
     }
 
     // Geocode location if provided
     const coords = location ? await geocodeIfChanged(location) : null;
 
-    // If no endDateTime provided, default to startDateTime (for instant/point-in-time events)
+    // If no endDateTime provided, default to startDateTime
     const finalEndDateTime = endDateTime || startDateTime;
 
-    // Sanitize optional fields - convert empty strings to null to avoid validation errors
+    // Sanitize optional fields
     const sanitizedContactEmail = contactEmail && contactEmail.trim() !== '' ? contactEmail : null;
     const sanitizedContactPhone = contactPhone && contactPhone.trim() !== '' ? contactPhone : null;
     const sanitizedDescription = description && description.trim() !== '' ? description : null;
@@ -76,7 +76,7 @@ exports.createEvent = async (req, res) => {
       contactPhone: sanitizedContactPhone,
       contactEmail: sanitizedContactEmail,
       description: sanitizedDescription,
-      isConfirmed: isConfirmed === 'true' || isConfirmed === true || isConfirmed === 'on', // Save false if unchecked (undefined)
+      isConfirmed: isConfirmed === 'true' || isConfirmed === true || isConfirmed === 'on',
     });
 
     // Add event to trip via ItemTrip junction table
@@ -85,48 +85,33 @@ exports.createEvent = async (req, res) => {
         await itemTripService.addItemToTrip('event', event.id, tripId);
       } catch (e) {
         logger.error('Error adding event to trip in ItemTrip:', e);
-        // Don't fail the event creation due to ItemTrip errors
       }
     }
 
-    // Add companions to this event (legacy system - will be deprecated)
+    // Handle companions - unified method
     try {
-      if (tripId) {
-        const companionIds = parseCompanions(companions);
-
-        // If companions were provided and not empty, use them; otherwise use fallback
-        if (companionIds.length > 0) {
-          await itemCompanionHelper.updateItemCompanions(
-            'event',
-            event.id,
-            companionIds,
-            tripId,
-            req.user.id
-          );
-        } else {
-          // Fallback: auto-add trip-level companions
-          await itemCompanionHelper.autoAddTripCompanions('event', event.id, tripId, req.user.id);
-        }
-      }
+      await itemCompanionService.handleItemCompanions('event', event.id, companions, tripId, req.user.id);
     } catch (e) {
       logger.error('Error managing companions for event:', e);
-      // Don't fail the event creation due to companion errors
     }
 
-    // Send response (handles both async and traditional form submission)
-    return sendAsyncResponse(res, true, event, 'Event added successfully', tripId, req, 'events');
+    // Centralized async/redirect response handling
+    return sendAsyncOrRedirect(req, res, {
+      success: true,
+      data: event,
+      message: 'Event added successfully',
+      redirectUrl: tripId ? `/trips/${tripId}` : '/dashboard',
+    });
   } catch (error) {
     logger.error('ERROR in createEvent:', error);
     logger.error('Request body:', req.body);
     logger.error('Request params:', req.params);
-    return sendAsyncResponse(
-      res,
-      false,
-      null,
-      error.message || 'Error adding event',
-      req.params.tripId,
-      req
-    );
+    return sendAsyncOrRedirect(req, res, {
+      success: false,
+      error: error.message || 'Error adding event',
+      status: 500,
+      redirectUrl: req.params.tripId ? `/trips/${req.params.tripId}` : '/dashboard',
+    });
   }
 };
 
@@ -140,7 +125,6 @@ exports.updateEvent = async (req, res) => {
       contactPhone,
       contactEmail,
       description,
-      // Support for separate date/time fields from sidebar form
       startDate,
       startTime,
       endDate,
@@ -151,12 +135,10 @@ exports.updateEvent = async (req, res) => {
 
     // Convert separate date/time fields to datetime strings if provided
     if (startDate && !startDateTime) {
-      // For all-day events without times, use midnight start
       const time = startTime || '00:00';
       startDateTime = `${startDate}T${time}`;
     }
     if (endDate && !endDateTime) {
-      // For all-day events without times, use 23:59 end
       const time = endTime || '23:59';
       endDateTime = `${endDate}T${time}`;
     }
@@ -166,32 +148,28 @@ exports.updateEvent = async (req, res) => {
       include: [{ model: Trip, as: 'trip', required: false }],
     });
 
-    // Verify event exists
-    if (!event) {
-      const isAsync =
-        req.headers['x-async-request'] === 'true' || req.get('content-type') === 'application/json';
-      if (isAsync) {
-        return res.status(404).json({ success: false, error: 'Event not found' });
-      }
-      return redirectAfterError(res, req, null, 'Event not found');
-    }
+    // Verify ownership - check if user is item creator OR trip owner OR trip admin with canEdit permission
+    const isItemOwner = verifyResourceOwnership(event, req.user.id);
+    const { TripCompanion } = require('../models');
+    const canEditTrip = event.tripId ? await verifyTripItemEditAccess(event.tripId, req.user.id, Trip, TripCompanion) : false;
 
-    // Verify ownership
-    if (!verifyResourceOwnership(event, req.user.id)) {
-      const isAsync =
-        req.headers['x-async-request'] === 'true' || req.get('content-type') === 'application/json';
-      if (isAsync) {
-        return res.status(403).json({ success: false, error: 'Unauthorized' });
-      }
-      return redirectAfterError(res, req, null, 'Event not found');
+    if (!isItemOwner && !canEditTrip) {
+      return sendAsyncOrRedirect(req, res, {
+        error: 'Event not found',
+        status: 403,
+        redirectUrl: '/',
+      });
     }
 
     // Verify trip edit access if changing trip association
     if (newTripId && newTripId !== event.tripId) {
       const hasAccess = await verifyTripEditAccess(newTripId, req.user.id);
       if (!hasAccess) {
-        const isAsync = req.headers['x-async-request'] === 'true';
-        return res.status(403).json({ success: false, error: 'Cannot attach to this trip' });
+        return sendAsyncOrRedirect(req, res, {
+          error: 'Cannot attach to this trip',
+          status: 403,
+          redirectUrl: '/',
+        });
       }
     }
 
@@ -202,10 +180,10 @@ exports.updateEvent = async (req, res) => {
       location ? { lat: event.lat, lng: event.lng } : null
     );
 
-    // If no endDateTime provided, default to startDateTime (for instant/point-in-time events)
+    // If no endDateTime provided, default to startDateTime
     const finalEndDateTime = endDateTime || startDateTime;
 
-    // Sanitize optional fields - convert empty strings to null to avoid validation errors
+    // Sanitize optional fields
     const sanitizedContactEmail = contactEmail && contactEmail.trim() !== '' ? contactEmail : null;
     const sanitizedContactPhone = contactPhone && contactPhone.trim() !== '' ? contactPhone : null;
     const sanitizedDescription = description && description.trim() !== '' ? description : null;
@@ -224,42 +202,38 @@ exports.updateEvent = async (req, res) => {
     });
 
     // Update trip association via ItemTrip if it changed
-    if (newTripId && newTripId !== event.tripId) {
-      try {
-        // Remove from old trip if there was one
+    try {
+      if (newTripId && newTripId !== event.tripId) {
         if (event.tripId) {
           await itemTripService.removeItemFromTrip('event', event.id, event.tripId);
         }
-        // Add to new trip
         await itemTripService.addItemToTrip('event', event.id, newTripId);
-      } catch (e) {
-        logger.error('Error updating event trip association:', e);
-        // Don't fail the update due to ItemTrip errors
-      }
-    } else if (newTripId === null && event.tripId) {
-      // Remove from trip if explicitly setting to null
-      try {
+      } else if (newTripId === null && event.tripId) {
         await itemTripService.removeItemFromTrip('event', event.id, event.tripId);
-      } catch (e) {
-        logger.error('Error removing event from trip:', e);
       }
+    } catch (e) {
+      logger.error('Error updating event trip association:', e);
     }
 
-    // Check if this is an async request
-    const isAsync =
-      req.headers['x-async-request'] === 'true' || req.get('content-type') === 'application/json';
-    if (isAsync) {
-      return res.json({ success: true, data: event, message: 'Event updated successfully' });
-    }
+    logger.info('Event updated successfully:', { eventId: req.params.id });
 
-    redirectAfterSuccess(res, req, event.tripId, 'events', 'Event updated successfully');
+    // Centralized async/redirect response handling
+    return sendAsyncOrRedirect(req, res, {
+      success: true,
+      data: event,
+      message: 'Event updated successfully',
+      redirectUrl: newTripId || event.tripId ? `/trips/${newTripId || event.tripId}` : '/dashboard',
+    });
   } catch (error) {
     logger.error('ERROR in updateEvent:', error);
     logger.error('Request body:', req.body);
     logger.error('Request params:', req.params);
-    const isAsync =
-      req.headers['x-async-request'] === 'true' || req.get('content-type') === 'application/json';
-    return res.status(500).json({ success: false, error: error.message || 'Error updating event' });
+    return sendAsyncOrRedirect(req, res, {
+      success: false,
+      error: error.message || 'Error updating event',
+      status: 500,
+      redirectUrl: '/dashboard',
+    });
   }
 };
 
@@ -270,13 +244,17 @@ exports.deleteEvent = async (req, res) => {
       include: [{ model: Trip, as: 'trip', required: false }],
     });
 
-    // Verify ownership
-    if (!verifyResourceOwnership(event, req.user.id)) {
-      const isAsync = req.headers['x-async-request'] === 'true';
-      if (isAsync) {
-        return res.status(403).json({ success: false, error: 'Event not found' });
-      }
-      return redirectAfterError(res, req, null, 'Event not found');
+    // Verify ownership - check if user is item creator OR trip owner OR trip admin with canEdit permission
+    const isItemOwner = verifyResourceOwnership(event, req.user.id);
+    const { TripCompanion } = require('../models');
+    const canEditTrip = event.tripId ? await verifyTripItemEditAccess(event.tripId, req.user.id, Trip, TripCompanion) : false;
+
+    if (!isItemOwner && !canEditTrip) {
+      return sendAsyncOrRedirect(req, res, {
+        error: 'Event not found',
+        status: 403,
+        redirectUrl: '/',
+      });
     }
 
     const { tripId } = event;
@@ -285,30 +263,30 @@ exports.deleteEvent = async (req, res) => {
     // Store the deleted event in session for potential restoration
     storeDeletedItem(req.session, 'event', event.id, eventData, event.name);
 
-    // Remove from all trips via ItemTrip (replaces old tripId association)
+    // Remove from all trips via ItemTrip
     try {
       await itemTripService.removeItemFromAllTrips('event', event.id);
     } catch (e) {
       logger.error('Error removing event from ItemTrip records:', e);
-      // Don't fail deletion due to ItemTrip cleanup errors
     }
-
-    // Remove all item companions (legacy system)
-    await itemCompanionHelper.removeItemCompanions('event', event.id);
 
     await event.destroy();
 
-    // Check if this is an async request
-    const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.json({ success: true, message: 'Event deleted successfully', itemId: event.id });
-    }
-
-    redirectAfterSuccess(res, req, tripId, 'events', 'Event deleted successfully');
+    // Centralized async/redirect response handling
+    return sendAsyncOrRedirect(req, res, {
+      success: true,
+      message: 'Event deleted successfully',
+      data: { itemId: event.id },
+      redirectUrl: tripId ? `/trips/${tripId}` : '/dashboard',
+    });
   } catch (error) {
-    logger.error(error);
-    const isAsync = req.headers['x-async-request'] === 'true';
-    return res.status(500).json({ success: false, error: 'Error deleting event' });
+    logger.error('ERROR in deleteEvent:', error);
+    return sendAsyncOrRedirect(req, res, {
+      success: false,
+      error: 'Error deleting event',
+      status: 500,
+      redirectUrl: '/dashboard',
+    });
   }
 };
 

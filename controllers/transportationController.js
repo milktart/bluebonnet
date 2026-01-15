@@ -1,16 +1,16 @@
 const { Transportation, Trip, ItemTrip } = require('../models');
 const logger = require('../utils/logger');
 const { utcToLocal } = require('../utils/timezoneHelper');
-const { parseCompanions } = require('../utils/parseHelper');
-const { sendAsyncResponse } = require('../utils/asyncResponseHelper');
-const itemCompanionHelper = require('../utils/itemCompanionHelper');
+const itemCompanionService = require('../services/itemCompanionService');
 const itemTripService = require('../services/itemTripService');
+const { sendAsyncOrRedirect } = require('../utils/asyncResponseHandler');
 const {
   verifyTripOwnership,
   geocodeOriginDestination,
   redirectAfterSuccess,
   redirectAfterError,
   verifyResourceOwnership,
+  verifyTripItemEditAccess,
   convertToUTC,
 } = require('./helpers/resourceController');
 const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
@@ -37,7 +37,11 @@ exports.createTransportation = async (req, res) => {
     if (tripId) {
       const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
       if (!trip) {
-        return sendAsyncResponse(res, false, null, 'Trip not found', null, req);
+        return sendAsyncOrRedirect(req, res, {
+          error: 'Trip not found',
+          status: 403,
+          redirectUrl: '/',
+        });
       }
     }
 
@@ -71,59 +75,31 @@ exports.createTransportation = async (req, res) => {
         await itemTripService.addItemToTrip('transportation', transportation.id, tripId);
       } catch (e) {
         logger.error('Error adding transportation to trip in ItemTrip:', e);
-        // Don't fail the transportation creation due to ItemTrip errors
       }
     }
 
-    // Add companions to this transportation (legacy system - will be deprecated)
+    // Handle companions - unified method
     try {
-      if (tripId) {
-        const companionIds = parseCompanions(companions);
-
-        // If companions were provided and not empty, use them; otherwise use fallback
-        if (companionIds.length > 0) {
-          await itemCompanionHelper.updateItemCompanions(
-            'transportation',
-            transportation.id,
-            companionIds,
-            tripId,
-            req.user.id
-          );
-        } else {
-          // Fallback: auto-add trip-level companions
-          await itemCompanionHelper.autoAddTripCompanions(
-            'transportation',
-            transportation.id,
-            tripId,
-            req.user.id
-          );
-        }
-      }
+      await itemCompanionService.handleItemCompanions('transportation', transportation.id, companions, tripId, req.user.id);
     } catch (e) {
       logger.error('Error managing companions for transportation:', e);
-      // Don't fail the transportation creation due to companion errors
     }
 
-    // Send response (handles both async and traditional form submission)
-    return sendAsyncResponse(
-      res,
-      true,
-      transportation,
-      'Transportation added successfully',
-      tripId,
-      req,
-      'transportation'
-    );
+    // Centralized async/redirect response handling
+    return sendAsyncOrRedirect(req, res, {
+      success: true,
+      data: transportation,
+      message: 'Transportation added successfully',
+      redirectUrl: tripId ? `/trips/${tripId}` : '/dashboard',
+    });
   } catch (error) {
-    logger.error(error);
-    return sendAsyncResponse(
-      res,
-      false,
-      null,
-      'Error adding transportation',
-      req.params.tripId,
-      req
-    );
+    logger.error('ERROR in createTransportation:', error);
+    return sendAsyncOrRedirect(req, res, {
+      success: false,
+      error: error.message || 'Error adding transportation',
+      status: 500,
+      redirectUrl: req.params.tripId ? `/trips/${req.params.tripId}` : '/dashboard',
+    });
   }
 };
 
@@ -152,24 +128,28 @@ exports.updateTransportation = async (req, res) => {
       include: [{ model: Trip, as: 'trip', required: false }],
     });
 
-    // Verify ownership
-    if (!verifyResourceOwnership(transportation, req.user.id)) {
-      const isAsync = req.headers['x-async-request'] === 'true';
-      if (isAsync) {
-        return res.status(403).json({ success: false, error: 'Transportation not found' });
-      }
-      return redirectAfterError(res, req, null, 'Transportation not found');
+    // Verify ownership - check if user is item creator OR trip owner OR trip admin with canEdit permission
+    const isItemOwner = verifyResourceOwnership(transportation, req.user.id);
+    const { TripCompanion } = require('../models');
+    const canEditTrip = transportation.tripId ? await verifyTripItemEditAccess(transportation.tripId, req.user.id, Trip, TripCompanion) : false;
+
+    if (!isItemOwner && !canEditTrip) {
+      return sendAsyncOrRedirect(req, res, {
+        error: 'Transportation not found',
+        status: 403,
+        redirectUrl: '/',
+      });
     }
 
     // Verify trip edit access if changing trips
     if (newTripId && newTripId !== transportation.tripId) {
       const hasAccess = await verifyTripEditAccess(newTripId, req.user.id);
       if (!hasAccess) {
-        const isAsync = req.headers['x-async-request'] === 'true';
-        if (isAsync) {
-          return res.status(403).json({ success: false, error: 'Cannot attach to this trip' });
-        }
-        return redirectAfterError(res, req, null, 'Cannot attach to this trip');
+        return sendAsyncOrRedirect(req, res, {
+          error: 'Cannot attach to this trip',
+          status: 403,
+          redirectUrl: '/',
+        });
       }
     }
 
@@ -215,9 +195,8 @@ exports.updateTransportation = async (req, res) => {
     });
 
     // Update trip association via ItemTrip if it changed
-    if (newTripId && newTripId !== transportation.tripId) {
-      try {
-        // Remove from old trip if there was one
+    try {
+      if (newTripId && newTripId !== transportation.tripId) {
         if (transportation.tripId) {
           await itemTripService.removeItemFromTrip(
             'transportation',
@@ -225,46 +204,35 @@ exports.updateTransportation = async (req, res) => {
             transportation.tripId
           );
         }
-        // Add to new trip
         await itemTripService.addItemToTrip('transportation', transportation.id, newTripId);
-      } catch (e) {
-        logger.error('Error updating transportation trip association:', e);
-        // Don't fail the update due to ItemTrip errors
-      }
-    } else if (newTripId === null && transportation.tripId) {
-      // Remove from trip if explicitly setting to null
-      try {
+      } else if (newTripId === null && transportation.tripId) {
         await itemTripService.removeItemFromTrip(
           'transportation',
           transportation.id,
           transportation.tripId
         );
-      } catch (e) {
-        logger.error('Error removing transportation from trip:', e);
       }
+    } catch (e) {
+      logger.error('Error updating transportation trip association:', e);
     }
 
-    // Check if this is an async request
-    const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.json({
-        success: true,
-        data: transportation,
-        message: 'Transportation updated successfully',
-      });
-    }
+    logger.info('Transportation updated successfully:', { transportationId: req.params.id });
 
-    redirectAfterSuccess(
-      res,
-      req,
-      transportation.tripId,
-      'transportation',
-      'Transportation updated successfully'
-    );
+    // Centralized async/redirect response handling
+    return sendAsyncOrRedirect(req, res, {
+      success: true,
+      data: transportation,
+      message: 'Transportation updated successfully',
+      redirectUrl: newTripId || transportation.tripId ? `/trips/${newTripId || transportation.tripId}` : '/dashboard',
+    });
   } catch (error) {
-    logger.error(error);
-    const isAsync = req.headers['x-async-request'] === 'true';
-    return res.status(500).json({ success: false, error: 'Error updating transportation' });
+    logger.error('ERROR in updateTransportation:', error);
+    return sendAsyncOrRedirect(req, res, {
+      success: false,
+      error: error.message || 'Error updating transportation',
+      status: 500,
+      redirectUrl: '/dashboard',
+    });
   }
 };
 
@@ -275,13 +243,17 @@ exports.deleteTransportation = async (req, res) => {
       include: [{ model: Trip, as: 'trip', required: false }],
     });
 
-    // Verify ownership
-    if (!verifyResourceOwnership(transportation, req.user.id)) {
-      const isAsync = req.headers['x-async-request'] === 'true';
-      if (isAsync) {
-        return res.status(403).json({ success: false, error: 'Transportation not found' });
-      }
-      return redirectAfterError(res, req, null, 'Transportation not found');
+    // Verify ownership - check if user is item creator OR trip owner OR trip admin with canEdit permission
+    const isItemOwner = verifyResourceOwnership(transportation, req.user.id);
+    const { TripCompanion } = require('../models');
+    const canEditTrip = transportation.tripId ? await verifyTripItemEditAccess(transportation.tripId, req.user.id, Trip, TripCompanion) : false;
+
+    if (!isItemOwner && !canEditTrip) {
+      return sendAsyncOrRedirect(req, res, {
+        error: 'Transportation not found',
+        status: 403,
+        redirectUrl: '/',
+      });
     }
 
     const { tripId } = transportation;
@@ -297,34 +269,30 @@ exports.deleteTransportation = async (req, res) => {
       transportationName
     );
 
-    // Remove from all trips via ItemTrip (replaces old tripId association)
+    // Remove from all trips via ItemTrip
     try {
       await itemTripService.removeItemFromAllTrips('transportation', transportation.id);
     } catch (e) {
       logger.error('Error removing transportation from ItemTrip records:', e);
-      // Don't fail deletion due to ItemTrip cleanup errors
     }
-
-    // Remove all item companions (legacy system)
-    await itemCompanionHelper.removeItemCompanions('transportation', transportation.id);
 
     await transportation.destroy();
 
-    // Check if this is an async request
-    const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.json({
-        success: true,
-        message: 'Transportation deleted successfully',
-        itemId: transportation.id,
-      });
-    }
-
-    redirectAfterSuccess(res, req, tripId, 'transportation', 'Transportation deleted successfully');
+    // Centralized async/redirect response handling
+    return sendAsyncOrRedirect(req, res, {
+      success: true,
+      message: 'Transportation deleted successfully',
+      data: { itemId: transportation.id },
+      redirectUrl: tripId ? `/trips/${tripId}` : '/dashboard',
+    });
   } catch (error) {
-    logger.error(error);
-    const isAsync = req.headers['x-async-request'] === 'true';
-    return res.status(500).json({ success: false, error: 'Error deleting transportation' });
+    logger.error('ERROR in deleteTransportation:', error);
+    return sendAsyncOrRedirect(req, res, {
+      success: false,
+      error: 'Error deleting transportation',
+      status: 500,
+      redirectUrl: '/dashboard',
+    });
   }
 };
 

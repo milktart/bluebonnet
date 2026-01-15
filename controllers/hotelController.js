@@ -1,15 +1,15 @@
 const { Hotel, Trip, ItemTrip } = require('../models');
 const logger = require('../utils/logger');
-const { parseCompanions } = require('../utils/parseHelper');
-const { sendAsyncResponse } = require('../utils/asyncResponseHelper');
-const itemCompanionHelper = require('../utils/itemCompanionHelper');
+const itemCompanionService = require('../services/itemCompanionService');
 const itemTripService = require('../services/itemTripService');
+const { sendAsyncOrRedirect } = require('../utils/asyncResponseHandler');
 const {
   verifyTripOwnership,
   geocodeIfChanged,
   redirectAfterSuccess,
   redirectAfterError,
-  verifyResourceOwnershipViaTrip,
+  verifyResourceOwnership,
+  verifyTripItemEditAccess,
 } = require('./helpers/resourceController');
 const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
@@ -33,11 +33,14 @@ exports.createHotel = async (req, res) => {
     } = req.body;
 
     // Verify trip ownership if tripId provided (for trip-associated items)
-    // If no tripId, this is a standalone item (allowed without trip)
     if (tripId) {
       const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
       if (!trip) {
-        return sendAsyncResponse(res, false, null, 'Trip not found', null, req);
+        return sendAsyncOrRedirect(req, res, {
+          error: 'Trip not found',
+          status: 403,
+          redirectUrl: '/',
+        });
       }
     }
 
@@ -46,29 +49,17 @@ exports.createHotel = async (req, res) => {
     let checkOutDateTime;
 
     if (checkInDateTimeCombined && checkOutDateTimeCombined) {
-      // Async form submission sends combined datetime
       checkInDateTime = checkInDateTimeCombined;
       checkOutDateTime = checkOutDateTimeCombined;
     } else {
-      // Traditional form submission sends split date/time fields
       // Validate required date/time fields
       if (!checkInDate || !checkInTime || !checkOutDate || !checkOutTime) {
-        logger.error('[Hotel Create] Missing required date/time fields:', {
-          checkInDate,
-          checkInTime,
-          checkOutDate,
-          checkOutTime,
+        return sendAsyncOrRedirect(req, res, {
+          error: 'All date and time fields are required',
+          status: 400,
+          redirectUrl: tripId ? `/trips/${tripId}` : '/dashboard',
         });
-        return sendAsyncResponse(
-          res,
-          false,
-          null,
-          'All date and time fields are required',
-          tripId,
-          req
-        );
       }
-      // Combine date and time fields
       checkInDateTime = `${checkInDate}T${checkInTime}`;
       checkOutDateTime = `${checkOutDate}T${checkOutTime}`;
     }
@@ -95,40 +86,31 @@ exports.createHotel = async (req, res) => {
         await itemTripService.addItemToTrip('hotel', hotel.id, tripId);
       } catch (e) {
         logger.error('Error adding hotel to trip in ItemTrip:', e);
-        // Don't fail the hotel creation due to ItemTrip errors
       }
     }
 
-    // Add companions to this hotel (legacy system - will be deprecated)
+    // Handle companions - unified method
     try {
-      if (tripId) {
-        // Parse and validate companions
-        const companionIds = parseCompanions(companions);
-
-        // If companions were provided and not empty, use them; otherwise use fallback
-        if (companionIds.length > 0) {
-          await itemCompanionHelper.updateItemCompanions(
-            'hotel',
-            hotel.id,
-            companionIds,
-            tripId,
-            req.user.id
-          );
-        } else {
-          // Fallback: auto-add trip-level companions
-          await itemCompanionHelper.autoAddTripCompanions('hotel', hotel.id, tripId, req.user.id);
-        }
-      }
+      await itemCompanionService.handleItemCompanions('hotel', hotel.id, companions, tripId, req.user.id);
     } catch (e) {
       logger.error('Error managing companions for hotel:', e);
-      // Don't fail the hotel creation due to companion errors
     }
 
-    // Send response (handles both async and traditional form submission)
-    return sendAsyncResponse(res, true, hotel, 'Hotel added successfully', tripId, req, 'hotels');
+    // Centralized async/redirect response handling
+    return sendAsyncOrRedirect(req, res, {
+      success: true,
+      data: hotel,
+      message: 'Hotel added successfully',
+      redirectUrl: tripId ? `/trips/${tripId}` : '/dashboard',
+    });
   } catch (error) {
-    logger.error(error);
-    return sendAsyncResponse(res, false, null, 'Error adding hotel', req.params.tripId, req);
+    logger.error('ERROR in createHotel:', error);
+    return sendAsyncOrRedirect(req, res, {
+      success: false,
+      error: error.message || 'Error adding hotel',
+      status: 500,
+      redirectUrl: req.params.tripId ? `/trips/${req.params.tripId}` : '/dashboard',
+    });
   }
 };
 
@@ -154,55 +136,39 @@ exports.updateHotel = async (req, res) => {
       include: [{ model: Trip, as: 'trip' }],
     });
 
-    // Verify ownership
-    // For standalone items, check if user owns it; for trip items, check if user owns the trip
-    if (!hotel) {
-      const isAsync = req.headers['x-async-request'] === 'true';
-      if (isAsync) {
-        return res.status(403).json({ success: false, error: 'Hotel not found' });
-      }
-      return redirectAfterError(res, req, null, 'Hotel not found');
-    }
-    if (hotel.tripId) {
-      // Trip-associated hotel - verify trip ownership
-      if (!verifyResourceOwnershipViaTrip(hotel, req.user.id)) {
-        const isAsync = req.headers['x-async-request'] === 'true';
-        if (isAsync) {
-          return res.status(403).json({ success: false, error: 'Hotel not found' });
-        }
-        return redirectAfterError(res, req, null, 'Hotel not found');
-      }
-    } else if (hotel.userId !== req.user.id) {
-      // Standalone hotel - verify direct ownership
-      const isAsync = req.headers['x-async-request'] === 'true';
-      if (isAsync) {
-        return res.status(403).json({ success: false, error: 'Hotel not found' });
-      }
-      return redirectAfterError(res, req, null, 'Hotel not found');
+    // Verify ownership - check if user is item owner OR trip owner OR trip admin with canEdit permission
+    const isItemOwner = verifyResourceOwnership(hotel, req.user.id);
+    const { TripCompanion } = require('../models');
+    const canEditTrip = hotel.tripId ? await verifyTripItemEditAccess(hotel.tripId, req.user.id, Trip, TripCompanion) : false;
+
+    if (!isItemOwner && !canEditTrip) {
+      return sendAsyncOrRedirect(req, res, {
+        error: 'Hotel not found',
+        status: 403,
+        redirectUrl: '/',
+      });
     }
 
     // Verify trip edit access if changing trips
     if (newTripId && newTripId !== hotel.tripId) {
       const hasAccess = await verifyTripEditAccess(newTripId, req.user.id);
       if (!hasAccess) {
-        const isAsync = req.headers['x-async-request'] === 'true';
-        if (isAsync) {
-          return res.status(403).json({ success: false, error: 'Cannot attach to this trip' });
-        }
-        return redirectAfterError(res, req, null, 'Cannot attach to this trip');
+        return sendAsyncOrRedirect(req, res, {
+          error: 'Cannot attach to this trip',
+          status: 403,
+          redirectUrl: '/',
+        });
       }
     }
 
-    // Handle both combined datetime (from async form) and split date/time fields (from traditional forms)
+    // Handle both combined datetime (from async form) and split date/time fields
     let checkInDateTime;
     let checkOutDateTime;
 
     if (checkInDateTimeCombined && checkOutDateTimeCombined) {
-      // Async form submission sends combined datetime
       checkInDateTime = checkInDateTimeCombined;
       checkOutDateTime = checkOutDateTimeCombined;
     } else {
-      // Traditional form submission sends split date/time fields
       checkInDateTime = `${checkInDate}T${checkInTime}`;
       checkOutDateTime = `${checkOutDate}T${checkOutTime}`;
     }
@@ -226,38 +192,36 @@ exports.updateHotel = async (req, res) => {
     });
 
     // Update trip association via ItemTrip if it changed
-    if (newTripId && newTripId !== hotel.tripId) {
-      try {
-        // Remove from old trip if there was one
+    try {
+      if (newTripId && newTripId !== hotel.tripId) {
         if (hotel.tripId) {
           await itemTripService.removeItemFromTrip('hotel', hotel.id, hotel.tripId);
         }
-        // Add to new trip
         await itemTripService.addItemToTrip('hotel', hotel.id, newTripId);
-      } catch (e) {
-        logger.error('Error updating hotel trip association:', e);
-        // Don't fail the update due to ItemTrip errors
-      }
-    } else if (newTripId === null && hotel.tripId) {
-      // Remove from trip if explicitly setting to null
-      try {
+      } else if (newTripId === null && hotel.tripId) {
         await itemTripService.removeItemFromTrip('hotel', hotel.id, hotel.tripId);
-      } catch (e) {
-        logger.error('Error removing hotel from trip:', e);
       }
+    } catch (e) {
+      logger.error('Error updating hotel trip association:', e);
     }
 
-    // Check if this is an async request
-    const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.json({ success: true, data: hotel, message: 'Hotel updated successfully' });
-    }
+    logger.info('Hotel updated successfully:', { hotelId: req.params.id });
 
-    redirectAfterSuccess(res, req, hotel.tripId, 'hotels', 'Hotel updated successfully');
+    // Centralized async/redirect response handling
+    return sendAsyncOrRedirect(req, res, {
+      success: true,
+      data: hotel,
+      message: 'Hotel updated successfully',
+      redirectUrl: newTripId || hotel.tripId ? `/trips/${newTripId || hotel.tripId}` : '/dashboard',
+    });
   } catch (error) {
-    logger.error(error);
-    const isAsync = req.headers['x-async-request'] === 'true';
-    return res.status(500).json({ success: false, error: 'Error updating hotel' });
+    logger.error('ERROR in updateHotel:', error);
+    return sendAsyncOrRedirect(req, res, {
+      success: false,
+      error: error.message || 'Error updating hotel',
+      status: 500,
+      redirectUrl: '/dashboard',
+    });
   }
 };
 
@@ -268,31 +232,17 @@ exports.deleteHotel = async (req, res) => {
       include: [{ model: Trip, as: 'trip' }],
     });
 
-    // Verify ownership
-    // For standalone items, check if user owns it; for trip items, check if user owns the trip
-    if (!hotel) {
-      const isAsync = req.headers['x-async-request'] === 'true';
-      if (isAsync) {
-        return res.status(403).json({ success: false, error: 'Hotel not found' });
-      }
-      return redirectAfterError(res, req, null, 'Hotel not found');
-    }
-    if (hotel.tripId) {
-      // Trip-associated hotel - verify trip ownership
-      if (!verifyResourceOwnershipViaTrip(hotel, req.user.id)) {
-        const isAsync = req.headers['x-async-request'] === 'true';
-        if (isAsync) {
-          return res.status(403).json({ success: false, error: 'Hotel not found' });
-        }
-        return redirectAfterError(res, req, null, 'Hotel not found');
-      }
-    } else if (hotel.userId !== req.user.id) {
-      // Standalone hotel - verify direct ownership
-      const isAsync = req.headers['x-async-request'] === 'true';
-      if (isAsync) {
-        return res.status(403).json({ success: false, error: 'Hotel not found' });
-      }
-      return redirectAfterError(res, req, null, 'Hotel not found');
+    // Verify ownership - check if user is item owner OR trip owner OR trip admin with canEdit permission
+    const isItemOwner = verifyResourceOwnership(hotel, req.user.id);
+    const { TripCompanion } = require('../models');
+    const canEditTrip = hotel.tripId ? await verifyTripItemEditAccess(hotel.tripId, req.user.id, Trip, TripCompanion) : false;
+
+    if (!isItemOwner && !canEditTrip) {
+      return sendAsyncOrRedirect(req, res, {
+        error: 'Hotel not found',
+        status: 403,
+        redirectUrl: '/',
+      });
     }
 
     const { tripId } = hotel;
@@ -301,30 +251,30 @@ exports.deleteHotel = async (req, res) => {
     // Store the deleted hotel in session for potential restoration
     storeDeletedItem(req.session, 'hotel', hotel.id, hotelData, hotel.hotelName);
 
-    // Remove from all trips via ItemTrip (replaces old tripId association)
+    // Remove from all trips via ItemTrip
     try {
       await itemTripService.removeItemFromAllTrips('hotel', hotel.id);
     } catch (e) {
       logger.error('Error removing hotel from ItemTrip records:', e);
-      // Don't fail deletion due to ItemTrip cleanup errors
     }
-
-    // Remove all item companions (legacy system)
-    await itemCompanionHelper.removeItemCompanions('hotel', hotel.id);
 
     await hotel.destroy();
 
-    // Check if this is an async request
-    const isAsync = req.headers['x-async-request'] === 'true';
-    if (isAsync) {
-      return res.json({ success: true, message: 'Hotel deleted successfully', itemId: hotel.id });
-    }
-
-    redirectAfterSuccess(res, req, tripId, 'hotels', 'Hotel deleted successfully');
+    // Centralized async/redirect response handling
+    return sendAsyncOrRedirect(req, res, {
+      success: true,
+      message: 'Hotel deleted successfully',
+      data: { itemId: hotel.id },
+      redirectUrl: tripId ? `/trips/${tripId}` : '/dashboard',
+    });
   } catch (error) {
-    logger.error(error);
-    const isAsync = req.headers['x-async-request'] === 'true';
-    return res.status(500).json({ success: false, error: 'Error deleting hotel' });
+    logger.error('ERROR in deleteHotel:', error);
+    return sendAsyncOrRedirect(req, res, {
+      success: false,
+      error: 'Error deleting hotel',
+      status: 500,
+      redirectUrl: '/dashboard',
+    });
   }
 };
 

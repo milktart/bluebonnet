@@ -26,9 +26,7 @@ const cacheService = require('./cacheService');
 const { sortCompanions } = require('../utils/itemCompanionHelper');
 // Note: These services will be used in Phase 3 continuation for getAccessibleTripIds and permission-aware queries
 // const ItemTripService = require('./itemTripService');
-// const AttendeeService = require('./attendeeService');
 // const itemTripService = new ItemTripService();
-// const attendeeService = new AttendeeService();
 class TripService extends BaseService {
   constructor() {
     super(Trip, 'Trip');
@@ -99,6 +97,7 @@ class TripService extends BaseService {
       {
         model: TripCompanion,
         as: 'tripCompanions',
+        attributes: ['id', 'tripId', 'companionId', 'canEdit', 'permissionSource'],
         include: [
           {
             model: TravelCompanion,
@@ -279,25 +278,41 @@ class TripService extends BaseService {
       });
     }
     // Get trips where user is a companion
-    // First find which trips the user is a companion on
+    // Need to find companions by BOTH userId (if account exists) AND email (for linking)
     let companionTrips = [];
-    const userCompanionRecord = await TravelCompanion.findOne({
-      where: { userId },
+
+    // Get user email for companion matching
+    const currentUser = await User.findByPk(userId, {
+      attributes: ['id', 'email'],
     });
-    if (userCompanionRecord) {
-      const tripsWithCompanion = await TripCompanion.findAll({
-        where: { companionId: userCompanionRecord.id },
+
+    if (currentUser) {
+      // Find all TravelCompanion records that reference this user
+      const userCompanionRecords = await TravelCompanion.findAll({
+        where: {
+          [Op.or]: [
+            { userId }, // User's own TravelCompanion record(s)
+            { email: currentUser.email }, // Companions created with this user's email (before they registered)
+          ],
+        },
       });
-      const tripIds = tripsWithCompanion.map((tc) => tc.tripId);
-      if (tripIds.length > 0) {
-        companionTrips = await Trip.findAll({
-          where: {
-            id: { [Op.in]: tripIds },
-            ...dateFilter,
-          },
-          include: tripIncludes,
-          order: [['departureDate', orderDirection]],
+
+      if (userCompanionRecords.length > 0) {
+        const companionIds = userCompanionRecords.map((c) => c.id);
+        const tripsWithCompanion = await TripCompanion.findAll({
+          where: { companionId: { [Op.in]: companionIds } },
         });
+        const tripIds = tripsWithCompanion.map((tc) => tc.tripId);
+        if (tripIds.length > 0) {
+          companionTrips = await Trip.findAll({
+            where: {
+              id: { [Op.in]: tripIds },
+              ...dateFilter,
+            },
+            include: tripIncludes,
+            order: [['departureDate', orderDirection]],
+          });
+        }
       }
     }
     // Get standalone items (always fetch them, filter determines which ones)
@@ -469,21 +484,36 @@ class TripService extends BaseService {
    * @returns {Promise<Object>} { flights, hotels, transportation, carRentals, events }
    */
   async getStandaloneItems(userId, dateFilter = {}) {
-    // Get the user's TravelCompanion record to find items shared with them
-    let userCompanionId = null;
-    const userCompanionRecord = await TravelCompanion.findOne({
-      where: { userId },
+    // Get the user's TravelCompanion record(s) to find items shared with them
+    // Need to check both by userId AND email (for companions added before user registered)
+    let userCompanionIds = [];
+
+    // Get user email
+    const currentUser = await User.findByPk(userId, {
+      attributes: ['id', 'email'],
     });
-    if (userCompanionRecord) {
-      userCompanionId = userCompanionRecord.id;
+
+    if (currentUser) {
+      // Find all TravelCompanion records matching this user
+      const userCompanionRecords = await TravelCompanion.findAll({
+        where: {
+          [Op.or]: [
+            { userId }, // User's own TravelCompanion record(s)
+            { email: currentUser.email }, // Companions created with this user's email (before they registered)
+          ],
+        },
+        attributes: ['id'],
+      });
+      userCompanionIds = userCompanionRecords.map((c) => c.id);
     }
+
     // Helper function to get shared item IDs for a given item type
     const getSharedItemIds = async (itemType) => {
-      if (!userCompanionId) return [];
+      if (userCompanionIds.length === 0) return [];
       const sharedCompanions = await ItemCompanion.findAll({
         attributes: ['itemId'],
         where: {
-          companionId: userCompanionId,
+          companionId: { [Op.in]: userCompanionIds },
           itemType,
         },
       });
@@ -635,7 +665,7 @@ class TripService extends BaseService {
             inheritedFromTrip: ic.inheritedFromTrip,
           });
           // Mark if this item is shared with the current user
-          if (ic.companionId === userCompanionId) {
+          if (userCompanionIds.includes(ic.companionId)) {
             sharedItemsMap[ic.itemId] = true;
           }
         });
@@ -713,7 +743,20 @@ class TripService extends BaseService {
     }
     // Verify ownership or companion access
     const isOwner = trip.userId === userId;
-    const isCompanion = trip.tripCompanions?.some((tc) => tc.companion?.userId === userId);
+
+    // Check if user is a companion - need to check both by userId AND email
+    let isCompanion = trip.tripCompanions?.some((tc) => tc.companion?.userId === userId);
+
+    if (!isCompanion) {
+      // Also check by email (for companions added before user registered)
+      const currentUser = await User.findByPk(userId, {
+        attributes: ['id', 'email'],
+      });
+      if (currentUser) {
+        isCompanion = trip.tripCompanions?.some((tc) => tc.companion?.email === currentUser.email);
+      }
+    }
+
     if (!isOwner && !isCompanion) {
       logger.warn('Trip access denied:', { tripId, userId });
       return null;
@@ -727,6 +770,21 @@ class TripService extends BaseService {
     });
     // Convert to plain JSON object to ensure associated items are serialized
     const tripData = trip.toJSON();
+
+    // Debug: Log the structure of tripCompanions
+    logger.debug('TripCompanions structure after toJSON', {
+      count: tripData.tripCompanions?.length,
+      companions: tripData.tripCompanions?.map((tc) => ({
+        id: tc.id,
+        canEdit: tc.canEdit,
+        companion: {
+          id: tc.companion?.id,
+          userId: tc.companion?.userId,
+          name: tc.companion?.name
+        }
+      }))
+    });
+
     // Ensure trip owner is included in tripCompanions
     // (some older trips may not have the owner in the trip_companions table)
     const ownerInCompanions = tripData.tripCompanions?.some(
@@ -779,6 +837,7 @@ class TripService extends BaseService {
           companionId: ownerCompanion.id,
           companion: ownerCompanion.toJSON ? ownerCompanion.toJSON() : ownerCompanion,
           permissionSource: 'owner',
+          canEdit: true,
           canAddItems: true,
         });
       }
@@ -847,14 +906,46 @@ class TripService extends BaseService {
         }
 
         // Add permission flags
-        // For trip items: owner can edit, companions can only view
+        // For trip items: owner can edit, companions with canEdit on trip can also edit all items
         const isItemOwner = item.userId === userId;
         const isCompanionAttendeeThroughItem = item.itemCompanions?.some(
           (ic) => ic.userId === userId
         );
-        item.canEdit = isItemOwner;
-        item.canDelete = isItemOwner;
+        // Check if user is a trip companion with canEdit permission
+        const tripCompanionWithEdit = tripData.tripCompanions?.some(
+          (tc) => {
+            const companionUserId = tc.companion?.userId;
+            const canEditValue = tc.canEdit;
+            const matches = companionUserId === userId && canEditValue === true;
+            logger.debug('Checking trip companion', {
+              companionUserId,
+              canEditValue,
+              userId,
+              matches
+            });
+            return matches;
+          }
+        );
+        item.canEdit = isItemOwner || tripCompanionWithEdit;
+        item.canDelete = isItemOwner || tripCompanionWithEdit;
         item.isShared = !isItemOwner && isCompanionAttendeeThroughItem;
+
+        // Debug logging
+        if (item.id) {
+          logger.debug('Item permission check', {
+            itemId: item.id,
+            itemName: item.name || item.hotelName || item.airline,
+            userId,
+            isItemOwner,
+            tripCompanionWithEdit,
+            canEdit: item.canEdit,
+            tripCompanions: tripData.tripCompanions?.map((tc) => ({
+              userId: tc.companion?.userId,
+              canEdit: tc.canEdit,
+              permissionSource: tc.permissionSource
+            }))
+          });
+        }
       });
     };
     // Load companions for all item types in parallel
