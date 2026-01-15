@@ -32,22 +32,31 @@
   function getInitials(email: string, name?: string, firstName?: string, lastName?: string): string {
     if (!email) return '?';
 
-    // Build name from firstName/lastName if available
-    let fullName = name;
-    if (!fullName && (firstName || lastName)) {
-      fullName = `${firstName || ''} ${lastName || ''}`.trim();
+    // Prefer firstName/lastName combination if both exist
+    if (firstName && lastName) {
+      return (firstName[0] + lastName[0]).toUpperCase();
     }
 
-    // If we have a name, use first letter of first and last name
-    if (fullName) {
-      const parts = fullName.trim().split(' ');
+    // If only firstName exists, use first letter
+    if (firstName) {
+      return firstName[0].toUpperCase();
+    }
+
+    // If only lastName exists, use first letter
+    if (lastName) {
+      return lastName[0].toUpperCase();
+    }
+
+    // Fall back to name field if it exists
+    if (name) {
+      const parts = name.trim().split(' ');
       if (parts.length >= 2) {
         return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
       }
       return parts[0][0].toUpperCase();
     }
 
-    // Otherwise, use first two letters of email
+    // Last resort: use first two letters of email
     return email.substring(0, 2).toUpperCase();
   }
 

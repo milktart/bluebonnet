@@ -110,7 +110,7 @@ export function getCompanionBadges(
 /**
  * Get display name for a companion
  * @param companion - Companion object
- * @returns Display name (firstName lastName, firstName, or email)
+ * @returns Display name (firstName lastName, firstName, lastName, name, or email)
  */
 export function getCompanionDisplayName(companion: any): string {
   const normalized = normalizeCompanion(companion);
@@ -129,6 +129,47 @@ export function getCompanionDisplayName(companion: any): string {
     return normalized.name;
   }
   return normalized.email || '';
+}
+
+/**
+ * Get initials for a companion badge
+ * Returns 1-2 character initials based on available name data
+ * @param companion - Companion object
+ * @returns 1-2 character initials (or '?' if no data)
+ */
+export function getCompanionInitials(companion: any): string {
+  const normalized = normalizeCompanion(companion);
+  if (!normalized) return '?';
+
+  const email = normalized.email || '';
+  if (!email) return '?';
+
+  // Prefer firstName/lastName combination if both exist
+  if (normalized.firstName && normalized.lastName) {
+    return (normalized.firstName[0] + normalized.lastName[0]).toUpperCase();
+  }
+
+  // If only firstName exists, use first letter
+  if (normalized.firstName) {
+    return normalized.firstName[0].toUpperCase();
+  }
+
+  // If only lastName exists, use first letter
+  if (normalized.lastName) {
+    return normalized.lastName[0].toUpperCase();
+  }
+
+  // Fall back to name field if it exists
+  if (normalized.name) {
+    const parts = normalized.name.trim().split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return parts[0][0].toUpperCase();
+  }
+
+  // Last resort: use first two letters of email
+  return email.substring(0, 2).toUpperCase();
 }
 
 /**

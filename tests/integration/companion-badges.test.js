@@ -222,17 +222,23 @@ describe('Companion Badges - Phase 5 Standardization', () => {
       expect(getInitials('john@example.com', undefined, 'John', undefined)).toBe('J');
     });
 
-    it('should generate initials from name field', () => {
+    it('should generate initial from last name only', () => {
+      expect(getInitials('jane@example.com', undefined, undefined, 'Smith')).toBe('S');
+    });
+
+    it('should generate initials from name field when firstName/lastName are missing', () => {
       expect(getInitials('user@example.com', 'John Doe', undefined, undefined)).toBe('JD');
     });
 
-    it('should fall back to email initials', () => {
+    it('should generate initial from name field when it has only one word', () => {
+      expect(getInitials('user@example.com', 'John', undefined, undefined)).toBe('J');
+    });
+
+    it('should fall back to email initials when no name data exists', () => {
       expect(getInitials('johndoe@example.com', undefined, undefined, undefined)).toBe('JO');
     });
 
-    it('should return question mark when email is empty (regardless of other fields)', () => {
-      // The implementation prioritizes email - if email is missing, returns '?' immediately
-      // This is by design to ensure there's always valid data to work with
+    it('should return question mark when email is empty', () => {
       expect(getInitials('', 'John Doe', undefined, undefined)).toBe('?');
       expect(getInitials('', undefined, 'John', undefined)).toBe('?');
       expect(getInitials('', undefined, undefined, 'Doe')).toBe('?');
