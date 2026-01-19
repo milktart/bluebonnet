@@ -428,8 +428,8 @@
     if ($dashboardStore.activeTab === 'upcoming') {
       filtered = allItems.filter((item) => {
         if (item.type === 'trip') {
-          const tripDate = item.data.departureDate ? parseLocalDate(item.data.departureDate) : null;
-          return tripDate && tripDate >= now;
+          const endDate = getTripEndDate(item.data);
+          return endDate >= now;
         } else {
           return item.sortDate >= now;
         }
