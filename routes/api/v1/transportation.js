@@ -252,11 +252,20 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { Transportation } = require('../../../models');
+    const geocodingService = require('../../../services/geocodingService');
+
+    // Geocode origin and destination
+    const originCoords = await geocodingService.geocodeLocation(req.body.origin);
+    const destCoords = await geocodingService.geocodeLocation(req.body.destination);
 
     // Transform form data to match model
     const transData = {
       ...req.body,
       userId: req.user.id,
+      originLat: originCoords?.lat,
+      originLng: originCoords?.lng,
+      destinationLat: destCoords?.lat,
+      destinationLng: destCoords?.lng,
     };
 
     // Combine date and time fields into datetime
@@ -314,6 +323,7 @@ router.post('/trips/:tripId', async (req, res) => {
     const { Trip } = require('../../../models');
     const { Transportation } = require('../../../models');
     const itemCompanionHelper = require('../../../utils/itemCompanionHelper');
+    const geocodingService = require('../../../services/geocodingService');
 
     // Verify trip belongs to user
     const trip = await Trip.findOne({
@@ -324,10 +334,18 @@ router.post('/trips/:tripId', async (req, res) => {
       return apiResponse.forbidden(res, 'Access denied');
     }
 
+    // Geocode origin and destination
+    const originCoords = await geocodingService.geocodeLocation(req.body.origin);
+    const destCoords = await geocodingService.geocodeLocation(req.body.destination);
+
     // Transform form data to match model
     const transData = {
       ...req.body,
       tripId,
+      originLat: originCoords?.lat,
+      originLng: originCoords?.lng,
+      destinationLat: destCoords?.lat,
+      destinationLng: destCoords?.lng,
     };
 
     // Combine date and time fields into datetime
@@ -396,6 +414,8 @@ router.put('/:id', async (req, res) => {
   try {
     const { Transportation, Trip } = require('../../../models');
     const { requireItemEditPermission } = require('../../../utils/itemPermissionHelper');
+    const geocodingService = require('../../../services/geocodingService');
+
     const trans = await Transportation.findByPk(req.params.id, {
       include: [{ model: Trip, as: 'trip', required: false }],
     });
@@ -409,6 +429,29 @@ router.put('/:id', async (req, res) => {
 
     // Transform form data to match model
     const transData = { ...req.body };
+
+    // Geocode if origin or destination changed
+    if (req.body.origin || req.body.destination) {
+      const originNew = req.body.origin || trans.origin;
+      const destNew = req.body.destination || trans.destination;
+      const originOld = trans.origin;
+      const destOld = trans.destination;
+
+      // Only re-geocode if locations changed
+      if (originNew !== originOld || destNew !== destOld) {
+        const originCoords = await geocodingService.geocodeLocation(originNew);
+        const destCoords = await geocodingService.geocodeLocation(destNew);
+
+        if (originCoords) {
+          transData.originLat = originCoords.lat;
+          transData.originLng = originCoords.lng;
+        }
+        if (destCoords) {
+          transData.destinationLat = destCoords.lat;
+          transData.destinationLng = destCoords.lng;
+        }
+      }
+    }
 
     // Combine date and time fields into datetime
     if (req.body.departureDate && req.body.departureTime) {

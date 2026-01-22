@@ -5,6 +5,7 @@
   import { dataService } from '$lib/services/dataService';
   import { utcToLocalTimeString } from '$lib/utils/timezoneUtils';
   import { getFormConfigs } from '$lib/utils/formConfigs';
+  import { getTripEndDate, parseLocalDate } from '$lib/utils/dashboardGrouping';
   import type { ItemType, Trip, TravelItem, FormData } from '$lib/types';
   import AirportAutocomplete from './AirportAutocomplete.svelte';
   import ItemCompanionsForm from './ItemCompanionsForm.svelte';
@@ -30,19 +31,12 @@
   // Show trip selector only for non-trip items (not for trip itself)
   $: showTripSelector = itemType !== 'trip';
 
-  // Parse local date string (YYYY-MM-DD) to Date object
-  function parseLocalDate(dateString: string): Date {
-    if (!dateString) return new Date(0);
-    const [year, month, day] = dateString.split('-').map(Number);
-    return new Date(year, month - 1, day, 0, 0, 0, 0);
-  }
-
   // Filter trips to show only upcoming/in-progress (exclude past trips)
   $: upcomingTrips = allTrips.filter((trip) => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
-    const tripDate = trip.departureDate ? parseLocalDate(trip.departureDate) : null;
-    return tripDate && tripDate >= now;
+    const endDate = getTripEndDate(trip);
+    return endDate >= now;
   });
 
   // Transform database datetime fields into separate date/time fields for editing

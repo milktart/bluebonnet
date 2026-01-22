@@ -24,6 +24,7 @@
     "db:verify-migration": "node scripts/verify-migration.js",
     "db:verify-companion-migration": "node scripts/verify-companion-migration.js",
     "db:seed-companion-data": "node scripts/seed-companion-data.js",
+    "db:backfill-transportation-coords": "node scripts/backfill-transportation-coordinates.js",
     "cache:clear": "node scripts/clear-cache.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
