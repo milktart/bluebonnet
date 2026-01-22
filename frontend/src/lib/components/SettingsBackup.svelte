@@ -153,6 +153,9 @@
               const parentItem = importPreview.items.find((i: any) => i.id === item.parentTripId);
               if (parentItem && tripMap[parentItem.originalId]) {
                 tripMap[parentItem.originalId].flights.push(item.data);
+              } else {
+                // Parent trip was not selected, treat this as a standalone flight
+                restructuredData.standaloneFlights.push(item.data);
               }
             } else {
               restructuredData.standaloneFlights.push(item.data);
@@ -162,6 +165,9 @@
               const parentItem = importPreview.items.find((i: any) => i.id === item.parentTripId);
               if (parentItem && tripMap[parentItem.originalId]) {
                 tripMap[parentItem.originalId].hotels.push(item.data);
+              } else {
+                // Parent trip was not selected, treat this as a standalone hotel
+                restructuredData.standaloneHotels.push(item.data);
               }
             } else {
               restructuredData.standaloneHotels.push(item.data);
@@ -171,6 +177,9 @@
               const parentItem = importPreview.items.find((i: any) => i.id === item.parentTripId);
               if (parentItem && tripMap[parentItem.originalId]) {
                 tripMap[parentItem.originalId].transportation.push(item.data);
+              } else {
+                // Parent trip was not selected, treat this as a standalone transportation
+                restructuredData.standaloneTransportation.push(item.data);
               }
             } else {
               restructuredData.standaloneTransportation.push(item.data);
@@ -180,6 +189,9 @@
               const parentItem = importPreview.items.find((i: any) => i.id === item.parentTripId);
               if (parentItem && tripMap[parentItem.originalId]) {
                 tripMap[parentItem.originalId].carRentals.push(item.data);
+              } else {
+                // Parent trip was not selected, treat this as a standalone car rental
+                restructuredData.standaloneCarRentals.push(item.data);
               }
             } else {
               restructuredData.standaloneCarRentals.push(item.data);
@@ -189,6 +201,9 @@
               const parentItem = importPreview.items.find((i: any) => i.id === item.parentTripId);
               if (parentItem && tripMap[parentItem.originalId]) {
                 tripMap[parentItem.originalId].events.push(item.data);
+              } else {
+                // Parent trip was not selected, treat this as a standalone event
+                restructuredData.standaloneEvents.push(item.data);
               }
             } else {
               restructuredData.standaloneEvents.push(item.data);
