@@ -418,16 +418,27 @@ exports.exportAccountData = async (req, res) => {
       companions,
     };
 
-    // Send as JSON file download
-    res.setHeader('Content-Type', 'application/json');
+    // Stringify with UTF-8 encoding
+    const jsonString = JSON.stringify(exportData, null, 2);
+    const utf8Bytes = Buffer.from(jsonString, 'utf8');
+
+    // Send as JSON file download with explicit UTF-8 encoding
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Length', utf8Bytes.length);
     res.setHeader(
       'Content-Disposition',
       `attachment; filename="travel-planner-export-${new Date().toISOString().split('T')[0]}.json"`
     );
-    res.json(exportData);
+    res.send(utf8Bytes);
   } catch (error) {
-    logger.error('Error exporting account data:', error);
-    res.status(500).json({ success: false, error: 'Error exporting account data' });
+    logger.error('Error exporting account data:', {
+      message: error.message,
+      stack: error.stack,
+      error,
+    });
+    res
+      .status(500)
+      .json({ success: false, error: error.message || 'Error exporting account data' });
   }
 };
 
@@ -692,24 +703,44 @@ exports.previewImportData = async (req, res) => {
       ],
     });
 
-    const allFlights = await Flight.findAll({ where: { userId } });
-    const allHotels = await Hotel.findAll({ where: { userId } });
-    const allTransportation = await Transportation.findAll({ where: { userId } });
-    const allCarRentals = await CarRental.findAll({ where: { userId } });
-    const allEvents = await Event.findAll({ where: { userId } });
+    // Get standalone items that belong to THIS USER (privacy/security: only user's own items)
+    const allFlights = await Flight.findAll({ where: { userId, tripId: null } });
+    const allHotels = await Hotel.findAll({ where: { userId, tripId: null } });
+    const allTransportation = await Transportation.findAll({ where: { userId, tripId: null } });
+    const allCarRentals = await CarRental.findAll({ where: { userId, tripId: null } });
+    const allEvents = await Event.findAll({ where: { userId, tripId: null } });
     const allVouchers = await Voucher.findAll({ where: { userId } });
     const allCompanions = await TravelCompanion.findAll({
       where: { createdBy: userId },
     });
 
+    // Extract items from THIS USER's trips for duplicate detection
+    // Only include items from trips where userId === currentUser (security check)
+    const tripItemsHotels = [];
+    const tripItemsFlights = [];
+    const tripItemsTransportation = [];
+    const tripItemsCarRentals = [];
+    const tripItemsEvents = [];
+
+    for (const trip of currentTrips) {
+      // Only include items from trips owned by the current user
+      if (trip.userId === userId) {
+        if (trip.hotels) tripItemsHotels.push(...trip.hotels);
+        if (trip.flights) tripItemsFlights.push(...trip.flights);
+        if (trip.transportation) tripItemsTransportation.push(...trip.transportation);
+        if (trip.carRentals) tripItemsCarRentals.push(...trip.carRentals);
+        if (trip.events) tripItemsEvents.push(...trip.events);
+      }
+    }
+
     // Structure current data for preview processor
     const currentUserData = {
       trips: currentTrips,
-      allFlights,
-      allHotels,
-      allTransportation,
-      allCarRentals,
-      allEvents,
+      allFlights: [...allFlights, ...tripItemsFlights],
+      allHotels: [...allHotels, ...tripItemsHotels],
+      allTransportation: [...allTransportation, ...tripItemsTransportation],
+      allCarRentals: [...allCarRentals, ...tripItemsCarRentals],
+      allEvents: [...allEvents, ...tripItemsEvents],
       vouchers: allVouchers,
       companions: allCompanions,
     };

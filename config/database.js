@@ -18,6 +18,8 @@ module.exports = {
     timezone: '+00:00',
     dialectOptions: {
       timezone: 'Etc/GMT-0',
+      charset: 'utf8mb4',
+      collate: 'utf8mb4_unicode_ci',
     },
     pool: {
       max: 5,
@@ -37,6 +39,8 @@ module.exports = {
     timezone: '+00:00',
     dialectOptions: {
       timezone: 'Etc/GMT-0',
+      charset: 'utf8mb4',
+      collate: 'utf8mb4_unicode_ci',
     },
     pool: {
       max: 5,
@@ -56,6 +60,8 @@ module.exports = {
     timezone: '+00:00',
     dialectOptions: {
       timezone: 'Etc/GMT-0',
+      charset: 'utf8mb4',
+      collate: 'utf8mb4_unicode_ci',
       // Only require SSL if host is not localhost (for Docker deployments)
       ...(process.env.DB_HOST &&
       process.env.DB_HOST !== 'postgres' &&
@@ -86,6 +92,8 @@ module.exports = {
     timezone: '+00:00',
     dialectOptions: {
       timezone: 'Etc/GMT-0',
+      charset: 'utf8mb4',
+      collate: 'utf8mb4_unicode_ci',
       // Only require SSL if host is not localhost (for Docker deployments)
       ...(process.env.DB_HOST &&
       process.env.DB_HOST !== 'postgres' &&

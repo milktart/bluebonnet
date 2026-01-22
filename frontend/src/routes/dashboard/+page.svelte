@@ -175,7 +175,14 @@
       updateMapData();
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to load trips';
-      dashboardStoreActions.setError(errorMsg);
+      // Only show error if we're on the main dashboard, not when in settings
+      const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+      if (!currentPath.includes('/settings')) {
+        dashboardStoreActions.setError(errorMsg);
+      } else {
+        // In settings, just log the error silently
+        console.warn('Error loading trips in background:', errorMsg);
+      }
     } finally {
       dashboardStoreActions.setLoading(false);
     }

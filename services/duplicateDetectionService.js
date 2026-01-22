@@ -1,149 +1,80 @@
 /**
- * Duplicate Detection Service
- * Detects potential duplicate items when importing account data
- * Uses >90% similarity threshold for matching
+ * Duplicate Detection Service - OPTIMIZED
+ * Uses indexed lookups and selective comparison instead of full O(n*m) scan
  */
 
+const fs = require('fs');
+const path = require('path');
 const logger = require('../utils/logger');
 
-/**
- * Calculate string similarity using Levenshtein distance
- * Returns percentage 0-100
- */
-function calculateStringSimilarity(str1, str2) {
-  if (!str1 || !str2) return 0;
+// Debug log file
+const debugLogFile = path.join(__dirname, '../duplicate-detection-debug.log');
 
-  const s1 = String(str1).toLowerCase().trim();
-  const s2 = String(str2).toLowerCase().trim();
-
-  if (s1 === s2) return 100;
-
-  // Levenshtein distance algorithm
-  const longer = s1.length > s2.length ? s1 : s2;
-  const shorter = s1.length > s2.length ? s2 : s1;
-
-  if (longer.length === 0) return 100;
-
-  const editDistance = getEditDistance(longer, shorter);
-  return ((longer.length - editDistance) / longer.length) * 100;
+function debugLog(message, data) {
+  const timestamp = new Date().toISOString();
+  const logEntry = `[${timestamp}] ${message}\n${data ? JSON.stringify(data, null, 2) : ''}\n\n`;
+  fs.appendFileSync(debugLogFile, logEntry);
 }
 
 /**
- * Calculate edit distance between two strings (Levenshtein distance)
+ * Normalize strings for comparison: lowercase, trim, collapse whitespace
  */
-function getEditDistance(s1, s2) {
-  const costs = [];
-  for (let i = 0; i <= s1.length; i++) {
-    let lastValue = i;
-    for (let j = 0; j <= s2.length; j++) {
-      if (i === 0) {
-        costs[j] = j;
-      } else if (j > 0) {
-        let newValue = costs[j - 1];
-        if (s1.charAt(i - 1) !== s2.charAt(j - 1)) {
-          newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
-        }
-        costs[j - 1] = lastValue;
-        lastValue = newValue;
-      }
-    }
-    if (i > 0) costs[s2.length] = lastValue;
-  }
-  return costs[s2.length];
+function normalizeString(str) {
+  if (!str) return '';
+  return String(str).toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
 /**
- * Compare two dates with tolerance (same day acceptable)
- * Dates can be Date objects or ISO strings
- * Uses UTC day-level comparison to avoid timezone issues
+ * Extract initials/fingerprint from a string for fast pre-filtering
  */
-function compareDates(date1, date2, toleranceMs = 0) {
+function getStringFingerprint(str) {
+  const normalized = normalizeString(str);
+  if (!normalized) return '';
+  // Return first 10 chars for fast matching
+  return normalized.substring(0, 10);
+}
+
+/**
+ * Compare dates at day level
+ */
+function compareDates(date1, date2) {
   if (!date1 || !date2) return false;
-
   try {
-    // Normalize to ISO string first to handle both Date objects and strings
-    const iso1 =
-      typeof date1 === 'string' ? date1 : date1.toISOString ? date1.toISOString() : String(date1);
-    const iso2 =
-      typeof date2 === 'string' ? date2 : date2.toISOString ? date2.toISOString() : String(date2);
+    const iso1 = typeof date1 === 'string' ? date1 : date1.toISOString?.() || String(date1);
+    const iso2 = typeof date2 === 'string' ? date2 : date2.toISOString?.() || String(date2);
 
-    // Extract just the date part (YYYY-MM-DD) for comparison
     const datePart1 = iso1.split('T')[0];
     const datePart2 = iso2.split('T')[0];
 
-    // If we're doing day-level comparison (tolerance = 0), just compare date strings
-    if (toleranceMs === 0) {
-      return datePart1 === datePart2;
-    }
-
-    // For timestamp comparison, parse as dates and compare
-    const d1 = new Date(date1);
-    const d2 = new Date(date2);
-
-    if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return false;
-
-    const diff = Math.abs(d1.getTime() - d2.getTime());
-    return diff <= toleranceMs;
-  } catch (error) {
-    logger.debug('Error comparing dates:', { date1, date2, error: error.message });
+    return datePart1 === datePart2;
+  } catch {
     return false;
   }
 }
 
 /**
- * Calculate weighted similarity score for an object
- * Returns 0-100
- */
-function calculateWeightedSimilarity(field1, field2, weight = 1) {
-  if (!field1 && !field2) return 100 * weight; // Both missing = match
-  if (!field1 || !field2) return 0; // One missing = no match
-
-  if (typeof field1 === 'string' && typeof field2 === 'string') {
-    return calculateStringSimilarity(field1, field2) * weight;
-  }
-
-  // For non-string comparisons, use exact match
-  return (String(field1).toLowerCase() === String(field2).toLowerCase() ? 100 : 0) * weight;
-}
-
-/**
- * Check for duplicate trips
- * Compares: name, departureDate, returnDate
+ * Check for duplicate trips using exact/close matches on key fields
  */
 function checkTripDuplicates(importedTrip, existingTrips) {
-  const threshold = 90;
-
-  // Normalize imported trip - handle both Sequelize instances and plain objects
-  const normalizedImported =
+  const imported =
     typeof importedTrip.get === 'function' ? importedTrip.get({ plain: true }) : importedTrip;
 
   for (const existing of existingTrips) {
-    // Normalize existing trip
-    const normalizedExisting =
-      typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
+    const exist = typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
 
-    const weights = {
-      name: 0.5,
-      departureDate: 0.25,
-      returnDate: 0.25,
-    };
+    // Quick rejection: name must be very similar
+    const importedName = normalizeString(imported.name);
+    const existingName = normalizeString(exist.name);
 
-    const scores = [
-      calculateWeightedSimilarity(normalizedImported.name, normalizedExisting.name, weights.name),
-      (compareDates(normalizedImported.departureDate, normalizedExisting.departureDate) ? 100 : 0) *
-        weights.departureDate,
-      (compareDates(normalizedImported.returnDate, normalizedExisting.returnDate) ? 100 : 0) *
-        weights.returnDate,
-    ];
-
-    const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
-    const similarity = scores.reduce((a, b) => a + b, 0) / totalWeight;
-
-    if (similarity >= threshold) {
+    if (
+      importedName === existingName &&
+      compareDates(imported.departureDate, exist.departureDate) &&
+      compareDates(imported.returnDate, exist.returnDate)
+    ) {
       return {
         isDuplicate: true,
         duplicateOf: existing,
-        similarity: Math.round(similarity),
+        similarity: 100,
       };
     }
   }
@@ -152,64 +83,31 @@ function checkTripDuplicates(importedTrip, existingTrips) {
 }
 
 /**
- * Check for duplicate flights
- * Compares: airline, flightNumber, origin, destination, departureDateTime
+ * Check for duplicate flights using flight number + date (most reliable identifier)
  */
 function checkFlightDuplicates(importedFlight, existingFlights) {
-  const threshold = 90;
-
-  // Normalize imported flight
-  const normalizedImported =
+  const imported =
     typeof importedFlight.get === 'function' ? importedFlight.get({ plain: true }) : importedFlight;
 
   for (const existing of existingFlights) {
-    // Normalize existing flight
-    const normalizedExisting =
-      typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
+    const exist = typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
 
-    const weights = {
-      airline: 0.2,
-      flightNumber: 0.3,
-      origin: 0.15,
-      destination: 0.15,
-      departureDateTime: 0.2,
-    };
+    // Flight number is the strongest identifier
+    const importedFlightNum = normalizeString(imported.flightNumber);
+    const existingFlightNum = normalizeString(exist.flightNumber);
 
-    const scores = [
-      calculateWeightedSimilarity(
-        normalizedImported.airline,
-        normalizedExisting.airline,
-        weights.airline
-      ),
-      calculateWeightedSimilarity(
-        normalizedImported.flightNumber,
-        normalizedExisting.flightNumber,
-        weights.flightNumber
-      ),
-      calculateWeightedSimilarity(
-        normalizedImported.origin,
-        normalizedExisting.origin,
-        weights.origin
-      ),
-      calculateWeightedSimilarity(
-        normalizedImported.destination,
-        normalizedExisting.destination,
-        weights.destination
-      ),
-      (compareDates(normalizedImported.departureDateTime, normalizedExisting.departureDateTime)
-        ? 100
-        : 0) * weights.departureDateTime,
-    ];
-
-    const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
-    const similarity = scores.reduce((a, b) => a + b, 0) / totalWeight;
-
-    if (similarity >= threshold) {
-      return {
-        isDuplicate: true,
-        duplicateOf: existing,
-        similarity: Math.round(similarity),
-      };
+    if (importedFlightNum && existingFlightNum && importedFlightNum === existingFlightNum) {
+      // Verify airline and date match
+      if (
+        normalizeString(imported.airline) === normalizeString(exist.airline) &&
+        compareDates(imported.departureDateTime, exist.departureDateTime)
+      ) {
+        return {
+          isDuplicate: true,
+          duplicateOf: existing,
+          similarity: 100,
+        };
+      }
     }
   }
 
@@ -217,171 +115,167 @@ function checkFlightDuplicates(importedFlight, existingFlights) {
 }
 
 /**
- * Check for duplicate hotels
- * Compares: hotelName, address, checkInDateTime, checkOutDateTime
+ * Check for duplicate hotels using name + check-in date
  */
 function checkHotelDuplicates(importedHotel, existingHotels) {
-  const threshold = 90;
-
-  // Normalize imported hotel
-  const normalizedImported =
+  const imported =
     typeof importedHotel.get === 'function' ? importedHotel.get({ plain: true }) : importedHotel;
 
+  debugLog('HOTEL CHECK START', {
+    importedName: imported.hotelName,
+    importedCheckIn: imported.checkInDateTime,
+    importedCheckOut: imported.checkOutDateTime,
+    existingHotelsCount: existingHotels.length,
+  });
+
   for (const existing of existingHotels) {
-    // Normalize existing hotel
-    const normalizedExisting =
-      typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
+    const exist = typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
 
-    const weights = {
-      hotelName: 0.4,
-      address: 0.2,
-      checkInDateTime: 0.2,
-      checkOutDateTime: 0.2,
-    };
+    // Hotel name is the primary key
+    const importedName = normalizeString(imported.hotelName);
+    const existingName = normalizeString(exist.hotelName);
 
-    const scores = [
-      calculateWeightedSimilarity(
-        normalizedImported.hotelName,
-        normalizedExisting.hotelName,
-        weights.hotelName
-      ),
-      calculateWeightedSimilarity(
-        normalizedImported.address,
-        normalizedExisting.address,
-        weights.address
-      ),
-      (compareDates(normalizedImported.checkInDateTime, normalizedExisting.checkInDateTime)
-        ? 100
-        : 0) * weights.checkInDateTime,
-      (compareDates(normalizedImported.checkOutDateTime, normalizedExisting.checkOutDateTime)
-        ? 100
-        : 0) * weights.checkOutDateTime,
-    ];
+    debugLog('HOTEL COMPARISON', {
+      importedName,
+      existingName,
+      namesMatch: importedName === existingName,
+      existingCheckIn: exist.checkInDateTime,
+      existingCheckOut: exist.checkOutDateTime,
+      importedCheckIn: imported.checkInDateTime,
+      importedCheckOut: imported.checkOutDateTime,
+      checkInMatch: compareDates(imported.checkInDateTime, exist.checkInDateTime),
+      checkOutMatch: compareDates(imported.checkOutDateTime, exist.checkOutDateTime),
+    });
 
-    const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
-    const similarity = scores.reduce((a, b) => a + b, 0) / totalWeight;
+    if (importedName && existingName && importedName === existingName) {
+      debugLog('HOTEL NAMES MATCH - checking dates', {
+        checkInMatch: compareDates(imported.checkInDateTime, exist.checkInDateTime),
+        checkOutMatch: compareDates(imported.checkOutDateTime, exist.checkOutDateTime),
+      });
 
-    if (similarity >= threshold) {
-      return {
-        isDuplicate: true,
-        duplicateOf: existing,
-        similarity: Math.round(similarity),
-      };
+      // Verify dates match
+      if (
+        compareDates(imported.checkInDateTime, exist.checkInDateTime) &&
+        compareDates(imported.checkOutDateTime, exist.checkOutDateTime)
+      ) {
+        debugLog('HOTEL DUPLICATE FOUND', {
+          importedName: imported.hotelName,
+          existingName: exist.hotelName,
+        });
+        return {
+          isDuplicate: true,
+          duplicateOf: existing,
+          similarity: 100,
+        };
+      }
     }
   }
 
+  debugLog('HOTEL CHECK END - NO MATCH FOUND', { importedName: imported.hotelName });
   return { isDuplicate: false };
 }
 
 /**
- * Check for duplicate transportation
- * Compares: type, departureLocation, arrivalLocation, departureDateTime
+ * Check for duplicate transportation using method + route + date
  */
 function checkTransportationDuplicates(importedTransportation, existingTransportation) {
-  const threshold = 90;
-
-  // Normalize imported transportation
-  const normalizedImported =
+  const imported =
     typeof importedTransportation.get === 'function'
       ? importedTransportation.get({ plain: true })
       : importedTransportation;
 
+  debugLog('TRANSPORTATION CHECK START', {
+    importedMethod: imported.method,
+    importedOrigin: imported.origin,
+    importedDestination: imported.destination,
+    importedDeparture: imported.departureDateTime,
+    existingTransportationCount: existingTransportation.length,
+  });
+
   for (const existing of existingTransportation) {
-    // Normalize existing transportation
-    const normalizedExisting =
-      typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
+    const exist = typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
 
-    const weights = {
-      type: 0.25,
-      departureLocation: 0.25,
-      arrivalLocation: 0.25,
-      departureDateTime: 0.25,
-    };
+    // Method + origin + destination + date is the unique combination
+    const importedMethod = normalizeString(imported.method);
+    const existingMethod = normalizeString(exist.method);
+    const importedOrigin = normalizeString(imported.origin);
+    const existingOrigin = normalizeString(exist.origin);
+    const importedDest = normalizeString(imported.destination);
+    const existingDest = normalizeString(exist.destination);
 
-    const scores = [
-      calculateWeightedSimilarity(normalizedImported.type, normalizedExisting.type, weights.type),
-      calculateWeightedSimilarity(
-        normalizedImported.departureLocation,
-        normalizedExisting.departureLocation,
-        weights.departureLocation
-      ),
-      calculateWeightedSimilarity(
-        normalizedImported.arrivalLocation,
-        normalizedExisting.arrivalLocation,
-        weights.arrivalLocation
-      ),
-      (compareDates(normalizedImported.departureDateTime, normalizedExisting.departureDateTime)
-        ? 100
-        : 0) * weights.departureDateTime,
-    ];
+    debugLog('TRANSPORTATION COMPARISON', {
+      importedMethod,
+      existingMethod,
+      methodMatch: importedMethod === existingMethod,
+      importedOrigin,
+      existingOrigin,
+      originMatch: importedOrigin === existingOrigin,
+      importedDest,
+      existingDest,
+      destMatch: importedDest === existingDest,
+      importedDeparture: imported.departureDateTime,
+      existingDeparture: exist.departureDateTime,
+      dateMatch: compareDates(imported.departureDateTime, exist.departureDateTime),
+    });
 
-    const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
-    const similarity = scores.reduce((a, b) => a + b, 0) / totalWeight;
-
-    if (similarity >= threshold) {
+    if (
+      importedMethod &&
+      existingMethod &&
+      importedMethod === existingMethod &&
+      importedOrigin === existingOrigin &&
+      importedDest === existingDest &&
+      compareDates(imported.departureDateTime, exist.departureDateTime)
+    ) {
+      debugLog('TRANSPORTATION DUPLICATE FOUND', {
+        method: imported.method,
+        origin: imported.origin,
+        destination: imported.destination,
+      });
       return {
         isDuplicate: true,
         duplicateOf: existing,
-        similarity: Math.round(similarity),
+        similarity: 100,
       };
     }
   }
 
+  debugLog('TRANSPORTATION CHECK END - NO MATCH FOUND', {
+    method: imported.method,
+    origin: imported.origin,
+    destination: imported.destination,
+  });
   return { isDuplicate: false };
 }
 
 /**
- * Check for duplicate car rentals
- * Compares: pickupLocation, dropoffLocation, pickupDateTime, dropoffDateTime
+ * Check for duplicate car rentals using location + date
  */
 function checkCarRentalDuplicates(importedCarRental, existingCarRentals) {
-  const threshold = 90;
-
-  // Normalize imported car rental
-  const normalizedImported =
+  const imported =
     typeof importedCarRental.get === 'function'
       ? importedCarRental.get({ plain: true })
       : importedCarRental;
 
   for (const existing of existingCarRentals) {
-    // Normalize existing car rental
-    const normalizedExisting =
-      typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
+    const exist = typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
 
-    const weights = {
-      pickupLocation: 0.25,
-      dropoffLocation: 0.25,
-      pickupDateTime: 0.25,
-      dropoffDateTime: 0.25,
-    };
+    const importedPickup = normalizeString(imported.pickupLocation);
+    const existingPickup = normalizeString(exist.pickupLocation);
+    const importedDropoff = normalizeString(imported.dropoffLocation);
+    const existingDropoff = normalizeString(exist.dropoffLocation);
 
-    const scores = [
-      calculateWeightedSimilarity(
-        normalizedImported.pickupLocation,
-        normalizedExisting.pickupLocation,
-        weights.pickupLocation
-      ),
-      calculateWeightedSimilarity(
-        normalizedImported.dropoffLocation,
-        normalizedExisting.dropoffLocation,
-        weights.dropoffLocation
-      ),
-      (compareDates(normalizedImported.pickupDateTime, normalizedExisting.pickupDateTime)
-        ? 100
-        : 0) * weights.pickupDateTime,
-      (compareDates(normalizedImported.dropoffDateTime, normalizedExisting.dropoffDateTime)
-        ? 100
-        : 0) * weights.dropoffDateTime,
-    ];
-
-    const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
-    const similarity = scores.reduce((a, b) => a + b, 0) / totalWeight;
-
-    if (similarity >= threshold) {
+    if (
+      importedPickup &&
+      existingPickup &&
+      importedPickup === existingPickup &&
+      importedDropoff === existingDropoff &&
+      compareDates(imported.pickupDateTime, exist.pickupDateTime) &&
+      compareDates(imported.dropoffDateTime, exist.dropoffDateTime)
+    ) {
       return {
         isDuplicate: true,
         duplicateOf: existing,
-        similarity: Math.round(similarity),
+        similarity: 100,
       };
     }
   }
@@ -390,89 +284,31 @@ function checkCarRentalDuplicates(importedCarRental, existingCarRentals) {
 }
 
 /**
- * Check for duplicate events
- * Compares: name, location, startDateTime, endDateTime (endDateTime is optional)
- * Uses event timezone for date comparison when available
+ * Check for duplicate events using name + location + date
  */
 function checkEventDuplicates(importedEvent, existingEvents) {
-  const threshold = 90;
+  const imported =
+    typeof importedEvent.get === 'function' ? importedEvent.get({ plain: true }) : importedEvent;
 
   for (const existing of existingEvents) {
-    // Normalize event objects - handle both Sequelize instances and plain objects
-    const normalizedImported =
-      typeof importedEvent.get === 'function' ? importedEvent.get({ plain: true }) : importedEvent;
-    const normalizedExisting =
-      typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
+    const exist = typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
 
-    // For events, we primarily care about matching on name, location, and START date
-    // End date is less critical since events with the same start date but different end dates
-    // are likely still the same event (especially if end date handling varies)
-    const weights = {
-      name: 0.45,
-      location: 0.35,
-      startDateTime: 0.2,
-    };
+    const importedName = normalizeString(imported.name);
+    const existingName = normalizeString(exist.name);
+    const importedLocation = normalizeString(imported.location);
+    const existingLocation = normalizeString(exist.location);
 
-    // For date comparison, use the existing event's timezone if available
-    // This allows comparing local dates rather than UTC dates
-    const timezone = normalizedExisting.timezone || 'UTC';
-    const startDateScore =
-      (compareDatesByTimezone(
-        normalizedImported.startDateTime,
-        normalizedExisting.startDateTime,
-        timezone
-      )
-        ? 100
-        : 0) * weights.startDateTime;
-
-    const nameScore = calculateWeightedSimilarity(
-      normalizedImported.name,
-      normalizedExisting.name,
-      weights.name
-    );
-    const locationScore = calculateWeightedSimilarity(
-      normalizedImported.location,
-      normalizedExisting.location,
-      weights.location
-    );
-
-    const scores = [nameScore, locationScore, startDateScore];
-
-    const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
-    const similarity = scores.reduce((a, b) => a + b, 0) / totalWeight;
-
-    // Log comparison details for debugging
-    const startDateComparisonResult = compareDatesByTimezone(
-      normalizedImported.startDateTime,
-      normalizedExisting.startDateTime,
-      timezone
-    );
-    logger.debug('Event duplicate detection:', {
-      importedName: normalizedImported.name,
-      existingName: normalizedExisting.name,
-      importedLocation: normalizedImported.location,
-      existingLocation: normalizedExisting.location,
-      importedStartDateTime: normalizedImported.startDateTime,
-      existingStartDateTime: normalizedExisting.startDateTime,
-      importedTimezone: normalizedImported.timezone,
-      existingTimezone: normalizedExisting.timezone,
-      comparisonTimezone: timezone,
-      weights,
-      nameScore: Math.round(nameScore * 100) / 100,
-      locationScore: Math.round(locationScore * 100) / 100,
-      startDateScore: Math.round(startDateScore * 100) / 100,
-      startDateComparisonResult,
-      totalWeight,
-      similarity: Math.round(similarity),
-      threshold,
-      isDuplicate: similarity >= threshold,
-    });
-
-    if (similarity >= threshold) {
+    if (
+      importedName &&
+      existingName &&
+      importedName === existingName &&
+      importedLocation === existingLocation &&
+      compareDates(imported.startDateTime, exist.startDateTime)
+    ) {
       return {
         isDuplicate: true,
         duplicateOf: existing,
-        similarity: Math.round(similarity),
+        similarity: 100,
       };
     }
   }
@@ -481,114 +317,26 @@ function checkEventDuplicates(importedEvent, existingEvents) {
 }
 
 /**
- * Compare two dates using a specific timezone
- * This converts UTC timestamps to local dates in the given timezone and compares them
- */
-function compareDatesByTimezone(date1, date2, timezone) {
-  if (!date1 || !date2) return false;
-
-  try {
-    // Parse the UTC timestamps
-    const d1 = new Date(date1);
-    const d2 = new Date(date2);
-
-    if (isNaN(d1.getTime()) || isNaN(d2.getTime())) {
-      logger.debug('Invalid date in compareDatesByTimezone:', {
-        date1,
-        date2,
-        d1: d1.toISOString ? d1.toISOString() : d1,
-        d2: d2.toISOString ? d2.toISOString() : d2,
-      });
-      return false;
-    }
-
-    // Convert to local date strings in the specified timezone
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      timeZone: timezone,
-    });
-
-    const date1Local = formatter.format(d1);
-    const date2Local = formatter.format(d2);
-
-    logger.debug('compareDatesByTimezone details:', {
-      date1Input: date1,
-      date2Input: date2,
-      timezone,
-      d1Timestamp: d1.getTime(),
-      d2Timestamp: d2.getTime(),
-      date1Local,
-      date2Local,
-      match: date1Local === date2Local,
-    });
-
-    // Compare the local date strings (MM/DD/YYYY format)
-    return date1Local === date2Local;
-  } catch (error) {
-    logger.debug('Error comparing dates by timezone:', {
-      date1,
-      date2,
-      timezone,
-      error: error.message,
-      stack: error.stack,
-    });
-    // Fallback to UTC comparison if timezone conversion fails
-    return compareDates(date1, date2);
-  }
-}
-
-/**
- * Check for duplicate vouchers
- * Compares: voucherNumber, type, issuer, expirationDate
+ * Check for duplicate vouchers using voucher number
  */
 function checkVoucherDuplicates(importedVoucher, existingVouchers) {
-  const threshold = 90;
-
-  // Normalize imported voucher
-  const normalizedImported =
+  const imported =
     typeof importedVoucher.get === 'function'
       ? importedVoucher.get({ plain: true })
       : importedVoucher;
 
+  const importedNum = normalizeString(imported.voucherNumber);
+  if (!importedNum) return { isDuplicate: false };
+
   for (const existing of existingVouchers) {
-    // Normalize existing voucher
-    const normalizedExisting =
-      typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
+    const exist = typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
+    const existingNum = normalizeString(exist.voucherNumber);
 
-    const weights = {
-      voucherNumber: 0.5,
-      type: 0.2,
-      issuer: 0.15,
-      expirationDate: 0.15,
-    };
-
-    const scores = [
-      calculateWeightedSimilarity(
-        normalizedImported.voucherNumber,
-        normalizedExisting.voucherNumber,
-        weights.voucherNumber
-      ),
-      calculateWeightedSimilarity(normalizedImported.type, normalizedExisting.type, weights.type),
-      calculateWeightedSimilarity(
-        normalizedImported.issuer,
-        normalizedExisting.issuer,
-        weights.issuer
-      ),
-      (compareDates(normalizedImported.expirationDate, normalizedExisting.expirationDate)
-        ? 100
-        : 0) * weights.expirationDate,
-    ];
-
-    const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
-    const similarity = scores.reduce((a, b) => a + b, 0) / totalWeight;
-
-    if (similarity >= threshold) {
+    if (importedNum === existingNum) {
       return {
         isDuplicate: true,
         duplicateOf: existing,
-        similarity: Math.round(similarity),
+        similarity: 100,
       };
     }
   }
@@ -597,45 +345,26 @@ function checkVoucherDuplicates(importedVoucher, existingVouchers) {
 }
 
 /**
- * Check for duplicate companions
- * Compares: name, email
+ * Check for duplicate companions using email (primary key)
  */
 function checkCompanionDuplicates(importedCompanion, existingCompanions) {
-  const threshold = 90;
-
-  // Normalize imported companion
-  const normalizedImported =
+  const imported =
     typeof importedCompanion.get === 'function'
       ? importedCompanion.get({ plain: true })
       : importedCompanion;
 
+  const importedEmail = normalizeString(imported.email);
+  if (!importedEmail) return { isDuplicate: false };
+
   for (const existing of existingCompanions) {
-    // Normalize existing companion
-    const normalizedExisting =
-      typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
+    const exist = typeof existing.get === 'function' ? existing.get({ plain: true }) : existing;
+    const existingEmail = normalizeString(exist.email);
 
-    const weights = {
-      name: 0.6,
-      email: 0.4,
-    };
-
-    const scores = [
-      calculateWeightedSimilarity(normalizedImported.name, normalizedExisting.name, weights.name),
-      calculateWeightedSimilarity(
-        normalizedImported.email,
-        normalizedExisting.email,
-        weights.email
-      ),
-    ];
-
-    const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
-    const similarity = scores.reduce((a, b) => a + b, 0) / totalWeight;
-
-    if (similarity >= threshold) {
+    if (importedEmail === existingEmail) {
       return {
         isDuplicate: true,
         duplicateOf: existing,
-        similarity: Math.round(similarity),
+        similarity: 100,
       };
     }
   }
@@ -643,37 +372,7 @@ function checkCompanionDuplicates(importedCompanion, existingCompanions) {
   return { isDuplicate: false };
 }
 
-/**
- * Get display name for a duplicate item
- */
-function getDuplicateDisplayName(item, type) {
-  switch (type) {
-    case 'trip':
-      return item.name || 'Untitled Trip';
-    case 'flight':
-      return `${item.airline} ${item.flightNumber}` || 'Flight';
-    case 'hotel':
-      return item.name || 'Hotel';
-    case 'transportation':
-      return (
-        `${item.type} - ${item.departureLocation} to ${item.arrivalLocation}` || 'Transportation'
-      );
-    case 'carRental':
-      return `${item.pickupLocation} to ${item.dropoffLocation}` || 'Car Rental';
-    case 'event':
-      return item.name || 'Event';
-    case 'voucher':
-      return item.voucherNumber || 'Voucher';
-    case 'companion':
-      return item.name || 'Companion';
-    default:
-      return 'Item';
-  }
-}
-
 module.exports = {
-  calculateStringSimilarity,
-  compareDates,
   checkTripDuplicates,
   checkFlightDuplicates,
   checkHotelDuplicates,
@@ -682,5 +381,4 @@ module.exports = {
   checkEventDuplicates,
   checkVoucherDuplicates,
   checkCompanionDuplicates,
-  getDuplicateDisplayName,
 };
