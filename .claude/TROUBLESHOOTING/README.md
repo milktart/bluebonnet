@@ -7,31 +7,34 @@ Quick solutions for common problems in Bluebonnet development and operations.
 ## Quick Links
 
 ### Development Issues
+
 - **[Debug Guide](./DEBUG_GUIDE.md)** - Debugging methodology
 - **[Setup Issues](./SETUP_ISSUES.md)** - Local setup problems
 - **[Database Issues](./DATABASE_ISSUES.md)** - Database connection, migrations
 - **[Form Issues](./FORM_ISSUES.md)** - Form submission problems
 
 ### Runtime Issues
+
 - **[Async Operations](./ASYNC_OPERATIONS.md)** - AJAX & async operation issues
 - **[Performance Issues](./PERFORMANCE_ISSUES.md)** - Slow queries, bundle size
 
 ### Operations
+
 - **[Deployment Issues](./DEPLOYMENT_ISSUES.md)** - Production problems
 
 ---
 
 ## Common Problems Quick Reference
 
-| Problem | Likely Cause | First Step |
-|---------|------------|-----------|
-| App won't start | Dependencies missing | `npm install` |
-| Database error | PostgreSQL not running | Check `docker ps` |
-| Form not working | JavaScript error | Check browser console |
-| Slow performance | Unoptimized query | Check Network tab |
-| Build fails | TypeScript error | Run `npm run lint` |
-| API error | Wrong headers | Check request headers |
-| Component not rendering | Svelte syntax error | Check console for errors |
+| Problem                 | Likely Cause           | First Step               |
+| ----------------------- | ---------------------- | ------------------------ |
+| App won't start         | Dependencies missing   | `npm install`            |
+| Database error          | PostgreSQL not running | Check `docker ps`        |
+| Form not working        | JavaScript error       | Check browser console    |
+| Slow performance        | Unoptimized query      | Check Network tab        |
+| Build fails             | TypeScript error       | Run `npm run lint`       |
+| API error               | Wrong headers          | Check request headers    |
+| Component not rendering | Svelte syntax error    | Check console for errors |
 
 ---
 
@@ -40,30 +43,35 @@ Quick solutions for common problems in Bluebonnet development and operations.
 When something breaks:
 
 ### 1. Identify the Problem
+
 - [ ] Where does it fail? (frontend, backend, database?)
 - [ ] When started happening? (after what change?)
 - [ ] What's the error message? (exact text)
 - [ ] Can you reproduce it reliably?
 
 ### 2. Check Basics
+
 - [ ] Is the server running? (`npm run dev`)
 - [ ] Is the database running? (`docker ps`)
 - [ ] Is Redis running? (if needed)
 - [ ] Are dependencies installed? (`npm install`)
 
 ### 3. Check Logs
+
 - [ ] Browser console (DevTools → Console)
 - [ ] Terminal output (where server is running)
 - [ ] Network tab (for API requests)
 - [ ] Application logs (if in production)
 
 ### 4. Debug Deeper
+
 - [ ] Add console.log statements
 - [ ] Use browser debugger (F12)
 - [ ] Check database directly
 - [ ] Review recent code changes
 
 ### 5. Search for Solutions
+
 - [ ] Check [TROUBLESHOOTING/](.) for similar issue
 - [ ] Search GitHub issues
 - [ ] Check framework docs (Svelte, Express, etc.)
@@ -74,26 +82,32 @@ When something breaks:
 ## Problem Categories
 
 ### Setup Problems
+
 **Symptoms:** App won't start, database connection fails
 **Solutions:** [Setup Issues](./SETUP_ISSUES.md)
 
 ### Database Problems
+
 **Symptoms:** Migration fails, table doesn't exist
 **Solutions:** [Database Issues](./DATABASE_ISSUES.md)
 
 ### Form Problems
+
 **Symptoms:** Form won't submit, validation errors
 **Solutions:** [Form Issues](./FORM_ISSUES.md)
 
 ### Async Problems
+
 **Symptoms:** API call doesn't work, sidebar doesn't update
 **Solutions:** [Async Operations](./ASYNC_OPERATIONS.md)
 
 ### Performance Problems
+
 **Symptoms:** Page loads slow, queries take forever
 **Solutions:** [Performance Issues](./PERFORMANCE_ISSUES.md)
 
 ### Deployment Problems
+
 **Symptoms:** Works locally but fails in production
 **Solutions:** [Deployment Issues](./DEPLOYMENT_ISSUES.md)
 
@@ -102,6 +116,7 @@ When something breaks:
 ## Debugging Tools
 
 ### Browser DevTools (F12)
+
 - **Console tab** - JavaScript errors, logging
 - **Network tab** - API requests, response times
 - **Storage tab** - Cookies, localStorage
@@ -109,6 +124,7 @@ When something breaks:
 - **Debugger tab** - Step through code
 
 ### Terminal
+
 ```bash
 # View Express logs
 npm run dev
@@ -124,12 +140,14 @@ psql -U postgres -d bluebonnet
 ```
 
 ### VS Code
+
 - Debug breakpoints (F5)
 - Hover to inspect variables
 - Integrated terminal
 - Git history
 
 ### Git
+
 ```bash
 # See what changed
 git diff
@@ -152,6 +170,7 @@ Sometimes explaining your problem helps you solve it:
 3. **Usually you'll realize the issue** (70% success rate!)
 
 Example:
+
 ```
 Me: "I'm adding a flight, but it doesn't save."
 Rubber duck: ...
@@ -165,30 +184,35 @@ Me: "That's the bug!"
 ## Common Solutions
 
 ### "Module not found"
+
 ```
 Solution: npm install
 Reason: Missing dependencies
 ```
 
 ### "Cannot connect to database"
+
 ```
 Solution: docker ps, check PostgreSQL running
 Reason: Database not started
 ```
 
 ### "TypeError: Cannot read property 'name' of undefined"
+
 ```
 Solution: Check if data is null/undefined before accessing
 Reason: Missing null check
 ```
 
 ### "EACCES: permission denied"
+
 ```
 Solution: sudo, or fix file permissions
 Reason: Permission issue
 ```
 
 ### "npm: command not found"
+
 ```
 Solution: Install Node.js
 Reason: Node not installed
@@ -199,22 +223,26 @@ Reason: Node not installed
 ## If You're Stuck
 
 ### Step 1: Take a Break
+
 - Walk around
 - Get coffee
 - Come back fresh
 
 ### Step 2: Simplify
+
 - Remove recent changes
 - Isolate the problem
 - Test one thing at a time
 
 ### Step 3: Ask for Help
+
 - Check documentation
 - Search for similar issues
 - Ask team member
 - Post on community forum
 
 ### Step 4: Document It
+
 - Write down what you did
 - Record what worked
 - Add to this guide
@@ -225,6 +253,7 @@ Reason: Node not installed
 ## Preventing Problems
 
 ### Best Practices
+
 - [ ] Run tests before committing (`npm test`)
 - [ ] Check console for errors (daily)
 - [ ] Review git diff before pushing
@@ -233,6 +262,7 @@ Reason: Node not installed
 - [ ] Add tests for bugs you fix
 
 ### Development Habits
+
 - [ ] Make small commits (easy to revert)
 - [ ] Test as you code (not after)
 - [ ] Read error messages carefully
@@ -244,6 +274,7 @@ Reason: Node not installed
 ## Emergency Procedures
 
 ### Database Corrupted
+
 ```bash
 # 1. Backup (if possible)
 pg_dump -U postgres bluebonnet > backup.sql
@@ -257,6 +288,7 @@ psql -U postgres bluebonnet < backup.sql
 ```
 
 ### App Won't Start
+
 ```bash
 # 1. Check errors
 npm run dev  # Look at errors
@@ -273,6 +305,7 @@ npm run db:sync
 ```
 
 ### Code is Broken
+
 ```bash
 # 1. See what changed
 git diff

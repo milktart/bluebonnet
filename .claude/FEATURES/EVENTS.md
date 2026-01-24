@@ -44,6 +44,7 @@ Events represent activities, attractions, and bookings during trips. Can be any 
 ## API Endpoints
 
 ### Create Event
+
 ```
 POST /api/trips/:tripId/events
 Body: {
@@ -54,12 +55,14 @@ Returns: { success: true, event: {...} }
 ```
 
 ### Get Events
+
 ```
 GET /api/trips/:tripId/events
 Returns: { success: true, events: [...] }
 ```
 
 ### Update Event
+
 ```
 PUT /api/events/:id
 Body: {...}
@@ -67,6 +70,7 @@ Returns: { success: true, event: {...} }
 ```
 
 ### Delete Event
+
 ```
 DELETE /api/events/:id
 Returns: { success: true }
@@ -77,9 +81,11 @@ Returns: { success: true }
 ## Frontend Implementation
 
 ### Add/Edit Form
+
 **File:** `views/partials/event-form.ejs`
 
 Features:
+
 - Event type selector (restaurant, museum, concert, etc.)
 - Date/time picker
 - Location with address autocomplete
@@ -88,6 +94,7 @@ Features:
 - Attendee selection from companions
 
 ### Form Fields
+
 - `title` - Event name
 - `eventType` - Dropdown (values from enum or config)
 - `eventDate` - Date picker
@@ -104,15 +111,19 @@ Features:
 ## Business Logic
 
 ### Duration Display
+
 Shows as "2 hours 30 minutes" on calendar/timeline
 
 ### Timezone Handling
+
 - Stored with timezone
 - Displayed in local time on calendar
 - Conversion for companions in different timezones
 
 ### Event Type Classification
+
 Used for:
+
 - Calendar color coding
 - Icon selection
 - Filtering
@@ -125,6 +136,7 @@ Types: restaurant, museum, tour, concert, show, activity, sports, theater, fligh
 ## Calendar Integration
 
 ### Visual Display
+
 - Events appear on their date
 - Time shown on timeline
 - Color-coded by event type
@@ -132,7 +144,9 @@ Types: restaurant, museum, tour, concert, show, activity, sports, theater, fligh
 - Conflicts/overlaps highlighted
 
 ### Day View
+
 Shows hourly breakdown:
+
 - All flights
 - All hotels (arrival/departure)
 - All events in time order
@@ -142,6 +156,7 @@ Shows hourly breakdown:
 ## Companion Integration
 
 Events can include multiple companions:
+
 - Attendee list
 - RSVP status (optional)
 - Cost per person tracking (optional)
@@ -152,6 +167,7 @@ Events can include multiple companions:
 ## Maps & Visualization
 
 Events appear on map as:
+
 - Marker at event location
 - Custom icon per event type
 - Name and time in popup
@@ -162,6 +178,7 @@ Events appear on map as:
 ## Phase 1 Migration (Svelte)
 
 ### New Components
+
 ```
 src/lib/components/
 ├── EventForm.svelte
@@ -175,6 +192,7 @@ src/lib/components/
 ## Vouchers
 
 Events can have vouchers:
+
 - Restaurant gift cards
 - Activity/tour vouchers
 - Show/concert tickets (tracked as voucher)

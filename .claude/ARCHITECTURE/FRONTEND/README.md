@@ -18,6 +18,7 @@ Client-side code handling UI, interactions, and communication with backend.
 ## Current State (Phase 1 Start)
 
 **Technology:**
+
 - **Templates:** EJS
 - **JavaScript:** Vanilla JS
 - **Styling:** Tailwind CSS
@@ -113,35 +114,39 @@ UI reflects changes
 ## Global Functions (Window Exports)
 
 ### Sidebar Control
+
 ```javascript
-loadSidebarContent(url, options)
-closeSecondarySidebar()
-openSecondarySidebar()
-closeTertiarySidebar()
-openTertiarySidebar()
-goBackInSidebar()
+loadSidebarContent(url, options);
+closeSecondarySidebar();
+openSecondarySidebar();
+closeTertiarySidebar();
+openTertiarySidebar();
+goBackInSidebar();
 ```
 
 ### Item CRUD
+
 ```javascript
-editItem(type, id)
-showAddForm(type, isStandalone)
-deleteItem(type, id, itemName)
-showAddFormWithLayoverDates(type, arrivalDT, departureDT, tz)
+editItem(type, id);
+showAddForm(type, isStandalone);
+deleteItem(type, id, itemName);
+showAddFormWithLayoverDates(type, arrivalDT, departureDT, tz);
 ```
 
 ### Form Handling
+
 ```javascript
-setupAsyncFormSubmission(formId)
-refreshTripView()
-refreshDashboardSidebar()
+setupAsyncFormSubmission(formId);
+refreshTripView();
+refreshDashboardSidebar();
 ```
 
 ### Maps
+
 ```javascript
-initializeMap(tripData)
-highlightMapMarker(id)
-unhighlightMapMarker(id)
+initializeMap(tripData);
+highlightMapMarker(id);
+unhighlightMapMarker(id);
 ```
 
 ---
@@ -149,6 +154,7 @@ unhighlightMapMarker(id)
 ## Key Modules
 
 ### async-form-handler.js
+
 Handles form submission without page reload.
 
 ```javascript
@@ -162,7 +168,7 @@ const data = new FormData(form);
 const response = await fetch(url, {
   method: 'POST',
   headers: { 'X-Async-Request': 'true' },
-  body: JSON.stringify(Object.fromEntries(data))
+  body: JSON.stringify(Object.fromEntries(data)),
 });
 
 // 4. Update UI
@@ -172,6 +178,7 @@ if (response.ok) {
 ```
 
 ### sidebar-loader.js
+
 Loads content dynamically into sidebars.
 
 ```javascript
@@ -188,17 +195,18 @@ function loadSidebarContent(url, options = {}) {
 ```
 
 ### datetime-formatter.js
+
 Formats dates for display.
 
 ```javascript
 // Display: "15 Oct 2025"
-formatDate(date)
+formatDate(date);
 
 // Display: "14:30"
-formatTime(date)
+formatTime(date);
 
 // Display: "15 Oct 2025, 14:30"
-formatDateTime(date)
+formatDateTime(date);
 ```
 
 ---
@@ -206,6 +214,7 @@ formatDateTime(date)
 ## Three-Sidebar Layout
 
 ### Visual
+
 ```
 ┌──────────────────────────────────────────┐
 │  Primary     Secondary        Tertiary    │
@@ -218,18 +227,20 @@ formatDateTime(date)
 ```
 
 ### Behavior
+
 - **Primary:** Always visible, fixed width
 - **Secondary:** Opens on-demand, fixed width
 - **Tertiary:** Opens on-demand, consumes remaining space
 - **Closing:** Click outside closes both secondary and tertiary
 
 ### State Management
+
 ```javascript
 // Global state
 window.sidebarState = {
   secondaryOpen: false,
   tertiaryOpen: false,
-  history: [] // For back navigation
+  history: [], // For back navigation
 };
 ```
 
@@ -238,6 +249,7 @@ window.sidebarState = {
 ## No Confirmation Pattern
 
 **Important UX Decision:**
+
 - No `alert()` or `confirm()` dialogs
 - No success messages
 - Operations execute immediately
@@ -246,9 +258,9 @@ window.sidebarState = {
 ```javascript
 // ❌ WRONG
 async function deleteItem(id) {
-  if (!confirm('Delete?')) return;  // No confirms!
+  if (!confirm('Delete?')) return; // No confirms!
   await fetch(`/item/${id}`, { method: 'DELETE' });
-  alert('Deleted!');  // No alerts!
+  alert('Deleted!'); // No alerts!
 }
 
 // ✅ RIGHT
@@ -267,14 +279,14 @@ async function deleteItem(id) {
 ## CSS Standards
 
 ### Tailwind
+
 ```html
 <!-- Use utility classes -->
-<div class="flex gap-4 p-2 bg-white rounded shadow">
-  Content
-</div>
+<div class="flex gap-4 p-2 bg-white rounded shadow">Content</div>
 ```
 
 ### Component Styles
+
 ```css
 /* Use scoped styles in components -->
 <style>
@@ -285,6 +297,7 @@ async function deleteItem(id) {
 ```
 
 ### Color Scheme
+
 - Primary: Bootstrap blue (#007bff)
 - Danger: Bootstrap red (#dc3545)
 - Success: Bootstrap green (#28a745)
@@ -294,6 +307,7 @@ async function deleteItem(id) {
 ## Phase 1 Migration (Svelte)
 
 ### What Changes
+
 ```
 Before (EJS + Vanilla JS):
 users/
@@ -319,6 +333,7 @@ src/
 ```
 
 ### What Stays the Same
+
 - API endpoints (Express backend unchanged)
 - Database models
 - Authentication
@@ -331,19 +346,22 @@ src/
 ### Debugging Frontend
 
 **Step 1:** Open browser DevTools (F12)
+
 - Console tab: JavaScript errors
 - Network tab: API requests
 - Application tab: Storage, cookies
 
 **Step 2:** Check for errors
+
 ```javascript
 // In console
-window.tripId        // Check current context
-window.tripData      // Check loaded data
-typeof editItem      // Verify function exists
+window.tripId; // Check current context
+window.tripData; // Check loaded data
+typeof editItem; // Verify function exists
 ```
 
 **Step 3:** Add logging
+
 ```javascript
 console.log('Debug:', variable);
 debugger; // Pauses execution
@@ -354,18 +372,21 @@ debugger; // Pauses execution
 ## Performance Considerations
 
 ### Bundle Size
+
 - Minimize JavaScript
 - Tree-shake unused code
 - Lazy load on demand
 - Compress images
 
 ### Page Load
+
 - Cache static assets
 - Optimize critical path
 - Minimize HTTP requests
 - Prefetch API data
 
 ### Runtime
+
 - Debounce frequent events
 - Cache API responses
 - Use CSS animations (faster)

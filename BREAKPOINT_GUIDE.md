@@ -20,9 +20,11 @@
 ## Layout Comparison
 
 ### MOBILE (< 640px)
+
 **Devices:** iPhone SE, iPhone 12-15, Galaxy S21
 
 **Structure:**
+
 ```
 ┌──────────────────────────┐
 │                          │
@@ -39,12 +41,14 @@
 ```
 
 **Navigation:**
+
 - ✅ Bottom tab bar (glass morphism, blur effect)
 - ✅ Hamburger menu for trip list
 - ✅ Bottom sheet for forms
 - ✅ Safe area padding for notches
 
 **Content Stacking:**
+
 ```
 Sidebar (Hamburger Drawer)
     ↓
@@ -54,6 +58,7 @@ Navigation (Bottom Tab Bar)
 ```
 
 **Form Display:**
+
 ```
 Backdrop (Semi-transparent)
     ↓
@@ -66,9 +71,11 @@ Bottom Sheet (Slides up from bottom)
 ---
 
 ### TABLET (640px - 1023px)
+
 **Devices:** iPad Mini, iPad (9-10"), Landscape phones
 
 **Structure:**
+
 ```
 ┌────────────────────────────────────────┐
 │    Top Navigation Bar (60px)            │
@@ -86,12 +93,14 @@ Bottom Sheet (Slides up from bottom)
 ```
 
 **Navigation:**
+
 - ✅ Top navigation bar (sticky)
 - ✅ Hamburger menu (collapses primary sidebar)
 - ✅ Side drawer from right (50% width, max 400px)
 - ✅ Backdrop overlay when drawer open
 
 **Content Stacking:**
+
 ```
 Top Navigation
     ↓
@@ -104,6 +113,7 @@ Backdrop (When drawer open)
 ```
 
 **Responsive Behavior:**
+
 - Sidebar starts expanded at 640px
 - Hamburger available to collapse
 - When collapsed, becomes drawer on left
@@ -113,9 +123,11 @@ Backdrop (When drawer open)
 ---
 
 ### DESKTOP (1024px - 1439px)
+
 **Devices:** MacBook (13"), Laptop (1200px), Desktop (1366px)
 
 **Structure:**
+
 ```
 ┌──────────────────────────────────────────────────────┐
 │  ☰  Bluebonnet                       [User] [Settings] │ ← 60px Nav
@@ -134,18 +146,21 @@ Backdrop (When drawer open)
 ```
 
 **Navigation:**
+
 - ✅ Top navigation bar (always visible)
 - ✅ Hamburger menu available (collapses primary)
 - ✅ Logo visible
 - ✅ User menu on right
 
 **Sidebar Behavior:**
+
 - Primary sidebar: Always visible (340px)
 - Secondary sidebar: Fades in/out (340px)
 - Tertiary sidebar: Floating, layered above content
 - Smooth opacity transitions
 
 **Content Stacking:**
+
 ```
 Top Navigation
     ↓
@@ -158,6 +173,7 @@ Top Navigation
 ```
 
 **Visual Appearance:**
+
 ```
 Sidebars:
   • White background: rgba(255, 255, 255, 0.7)
@@ -169,9 +185,11 @@ Sidebars:
 ---
 
 ### ULTRA-WIDE (≥ 1440px)
+
 **Devices:** Desktop (1440px+), Full HD (1920px), 4K (2560px)
 
 **Structure:**
+
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │  ☰  Bluebonnet                          [User] [Settings] [Logout] │ ← 60px
@@ -191,12 +209,14 @@ Sidebars:
 ```
 
 **Navigation:**
+
 - ✅ Top navigation bar (always visible)
 - ✅ Hamburger menu available
 - ✅ Full branding visible
 - ✅ User menu expanded
 
 **All Sidebars Always Visible:**
+
 - Primary (340px): Trip list
 - Secondary (340px): Details/content
 - Tertiary (340px): Forms/editor
@@ -204,6 +224,7 @@ Sidebars:
 - Maximum information density
 
 **Content Stacking:**
+
 ```
 Top Navigation
     ↓
@@ -217,6 +238,7 @@ No overlays, all columns in grid
 ```
 
 **Maximum Utilization:**
+
 ```
 Navigation: 60px
 Content: Full remaining height
@@ -229,6 +251,7 @@ Total Visible Width: 340 + 1fr + 340 + 340 = Full viewport
 ## Responsive Spacing
 
 ### How Spacing Scales
+
 ```
 --spacing-lg ranges from 16px to 24px depending on viewport
 
@@ -242,6 +265,7 @@ Using: clamp(1rem, 2.5vw, 1.5rem)
 ```
 
 ### Spacing Scale Reference
+
 ```
 --spacing-xs:  4px    (mobile) → 8px    (desktop)
 --spacing-sm:  8px    (mobile) → 12px   (desktop)
@@ -256,6 +280,7 @@ Using: clamp(1rem, 2.5vw, 1.5rem)
 ## Form Display Variations
 
 ### Mobile: Bottom Sheet
+
 ```
 ┌──────────────────────┐
 │                      │
@@ -274,6 +299,7 @@ Using: clamp(1rem, 2.5vw, 1.5rem)
 ```
 
 ### Tablet: Side Drawer
+
 ```
 ┌────────────────────────────────────────┐
 │ Top Nav                                 │
@@ -291,6 +317,7 @@ Using: clamp(1rem, 2.5vw, 1.5rem)
 ```
 
 ### Desktop: Side Panel (Fade)
+
 ```
 ┌──────────────────────────────────────────────┐
 │ Top Nav                                      │
@@ -312,6 +339,7 @@ Smooth transition: 0.35s
 ## Navigation Variations
 
 ### Mobile Navigation
+
 ```
 ┌──────────────────────────────┐
 │    Hamburger Drawer          │
@@ -336,6 +364,7 @@ Smooth transition: 0.35s
 ```
 
 ### Tablet/Desktop Navigation
+
 ```
 ┌──────────────────────────────────────┐
 │ ☰ Bluebonnet  [Search]  [User] [⚙]   │ ← Top Nav Bar
@@ -350,6 +379,7 @@ Smooth transition: 0.35s
 ## Hamburger Menu States
 
 ### Closed (Sidebar visible)
+
 ```
 ┌─────────────────┐
 │ ☰ (visible)     │  ← Hamburger icon visible
@@ -359,6 +389,7 @@ Smooth transition: 0.35s
 ```
 
 ### Open (Sidebar hidden)
+
 ```
 ┌─────────────────┐
 │ ✕ (visible)     │  ← X icon (close)
@@ -373,6 +404,7 @@ Smooth transition: 0.35s
 ## Touch Target Sizing
 
 ### WCAG AA Compliance
+
 ```
 Minimum touch target: 44px × 44px
 
@@ -404,6 +436,7 @@ Tab Navigation:
 ## Safe Area Support (Notched Devices)
 
 ### iPhone with Notch
+
 ```
 ┌────────┌────┐────────┐
 │        │ 🔆 │        │  ← Notch
@@ -420,12 +453,10 @@ Tab Navigation:
 ```
 
 ### CSS Implementation
+
 ```css
 .nav-bar {
-  padding-bottom: max(
-    var(--spacing-md),
-    env(safe-area-inset-bottom, 0px)
-  );
+  padding-bottom: max(var(--spacing-md), env(safe-area-inset-bottom, 0px));
 }
 ```
 
@@ -434,6 +465,7 @@ Tab Navigation:
 ## Landscape Mode Detection
 
 ### Tablet Landscape (max-height: 600px)
+
 ```
 Reduced spacing and nav height
 
@@ -461,40 +493,52 @@ Copy these for your component styling:
 
 ```css
 /* Mobile ONLY */
-@media (max-width: 639px) { }
+@media (max-width: 639px) {
+}
 
 /* Tablet and up */
-@media (min-width: 640px) { }
+@media (min-width: 640px) {
+}
 
 /* Tablet ONLY */
-@media (min-width: 640px) and (max-width: 1023px) { }
+@media (min-width: 640px) and (max-width: 1023px) {
+}
 
 /* Desktop and up */
-@media (min-width: 1024px) { }
+@media (min-width: 1024px) {
+}
 
 /* Desktop ONLY */
-@media (min-width: 1024px) and (max-width: 1439px) { }
+@media (min-width: 1024px) and (max-width: 1439px) {
+}
 
 /* Ultra-wide */
-@media (min-width: 1440px) { }
+@media (min-width: 1440px) {
+}
 
 /* Landscape mode */
-@media (max-height: 600px) { }
+@media (max-height: 600px) {
+}
 
 /* Hover capable devices */
-@media (hover: hover) { }
+@media (hover: hover) {
+}
 
 /* Touch-only devices */
-@media (hover: none) { }
+@media (hover: none) {
+}
 
 /* Reduced motion */
-@media (prefers-reduced-motion: reduce) { }
+@media (prefers-reduced-motion: reduce) {
+}
 
 /* High contrast mode */
-@media (prefers-contrast: more) { }
+@media (prefers-contrast: more) {
+}
 
 /* Dark mode */
-@media (prefers-color-scheme: dark) { }
+@media (prefers-color-scheme: dark) {
+}
 ```
 
 ---
@@ -502,6 +546,7 @@ Copy these for your component styling:
 ## Testing Checklist
 
 ### Test These Viewport Widths
+
 - [ ] 375px (iPhone SE)
 - [ ] 480px (Galaxy S21)
 - [ ] 640px (iPad boundary)
@@ -513,22 +558,26 @@ Copy these for your component styling:
 - [ ] 2560px (4K)
 
 ### Test These Device Orientations
+
 - [ ] Portrait (all mobile)
 - [ ] Landscape (mobile)
 - [ ] Landscape (tablet)
 
 ### Test Form Display
+
 - [ ] Mobile: Bottom sheet appears
 - [ ] Tablet: Side drawer appears
 - [ ] Desktop: Side panel fades in
 
 ### Test Navigation
+
 - [ ] Mobile: Bottom tab bar visible
 - [ ] Mobile: Hamburger drawer works
 - [ ] Tablet: Top nav visible, hamburger works
 - [ ] Desktop: Top nav visible, hamburger works
 
 ### Test Sidebars
+
 - [ ] Mobile: All hidden, drawer accessible
 - [ ] Tablet: Primary collapsible, secondary drawer
 - [ ] Desktop: Primary + Secondary visible, tertiary floating
@@ -551,17 +600,16 @@ Copy these for your component styling:
 
 ## Browser Compatibility
 
-| Feature | Chrome | Firefox | Safari | Edge |
-|---------|--------|---------|--------|------|
-| CSS Grid | ✅ | ✅ | ✅ | ✅ |
-| CSS Variables | ✅ | ✅ | ✅ | ✅ |
-| clamp() | ✅ | ✅ | ✅ | ✅ |
-| env() (safe area) | ✅ | ✅ | ✅ | ✅ |
-| Media Queries | ✅ | ✅ | ✅ | ✅ |
-| Backdrop-filter | ✅ | ✅ | ✅ (12.1+) | ✅ |
+| Feature           | Chrome | Firefox | Safari     | Edge |
+| ----------------- | ------ | ------- | ---------- | ---- |
+| CSS Grid          | ✅     | ✅      | ✅         | ✅   |
+| CSS Variables     | ✅     | ✅      | ✅         | ✅   |
+| clamp()           | ✅     | ✅      | ✅         | ✅   |
+| env() (safe area) | ✅     | ✅      | ✅         | ✅   |
+| Media Queries     | ✅     | ✅      | ✅         | ✅   |
+| Backdrop-filter   | ✅     | ✅      | ✅ (12.1+) | ✅   |
 
 ---
 
 **Last Updated:** January 8, 2026
 **System Version:** Phase 1 - CSS Foundation Complete
-

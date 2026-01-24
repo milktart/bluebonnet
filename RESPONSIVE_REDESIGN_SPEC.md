@@ -12,6 +12,7 @@
 This document specifies a unified responsive design system that transforms the current dual-view architecture (mobile tab-based + desktop three-sidebar) into a **single elegant responsive layout** that adapts gracefully across all breakpoints using a **Sidebar-to-Drawer pattern**.
 
 ### Key Improvements
+
 - ✅ One codebase instead of two separate layout systems
 - ✅ Smooth transitions between breakpoints (no hard layout switches)
 - ✅ Modern drawer-based navigation (hamburger menu on smaller screens)
@@ -60,9 +61,9 @@ This document specifies a unified responsive design system that transforms the c
   --sidebar-width-tertiary: clamp(260px, 30vw, 340px);
 
   /* Navigation Heights */
-  --nav-height-mobile: 60px;    /* Bottom bar on mobile */
-  --nav-height-tablet: 60px;    /* Top bar on tablet */
-  --nav-height-desktop: 60px;   /* Top bar on desktop */
+  --nav-height-mobile: 60px; /* Bottom bar on mobile */
+  --nav-height-tablet: 60px; /* Top bar on tablet */
+  --nav-height-desktop: 60px; /* Top bar on desktop */
 
   /* Z-index Stack */
   --z-map: 1;
@@ -89,6 +90,7 @@ This document specifies a unified responsive design system that transforms the c
 **Purpose:** Single-column layout optimized for phones
 
 **Structure:**
+
 ```
 ┌─────────────────────────────────┐
 │     Full-screen Content          │
@@ -104,6 +106,7 @@ This document specifies a unified responsive design system that transforms the c
 ```
 
 **Key Features:**
+
 - Full-screen content area (100vw × 100vh - nav height)
 - Fixed bottom navigation bar (60px)
 - Hamburger menu for navigation drawer (top-left)
@@ -111,16 +114,19 @@ This document specifies a unified responsive design system that transforms the c
 - No sidebars visible (all content in drawer or fullscreen)
 
 **Sidebar Visibility:**
+
 - **Primary Sidebar:** Hidden, accessible via hamburger menu (drawer)
 - **Secondary Sidebar:** Hidden, appears as bottom sheet modal
 - **Tertiary Sidebar:** Hidden, appears as bottom sheet modal
 
 **Navigation:**
+
 - Bottom tab bar with 4 main actions: List, Add, Calendar, Settings
 - Hamburger menu (top-left) for trip list access
 - Smooth slide-up animations for bottom sheets
 
 **CSS Implementation:**
+
 ```css
 @media (max-width: 639px) {
   .app-layout {
@@ -205,6 +211,7 @@ This document specifies a unified responsive design system that transforms the c
 **Purpose:** Two-column layout for landscape phones and small tablets
 
 **Structure:**
+
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  ☰  Bluebonnet                              [User] [×]   │ ← Top Nav Bar (60px)
@@ -218,6 +225,7 @@ This document specifies a unified responsive design system that transforms the c
 ```
 
 **Key Features:**
+
 - Collapsible primary sidebar (hamburger menu collapses/expands)
 - Secondary sidebar visible as overlay/drawer when content exists
 - Top navigation bar (matches desktop)
@@ -225,15 +233,18 @@ This document specifies a unified responsive design system that transforms the c
 - Forms appear as side drawers or bottom sheets
 
 **Sidebar Visibility:**
+
 - **Primary Sidebar:** Collapsible via hamburger toggle (or always visible if space allows)
 - **Secondary Sidebar:** Drawer overlay on right side
 - **Tertiary Sidebar:** Drawer overlay (layered over secondary)
 
 **Navigation:**
+
 - Top navigation bar with hamburger menu
 - Consistent with desktop navigation pattern
 
 **CSS Implementation:**
+
 ```css
 @media (min-width: 640px) and (max-width: 1023px) {
   .app-layout {
@@ -310,6 +321,7 @@ This document specifies a unified responsive design system that transforms the c
 **Purpose:** Three-column layout for traditional laptops
 
 **Structure:**
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  ☰ Bluebonnet                                      [User] [×]     │
@@ -325,6 +337,7 @@ This document specifies a unified responsive design system that transforms the c
 ```
 
 **Key Features:**
+
 - Three sidebars fully visible simultaneously
 - Primary sidebar always visible (trip list)
 - Secondary sidebar shows details/forms (340px default)
@@ -333,15 +346,18 @@ This document specifies a unified responsive design system that transforms the c
 - Hamburger menu collapses primary sidebar
 
 **Sidebar Visibility:**
+
 - **Primary Sidebar:** Always visible (collapsible, 340px default)
 - **Secondary Sidebar:** Appears on-demand with fade-in
 - **Tertiary Sidebar:** Appears on-demand with fade-in
 
 **Navigation:**
+
 - Top navigation bar with hamburger menu
 - Logo/branding visible in top-left
 
 **CSS Implementation:**
+
 ```css
 @media (min-width: 1024px) and (max-width: 1439px) {
   .app-layout {
@@ -421,6 +437,7 @@ This document specifies a unified responsive design system that transforms the c
 **Purpose:** Full three-column layout for ultra-wide screens with maximum content visibility
 
 **Structure:**
+
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
 │  ☰ Bluebonnet                                       [User] [Settings] │
@@ -436,6 +453,7 @@ This document specifies a unified responsive design system that transforms the c
 ```
 
 **Key Features:**
+
 - All three sidebars visible simultaneously
 - Maximum information density
 - Large map in center background
@@ -443,11 +461,13 @@ This document specifies a unified responsive design system that transforms the c
 - No drawer behavior (everything visible)
 
 **Sidebar Visibility:**
+
 - **Primary Sidebar:** Always visible (340px)
 - **Secondary Sidebar:** Always visible or on-demand (340px)
 - **Tertiary Sidebar:** Always visible or on-demand (340px)
 
 **CSS Implementation:**
+
 ```css
 @media (min-width: 1440px) {
   .app-layout {
@@ -508,11 +528,13 @@ This document specifies a unified responsive design system that transforms the c
 ### 3.1 Top Navigation Bar (All Breakpoints ≥ 640px)
 
 **Components:**
+
 - Left: Hamburger menu + Logo
 - Center: (Optional) App title
 - Right: User avatar, settings dropdown, close button
 
 **Behavior:**
+
 ```
 Mobile < 640px:   HIDDEN (uses bottom tab bar instead)
 Tablet 640-1023px: VISIBLE (dark background, sticky)
@@ -520,6 +542,7 @@ Desktop 1024px+:   VISIBLE (light background, sticky)
 ```
 
 **HTML Structure:**
+
 ```html
 <nav class="app-nav">
   <div class="nav-left">
@@ -545,6 +568,7 @@ Desktop 1024px+:   VISIBLE (light background, sticky)
 ```
 
 **Styling:**
+
 ```css
 .app-nav {
   display: flex;
@@ -595,17 +619,20 @@ Desktop 1024px+:   VISIBLE (light background, sticky)
 ### 3.2 Bottom Navigation Bar (Mobile < 640px)
 
 **Components:**
+
 - 4 tabs: List, Add, Calendar, Settings
 - Active state highlighting
 - Icon + label (stacked)
 
 **Behavior:**
+
 ```
 Mobile < 640px:   VISIBLE (fixed bottom, glass morphism)
 Tablet 640px+:    HIDDEN (replaced by top nav + drawer)
 ```
 
 **HTML Structure:**
+
 ```html
 <nav class="mobile-nav">
   <button class="mobile-nav-tab active" data-tab="list">
@@ -628,6 +655,7 @@ Tablet 640px+:    HIDDEN (replaced by top nav + drawer)
 ```
 
 **Styling:**
+
 ```css
 @media (max-width: 639px) {
   .mobile-nav {
@@ -677,30 +705,30 @@ Tablet 640px+:    HIDDEN (replaced by top nav + drawer)
 
 ### 4.1 Primary Sidebar (Trip List)
 
-| Breakpoint | Visibility | Behavior | Trigger |
-|------------|-----------|----------|---------|
-| **Mobile < 640px** | Hidden | Accessible via hamburger drawer | Hamburger icon |
-| **Tablet 640-1023px** | Collapsible | Drawer when collapsed, sidebar when expanded | Hamburger toggle |
-| **Desktop 1024-1439px** | Always visible | Fixed column (340px) | Always shown |
-| **Ultra 1440px+** | Always visible | Fixed column (340px) | Always shown |
+| Breakpoint              | Visibility     | Behavior                                     | Trigger          |
+| ----------------------- | -------------- | -------------------------------------------- | ---------------- |
+| **Mobile < 640px**      | Hidden         | Accessible via hamburger drawer              | Hamburger icon   |
+| **Tablet 640-1023px**   | Collapsible    | Drawer when collapsed, sidebar when expanded | Hamburger toggle |
+| **Desktop 1024-1439px** | Always visible | Fixed column (340px)                         | Always shown     |
+| **Ultra 1440px+**       | Always visible | Fixed column (340px)                         | Always shown     |
 
 ### 4.2 Secondary Sidebar (Details/Forms)
 
-| Breakpoint | Visibility | Behavior | Appearance |
-|------------|-----------|----------|-----------|
-| **Mobile < 640px** | Hidden | Bottom sheet modal | Slides up from bottom |
-| **Tablet 640-1023px** | Hidden | Right-side drawer (50% width) | Slides in from right |
-| **Desktop 1024-1439px** | On-demand | Right column (340px) | Fade in/out |
-| **Ultra 1440px+** | Always | Right column (340px) | Always visible |
+| Breakpoint              | Visibility | Behavior                      | Appearance            |
+| ----------------------- | ---------- | ----------------------------- | --------------------- |
+| **Mobile < 640px**      | Hidden     | Bottom sheet modal            | Slides up from bottom |
+| **Tablet 640-1023px**   | Hidden     | Right-side drawer (50% width) | Slides in from right  |
+| **Desktop 1024-1439px** | On-demand  | Right column (340px)          | Fade in/out           |
+| **Ultra 1440px+**       | Always     | Right column (340px)          | Always visible        |
 
 ### 4.3 Tertiary Sidebar (Additional Forms)
 
-| Breakpoint | Visibility | Behavior | Appearance |
-|------------|-----------|----------|-----------|
-| **Mobile < 640px** | Hidden | Bottom sheet (layered) | Slides up over secondary |
-| **Tablet 640-1023px** | Hidden | Right-side drawer (layered) | Slides over secondary |
-| **Desktop 1024-1439px** | On-demand | Floating panel (340px) | Fade in/out, positioned top-right |
-| **Ultra 1440px+** | Always | Right column (340px) | Always visible, rightmost |
+| Breakpoint              | Visibility | Behavior                    | Appearance                        |
+| ----------------------- | ---------- | --------------------------- | --------------------------------- |
+| **Mobile < 640px**      | Hidden     | Bottom sheet (layered)      | Slides up over secondary          |
+| **Tablet 640-1023px**   | Hidden     | Right-side drawer (layered) | Slides over secondary             |
+| **Desktop 1024-1439px** | On-demand  | Floating panel (340px)      | Fade in/out, positioned top-right |
+| **Ultra 1440px+**       | Always     | Right column (340px)        | Always visible, rightmost         |
 
 ---
 
@@ -709,12 +737,14 @@ Tablet 640px+:    HIDDEN (replaced by top nav + drawer)
 ### 5.1 Bottom Sheet (Mobile < 640px)
 
 **Appearance:**
+
 - Slides up from bottom
 - Dark backdrop (semi-transparent)
 - Border-radius on top corners only
 - Max height: 90vh (allows close button visible)
 
 **Animation:**
+
 ```css
 .bottom-sheet {
   position: fixed;
@@ -757,12 +787,14 @@ Tablet 640px+:    HIDDEN (replaced by top nav + drawer)
 ### 5.2 Side Drawer (Tablet 640-1023px)
 
 **Appearance:**
+
 - Slides in from right side
 - 50% viewport width (max 400px)
 - Dark backdrop
 - Full height
 
 **Animation:**
+
 ```css
 .side-drawer {
   position: fixed;
@@ -805,12 +837,14 @@ Tablet 640px+:    HIDDEN (replaced by top nav + drawer)
 ### 5.3 Side Panel (Desktop 1024px+)
 
 **Appearance:**
+
 - Always visible or fade in/out
 - Fixed width (340px)
 - No backdrop (integrated into layout)
 - Smooth opacity transitions
 
 **Animation:**
+
 ```css
 .side-panel {
   width: 340px;
@@ -833,6 +867,7 @@ Tablet 640px+:    HIDDEN (replaced by top nav + drawer)
 ### Current Components to Refactor
 
 **HIGH PRIORITY (Fundamental changes):**
+
 1. **MapLayout.svelte** → **ResponsiveLayout.svelte**
    - Remove mobile/desktop branching logic
    - Implement unified grid-based layout
@@ -861,16 +896,9 @@ Tablet 640px+:    HIDDEN (replaced by top nav + drawer)
    - Use responsive grid for map + details split
    - Remove mobile-specific styling
 
-**MEDIUM PRIORITY (Component updates):**
-6. **MapVisualization.svelte** - Update sizing logic
-7. **ItemsList.svelte** - Make card sizes responsive
-8. **Sidebar.svelte** - Adapt to new layout system
-9. All form components - Support responsive display modes
+**MEDIUM PRIORITY (Component updates):** 6. **MapVisualization.svelte** - Update sizing logic 7. **ItemsList.svelte** - Make card sizes responsive 8. **Sidebar.svelte** - Adapt to new layout system 9. All form components - Support responsive display modes
 
-**LOWER PRIORITY (Styling updates):**
-10. Global styles consolidation
-11. Breakpoint variable synchronization
-12. Responsive typography refinement
+**LOWER PRIORITY (Styling updates):** 10. Global styles consolidation 11. Breakpoint variable synchronization 12. Responsive typography refinement
 
 ---
 
@@ -896,7 +924,7 @@ let mobileFormState: FormState | null;
 // Single state system
 interface AppState {
   // Navigation
-  navigationOpen: boolean;              // Hamburger menu open/closed
+  navigationOpen: boolean; // Hamburger menu open/closed
   activePanel: 'list' | 'calendar' | 'settings'; // Active main view
 
   // Content selection
@@ -906,7 +934,7 @@ interface AppState {
 
   // Form/modal display
   formMode: 'create' | 'edit' | null;
-  formType: string | null;              // 'trip', 'flight', etc.
+  formType: string | null; // 'trip', 'flight', etc.
   showSecondaryPanel: boolean;
   showTertiaryPanel: boolean;
 
@@ -925,7 +953,7 @@ export const appState = writable<AppState>({
   formType: null,
   showSecondaryPanel: false,
   showTertiaryPanel: false,
-  currentBreakpoint: 'desktop'
+  currentBreakpoint: 'desktop',
 });
 ```
 
@@ -942,10 +970,12 @@ export const appState = writable<AppState>({
 5. Test CSS layout at different viewport widths
 
 **Files to Create:**
+
 - `/frontend/src/lib/styles/responsive.css` - Unified breakpoint system
 - `/frontend/src/lib/styles/layout.css` - Grid/flex layouts for each breakpoint
 
 **Files to Modify:**
+
 - `/frontend/src/app.css` - Add custom properties
 - `/frontend/src/lib/styles/form-styles.css` - Update breakpoint references
 
@@ -958,10 +988,12 @@ export const appState = writable<AppState>({
 5. Test layout switching at each breakpoint
 
 **Files to Create:**
+
 - `/frontend/src/lib/components/ResponsiveLayout.svelte`
 - `/frontend/src/lib/components/Navigation.svelte`
 
 **Files to Modify:**
+
 - Deprecate `MapLayout.svelte`
 - Update `dashboard/+page.svelte` imports
 
@@ -973,9 +1005,11 @@ export const appState = writable<AppState>({
 4. Update styling for all breakpoints
 
 **Files to Create:**
+
 - `/frontend/src/lib/components/NavigationDrawer.svelte`
 
 **Files to Modify:**
+
 - Refactor `MobileTabNavigation.svelte`
 
 ### Phase 4: Form System (Est. 6-8 hours)
@@ -987,11 +1021,13 @@ export const appState = writable<AppState>({
 5. Update all form components to support new system
 
 **Files to Create:**
+
 - `/frontend/src/lib/components/FormContainer.svelte` (wrapper)
 - `/frontend/src/lib/components/BottomSheet.svelte`
 - `/frontend/src/lib/components/SideDrawer.svelte`
 
 **Files to Modify:**
+
 - Deprecate `MobileFormModal.svelte`
 - Update all form components
 
@@ -1003,6 +1039,7 @@ export const appState = writable<AppState>({
 4. Update all detail components
 
 **Files to Modify:**
+
 - Split `dashboard/+page.svelte` (create 3-4 new files)
 - Update `MobileTripDetailView.svelte`
 - Update `ItemsList.svelte`
@@ -1016,6 +1053,7 @@ export const appState = writable<AppState>({
 5. Performance optimization
 
 **Testing Checklist:**
+
 - [ ] Mobile (< 640px): bottom nav, bottom sheets, hamburger drawer
 - [ ] Tablet (640-1023px): top nav, side drawer, hamburger toggle
 - [ ] Desktop (1024-1439px): three-sidebar layout visible
@@ -1035,37 +1073,48 @@ export const appState = writable<AppState>({
 /* Mobile first approach */
 
 /* Mobile only (< 640px) */
-@media (max-width: 639px) { }
+@media (max-width: 639px) {
+}
 
 /* Tablet and up (≥ 640px) */
-@media (min-width: 640px) { }
+@media (min-width: 640px) {
+}
 
 /* Tablet only (640-1023px) */
-@media (min-width: 640px) and (max-width: 1023px) { }
+@media (min-width: 640px) and (max-width: 1023px) {
+}
 
 /* Desktop and up (≥ 1024px) */
-@media (min-width: 1024px) { }
+@media (min-width: 1024px) {
+}
 
 /* Desktop only (1024-1439px) */
-@media (min-width: 1024px) and (max-width: 1439px) { }
+@media (min-width: 1024px) and (max-width: 1439px) {
+}
 
 /* Ultra-wide (≥ 1440px) */
-@media (min-width: 1440px) { }
+@media (min-width: 1440px) {
+}
 
 /* Landscape mode (height-based) */
-@media (max-height: 600px) { }
+@media (max-height: 600px) {
+}
 
 /* Touch devices */
-@media (hover: none) { }
+@media (hover: none) {
+}
 
 /* Reduced motion */
-@media (prefers-reduced-motion: reduce) { }
+@media (prefers-reduced-motion: reduce) {
+}
 
 /* High contrast */
-@media (prefers-contrast: more) { }
+@media (prefers-contrast: more) {
+}
 
 /* Dark mode (future) */
-@media (prefers-color-scheme: dark) { }
+@media (prefers-color-scheme: dark) {
+}
 ```
 
 ---
@@ -1110,24 +1159,28 @@ frontend/src/
 ## 11. Success Criteria
 
 ### Functionality
+
 - ✅ All features work identically across all breakpoints
 - ✅ No layout jumping or visual artifacts during resize
 - ✅ Forms appear correctly on all screen sizes
 - ✅ Navigation accessible and intuitive at all sizes
 
 ### Performance
+
 - ✅ No performance degradation from responsive changes
 - ✅ Smooth 60fps transitions between states
 - ✅ Fast breakpoint detection (CSS-based, not JavaScript)
 - ✅ Bundle size reduction (removed duplicate code)
 
 ### User Experience
+
 - ✅ Seamless experience across all devices
 - ✅ Familiar patterns: hamburger menu, bottom sheets, sidebars
 - ✅ Touch-friendly (44px minimum tap targets)
 - ✅ Accessible (keyboard navigation, ARIA labels, high contrast)
 
 ### Code Quality
+
 - ✅ 50% reduction in layout component code
 - ✅ Single responsive system (no duplication)
 - ✅ Clear CSS custom properties for maintenance
@@ -1140,6 +1193,7 @@ frontend/src/
 This specification defines a comprehensive transformation of the Bluebonnet frontend from a dual-view (mobile + desktop) architecture to a unified, modern responsive design using the Sidebar-to-Drawer pattern.
 
 **Key Benefits:**
+
 1. **Single Codebase:** One set of components handles all breakpoints
 2. **Better UX:** Smooth transitions, modern patterns (hamburger, drawers)
 3. **Easier Maintenance:** No duplicate logic or conditional rendering
@@ -1151,8 +1205,8 @@ This specification defines a comprehensive transformation of the Bluebonnet fron
 ---
 
 **Next Steps:**
+
 1. Review and approve this specification
 2. Begin Phase 1: CSS Foundation
 3. Create `responsive.css` and `layout.css` files
 4. Start unit testing of CSS layouts at each breakpoint
-

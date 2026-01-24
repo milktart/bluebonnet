@@ -14,10 +14,14 @@ module.exports = {
         if (columns.canShareTrips && columns.canManageTrips && !columns.canView) {
           // Drop old columns and add new ones
           if (columns.canShareTrips) {
-            await queryInterface.removeColumn('companion_permissions', 'canShareTrips', { transaction });
+            await queryInterface.removeColumn('companion_permissions', 'canShareTrips', {
+              transaction,
+            });
           }
           if (columns.canManageTrips) {
-            await queryInterface.removeColumn('companion_permissions', 'canManageTrips', { transaction });
+            await queryInterface.removeColumn('companion_permissions', 'canManageTrips', {
+              transaction,
+            });
           }
         }
 
@@ -183,16 +187,12 @@ module.exports = {
         );
 
         // Add indexes
-        await queryInterface.addIndex(
-          'item_companion_permissions',
-          ['itemType', 'itemId'],
-          { transaction }
-        );
-        await queryInterface.addIndex(
-          'item_companion_permissions',
-          ['companionId'],
-          { transaction }
-        );
+        await queryInterface.addIndex('item_companion_permissions', ['itemType', 'itemId'], {
+          transaction,
+        });
+        await queryInterface.addIndex('item_companion_permissions', ['companionId'], {
+          transaction,
+        });
         await queryInterface.addIndex(
           'item_companion_permissions',
           ['itemType', 'itemId', 'companionId'],
@@ -229,10 +229,14 @@ module.exports = {
           await queryInterface.removeColumn('trip_companions', 'canEdit', { transaction });
         }
         if (columns.canManageCompanions) {
-          await queryInterface.removeColumn('trip_companions', 'canManageCompanions', { transaction });
+          await queryInterface.removeColumn('trip_companions', 'canManageCompanions', {
+            transaction,
+          });
         }
         if (columns.inheritedFromTrip) {
-          await queryInterface.removeColumn('trip_companions', 'inheritedFromTrip', { transaction });
+          await queryInterface.removeColumn('trip_companions', 'inheritedFromTrip', {
+            transaction,
+          });
         }
 
         // Re-add old canEdit column
@@ -260,7 +264,9 @@ module.exports = {
           await queryInterface.removeColumn('companion_permissions', 'canEdit', { transaction });
         }
         if (columns.canManageCompanions) {
-          await queryInterface.removeColumn('companion_permissions', 'canManageCompanions', { transaction });
+          await queryInterface.removeColumn('companion_permissions', 'canManageCompanions', {
+            transaction,
+          });
         }
 
         // Re-add old columns

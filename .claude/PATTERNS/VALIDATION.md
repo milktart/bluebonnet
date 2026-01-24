@@ -7,6 +7,7 @@ Data validation strategies across frontend and backend.
 ## Backend Validation (Server-Side)
 
 ### Express Validator Setup
+
 **File:** `middleware/validation.js`
 
 ```javascript
@@ -19,18 +20,20 @@ const flightValidation = [
   body('origin').isLength({ min: 3, max: 3 }),
   body('destination').isLength({ min: 3, max: 3 }),
   body('departureDateTime').isISO8601(),
-  body('arrivalDateTime').isISO8601()
+  body('arrivalDateTime').isISO8601(),
 ];
 
 module.exports = { flightValidation };
 ```
 
 ### Using Validators in Routes
+
 ```javascript
 router.post('/flights', flightValidation, flightController.create);
 ```
 
 ### Handling Validation Results
+
 ```javascript
 async function create(req, res) {
   const errors = validationResult(req);
@@ -39,7 +42,7 @@ async function create(req, res) {
     if (req.get('X-Async-Request') === 'true') {
       return res.status(400).json({
         success: false,
-        errors: errors.array()
+        errors: errors.array(),
       });
     } else {
       // Flash messages for form submission
@@ -55,6 +58,7 @@ async function create(req, res) {
 ### Validation Rules by Item Type
 
 **Flights:**
+
 - airline: required, string
 - flightNumber: required, string
 - origin/destination: required, 3-letter IATA code
@@ -62,6 +66,7 @@ async function create(req, res) {
 - arrivalDateTime: required, ISO8601, after departure
 
 **Hotels:**
+
 - name: required, string
 - checkInDate: required, date
 - checkOutDate: required, date, after checkIn
@@ -69,6 +74,7 @@ async function create(req, res) {
 - address: required, string
 
 **Events:**
+
 - title: required, string
 - eventDate: required, date, within trip range
 - location: required, string
@@ -78,14 +84,16 @@ async function create(req, res) {
 ## Frontend Validation (Client-Side)
 
 ### HTML5 Validation
+
 ```html
-<input type="date" name="departureDate" required>
-<input type="time" name="departureTime" required>
-<input type="email" name="email" required>
-<input type="number" name="cost" min="0" step="0.01">
+<input type="date" name="departureDate" required />
+<input type="time" name="departureTime" required />
+<input type="email" name="email" required />
+<input type="number" name="cost" min="0" step="0.01" />
 ```
 
 ### JavaScript Validation (Optional)
+
 ```javascript
 function validateFlightForm(formData) {
   const errors = [];
@@ -110,6 +118,7 @@ function validateFlightForm(formData) {
 ```
 
 ### Error Display (No Alerts!)
+
 ```javascript
 // BAD - Don't use alerts
 if (!validateFlightForm(data)) {
@@ -130,6 +139,7 @@ if (errors.length > 0) {
 ## Validation Flow
 
 ### Complete Flow
+
 ```
 1. User fills form
 2. HTML5 browser validation (optional)
@@ -149,6 +159,7 @@ if (errors.length > 0) {
 ## Phase 1 Svelte Validation
 
 ### Reactive Validation
+
 ```svelte
 <script lang="ts">
   let formData = {
@@ -196,6 +207,7 @@ if (errors.length > 0) {
 ## Custom Validation Functions
 
 ### IATA Code Validation
+
 ```javascript
 function isValidIATACode(code) {
   return /^[A-Z]{3}$/.test(code);
@@ -203,6 +215,7 @@ function isValidIATACode(code) {
 ```
 
 ### Date Range Validation
+
 ```javascript
 function isDateWithinTrip(date, tripStart, tripEnd) {
   const d = new Date(date);
@@ -211,6 +224,7 @@ function isDateWithinTrip(date, tripStart, tripEnd) {
 ```
 
 ### Duration Validation
+
 ```javascript
 function isValidDuration(departure, arrival) {
   const diff = new Date(arrival) - new Date(departure);

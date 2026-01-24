@@ -7,21 +7,25 @@ Reusable patterns used throughout Bluebonnet. Follow these when building feature
 ## Quick Links
 
 ### Core Patterns
+
 - **[CRUD Pattern](./CRUD_PATTERN.md)** - Create, Read, Update, Delete flow (most important)
 - **[Form Pattern](./FORM_PATTERN.md)** - Form submission and validation
 - **[Async Patterns](./ASYNC_PATTERNS.md)** - AJAX and async operations
 
 ### Architecture Patterns
+
 - **[Component Pattern](./COMPONENT_PATTERN.md)** - How to structure components
 - **[State Management](./STATE_MANAGEMENT.md)** - Managing state (current + Svelte)
 - **[API Patterns](./API_PATTERNS.md)** - Request/response patterns
 
 ### Code Quality
+
 - **[Error Handling](./ERROR_HANDLING.md)** - How to handle errors
 - **[Validation Pattern](./VALIDATION_PATTERN.md)** - Data validation approach
 - **[Testing Pattern](./TESTING_PATTERN.md)** - How to write tests
 
 ### Decision Guides
+
 - **[When to Use Patterns](./WHEN_TO_USE_PATTERNS.md)** - Which pattern for your use case
 - **[UX Patterns](./UX_PATTERNS.md)** - UX decisions (no alerts, silent failures)
 - **[File Organization](./FILE_ORGANIZATION.md)** - Where to put code
@@ -31,6 +35,7 @@ Reusable patterns used throughout Bluebonnet. Follow these when building feature
 ## Pattern Flowchart
 
 ### "I'm adding a new feature"
+
 ```
 1. Read: CRUD Pattern (what operations?)
    ↓
@@ -44,6 +49,7 @@ Reusable patterns used throughout Bluebonnet. Follow these when building feature
 ```
 
 ### "I'm fixing a bug"
+
 ```
 1. Read: Error Handling (error related?)
    ↓
@@ -55,6 +61,7 @@ Reusable patterns used throughout Bluebonnet. Follow these when building feature
 ```
 
 ### "I'm refactoring code"
+
 ```
 1. Read: Component Pattern (can we split?)
    ↓
@@ -72,48 +79,62 @@ Reusable patterns used throughout Bluebonnet. Follow these when building feature
 **Which pattern should I use?**
 
 ### For CRUD Operations
+
 → Use **[CRUD Pattern](./CRUD_PATTERN.md)**
+
 - Creating items
 - Reading items
 - Updating items
 - Deleting items
 
 ### For Forms
+
 → Use **[Form Pattern](./FORM_PATTERN.md)**
+
 - User input
 - Validation
 - Submission
 - Error feedback
 
 ### For API Communication
+
 → Use **[API Patterns](./API_PATTERNS.md)**
+
 - Request format
 - Response format
 - Error responses
 - Headers
 
 ### For State Management
+
 → Use **[State Management](./STATE_MANAGEMENT.md)**
+
 - Global state (auth, user, trip)
 - Local state (form, UI)
 - Store subscriptions
 
 ### For Error Handling
+
 → Use **[Error Handling](./ERROR_HANDLING.md)**
+
 - Try/catch blocks
 - Error logging
 - User feedback
 - Recovery
 
 ### For Component Architecture
+
 → Use **[Component Pattern](./COMPONENT_PATTERN.md)**
+
 - Component responsibilities
 - Props vs stores
 - Event handling
 - Code organization
 
 ### For Testing
+
 → Use **[Testing Pattern](./TESTING_PATTERN.md)**
+
 - Unit tests
 - Integration tests
 - What to test
@@ -124,6 +145,7 @@ Reusable patterns used throughout Bluebonnet. Follow these when building feature
 ## Most Important Patterns
 
 ### 1. CRUD Pattern (Read First!)
+
 ```
 1. GET all items
 2. GET single item
@@ -137,6 +159,7 @@ Follow this for every feature!
 → See: [CRUD Pattern](./CRUD_PATTERN.md)
 
 ### 2. Form Pattern
+
 ```
 1. User fills form
 2. Form validation
@@ -150,6 +173,7 @@ Always use this for forms!
 → See: [Form Pattern](./FORM_PATTERN.md)
 
 ### 3. Component Pattern
+
 ```
 1. One component = one responsibility
 2. Props for data
@@ -167,6 +191,7 @@ Structure all components this way!
 ## Quick Reference
 
 ### API Response Format
+
 ```javascript
 // Success
 { success: true, data: {...} }
@@ -176,6 +201,7 @@ Structure all components this way!
 ```
 
 ### Form Validation Flow
+
 ```
 1. Validate on client
 2. Validate on server
@@ -184,6 +210,7 @@ Structure all components this way!
 ```
 
 ### Error Handling
+
 ```
 try {
   // operation
@@ -195,6 +222,7 @@ try {
 ```
 
 ### Component Structure
+
 ```javascript
 <script>
   // 1. Imports
@@ -216,6 +244,7 @@ try {
 ## Pattern by Use Case
 
 ### Adding a New Travel Item Type (Flight, Hotel, etc.)
+
 1. **Step 1:** Follow [CRUD Pattern](./CRUD_PATTERN.md)
 2. **Step 2:** Create model and controller
 3. **Step 3:** Create routes with validation
@@ -224,6 +253,7 @@ try {
 6. **Step 6:** Write tests following [Testing Pattern](./TESTING_PATTERN.md)
 
 ### Updating Existing Feature
+
 1. **Step 1:** Check current [CRUD Pattern](./CRUD_PATTERN.md) implementation
 2. **Step 2:** Update model if needed
 3. **Step 3:** Update controller/service
@@ -232,6 +262,7 @@ try {
 6. **Step 6:** Add tests
 
 ### Fixing a Bug
+
 1. **Step 1:** Write test that reproduces bug
 2. **Step 2:** Understand which pattern is involved
 3. **Step 3:** Fix the bug
@@ -243,6 +274,7 @@ try {
 ## Common Mistakes to Avoid
 
 ### ❌ Don't
+
 - Create endpoints that don't follow API pattern
 - Mix business logic in controllers
 - Put global state in components
@@ -250,6 +282,7 @@ try {
 - Add components without tests
 
 ### ✅ Do
+
 - Follow established patterns
 - Keep controllers thin, put logic in services
 - Use stores for global state, props for local
@@ -261,12 +294,14 @@ try {
 ## Pattern Evolution (Phase 1 vs Phase 2)
 
 ### Phase 1 (Svelte Frontend)
+
 - Forms built with Svelte reactivity
 - State managed with Svelte stores
 - API client calls Express backend
 - Components use props + stores
 
 ### Phase 2 (Backend Refactoring)
+
 - Services layer extracted from controllers
 - TypeScript for type safety
 - More sophisticated validation
@@ -289,11 +324,13 @@ try {
 ## Getting Started
 
 **First time?**
+
 1. Read [CRUD Pattern](./CRUD_PATTERN.md) - 10 min
 2. Read [Form Pattern](./FORM_PATTERN.md) - 10 min
 3. Start with a simple feature following patterns
 
 **Have a specific question?**
+
 - Use [When to Use Patterns](./WHEN_TO_USE_PATTERNS.md)
 - Or search [INDEX](../INDEX.md)
 

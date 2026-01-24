@@ -4,21 +4,25 @@ The content has been processed where content has been compressed (code blocks ar
 # File Summary
 
 ## Purpose
+
 This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
 It is designed to be easily consumable by AI systems for analysis, code review,
 or other automated processes.
 
 ## File Format
+
 The content is organized as follows:
+
 1. This summary section
 2. Repository information
 3. Directory structure
 4. Repository files (if enabled)
 5. Multiple file entries, each consisting of:
-  a. A header with the file path (## File: path/to/file)
-  b. The full contents of the file in a code block
+   a. A header with the file path (## File: path/to/file)
+   b. The full contents of the file in a code block
 
 ## Usage Guidelines
+
 - This file should be treated as read-only. Any changes should be made to the
   original repository files, not this packed version.
 - When processing this file, use the file path to distinguish
@@ -27,6 +31,7 @@ The content is organized as follows:
   the same level of security as you would the original repository.
 
 ## Notes
+
 - Some files may have been excluded based on .gitignore rules and Repomix's configuration
 - Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
 - Files matching these patterns are excluded: data/airports.json
@@ -36,6 +41,7 @@ The content is organized as follows:
 - Files are sorted by Git change count (files with more changes are at the bottom)
 
 # Directory Structure
+
 ```
 .claude/
   ARCHITECTURE/
@@ -588,6 +594,7 @@ tailwind.config.js
 # Files
 
 ## File: .claude/ARCHITECTURE/BACKEND/README.md
+
 ````markdown
 # 🔧 Backend Architecture
 
@@ -612,6 +619,7 @@ Express.js backend handling API endpoints, business logic, and database operatio
 Backend provides REST API for frontend to communicate with database.
 
 ### Tech Stack
+
 - **Framework:** Express.js
 - **Database:** PostgreSQL + Sequelize ORM
 - **Cache:** Redis
@@ -647,15 +655,14 @@ Response (JSON) back to Frontend
 Maps URLs to controllers.
 
 **Example:**
+
 ```javascript
 // routes/flights.js
-router.post('/flights', ensureAuthenticated,
-  validateFlight(),
-  flightController.createFlight
-);
+router.post('/flights', ensureAuthenticated, validateFlight(), flightController.createFlight);
 ```
 
 **Key Routes:**
+
 - `/auth` - Authentication
 - `/trips` - Trip management
 - `/flights`, `/hotels`, `/events`, etc. - Travel items
@@ -668,6 +675,7 @@ router.post('/flights', ensureAuthenticated,
 Handles request processing and business logic.
 
 **Current Controllers:**
+
 - `authController.js` - Login, registration
 - `tripController.js` - Trip CRUD (60KB - being refactored)
 - `flightController.js` - Flight CRUD
@@ -680,6 +688,7 @@ Handles request processing and business logic.
 - `accountController.js` - User account (27KB)
 
 **Example Controller:**
+
 ```javascript
 exports.createFlight = async (req, res) => {
   try {
@@ -728,6 +737,7 @@ exports.createFlight = async (req, res) => {
 Sequelize ORM models representing database tables.
 
 **Current Models:**
+
 - `User.js` - User accounts
 - `Trip.js` - Trips (core entity)
 - `Flight.js` - Flights
@@ -742,6 +752,7 @@ Sequelize ORM models representing database tables.
 - `Notification.js` - User notifications
 
 **Example Model:**
+
 ```javascript
 // models/Flight.js
 module.exports = (sequelize, DataTypes) => {
@@ -778,6 +789,7 @@ module.exports = (sequelize, DataTypes) => {
 Processes requests before reaching controllers.
 
 **Current Middleware:**
+
 - `auth.js` - Authentication guards
   - `ensureAuthenticated` - Protects routes
   - `forwardAuthenticated` - Redirects logged-in users
@@ -787,6 +799,7 @@ Processes requests before reaching controllers.
   - `validateTrip()`
 
 **Example Middleware:**
+
 ```javascript
 // middleware/auth.js
 exports.ensureAuthenticated = (req, res, next) => {
@@ -864,7 +877,7 @@ try {
   if (isAsyncRequest) {
     return res.status(400).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
   req.flash('error_msg', error.message);
@@ -888,6 +901,7 @@ if (!trip || trip.userId !== req.user.id) {
 Reusable utilities for controllers.
 
 **Current Helpers:**
+
 - `resourceController.js`
   - `verifyTripOwnership()` - Check trip ownership
   - `geocodeIfChanged()` - Geocode location
@@ -968,16 +982,19 @@ REDIS_PORT=6379
 ## Performance Considerations
 
 ### Queries
+
 - Use `.include()` for eager loading (avoid N+1)
 - Use `.select()` to limit columns
 - Use indexes on frequently queried columns
 
 ### Caching
+
 - Redis for session data
 - Passport sessions
 - Airport data caching
 
 ### Optimization
+
 - Lazy load companions/vouchers
 - Paginate large result sets
 - Compress responses
@@ -990,10 +1007,10 @@ Winston logger configured in `server.js`:
 
 ```javascript
 // Log levels
-logger.error('Error message');    // Errors
-logger.warn('Warning message');   // Warnings
-logger.info('Info message');      // Info
-logger.debug('Debug message');    // Debug
+logger.error('Error message'); // Errors
+logger.warn('Warning message'); // Warnings
+logger.info('Info message'); // Info
+logger.debug('Debug message'); // Debug
 ```
 
 **Never use** `console.log()` (use logger instead)
@@ -1017,6 +1034,7 @@ logger.debug('Debug message');    // Debug
 ````
 
 ## File: .claude/ARCHITECTURE/DATA_MODEL/README.md
+
 ````markdown
 # 📊 Data Model
 
@@ -1038,69 +1056,83 @@ Database entities, relationships, and schema documentation.
 ## Core Entities
 
 ### User
+
 Users who create trips and manage travel plans.
 
 **Fields:** id, email, password, name, createdAt, updatedAt
 
 **Relationships:**
+
 - Owns many Trips
 - Creates many TravelCompanions
 - Has one TravelCompanion profile (optional)
 
 ### Trip
+
 Travel planning document with start/end dates and multiple items.
 
 **Fields:** id, name, userId, startDate, endDate, description, defaultCompanionEditPermission, createdAt, updatedAt
 
 **Relationships:**
+
 - Belongs to User
 - Has many Flights, Hotels, Events, CarRentals, Transportation
 - Has many TravelCompanions (via TripCompanion)
 - Has many Vouchers
 
 ### Flights, Hotels, Events, CarRentals, Transportation
+
 Travel items belonging to a trip.
 
 **Common Fields:** id, tripId, userId, createdAt, updatedAt, [item-specific fields]
 
 **Relationships:**
+
 - Belong to Trip
 - Optional: Belong to User (for standalone items)
 - May have Vouchers attached
 
 ### TravelCompanion
+
 Companion profile that can be invited to trips.
 
 **Fields:** id, userId (optional), name, email, phone, createdAt, updatedAt
 
 **Relationships:**
+
 - Optionally linked to User
 - Invited to many Trips (via TripCompanion)
 
 ### TripCompanion (Junction)
+
 Links companions to trips with permissions.
 
 **Fields:** id, tripId, companionId, canEdit, addedBy, createdAt
 
 **Relationships:**
+
 - Links Trip to TravelCompanion
 - Tracks permissions and who added them
 
 ### Voucher
+
 Travel credit or upgrade voucher.
 
 **Fields:** id, tripId, type, description, status, createdAt, updatedAt
 
 **Relationships:**
+
 - Belongs to Trip
 - Has many VoucherAttachments
 
 ### VoucherAttachment
+
 Links vouchers to specific items and assigns to companions.
 
 **Fields:** id, voucherId, itemType, itemId, passengerId, createdAt
 
 **Relationships:**
+
 - Belongs to Voucher
 - Links to flight/hotel/etc.
 - May reference companion
@@ -1137,12 +1169,14 @@ Voucher (1)
 All primary keys are **UUIDs** (universally unique identifiers).
 
 ### Timestamps
+
 - `createdAt` - When record created
 - `updatedAt` - Last modification time
 
 Both stored in UTC (GMT-0) for consistency.
 
 ### Dates
+
 - Flight: `departureDateTime`, `arrivalDateTime`
 - Hotel: `checkInDate`, `checkOutDate`
 - Event: `eventDate`, `eventTime`
@@ -1150,10 +1184,12 @@ Both stored in UTC (GMT-0) for consistency.
 Stored as ISO strings with timezone info.
 
 ### Coordinates
+
 - `latitude`, `longitude` - DECIMAL(10, 8)
 - For flights, hotels, events with locations
 
 ### Enums (Status Fields)
+
 - Voucher status: `pending`, `used`, `expired`
 - Event type: `flight`, `hotel`, `event`, etc.
 
@@ -1162,7 +1198,9 @@ Stored as ISO strings with timezone info.
 ## Key Design Patterns
 
 ### CASCADE DELETE
+
 When a Trip is deleted, all its:
+
 - Flights
 - Hotels
 - Events
@@ -1176,12 +1214,15 @@ When a Trip is deleted, all its:
 **Benefit:** Maintains data integrity, no orphaned records
 
 ### Soft Delete (Planned)
+
 Some entities may use soft deletes in future:
+
 - `deletedAt` timestamp field
 - Records marked as deleted, not removed
 - Benefit: Can recover deleted items
 
 ### Associations
+
 Models define relationships:
 
 ```javascript
@@ -1189,12 +1230,14 @@ Models define relationships:
 Trip.hasMany(models.Flight, { onDelete: 'CASCADE' });
 Trip.hasMany(models.Hotel, { onDelete: 'CASCADE' });
 Trip.belongsToMany(models.TravelCompanion, {
-  through: models.TripCompanion
+  through: models.TripCompanion,
 });
 ```
 
 ### Permissions
+
 TripCompanion tracks:
+
 - `canEdit` - Can companion edit trip?
 - `addedBy` - Which user added them?
 
@@ -1203,17 +1246,20 @@ TripCompanion tracks:
 ## Database Schema Highlights
 
 ### Indexes (Performance)
+
 - `User.email` - Fast login lookups
 - `Trip.userId` - Fast trip queries by user
 - `Flight.tripId` - Fast flight queries by trip
 - `TravelCompanion.email` - Fast companion lookups
 
 ### Constraints
+
 - Email must be unique
 - Foreign keys enforce referential integrity
 - NOT NULL on required fields
 
 ### Defaults
+
 - `createdAt`/`updatedAt` - Automatic timestamps
 - `id` - AUTO UUID V4
 - `canEdit` - Defaults to trip's defaultCompanionEditPermission
@@ -1223,6 +1269,7 @@ TripCompanion tracks:
 ## Data Volume Expectations
 
 ### Typical Usage
+
 - **User:** 100-10,000 (small to medium app)
 - **Trips:** 1,000-100,000 (1-10 per active user)
 - **Flights:** 3,000-500,000 (3-5 per trip on average)
@@ -1230,6 +1277,7 @@ TripCompanion tracks:
 - **TravelCompanions:** 1,000-50,000 (1-5 per user)
 
 ### Growth Rate
+
 - 10-100 new users/month
 - 20-500 new trips/month
 - 100-5,000 new items/month
@@ -1241,12 +1289,14 @@ TripCompanion tracks:
 All dates stored in **UTC (GMT-0)** for consistency.
 
 Local times stored with timezone:
+
 - `originTimezone: "America/New_York"`
 - `destinationTimezone: "Europe/London"`
 
 Frontend displays local time based on timezone.
 
 ### Example
+
 ```
 Flight departs from New York:
 - UTC: 2025-06-01T08:00:00Z
@@ -1264,16 +1314,19 @@ Flight arrives in London:
 ## Future Considerations
 
 ### Phase 2 (Optional)
+
 - [ ] Migrate to Prisma ORM (from Sequelize)
 - [ ] Add soft deletes for audit trail
 - [ ] Add change logging/history
 
 ### Phase 3 (Optional)
+
 - [ ] Add real-time features (WebSocket)
 - [ ] Add collaboration tracking
 - [ ] Add activity feed
 
 ### Scaling (Future)
+
 - [ ] Database sharding by userId
 - [ ] Read replicas for queries
 - [ ] Archive old trips
@@ -1296,6 +1349,7 @@ Flight arrives in London:
 ````
 
 ## File: .claude/ARCHITECTURE/FRONTEND/README.md
+
 ````markdown
 # 🎨 Frontend Architecture
 
@@ -1317,6 +1371,7 @@ Client-side code handling UI, interactions, and communication with backend.
 ## Current State (Phase 1 Start)
 
 **Technology:**
+
 - **Templates:** EJS
 - **JavaScript:** Vanilla JS
 - **Styling:** Tailwind CSS
@@ -1412,35 +1467,39 @@ UI reflects changes
 ## Global Functions (Window Exports)
 
 ### Sidebar Control
+
 ```javascript
-loadSidebarContent(url, options)
-closeSecondarySidebar()
-openSecondarySidebar()
-closeTertiarySidebar()
-openTertiarySidebar()
-goBackInSidebar()
+loadSidebarContent(url, options);
+closeSecondarySidebar();
+openSecondarySidebar();
+closeTertiarySidebar();
+openTertiarySidebar();
+goBackInSidebar();
 ```
 
 ### Item CRUD
+
 ```javascript
-editItem(type, id)
-showAddForm(type, isStandalone)
-deleteItem(type, id, itemName)
-showAddFormWithLayoverDates(type, arrivalDT, departureDT, tz)
+editItem(type, id);
+showAddForm(type, isStandalone);
+deleteItem(type, id, itemName);
+showAddFormWithLayoverDates(type, arrivalDT, departureDT, tz);
 ```
 
 ### Form Handling
+
 ```javascript
-setupAsyncFormSubmission(formId)
-refreshTripView()
-refreshDashboardSidebar()
+setupAsyncFormSubmission(formId);
+refreshTripView();
+refreshDashboardSidebar();
 ```
 
 ### Maps
+
 ```javascript
-initializeMap(tripData)
-highlightMapMarker(id)
-unhighlightMapMarker(id)
+initializeMap(tripData);
+highlightMapMarker(id);
+unhighlightMapMarker(id);
 ```
 
 ---
@@ -1448,6 +1507,7 @@ unhighlightMapMarker(id)
 ## Key Modules
 
 ### async-form-handler.js
+
 Handles form submission without page reload.
 
 ```javascript
@@ -1461,7 +1521,7 @@ const data = new FormData(form);
 const response = await fetch(url, {
   method: 'POST',
   headers: { 'X-Async-Request': 'true' },
-  body: JSON.stringify(Object.fromEntries(data))
+  body: JSON.stringify(Object.fromEntries(data)),
 });
 
 // 4. Update UI
@@ -1471,6 +1531,7 @@ if (response.ok) {
 ```
 
 ### sidebar-loader.js
+
 Loads content dynamically into sidebars.
 
 ```javascript
@@ -1487,17 +1548,18 @@ function loadSidebarContent(url, options = {}) {
 ```
 
 ### datetime-formatter.js
+
 Formats dates for display.
 
 ```javascript
 // Display: "15 Oct 2025"
-formatDate(date)
+formatDate(date);
 
 // Display: "14:30"
-formatTime(date)
+formatTime(date);
 
 // Display: "15 Oct 2025, 14:30"
-formatDateTime(date)
+formatDateTime(date);
 ```
 
 ---
@@ -1505,6 +1567,7 @@ formatDateTime(date)
 ## Three-Sidebar Layout
 
 ### Visual
+
 ```
 ┌──────────────────────────────────────────┐
 │  Primary     Secondary        Tertiary    │
@@ -1517,18 +1580,20 @@ formatDateTime(date)
 ```
 
 ### Behavior
+
 - **Primary:** Always visible, fixed width
 - **Secondary:** Opens on-demand, fixed width
 - **Tertiary:** Opens on-demand, consumes remaining space
 - **Closing:** Click outside closes both secondary and tertiary
 
 ### State Management
+
 ```javascript
 // Global state
 window.sidebarState = {
   secondaryOpen: false,
   tertiaryOpen: false,
-  history: [] // For back navigation
+  history: [], // For back navigation
 };
 ```
 
@@ -1537,6 +1602,7 @@ window.sidebarState = {
 ## No Confirmation Pattern
 
 **Important UX Decision:**
+
 - No `alert()` or `confirm()` dialogs
 - No success messages
 - Operations execute immediately
@@ -1545,9 +1611,9 @@ window.sidebarState = {
 ```javascript
 // ❌ WRONG
 async function deleteItem(id) {
-  if (!confirm('Delete?')) return;  // No confirms!
+  if (!confirm('Delete?')) return; // No confirms!
   await fetch(`/item/${id}`, { method: 'DELETE' });
-  alert('Deleted!');  // No alerts!
+  alert('Deleted!'); // No alerts!
 }
 
 // ✅ RIGHT
@@ -1566,14 +1632,14 @@ async function deleteItem(id) {
 ## CSS Standards
 
 ### Tailwind
+
 ```html
 <!-- Use utility classes -->
-<div class="flex gap-4 p-2 bg-white rounded shadow">
-  Content
-</div>
+<div class="flex gap-4 p-2 bg-white rounded shadow">Content</div>
 ```
 
 ### Component Styles
+
 ```css
 /* Use scoped styles in components -->
 <style>
@@ -1584,6 +1650,7 @@ async function deleteItem(id) {
 ```
 
 ### Color Scheme
+
 - Primary: Bootstrap blue (#007bff)
 - Danger: Bootstrap red (#dc3545)
 - Success: Bootstrap green (#28a745)
@@ -1593,6 +1660,7 @@ async function deleteItem(id) {
 ## Phase 1 Migration (Svelte)
 
 ### What Changes
+
 ```
 Before (EJS + Vanilla JS):
 users/
@@ -1618,6 +1686,7 @@ src/
 ```
 
 ### What Stays the Same
+
 - API endpoints (Express backend unchanged)
 - Database models
 - Authentication
@@ -1630,19 +1699,22 @@ src/
 ### Debugging Frontend
 
 **Step 1:** Open browser DevTools (F12)
+
 - Console tab: JavaScript errors
 - Network tab: API requests
 - Application tab: Storage, cookies
 
 **Step 2:** Check for errors
+
 ```javascript
 // In console
-window.tripId        // Check current context
-window.tripData      // Check loaded data
-typeof editItem      // Verify function exists
+window.tripId; // Check current context
+window.tripData; // Check loaded data
+typeof editItem; // Verify function exists
 ```
 
 **Step 3:** Add logging
+
 ```javascript
 console.log('Debug:', variable);
 debugger; // Pauses execution
@@ -1653,18 +1725,21 @@ debugger; // Pauses execution
 ## Performance Considerations
 
 ### Bundle Size
+
 - Minimize JavaScript
 - Tree-shake unused code
 - Lazy load on demand
 - Compress images
 
 ### Page Load
+
 - Cache static assets
 - Optimize critical path
 - Minimize HTTP requests
 - Prefetch API data
 
 ### Runtime
+
 - Debounce frequent events
 - Cache API responses
 - Use CSS animations (faster)
@@ -1689,6 +1764,7 @@ debugger; // Pauses execution
 ````
 
 ## File: .claude/ARCHITECTURE/INTEGRATIONS/README.md
+
 ````markdown
 # 🔌 External Integrations
 
@@ -1698,38 +1774,44 @@ Third-party services and external APIs used by Bluebonnet.
 
 ## Services Overview
 
-| Service | Purpose | Type | Status |
-|---------|---------|------|--------|
-| **Nominatim** | Location geocoding | Free API | Active |
-| **Airport Data** | Airport info | Local JSON + DB | Active |
-| **Redis** | Caching | In-memory store | Active |
+| Service          | Purpose            | Type            | Status |
+| ---------------- | ------------------ | --------------- | ------ |
+| **Nominatim**    | Location geocoding | Free API        | Active |
+| **Airport Data** | Airport info       | Local JSON + DB | Active |
+| **Redis**        | Caching            | In-memory store | Active |
 
 ---
 
 ## Nominatim API (Geocoding)
 
 ### Purpose
+
 Converts address/location names to latitude/longitude coordinates.
 
 **Examples:**
+
 - "JFK Airport" → (40.6413, -73.7781)
 - "Eiffel Tower, Paris" → (48.8584, 2.2945)
 
 ### Service Details
+
 - **Provider:** OpenStreetMap
 - **URL:** https://nominatim.openstreetmap.org
 - **Auth:** None required (public API)
 - **Rate Limit:** 1 request per second (configurable)
 
 ### Implementation
+
 **File:** `services/geocodingService.js`
 
 **Features:**
+
 - In-memory caching (reduces API calls)
 - Configurable rate limiting
 - Timeout handling
 
 **Configuration:**
+
 ```env
 NOMINATIM_BASE_URL=https://nominatim.openstreetmap.org
 GEOCODING_TIMEOUT=10000
@@ -1737,6 +1819,7 @@ GEOCODING_RATE_LIMIT=1000
 ```
 
 ### Usage
+
 ```javascript
 const { geocode } = require('./services/geocodingService');
 
@@ -1745,6 +1828,7 @@ const result = await geocode('Eiffel Tower, Paris');
 ```
 
 ### Limitations
+
 - Free service (slower than paid)
 - Rate limited to 1/second
 - No authentication required but terms of service apply
@@ -1755,27 +1839,33 @@ const result = await geocode('Eiffel Tower, Paris');
 ## Airport Service
 
 ### Purpose
+
 Provides airport information (names, IATA codes, coordinates, timezones).
 
 **Examples:**
+
 - "JFK" → "John F. Kennedy International Airport"
 - "LHR" → "London Heathrow"
 
 ### Implementation
+
 **File:** `services/airportService.js`
 
 **Data Sources:**
+
 - PostgreSQL: Main airport database
 - JSON: `data/airports.json` (seeding data)
 - Redis: Cached airport lookups
 
 ### Features
+
 - IATA code lookup
 - Airport search by name/city
 - Timezone information
 - Coordinates (lat/lng)
 
 ### Usage
+
 ```javascript
 const airportService = require('./services/airportService');
 
@@ -1789,9 +1879,11 @@ const results = await airportService.searchAirports('new york');
 ```
 
 ### Airline Information
+
 **File:** `services/airportService.js`
 
 Gets airline name from flight number:
+
 ```javascript
 const airline = airportService.getAirlineNameFromFlightNumber('UA123');
 // Returns: 'United Airlines'
@@ -1804,9 +1896,11 @@ const airline = airportService.getAirlineNameFromFlightNumber('UA123');
 ## Redis Cache
 
 ### Purpose
+
 In-memory data store for caching and session storage.
 
 ### Configuration
+
 ```env
 REDIS_ENABLED=true
 REDIS_HOST=localhost
@@ -1818,12 +1912,14 @@ REDIS_DB=0       # Database number
 ### Usage
 
 **Session Storage:**
+
 ```javascript
 // Sessions stored in Redis automatically
 // via connect-redis middleware
 ```
 
 **Manual Caching:**
+
 ```javascript
 const redis = require('redis');
 const client = redis.createClient();
@@ -1836,11 +1932,13 @@ const data = await client.get('airport:JFK');
 ```
 
 ### Cache Keys Pattern
+
 - `airport:{iata}` - Airport data
 - `search:airports:{query}` - Search results
 - `session:*` - User sessions
 
 ### Benefits
+
 - Faster response times
 - Reduced database queries
 - Session persistence
@@ -1851,6 +1949,7 @@ const data = await client.get('airport:JFK');
 ## Integration Patterns
 
 ### API Error Handling
+
 ```javascript
 try {
   const result = await geocode(address);
@@ -1862,13 +1961,15 @@ try {
 ```
 
 ### Rate Limiting
+
 ```javascript
 // Nominatim limited to 1/second
-await new Promise(resolve => setTimeout(resolve, 1000));
+await new Promise((resolve) => setTimeout(resolve, 1000));
 const result = await geocode(address);
 ```
 
 ### Caching Pattern
+
 ```javascript
 // Check cache first
 let data = await cache.get(key);
@@ -1887,6 +1988,7 @@ return data;
 ## Future Integrations (Planned)
 
 ### Phase 2+
+
 - [ ] Real-time weather API
 - [ ] Currency exchange rates
 - [ ] Hotel/flight booking APIs
@@ -1899,6 +2001,7 @@ return data;
 ## Monitoring & Health Checks
 
 ### Checking Service Health
+
 ```javascript
 // Check if Nominatim is responding
 const isHealthy = await checkNominatimHealth();
@@ -1908,7 +2011,9 @@ const redisHealthy = await redis.ping();
 ```
 
 ### Logging
+
 All integration calls logged:
+
 ```
 [INFO] Nominatim request: Eiffel Tower, Paris
 [INFO] Nominatim response: 48.8584, 2.2945 (123ms)
@@ -1921,15 +2026,18 @@ All integration calls logged:
 ## Costs
 
 ### Current
+
 - **Nominatim:** Free (public API)
 - **Redis:** Free (self-hosted)
 - **Airport data:** Free (public JSON)
 - **Airlines data:** Free (static data)
 
 ### Estimated Monthly Costs
+
 - $0 (all free services)
 
 ### Scaling Costs (Future)
+
 - Nominatim: Free tier (rate-limited)
 - Redis: $12-30/month (managed service)
 - Weather API: $10-100/month
@@ -1951,6 +2059,7 @@ All integration calls logged:
 ````
 
 ## File: .claude/ARCHITECTURE/README.md
+
 ````markdown
 # 🏗️ Architecture Documentation
 
@@ -1997,6 +2106,7 @@ Complete documentation of how Bluebonnet is organized and how systems interact.
 ```
 
 ### Current Stack (Phase 1 Target)
+
 - **Frontend:** Svelte + SvelteKit
 - **Backend:** Express.js + Node.js
 - **Database:** PostgreSQL + Sequelize ORM
@@ -2010,17 +2120,20 @@ Complete documentation of how Bluebonnet is organized and how systems interact.
 ### Frontend Layer (Replacing EJS + Vanilla JS)
 
 **Svelte Components:**
+
 - Page components (`+page.svelte`)
 - Form components (FlightForm, HotelForm, etc.)
 - Layout components (Sidebars, PageLayout)
 - Data components (Tables, Cards)
 
 **State Management:**
+
 - Svelte Stores (authStore, tripStore, uiStore)
 - Reactive bindings
 - Store subscriptions
 
 **Communication:**
+
 - API service layer
 - Fetch requests with auth headers
 - Error handling
@@ -2030,17 +2143,20 @@ See: [Frontend Architecture](./FRONTEND/README.md)
 ### Backend Layer (Express + Controllers)
 
 **Route Handlers:**
+
 - Auth routes (`/api/auth`)
 - Trip routes (`/api/trips`)
 - Item routes (`/api/flights`, `/api/hotels`, etc.)
 
 **Controllers:**
+
 - Authentication
 - Trip management
 - Resource CRUD (flights, hotels, etc.)
 - Companion management
 
 **Services:**
+
 - Business logic
 - Database queries
 - Validation
@@ -2051,6 +2167,7 @@ See: [Backend Architecture](./BACKEND/README.md)
 ### Data Model
 
 **Core Entities:**
+
 - User
 - Trip
 - Flight, Hotel, Event, Transportation, CarRental
@@ -2110,6 +2227,7 @@ See: [Integrations](./INTEGRATIONS/README.md)
    - UI reflects new flight
 
 ### Result:
+
 - Flight created in database
 - User sees flight in trip
 - No page reload
@@ -2159,6 +2277,7 @@ Frontend
 ## Directory Structure
 
 ### Backend (Express)
+
 ```
 controllers/        ← Route handlers
 ├── helpers/        ← Shared utilities (geocoding, redirects)
@@ -2170,6 +2289,7 @@ utils/              ← General utilities
 ```
 
 ### Frontend (Svelte)
+
 ```
 src/
 ├── routes/         ← Page components (+page.svelte)
@@ -2183,6 +2303,7 @@ src/
 ```
 
 ### Database
+
 ```
 PostgreSQL
 ├── users
@@ -2203,6 +2324,7 @@ PostgreSQL
 ## Key Architectural Decisions
 
 ### Why Express?
+
 - Lightweight, flexible
 - Large ecosystem
 - Easy to integrate with Svelte
@@ -2211,6 +2333,7 @@ PostgreSQL
 See: [ADR 001](../DECISIONS/ADR_001_EXPRESS.md)
 
 ### Why Svelte (Phase 1)?
+
 - Smallest bundle size
 - Best developer experience
 - Reactive by default
@@ -2219,6 +2342,7 @@ See: [ADR 001](../DECISIONS/ADR_001_EXPRESS.md)
 See: [ADR 005](../DECISIONS/ADR_005_SVELTE.md)
 
 ### Why PostgreSQL?
+
 - Robust, reliable
 - Great for relational data
 - Good for travel data (trips, items, relationships)
@@ -2230,17 +2354,20 @@ See: [ADR 004](../DECISIONS/ADR_004_POSTGRES_REDIS.md)
 ## Getting Started
 
 ### New Developer?
+
 1. Read [Current State](./CURRENT_STATE.md) - 10 min
 2. Read [Backend Overview](./BACKEND/README.md) - 10 min
 3. Read [Frontend Overview](./FRONTEND/README.md) - 10 min
 4. Read specific [Data Model](./DATA_MODEL/README.md) section for feature you're working on
 
 ### Making a Change?
+
 1. Check [Patterns Documentation](../PATTERNS/) for your use case
 2. Follow pattern for backend and frontend
 3. Check [Testing Guide](../TESTING/) for test coverage
 
 ### New to Svelte?
+
 1. [Svelte Basics](../LEARNING_RESOURCES/SVELTE_BASICS.md) - Quick reference
 2. [Phase 1 Setup](../MODERNIZATION/PHASE_1_SVELTE_SETUP.md) - Getting started
 3. [Building Components](../MODERNIZATION/PHASE_1_COMPONENTS.md) - Component patterns
@@ -2261,7 +2388,8 @@ See: [ADR 004](../DECISIONS/ADR_004_POSTGRES_REDIS.md)
 ````
 
 ## File: .claude/ARCHIVE/README.md
-````markdown
+
+```markdown
 # 📚 Learning Resources
 
 Quick references and learning guides for frameworks used in Bluebonnet.
@@ -2271,14 +2399,17 @@ Quick references and learning guides for frameworks used in Bluebonnet.
 ## Quick Links
 
 ### Svelte (Phase 1 Focus)
+
 - **[Svelte Basics](./SVELTE_BASICS.md)** - Quick reference for Svelte syntax
 - **[SvelteKit Basics](./SVELTEKIT_BASICS.md)** - SvelteKit patterns and setup
 
 ### Backend
+
 - **[TypeScript Guidelines](./TYPESCRIPT_GUIDELINES.md)** - TypeScript best practices
 - **[Database Basics](./DATABASE_BASICS.md)** - Sequelize/database concepts
 
 ### External Resources
+
 - **[External Resources](./EXTERNAL_RESOURCES.md)** - Links to official docs
 
 ---
@@ -2288,26 +2419,31 @@ Quick references and learning guides for frameworks used in Bluebonnet.
 ### First Week Learning Path
 
 **Day 1: Understand the App**
+
 - Read [Getting Started](../GETTING_STARTED.md)
 - Read [Architecture Overview](../ARCHITECTURE/README.md)
 - Run app locally (`docker-compose up`)
 
 **Day 2: Learn Svelte (if frontend)**
+
 - Read [Svelte Basics](./SVELTE_BASICS.md) - 30 min
 - Read [SvelteKit Basics](./SVELTEKIT_BASICS.md) - 30 min
 - Build first component - 1 hour
 
 **Day 3: Learn Express (if backend)**
+
 - Read [Backend Architecture](../ARCHITECTURE/BACKEND/README.md) - 30 min
 - Read [Database Basics](./DATABASE_BASICS.md) - 30 min
 - Study one controller - 1 hour
 
 **Day 4: Learn Patterns**
+
 - Read [CRUD Pattern](../PATTERNS/CRUD_PATTERN.md) - 30 min
 - Read [Form Pattern](../PATTERNS/FORM_PATTERN.md) - 30 min
 - Follow a feature through codebase - 1 hour
 
 **Day 5: Write Code**
+
 - Build your first feature following patterns
 - Get code reviewed
 - Ask questions!
@@ -2317,13 +2453,16 @@ Quick references and learning guides for frameworks used in Bluebonnet.
 ## By Role
 
 ### Frontend Developer (Svelte)
+
 **Must Learn:**
+
 1. [Svelte Basics](./SVELTE_BASICS.md)
 2. [SvelteKit Basics](./SVELTEKIT_BASICS.md)
 3. [Component Pattern](../PATTERNS/COMPONENT_PATTERN.md)
 4. [Form Pattern](../PATTERNS/FORM_PATTERN.md)
 
 **Nice to Know:**
+
 - TypeScript (optional but recommended)
 - Testing for components
 - Performance optimization
@@ -2331,13 +2470,16 @@ Quick references and learning guides for frameworks used in Bluebonnet.
 **Time:** 1-2 weeks to be productive
 
 ### Backend Developer (Express)
+
 **Must Learn:**
+
 1. [Backend Architecture](../ARCHITECTURE/BACKEND/README.md)
 2. [Database Basics](./DATABASE_BASICS.md)
 3. [CRUD Pattern](../PATTERNS/CRUD_PATTERN.md)
 4. [API Patterns](../PATTERNS/API_PATTERNS.md)
 
 **Nice to Know:**
+
 - TypeScript (for Phase 2)
 - Sequelize advanced patterns
 - Testing services
@@ -2345,12 +2487,15 @@ Quick references and learning guides for frameworks used in Bluebonnet.
 **Time:** Already familiar (existing codebase)
 
 ### DevOps/Operations
+
 **Must Learn:**
+
 1. [Docker Setup](../DEPLOYMENT/DOCKER_SETUP.md)
 2. [Environment Config](../DEPLOYMENT/ENVIRONMENT_CONFIG.md)
 3. [Deployment](../DEPLOYMENT/README.md)
 
 **Nice to Know:**
+
 - Docker advanced topics
 - PostgreSQL administration
 - Monitoring setup
@@ -2394,22 +2539,27 @@ Quick references and learning guides for frameworks used in Bluebonnet.
 ### Example: Adding a New Field to Flight Form
 
 **1. Understand Feature**
+
 - Read [Flight Management](../FEATURES/FLIGHT_MANAGEMENT.md)
 
 **2. Follow Pattern**
+
 - Read [Form Pattern](../PATTERNS/FORM_PATTERN.md)
 
 **3. Look at Existing Code**
+
 - Find `FlightForm.svelte`
 - Review how existing fields work
 
 **4. Make Change**
+
 - Add new field following pattern
 - Update component
 - Update API
 - Test
 
 **5. Learn**
+
 - Ask questions
 - Get code reviewed
 - Document what you learned
@@ -2419,6 +2569,7 @@ Quick references and learning guides for frameworks used in Bluebonnet.
 ## External Learning Resources
 
 ### Official Docs (Highly Recommended)
+
 - **Svelte:** https://svelte.dev
 - **SvelteKit:** https://kit.svelte.dev
 - **Express:** https://expressjs.com
@@ -2426,11 +2577,13 @@ Quick references and learning guides for frameworks used in Bluebonnet.
 - **PostgreSQL:** https://www.postgresql.org/docs/
 
 ### YouTube Channels
+
 - Svelte Society (official)
 - Net Ninja (Svelte tutorials)
 - Traversy Media (web dev)
 
 ### Interactive Learning
+
 - Svelte tutorial on svelte.dev (interactive)
 - SvelteKit docs with examples
 - Express.js official guides
@@ -2442,20 +2595,24 @@ See: [External Resources](./EXTERNAL_RESOURCES.md)
 ## Learning Styles
 
 ### If You Learn by Reading
+
 → Read the official docs
 → Check [External Resources](./EXTERNAL_RESOURCES.md)
 
 ### If You Learn by Doing
+
 → Follow [Svelte Basics](./SVELTE_BASICS.md) examples
 → Build a small component
 → Add a feature to Bluebonnet
 
 ### If You Learn by Watching
+
 → Find YouTube tutorials
 → Watch official walkthrough videos
 → Pair program with team member
 
 ### If You Learn by Teaching
+
 → Explain concept to team member
 → Write documentation
 → Code review others' work
@@ -2466,19 +2623,19 @@ See: [External Resources](./EXTERNAL_RESOURCES.md)
 
 ### To Be Productive
 
-| Role | Time | Focus |
-|------|------|-------|
-| **Frontend (Svelte)** | 1-2 weeks | Components, state, forms |
-| **Backend (Express)** | Already familiar | Patterns, TypeScript |
-| **DevOps** | 1 week | Docker, deployment |
-| **Full-stack** | 2-3 weeks | Both frontend + backend |
+| Role                  | Time             | Focus                    |
+| --------------------- | ---------------- | ------------------------ |
+| **Frontend (Svelte)** | 1-2 weeks        | Components, state, forms |
+| **Backend (Express)** | Already familiar | Patterns, TypeScript     |
+| **DevOps**            | 1 week           | Docker, deployment       |
+| **Full-stack**        | 2-3 weeks        | Both frontend + backend  |
 
 ### To Be Proficient
 
-| Role | Time | Includes |
-|------|------|----------|
-| **Frontend** | 4-6 weeks | Advanced patterns, performance |
-| **Backend** | 2-3 weeks | Services layer, TypeScript |
+| Role           | Time      | Includes                        |
+| -------------- | --------- | ------------------------------- |
+| **Frontend**   | 4-6 weeks | Advanced patterns, performance  |
+| **Backend**    | 2-3 weeks | Services layer, TypeScript      |
 | **Full-stack** | 6-8 weeks | All skills at comfortable level |
 
 ---
@@ -2486,24 +2643,28 @@ See: [External Resources](./EXTERNAL_RESOURCES.md)
 ## Learning Milestones
 
 ### Week 1: Foundation
+
 - [ ] Understand architecture
 - [ ] Run app locally
 - [ ] Read framework basics
 - [ ] Ask lots of questions
 
 ### Week 2: First Feature
+
 - [ ] Build first component/endpoint
 - [ ] Get code reviewed
 - [ ] Make changes from review
 - [ ] Celebrate!
 
 ### Week 3: Comfortable
+
 - [ ] Build features without heavy review
 - [ ] Debug issues independently
 - [ ] Help other developers
 - [ ] Suggest improvements
 
 ### Week 4+: Productive
+
 - [ ] Contribute to complex features
 - [ ] Mentor new developers
 - [ ] Improve documentation
@@ -2526,18 +2687,21 @@ See: [External Resources](./EXTERNAL_RESOURCES.md)
 ## Asking for Help
 
 ### How to Ask Good Questions
+
 - **Be specific:** "X doesn't work" → Show error message
 - **Provide context:** What were you trying to do?
 - **Show what you tried:** What solutions didn't work?
 - **Ask for help, not answers:** Help me understand, not just fix it
 
 ### Where to Ask
+
 - Team Slack/Discord
 - Code review comments
 - In-person pair programming
 - Documentation issues
 
 ### How to Help Others
+
 - Explain, don't just tell the answer
 - Point to relevant docs
 - Pair program if complex
@@ -2560,9 +2724,10 @@ See: [External Resources](./EXTERNAL_RESOURCES.md)
 **Last Updated:** 2025-12-17
 **Most Popular:** Svelte Basics
 **Recommended First Read:** Getting Started → Development → Architecture
-````
+```
 
 ## File: .claude/ARCHIVE/SVELTE_BASICS.md
+
 ````markdown
 # 🎓 Svelte Basics Quick Reference
 
@@ -2573,6 +2738,7 @@ Essential Svelte concepts for developers starting Phase 1.
 ## Quick Start
 
 ### Installation
+
 ```bash
 npm create vite@latest my-app -- --template svelte
 cd my-app
@@ -2581,6 +2747,7 @@ npm run dev
 ```
 
 ### Your First Component
+
 ```svelte
 <script>
   let count = 0;
@@ -2610,6 +2777,7 @@ npm run dev
 ## Reactive Variables
 
 ### Declare with `let`
+
 ```svelte
 <script>
   let name = 'World';
@@ -2622,6 +2790,7 @@ npm run dev
 ```
 
 ### Reactive Statements
+
 ```svelte
 <script>
   let count = 0;
@@ -2636,6 +2805,7 @@ npm run dev
 ```
 
 ### Derived State
+
 ```svelte
 <script>
   let items = [1, 2, 3];
@@ -2652,6 +2822,7 @@ npm run dev
 ## Event Handling
 
 ### Click Events
+
 ```svelte
 <script>
   function handleClick(event) {
@@ -2664,6 +2835,7 @@ npm run dev
 ```
 
 ### Form Events
+
 ```svelte
 <script>
   let value = '';
@@ -2681,6 +2853,7 @@ npm run dev
 ```
 
 ### Event Modifiers
+
 ```svelte
 <!-- Stop propagation -->
 <button on:click|stopPropagation={() => alert('clicked')}>
@@ -2700,6 +2873,7 @@ npm run dev
 ## Two-Way Binding
 
 ### Binding to Input
+
 ```svelte
 <script>
   let name = '';
@@ -2710,6 +2884,7 @@ npm run dev
 ```
 
 ### Binding to Checkbox
+
 ```svelte
 <script>
   let agreed = false;
@@ -2726,6 +2901,7 @@ npm run dev
 ```
 
 ### Binding to Select
+
 ```svelte
 <script>
   let selected = '';
@@ -2745,6 +2921,7 @@ npm run dev
 ## Conditional Rendering
 
 ### if/else
+
 ```svelte
 <script>
   let count = 0;
@@ -2760,6 +2937,7 @@ npm run dev
 ```
 
 ### each Loop
+
 ```svelte
 <script>
   let items = ['Apple', 'Banana', 'Cherry'];
@@ -2773,6 +2951,7 @@ npm run dev
 ```
 
 ### each with Index
+
 ```svelte
 {#each items as item, index (item)}
   <p>{index}: {item}</p>
@@ -2780,6 +2959,7 @@ npm run dev
 ```
 
 ### await Blocks
+
 ```svelte
 <script>
   let promise = fetch('/api/data').then(r => r.json());
@@ -2799,6 +2979,7 @@ npm run dev
 ## Components
 
 ### Creating a Component
+
 ```svelte
 <!-- Button.svelte -->
 <script>
@@ -2818,6 +2999,7 @@ npm run dev
 ```
 
 ### Using a Component
+
 ```svelte
 <!-- App.svelte -->
 <script>
@@ -2832,6 +3014,7 @@ npm run dev
 ```
 
 ### Props
+
 ```svelte
 <!-- Props are exported variables -->
 <script>
@@ -2850,6 +3033,7 @@ npm run dev
 ```
 
 ### Slots
+
 ```svelte
 <!-- Container.svelte -->
 <div class="card">
@@ -2863,6 +3047,7 @@ npm run dev
 ```
 
 ### Named Slots
+
 ```svelte
 <!-- Card.svelte -->
 <div class="card">
@@ -2890,6 +3075,7 @@ npm run dev
 ## Stores
 
 ### Writable Store
+
 ```typescript
 // stores/count.ts
 import { writable } from 'svelte/store';
@@ -2905,6 +3091,7 @@ import { count } from './stores/count';
 ```
 
 ### Store Subscriptions
+
 ```svelte
 <script>
   import { count } from './stores/count';
@@ -2926,6 +3113,7 @@ import { count } from './stores/count';
 ## Lifecycle
 
 ### onMount
+
 ```svelte
 <script>
   import { onMount } from 'svelte';
@@ -2941,6 +3129,7 @@ import { count } from './stores/count';
 ```
 
 ### onDestroy
+
 ```svelte
 <script>
   import { onDestroy } from 'svelte';
@@ -2957,6 +3146,7 @@ import { count } from './stores/count';
 ## Classes & Styles
 
 ### Dynamic Classes
+
 ```svelte
 <script>
   let isActive = false;
@@ -2975,6 +3165,7 @@ import { count } from './stores/count';
 ```
 
 ### Dynamic Styles
+
 ```svelte
 <script>
   let color = 'red';
@@ -2991,6 +3182,7 @@ import { count } from './stores/count';
 ## Animations & Transitions
 
 ### Transitions
+
 ```svelte
 <script>
   import { fade } from 'svelte/transition';
@@ -3005,6 +3197,7 @@ import { count } from './stores/count';
 ```
 
 ### Common Transitions
+
 - `fade` - Fade in/out
 - `fly` - Slide in/out
 - `scale` - Grow/shrink
@@ -3016,6 +3209,7 @@ import { count } from './stores/count';
 ## TypeScript
 
 ### Add Types to Component
+
 ```svelte
 <script lang="ts">
   export let items: Array<{ id: string; name: string }> = [];
@@ -3028,6 +3222,7 @@ import { count } from './stores/count';
 ```
 
 ### Typed Store
+
 ```typescript
 // stores/app.ts
 import { writable, type Writable } from 'svelte/store';
@@ -3046,6 +3241,7 @@ export const user: Writable<User | null> = writable(null);
 ## Common Patterns
 
 ### Form Handling
+
 ```svelte
 <script>
   let form = {
@@ -3066,6 +3262,7 @@ export const user: Writable<User | null> = writable(null);
 ```
 
 ### Async Data Loading
+
 ```svelte
 <script>
   let promise;
@@ -3104,6 +3301,7 @@ export const user: Writable<User | null> = writable(null);
 ````
 
 ## File: .claude/COMPONENTS/FORM_COMPONENTS.md
+
 ````markdown
 # 📝 Form Components
 
@@ -3120,6 +3318,7 @@ All travel item forms follow same structure: input fields → validation → sub
 ## Base Form Component
 
 ### FormContainer.svelte
+
 Wrapper for all item forms with consistent styling/layout.
 
 ```svelte
@@ -3188,6 +3387,7 @@ Wrapper for all item forms with consistent styling/layout.
 ## Input Components
 
 ### TextInput.svelte
+
 ```svelte
 <script lang="ts">
   export let label: string;
@@ -3258,6 +3458,7 @@ Wrapper for all item forms with consistent styling/layout.
 ```
 
 ### DateTimePicker.svelte
+
 ```svelte
 <script lang="ts">
   export let label: string;
@@ -3346,6 +3547,7 @@ Wrapper for all item forms with consistent styling/layout.
 ```
 
 ### Select.svelte
+
 ```svelte
 <script lang="ts">
   export let label: string;
@@ -3389,6 +3591,7 @@ Wrapper for all item forms with consistent styling/layout.
 ## Flight Form Components
 
 ### FlightForm.svelte
+
 Complete flight add/edit form using components above.
 
 ```svelte
@@ -3511,6 +3714,7 @@ Complete flight add/edit form using components above.
 ## Display Components
 
 ### FlightCard.svelte
+
 ```svelte
 <script lang="ts">
   export let flight: any;
@@ -3610,6 +3814,7 @@ Complete flight add/edit form using components above.
 ## Component Checklist
 
 When creating new form component:
+
 - [ ] Props exported with TypeScript types
 - [ ] Error handling and display
 - [ ] Validation integration
@@ -3634,6 +3839,7 @@ When creating new form component:
 ````
 
 ## File: .claude/DECISIONS/ADR_001_SVELTE_FRAMEWORK.md
+
 ````markdown
 # ADR 001: Choose Svelte for Phase 1 Frontend Migration
 
@@ -3648,6 +3854,7 @@ When creating new form component:
 Bluebonnet currently uses EJS templates + Vanilla JavaScript for frontend. This is difficult to maintain, lacks reactivity, and doesn't scale well for a growing team. We need to modernize the frontend stack.
 
 ### Candidate Frameworks Evaluated
+
 1. **React** - Proven, large ecosystem, learning curve
 2. **Vue 3** - Progressive, good DX, moderate community
 3. **Svelte** - Smallest bundle, best DX, emerging
@@ -3663,15 +3870,15 @@ Bluebonnet currently uses EJS templates + Vanilla JavaScript for frontend. This 
 
 ### Rationale
 
-| Factor | Svelte | React | Vue | Alpine | Next.js |
-|--------|--------|-------|-----|--------|---------|
-| **Bundle Size** | 8-12KB ✅ | 50-60KB | 30-40KB | 15KB | 70KB+ |
-| **Learning Curve** | Easy ✅ | Steep | Moderate | Easy | Steep |
-| **Reactivity** | Built-in ✅ | Hooks | Reactive | No | Built-in |
-| **Performance** | Excellent ✅ | Good | Good | Fair | Good |
-| **Developer Experience** | Best ✅ | Good | Good | Basic | Opinionated |
-| **Community** | Growing ✅ | Massive | Moderate | Small | Large |
-| **Scalability** | Good ✅ | Excellent | Good | Limited | Excellent |
+| Factor                   | Svelte       | React     | Vue      | Alpine  | Next.js     |
+| ------------------------ | ------------ | --------- | -------- | ------- | ----------- |
+| **Bundle Size**          | 8-12KB ✅    | 50-60KB   | 30-40KB  | 15KB    | 70KB+       |
+| **Learning Curve**       | Easy ✅      | Steep     | Moderate | Easy    | Steep       |
+| **Reactivity**           | Built-in ✅  | Hooks     | Reactive | No      | Built-in    |
+| **Performance**          | Excellent ✅ | Good      | Good     | Fair    | Good        |
+| **Developer Experience** | Best ✅      | Good      | Good     | Basic   | Opinionated |
+| **Community**            | Growing ✅   | Massive   | Moderate | Small   | Large       |
+| **Scalability**          | Good ✅      | Excellent | Good     | Limited | Excellent   |
 
 ### Specific Reasons
 
@@ -3703,6 +3910,7 @@ Bluebonnet currently uses EJS templates + Vanilla JavaScript for frontend. This 
 ## Consequences
 
 ### Positive
+
 - ✅ Significantly smaller JavaScript bundles
 - ✅ Faster page loads, especially on mobile
 - ✅ Easier component creation
@@ -3711,6 +3919,7 @@ Bluebonnet currently uses EJS templates + Vanilla JavaScript for frontend. This 
 - ✅ Easier team scaling
 
 ### Risks & Mitigation
+
 - **Smaller community** → Mitigated by good docs, Svelte has active Discord
 - **Fewer libraries** → We can write custom, or use JS libraries
 - **Learning curve for team** → 1 week training planned
@@ -3721,11 +3930,13 @@ Bluebonnet currently uses EJS templates + Vanilla JavaScript for frontend. This 
 ## Implementation
 
 ### Timeline
+
 - **Phase 1:** SvelteKit frontend (12 weeks)
 - **No backend changes** - Express backend stays as-is
 - **API contracts** - Unchanged
 
 ### Architecture
+
 ```
 Svelte Frontend (New)
     ↓ JSON API
@@ -3733,6 +3944,7 @@ Express Backend (Unchanged)
 ```
 
 ### Tech Stack
+
 - **Framework:** SvelteKit
 - **Build:** Vite
 - **Styling:** Tailwind CSS (same as current)
@@ -3744,43 +3956,55 @@ Express Backend (Unchanged)
 ## Comparison Detail
 
 ### Svelte vs React
+
 **React:**
+
 - Pro: Largest community, most job openings
 - Con: 50-60KB bundle, requires hooks knowledge, JSX syntax
 
 **Svelte:**
+
 - Pro: 8-12KB bundle, simpler syntax, built-in reactivity
 - Con: Smaller community, fewer libraries
 
 **Winner for this project:** Svelte (bundle size critical for travel app)
 
 ### Svelte vs Vue 3
+
 **Vue 3:**
+
 - Pro: Progressive, good community, good docs
 - Con: 30-40KB bundle, still larger than Svelte
 
 **Svelte:**
+
 - Pro: Smaller bundle, simpler API
 - Con: Smaller community
 
 **Winner:** Svelte (bundle size advantage)
 
 ### Svelte vs Alpine.js
+
 **Alpine:**
+
 - Pro: Very lightweight (15KB), minimal learning
 - Con: Not a full framework, limited for complex UI
 
 **Svelte:**
+
 - Pro: Full framework, scalable, better for large apps
 
 **Winner:** Svelte (scalability for growing travel app)
 
 ### Svelte vs Next.js
+
 **Next.js:**
+
 - Pro: Full-stack React, opinionated, easier initial setup
 - Con: React bundle overhead, more complex
 
 **Svelte:**
+
 - Pro: Lighter weight, simpler
 - Con: Less ecosystem
 
@@ -3791,16 +4015,19 @@ Express Backend (Unchanged)
 ## Alternatives Considered
 
 ### 1. Stay with EJS + Vanilla JS
+
 - ❌ Not scalable, hard to maintain
 - ❌ No component reusability
 - ❌ Poor developer experience
 
 ### 2. Use Angular
+
 - ❌ Heavy framework, steep learning curve
 - ❌ Over-engineered for travel app
 - ❌ Large bundle size
 
 ### 3. Use Next.js + React
+
 - ❌ Heavier bundle than Svelte
 - ❌ More complex, more boilerplate
 - ❌ Overkill for our use case
@@ -3828,6 +4055,7 @@ Express Backend (Unchanged)
 ````
 
 ## File: .claude/FEATURES/CAR_RENTALS.md
+
 ````markdown
 # 🚙 Car Rentals Feature
 
@@ -3876,6 +4104,7 @@ Car rentals represent vehicle rentals during trips. Track pickup/dropoff locatio
 ## API Endpoints
 
 ### Create Car Rental
+
 ```
 POST /api/trips/:tripId/car-rentals
 Body: {
@@ -3887,12 +4116,14 @@ Returns: { success: true, carRental: {...} }
 ```
 
 ### Get Car Rentals
+
 ```
 GET /api/trips/:tripId/car-rentals
 Returns: { success: true, carRentals: [...] }
 ```
 
 ### Update Car Rental
+
 ```
 PUT /api/car-rentals/:id
 Body: {...}
@@ -3900,6 +4131,7 @@ Returns: { success: true, carRental: {...} }
 ```
 
 ### Delete Car Rental
+
 ```
 DELETE /api/car-rentals/:id
 Returns: { success: true }
@@ -3910,9 +4142,11 @@ Returns: { success: true }
 ## Frontend Implementation
 
 ### Add/Edit Form
+
 **File:** `views/partials/car-rental-form.ejs`
 
 Features:
+
 - Pickup/dropoff location inputs
 - Datetime pickers
 - Vehicle type selector
@@ -3923,7 +4157,9 @@ Features:
 - Cost calculator
 
 ### Duration Calculation
+
 Automatically calculates:
+
 - Number of rental days
 - Daily rate calculation
 - Total cost estimate
@@ -3933,18 +4169,22 @@ Automatically calculates:
 ## Business Logic
 
 ### Rental Period
+
 ```javascript
 const rentalDays = (dropoffDateTime - pickupDateTime) / MS_PER_DAY;
 const totalCost = dailyRate * rentalDays;
 ```
 
 ### Location Tracking
+
 - Pickup coordinates geocoded and stored
 - Dropoff coordinates geocoded and stored
 - Used for map visualization and route planning
 
 ### Companion Assignment
+
 Can assign to multiple companions:
+
 - Primary driver
 - Additional drivers
 - Passenger count
@@ -3954,6 +4194,7 @@ Can assign to multiple companions:
 ## Calendar Integration
 
 Displayed as:
+
 - Time block from pickup to dropoff
 - Color-coded for car rental
 - Duration shown as number of days
@@ -3965,6 +4206,7 @@ Displayed as:
 ## Maps & Visualization
 
 Shows:
+
 - Pickup location marker
 - Dropoff location marker
 - Route line between (if different)
@@ -3976,6 +4218,7 @@ Shows:
 ## Phase 1 Migration (Svelte)
 
 ### New Components
+
 ```
 src/lib/components/
 ├── CarRentalForm.svelte
@@ -4000,6 +4243,7 @@ src/lib/components/
 ## Vouchers
 
 Car rentals can have:
+
 - Upgrade vouchers
 - Rental credit vouchers
 - Loyalty program points
@@ -4019,6 +4263,7 @@ Car rentals can have:
 ````
 
 ## File: .claude/FEATURES/COMPANIONS.md
+
 ````markdown
 # 👥 Travel Companions Feature
 
@@ -4037,6 +4282,7 @@ Travel companions allow users to collaborate on trips, share planning responsibi
 ## Data Model
 
 ### TravelCompanion
+
 **File:** `models/TravelCompanion.js`
 
 ```javascript
@@ -4052,6 +4298,7 @@ Travel companions allow users to collaborate on trips, share planning responsibi
 ```
 
 ### TripCompanion (Junction)
+
 **File:** `models/TripCompanion.js`
 
 Links companions to trips with permissions:
@@ -4072,6 +4319,7 @@ Links companions to trips with permissions:
 ## API Endpoints
 
 ### Create Companion
+
 ```
 POST /api/companions
 Body: { name, email, phone }
@@ -4079,6 +4327,7 @@ Returns: { success: true, companion: {...} }
 ```
 
 ### Add Companion to Trip
+
 ```
 POST /api/trips/:tripId/companions
 Body: { companionId, canEdit }
@@ -4086,12 +4335,14 @@ Returns: { success: true, tripCompanion: {...} }
 ```
 
 ### Remove Companion from Trip
+
 ```
 DELETE /api/trips/:tripId/companions/:companionId
 Returns: { success: true }
 ```
 
 ### Update Companion Permissions
+
 ```
 PUT /api/trips/:tripId/companions/:companionId
 Body: { canEdit }
@@ -4099,6 +4350,7 @@ Returns: { success: true, tripCompanion: {...} }
 ```
 
 ### Get Trip Companions
+
 ```
 GET /api/trips/:tripId/companions
 Returns: { success: true, companions: [...] }
@@ -4109,18 +4361,22 @@ Returns: { success: true, companions: [...] }
 ## Frontend Implementation
 
 ### Companion Selector
+
 **File:** `public/js/companions.js`
 
 Used in forms for:
+
 - Assigning flights to companions
 - Assigning hotels/rooms to companions
 - Voucher redemption assignments
 - Event attendance
 
 ### Companion Management
+
 **File:** `views/partials/companions-manage.ejs`
 
 Features:
+
 - View trip companions list
 - Add new companion (or existing profile)
 - Edit companion permissions
@@ -4128,7 +4384,9 @@ Features:
 - View companion assignments across items
 
 ### Form Integration
+
 When creating flights, hotels, events:
+
 - Dropdown/checkboxes for selecting companion participants
 - Displayed during trip item add/edit
 - Stored with voucher attachments
@@ -4140,23 +4398,28 @@ When creating flights, hotels, events:
 ### Permission Levels
 
 **Owner (Trip Creator)**
+
 - Create, edit, delete any trip item
 - Add/remove companions
 - Change companion permissions
 - Delete trip
 
 **Editor Companion (canEdit: true)**
+
 - Create, edit, delete trip items
 - Add/remove companions from trip items
 - Cannot delete trip or remove other companions
 
 **Viewer Companion (canEdit: false)**
+
 - View trip and all items
 - Cannot make any changes
 - Can be assigned as passenger/guest on items
 
 ### Default Permissions
+
 Trips have `defaultCompanionEditPermission`:
+
 - When new companion added, inherits this permission
 - Owner can override per-companion
 - Can be changed trip-wide
@@ -4193,11 +4456,14 @@ Example: Upgrade voucher assigned to companion on specific flight
 ## Collaboration Features
 
 ### Simultaneous Editing
+
 Currently: Last-write-wins (no conflict resolution)
 Future: Real-time sync via WebSocket (Phase 3)
 
 ### Activity Tracking
+
 Optional: Track who created/edited which items
+
 - Stored in item `createdBy` and `updatedBy` fields
 - Future: Activity log/feed
 
@@ -4206,6 +4472,7 @@ Optional: Track who created/edited which items
 ## Notifications (Future)
 
 Optional feature to notify companions:
+
 - When they're added to trip
 - When new items added to trip
 - When trip starts/ends
@@ -4218,11 +4485,13 @@ Optional feature to notify companions:
 ### Email vs Account Link
 
 Companion profiles can exist without account:
+
 - `userId: null` - Standalone companion profile
 - Email used for notifications/invitations
 - No login capability unless user creates account
 
 When companion creates account:
+
 - Email matched to existing profile
 - `userId` populated
 - Can login and view own trips
@@ -4238,6 +4507,7 @@ When companion creates account:
 ## Phase 1 Migration (Svelte)
 
 ### New Components
+
 ```
 src/lib/components/
 ├── CompanionSelector.svelte    # Add/select companions
@@ -4247,6 +4517,7 @@ src/lib/components/
 ```
 
 ### Svelte Implementation
+
 ```svelte
 <script lang="ts">
   import { tripStore } from '$lib/stores/tripStore';
@@ -4315,6 +4586,7 @@ src/lib/components/
 ````
 
 ## File: .claude/FEATURES/EVENTS.md
+
 ````markdown
 # 🎭 Events Feature
 
@@ -4362,6 +4634,7 @@ Events represent activities, attractions, and bookings during trips. Can be any 
 ## API Endpoints
 
 ### Create Event
+
 ```
 POST /api/trips/:tripId/events
 Body: {
@@ -4372,12 +4645,14 @@ Returns: { success: true, event: {...} }
 ```
 
 ### Get Events
+
 ```
 GET /api/trips/:tripId/events
 Returns: { success: true, events: [...] }
 ```
 
 ### Update Event
+
 ```
 PUT /api/events/:id
 Body: {...}
@@ -4385,6 +4660,7 @@ Returns: { success: true, event: {...} }
 ```
 
 ### Delete Event
+
 ```
 DELETE /api/events/:id
 Returns: { success: true }
@@ -4395,9 +4671,11 @@ Returns: { success: true }
 ## Frontend Implementation
 
 ### Add/Edit Form
+
 **File:** `views/partials/event-form.ejs`
 
 Features:
+
 - Event type selector (restaurant, museum, concert, etc.)
 - Date/time picker
 - Location with address autocomplete
@@ -4406,6 +4684,7 @@ Features:
 - Attendee selection from companions
 
 ### Form Fields
+
 - `title` - Event name
 - `eventType` - Dropdown (values from enum or config)
 - `eventDate` - Date picker
@@ -4422,15 +4701,19 @@ Features:
 ## Business Logic
 
 ### Duration Display
+
 Shows as "2 hours 30 minutes" on calendar/timeline
 
 ### Timezone Handling
+
 - Stored with timezone
 - Displayed in local time on calendar
 - Conversion for companions in different timezones
 
 ### Event Type Classification
+
 Used for:
+
 - Calendar color coding
 - Icon selection
 - Filtering
@@ -4443,6 +4726,7 @@ Types: restaurant, museum, tour, concert, show, activity, sports, theater, fligh
 ## Calendar Integration
 
 ### Visual Display
+
 - Events appear on their date
 - Time shown on timeline
 - Color-coded by event type
@@ -4450,7 +4734,9 @@ Types: restaurant, museum, tour, concert, show, activity, sports, theater, fligh
 - Conflicts/overlaps highlighted
 
 ### Day View
+
 Shows hourly breakdown:
+
 - All flights
 - All hotels (arrival/departure)
 - All events in time order
@@ -4460,6 +4746,7 @@ Shows hourly breakdown:
 ## Companion Integration
 
 Events can include multiple companions:
+
 - Attendee list
 - RSVP status (optional)
 - Cost per person tracking (optional)
@@ -4470,6 +4757,7 @@ Events can include multiple companions:
 ## Maps & Visualization
 
 Events appear on map as:
+
 - Marker at event location
 - Custom icon per event type
 - Name and time in popup
@@ -4480,6 +4768,7 @@ Events appear on map as:
 ## Phase 1 Migration (Svelte)
 
 ### New Components
+
 ```
 src/lib/components/
 ├── EventForm.svelte
@@ -4493,6 +4782,7 @@ src/lib/components/
 ## Vouchers
 
 Events can have vouchers:
+
 - Restaurant gift cards
 - Activity/tour vouchers
 - Show/concert tickets (tracked as voucher)
@@ -4525,6 +4815,7 @@ Events can have vouchers:
 ````
 
 ## File: .claude/FEATURES/FLIGHTS.md
+
 ````markdown
 # ✈️ Flights Feature
 
@@ -4568,6 +4859,7 @@ Flights are the primary travel item in trip planning. Users can add, edit, and d
 ## API Endpoints
 
 ### Create Flight
+
 ```
 POST /api/trips/:tripId/flights
 Body: {
@@ -4579,12 +4871,14 @@ Returns: { success: true, flight: {...} }
 ```
 
 ### Get Flights
+
 ```
 GET /api/trips/:tripId/flights
 Returns: { success: true, flights: [...] }
 ```
 
 ### Update Flight
+
 ```
 PUT /api/flights/:id
 Body: {airline, flightNumber, ...}
@@ -4592,6 +4886,7 @@ Returns: { success: true, flight: {...} }
 ```
 
 ### Delete Flight
+
 ```
 DELETE /api/flights/:id
 Returns: { success: true }
@@ -4602,9 +4897,11 @@ Returns: { success: true }
 ## Frontend Implementation
 
 ### Add/Edit Form
+
 **File:** `views/partials/flight-form.ejs`
 
 Features:
+
 - Airport autocomplete (IATA code search)
 - Departure/arrival datetime picker
 - Timezone inference from airports
@@ -4612,6 +4909,7 @@ Features:
 - Notes field
 
 **Form Fields:**
+
 - `airline` - Select or text input
 - `flightNumber` - Text input
 - `origin` - Airport autocomplete
@@ -4623,26 +4921,21 @@ Features:
 - `notes` - Textarea
 
 ### Form Initialization
+
 **File:** `public/js/form-utilities.js`
 
 ```javascript
 // Sync arrival date to be >= departure date
-initializeDateSync(
-  'input[name="departureDate"]',
-  'input[name="arrivalDate"]'
-);
+initializeDateSync('input[name="departureDate"]', 'input[name="arrivalDate"]');
 
 // Auto-populate timezones from airports
-initializeOriginDestTimezoneInference(
-  originSelector,
-  destSelector,
-  originTzField,
-  destTzField
-);
+initializeOriginDestTimezoneInference(originSelector, destSelector, originTzField, destTzField);
 ```
 
 ### Companion Assignment
+
 Each flight can have passengers assigned from trip companions:
+
 - Owner (trip creator) automatically included
 - Companions with edit permission can be added
 - Vouchers can be assigned to specific passengers per flight
@@ -4652,9 +4945,11 @@ Each flight can have passengers assigned from trip companions:
 ## Display & Calendar Integration
 
 ### Trip View Display
+
 **File:** `views/partials/trip-sidebar-content.ejs`
 
 Flights displayed in chronological order:
+
 - Flight number with airline
 - Departure/arrival times (formatted in local timezone)
 - Origin → Destination airports
@@ -4662,9 +4957,11 @@ Flights displayed in chronological order:
 - Edit/delete actions
 
 ### Calendar View
+
 **File:** `public/js/calendar.js`
 
 Flights appear on calendar as:
+
 - Departure marker on departure date
 - Different color/style from hotels
 - Clickable to view flight details
@@ -4675,11 +4972,13 @@ Flights appear on calendar as:
 ## Key Business Logic
 
 ### Timezone Handling
+
 1. **User Input:** Departure/arrival times in local timezone via datetime picker
 2. **Storage:** Convert to UTC before storing (handled by controller)
 3. **Display:** Show in origin/destination timezones (handled by frontend)
 
 ### Duration Calculation
+
 ```javascript
 function calculateFlightDuration(departureUTC, arrivalUTC) {
   return (arrivalUTC - departureUTC) / MS_PER_HOUR;
@@ -4687,7 +4986,9 @@ function calculateFlightDuration(departureUTC, arrivalUTC) {
 ```
 
 ### Layover Detection
+
 When adding a new flight, system can detect layovers:
+
 - Flight A arrives at time X
 - Flight B departs from same airport at time X + Y
 - Gap between = layover duration
@@ -4698,6 +4999,7 @@ const layoverDuration = flight2.departure - flight1.arrival;
 ```
 
 ### Validation Rules
+
 - Departure < Arrival (enforced)
 - IATA codes valid (checked against airport database)
 - Flight number format valid
@@ -4708,15 +5010,18 @@ const layoverDuration = flight2.departure - flight1.arrival;
 ## Voucher Integration
 
 ### Applying Vouchers to Flights
+
 **File:** `views/partials/voucher-details-flight.ejs`
 
 Each flight can have multiple vouchers:
+
 - Travel credits
 - Airline vouchers
 - Upgrade vouchers
 - Gift cards
 
 Process:
+
 1. Open flight edit form
 2. Navigate to "Vouchers" tab
 3. Select voucher from trip's available vouchers
@@ -4724,6 +5029,7 @@ Process:
 5. Mark voucher as "used" or "partial"
 
 ### Voucher Status Tracking
+
 - `pending` - Created but not used
 - `used` - Applied to flight
 - `expired` - Past trip end date
@@ -4733,16 +5039,19 @@ Process:
 ## Related Features
 
 ### Companions
+
 - Flights can assign vouchers to specific companions
 - Companion availability affects flight timing preferences
 - Multi-passenger flights coordination
 
 ### Maps
+
 - Flights visualized on map with origin/destination markers
 - Route line drawn from origin to destination
 - Airport coordinates from geocoding service
 
 ### Calendar
+
 - Flights displayed on calendar view
 - Drag-to-reschedule (optional feature)
 - Conflict detection with hotels/events
@@ -4752,6 +5061,7 @@ Process:
 ## Phase 1 Migration (Svelte)
 
 ### New Component Structure
+
 ```
 src/lib/components/
 ├── FlightForm.svelte       # Add/edit form
@@ -4761,6 +5071,7 @@ src/lib/components/
 ```
 
 ### Svelte Implementation
+
 ```svelte
 <script lang="ts">
   import { tripStore } from '$lib/stores/tripStore';
@@ -4807,18 +5118,21 @@ src/lib/components/
 ## Testing
 
 ### Unit Tests
+
 - Flight model validation
 - Timezone conversion logic
 - Duration calculation
 - Layover detection
 
 ### Integration Tests
+
 - Create flight via API
 - Update flight with valid data
 - Delete flight and cascade
 - Voucher attachment
 
 ### E2E Tests
+
 - Add flight to trip (full flow)
 - Edit flight dates and times
 - Apply voucher to flight
@@ -4862,6 +5176,7 @@ src/lib/components/
 ````
 
 ## File: .claude/FEATURES/HOTELS.md
+
 ````markdown
 # 🏨 Hotels Feature
 
@@ -4909,6 +5224,7 @@ Hotels represent accommodation during trips. Users can track check-in/check-out 
 ## API Endpoints
 
 ### Create Hotel
+
 ```
 POST /api/trips/:tripId/hotels
 Body: {
@@ -4919,12 +5235,14 @@ Returns: { success: true, hotel: {...} }
 ```
 
 ### Get Hotels
+
 ```
 GET /api/trips/:tripId/hotels
 Returns: { success: true, hotels: [...] }
 ```
 
 ### Update Hotel
+
 ```
 PUT /api/hotels/:id
 Body: {...}
@@ -4932,6 +5250,7 @@ Returns: { success: true, hotel: {...} }
 ```
 
 ### Delete Hotel
+
 ```
 DELETE /api/hotels/:id
 Returns: { success: true }
@@ -4942,9 +5261,11 @@ Returns: { success: true }
 ## Frontend Implementation
 
 ### Add/Edit Form
+
 **File:** `views/partials/hotel-form.ejs`
 
 Features:
+
 - Date picker for check-in/check-out
 - Address input with geocoding
 - Rate calculator (nights × rate)
@@ -4952,14 +5273,18 @@ Features:
 - Notes field
 
 ### Location & Geocoding
+
 When address is entered:
+
 1. Frontend sends to `/api/geocode` endpoint
 2. Returns { latitude, longitude }
 3. Stores with hotel record
 4. Used for map display
 
 ### Calendar Integration
+
 Displays as block on calendar:
+
 - Check-in date: color-coded start
 - Duration: check-out date minus check-in date
 - Overlaps with other hotels highlighted (warning)
@@ -4970,18 +5295,21 @@ Displays as block on calendar:
 ## Business Logic
 
 ### Stay Duration
+
 ```javascript
 const nights = (checkOutDate - checkInDate) / MS_PER_DAY;
 const totalCost = nights * rate;
 ```
 
 ### Guest Management
+
 - Owner automatically included
 - Companions can be added to assign room
 - Multiple rooms tracked separately
 - Total guest count calculation
 
 ### Rate Tracking
+
 - Per-night rate stored
 - Total cost calculated from nights
 - Optional: daily rate variations
@@ -4992,6 +5320,7 @@ const totalCost = nights * rate;
 ## Voucher Integration
 
 Hotels can have travel credits or upgrade vouchers:
+
 - Room upgrade vouchers
 - Meal/resort credit vouchers
 - Loyalty point redemptions
@@ -5001,6 +5330,7 @@ Hotels can have travel credits or upgrade vouchers:
 ## Maps & Visualization
 
 Hotels appear on map as:
+
 - Marker at geocoded address
 - Hotel name in popup
 - Address and check-in/out dates
@@ -5011,6 +5341,7 @@ Hotels appear on map as:
 ## Phase 1 Migration (Svelte)
 
 ### New Components
+
 ```
 src/lib/components/
 ├── HotelForm.svelte
@@ -5046,10 +5377,12 @@ src/lib/components/
 ````
 
 ## File: .claude/FEATURES/README.md
+
 ````markdown
 # 🎯 Features Documentation
 
 Complete guides for each feature in Bluebonnet. Each feature includes:
+
 - How it works
 - User flow
 - Database tables involved
@@ -5062,6 +5395,7 @@ Complete guides for each feature in Bluebonnet. Each feature includes:
 ## Quick Links
 
 ### Travel Items (Core Features)
+
 - **[Flights](./FLIGHT_MANAGEMENT.md)** - Commercial flights management
 - **[Hotels](./HOTEL_MANAGEMENT.md)** - Accommodation booking
 - **[Events](./EVENTS_MANAGEMENT.md)** - Activities and attractions
@@ -5069,11 +5403,13 @@ Complete guides for each feature in Bluebonnet. Each feature includes:
 - **[Transportation](./TRANSPORTATION.md)** - Ground transportation
 
 ### Trip Management
+
 - **[Trip Management](./TRIP_MANAGEMENT.md)** - Creating, editing, sharing trips
 - **[Calendar View](./CALENDAR_VIEW.md)** - Timeline visualization
 - **[Maps](./MAPS.md)** - Location-based features
 
 ### Companion & Voucher Systems
+
 - **[Travel Companions](./TRAVEL_COMPANIONS.md)** - Invite people to trips
 - **[Vouchers](./VOUCHERS.md)** - Track travel credits
 
@@ -5082,33 +5418,34 @@ Complete guides for each feature in Bluebonnet. Each feature includes:
 ## Feature Overview
 
 ### Travel Items
+
 All five types of travel items follow the same CRUD pattern:
 
-| Feature | Model | Controller | Routes | Status |
-|---------|-------|-----------|--------|--------|
-| **Flight** | Flight.js | flightController.js | `/flights` | ✅ Active |
-| **Hotel** | Hotel.js | hotelController.js | `/hotels` | ✅ Active |
-| **Event** | Event.js | eventController.js | `/events` | ✅ Active |
-| **Car Rental** | CarRental.js | carRentalController.js | `/car-rentals` | ✅ Active |
+| Feature            | Model             | Controller                  | Routes            | Status    |
+| ------------------ | ----------------- | --------------------------- | ----------------- | --------- |
+| **Flight**         | Flight.js         | flightController.js         | `/flights`        | ✅ Active |
+| **Hotel**          | Hotel.js          | hotelController.js          | `/hotels`         | ✅ Active |
+| **Event**          | Event.js          | eventController.js          | `/events`         | ✅ Active |
+| **Car Rental**     | CarRental.js      | carRentalController.js      | `/car-rentals`    | ✅ Active |
 | **Transportation** | Transportation.js | transportationController.js | `/transportation` | ✅ Active |
 
 **All are optional** - can be added to a trip or created standalone
 
 ### Trip Features
 
-| Feature | Purpose | Phase 1 Status |
-|---------|---------|---|
-| **Trip CRUD** | Create, read, update, delete trips | ✅ Migrating |
-| **Trip Sharing** | Invite companions, manage permissions | ✅ Migrating |
-| **Calendar View** | Timeline visualization of items | ✅ Migrating |
-| **Maps** | View locations on map | ✅ Migrating |
+| Feature           | Purpose                               | Phase 1 Status |
+| ----------------- | ------------------------------------- | -------------- |
+| **Trip CRUD**     | Create, read, update, delete trips    | ✅ Migrating   |
+| **Trip Sharing**  | Invite companions, manage permissions | ✅ Migrating   |
+| **Calendar View** | Timeline visualization of items       | ✅ Migrating   |
+| **Maps**          | View locations on map                 | ✅ Migrating   |
 
 ### Systems
 
-| System | Purpose | Phase 1 Status |
-|--------|---------|---|
-| **Travel Companions** | Invite people, manage permissions | ✅ Migrating |
-| **Vouchers** | Track travel credits and upgrades | ✅ Migrating |
+| System                | Purpose                           | Phase 1 Status |
+| --------------------- | --------------------------------- | -------------- |
+| **Travel Companions** | Invite people, manage permissions | ✅ Migrating   |
+| **Vouchers**          | Track travel credits and upgrades | ✅ Migrating   |
 
 ---
 
@@ -5117,6 +5454,7 @@ All five types of travel items follow the same CRUD pattern:
 All travel items follow the same basic flow:
 
 ### 1. User Interface (Svelte)
+
 ```
 User clicks "Add Flight/Hotel/Event/etc."
     ↓
@@ -5128,6 +5466,7 @@ User clicks "Save"
 ```
 
 ### 2. Backend Processing
+
 ```
 Form submitted to /api/flights (or /hotels, /events, etc.)
     ↓
@@ -5143,6 +5482,7 @@ JSON response sent back
 ```
 
 ### 3. UI Update
+
 ```
 Response received
     ↓
@@ -5160,9 +5500,11 @@ See: [CRUD Pattern](../PATTERNS/CRUD_PATTERN.md)
 ## Travel Item Specifics
 
 ### Flights
+
 **What:** Commercial flights with airline, flight number, departure/arrival
 
 **Key Fields:**
+
 - Airline (e.g., "United Airlines")
 - Flight number (e.g., "UA123")
 - Origin (with airport code handling, e.g., "JFK")
@@ -5177,9 +5519,11 @@ See: [CRUD Pattern](../PATTERNS/CRUD_PATTERN.md)
 See: [Flight Management](./FLIGHT_MANAGEMENT.md)
 
 ### Hotels
+
 **What:** Accommodations with check-in/check-out dates
 
 **Key Fields:**
+
 - Hotel name
 - Check-in date
 - Check-out date
@@ -5189,9 +5533,11 @@ See: [Flight Management](./FLIGHT_MANAGEMENT.md)
 See: [Hotel Management](./HOTEL_MANAGEMENT.md)
 
 ### Events
+
 **What:** Activities, attractions, meetings
 
 **Key Fields:**
+
 - Event name
 - Date/time
 - Location
@@ -5201,9 +5547,11 @@ See: [Hotel Management](./HOTEL_MANAGEMENT.md)
 See: [Events Management](./EVENTS_MANAGEMENT.md)
 
 ### Car Rentals
+
 **What:** Vehicle rentals
 
 **Key Fields:**
+
 - Rental company
 - Vehicle type
 - Pickup location
@@ -5215,9 +5563,11 @@ See: [Events Management](./EVENTS_MANAGEMENT.md)
 See: [Car Rentals](./CAR_RENTALS.md)
 
 ### Transportation
+
 **What:** Ground transportation (taxi, shuttle, train, bus)
 
 **Key Fields:**
+
 - Transportation type
 - Origin
 - Destination
@@ -5249,7 +5599,9 @@ Trip
 ## Associated Systems
 
 ### Travel Companions
+
 Allows you to:
+
 - Invite people to trips
 - Set permissions (can they edit?)
 - See who's going
@@ -5258,7 +5610,9 @@ Allows you to:
 See: [Travel Companions](./TRAVEL_COMPANIONS.md)
 
 ### Vouchers
+
 Allows you to:
+
 - Create and track travel credits
 - Attach to specific flights
 - Assign to companions
@@ -5271,6 +5625,7 @@ See: [Vouchers](./VOUCHERS.md)
 ## Phase 1 Migration Status
 
 ### Currently Being Migrated to Svelte
+
 - ✅ Trip management pages
 - ✅ Flight form and list
 - ✅ Hotel form and list
@@ -5299,12 +5654,14 @@ See: [Vouchers](./VOUCHERS.md)
 ## Getting Started
 
 **New to a feature?**
+
 1. Read the feature-specific doc (e.g., FLIGHT_MANAGEMENT.md)
 2. Check the [CRUD Pattern](../PATTERNS/CRUD_PATTERN.md)
 3. Look at code examples in the feature doc
 4. Check component specs in [Components](../COMPONENTS/README.md)
 
 **Adding a new field to a feature?**
+
 1. Update database model
 2. Update API endpoint
 3. Update Svelte form component
@@ -5317,6 +5674,7 @@ See: [Vouchers](./VOUCHERS.md)
 ````
 
 ## File: .claude/FEATURES/TRANSPORTATION.md
+
 ````markdown
 # 🚗 Transportation Feature
 
@@ -5360,6 +5718,7 @@ Transportation covers all ground-based travel: taxis, trains, buses, ride-shares
 ## Types
 
 **Supported Transportation Types:**
+
 - `taxi` - Taxi/cab/uber/lyft
 - `train` - Train/rail
 - `bus` - Bus/coach
@@ -5375,6 +5734,7 @@ Each type can have specific fields (train number, bus route, confirmation number
 ## API Endpoints
 
 ### Create Transportation
+
 ```
 POST /api/trips/:tripId/transportation
 Body: {
@@ -5386,12 +5746,14 @@ Returns: { success: true, transportation: {...} }
 ```
 
 ### Get Transportation
+
 ```
 GET /api/trips/:tripId/transportation
 Returns: { success: true, transportation: [...] }
 ```
 
 ### Update Transportation
+
 ```
 PUT /api/transportation/:id
 Body: {...}
@@ -5399,6 +5761,7 @@ Returns: { success: true, transportation: {...} }
 ```
 
 ### Delete Transportation
+
 ```
 DELETE /api/transportation/:id
 Returns: { success: true }
@@ -5409,9 +5772,11 @@ Returns: { success: true }
 ## Frontend Implementation
 
 ### Add/Edit Form
+
 **File:** `views/partials/transportation-form.ejs`
 
 Features:
+
 - Transportation type selector
 - Departure/arrival location inputs
 - Datetime pickers
@@ -5424,20 +5789,26 @@ Features:
 ## Business Logic
 
 ### Layover Detection
+
 System detects when transportation bridges two flights:
+
 - Flight A arrives at airport at time X
 - Transportation departs from airport at time X + Y
 - Gap calculation shown to user
 - Suggested transportation durations
 
 ### Timeline Integration
+
 Transportation appears in trip timeline:
+
 - Between flights (layover transport)
 - Between hotel checkout and next event
 - From airport to hotel
 
 ### Cost Tracking
+
 Total transportation cost calculated:
+
 - Sum of all transportation items
 - Per-leg cost tracking
 - Trip total includes transportation
@@ -5447,6 +5818,7 @@ Total transportation cost calculated:
 ## Calendar Integration
 
 Transportation displayed as:
+
 - Time block from departure to arrival
 - Different styling from flights/hotels
 - Appears in day view timeline
@@ -5457,6 +5829,7 @@ Transportation displayed as:
 ## Companions
 
 Can assign to specific companions:
+
 - Which companion taking which transport
 - Group transportation vs individual
 
@@ -5465,6 +5838,7 @@ Can assign to specific companions:
 ## Maps & Visualization
 
 Routes shown on map:
+
 - Departure marker
 - Arrival marker
 - Route line between (if available)
@@ -5475,6 +5849,7 @@ Routes shown on map:
 ## Phase 1 Migration (Svelte)
 
 ### New Components
+
 ```
 src/lib/components/
 ├── TransportationForm.svelte
@@ -5509,6 +5884,7 @@ src/lib/components/
 ````
 
 ## File: .claude/FEATURES/VOUCHERS.md
+
 ````markdown
 # 🎟️ Vouchers & Credits System
 
@@ -5527,6 +5903,7 @@ Vouchers track travel credits, upgrade vouchers, gift cards, and other redeemabl
 ## Data Model
 
 ### Voucher
+
 **File:** `models/Voucher.js`
 
 ```javascript
@@ -5547,6 +5924,7 @@ Vouchers track travel credits, upgrade vouchers, gift cards, and other redeemabl
 ```
 
 ### VoucherAttachment
+
 Assigns voucher to specific item and passenger:
 
 ```javascript
@@ -5567,6 +5945,7 @@ Assigns voucher to specific item and passenger:
 ## API Endpoints
 
 ### Create Voucher
+
 ```
 POST /api/trips/:tripId/vouchers
 Body: {
@@ -5577,6 +5956,7 @@ Returns: { success: true, voucher: {...} }
 ```
 
 ### Attach Voucher to Item
+
 ```
 POST /api/vouchers/:voucherId/attach
 Body: {
@@ -5586,6 +5966,7 @@ Returns: { success: true, attachment: {...} }
 ```
 
 ### Update Voucher Status
+
 ```
 PUT /api/vouchers/:id
 Body: { status }
@@ -5593,12 +5974,14 @@ Returns: { success: true, voucher: {...} }
 ```
 
 ### Get Trip Vouchers
+
 ```
 GET /api/trips/:tripId/vouchers
 Returns: { success: true, vouchers: [...] }
 ```
 
 ### Delete Voucher
+
 ```
 DELETE /api/vouchers/:id
 Returns: { success: true }
@@ -5630,9 +6013,11 @@ Returns: { success: true }
 ## Frontend Implementation
 
 ### Voucher Management Interface
+
 **File:** `views/partials/vouchers-sidebar.ejs`
 
 Features:
+
 - List all trip vouchers
 - Status color-coding
 - Value and expiry date display
@@ -5640,9 +6025,11 @@ Features:
 - Attachment status showing which items use voucher
 
 ### Voucher Editor
+
 **File:** `views/partials/voucher-details-*.ejs`
 
 Edit voucher details:
+
 - Type selector
 - Amount and currency
 - Expiry date picker
@@ -5650,7 +6037,9 @@ Edit voucher details:
 - Status updates
 
 ### Item Integration
+
 When editing flights/hotels:
+
 - Voucher assignment interface appears
 - Select voucher from trip's available vouchers
 - Assign to specific passenger
@@ -5679,12 +6068,14 @@ When editing flights/hotels:
 ### Redemption Tracking
 
 Each attachment tracks:
+
 - Which voucher used
 - Which item (flight, hotel, etc.)
 - Which passenger
 - Status on that item (may differ from voucher status)
 
 Example:
+
 - Upgrade voucher created (status: pending)
 - Attached to Flight A (statusOnItem: used)
 - Attached to Flight B (statusOnItem: used)
@@ -5693,6 +6084,7 @@ Example:
 ### Expiry Handling
 
 Automatic checks:
+
 - Display "expired" badge if `expiryDate < today`
 - Cannot create attachment for expired voucher
 - Dashboard warning if voucher expiring soon
@@ -5702,20 +6094,26 @@ Automatic checks:
 ## Display Integration
 
 ### Trip View
+
 Shows in trip sidebar:
+
 - Pending vouchers available to use
 - Used vouchers on each trip item
 - Total value of active vouchers
 - Expiry dates and warnings
 
 ### Calendar View
+
 Vouchers displayed on calendar:
+
 - Attached to specific item
 - Passenger assignment shown
 - Status indicated (used/pending/expired)
 
 ### Item Details
+
 When viewing flight/hotel/event:
+
 - All attached vouchers listed
 - Redemption status shown
 - Used value tracked per passenger
@@ -5725,6 +6123,7 @@ When viewing flight/hotel/event:
 ## Analytics & Reporting
 
 ### Tracking
+
 - Total voucher value per trip
 - Redemption percentage
 - Expiry rate
@@ -5732,7 +6131,9 @@ When viewing flight/hotel/event:
 - Cost savings from voucher redemption
 
 ### Reports
+
 Trip summary shows:
+
 - "You used $X in vouchers"
 - "You have $Y in unused vouchers"
 - "Z vouchers expiring soon"
@@ -5742,6 +6143,7 @@ Trip summary shows:
 ## Phase 1 Migration (Svelte)
 
 ### New Components
+
 ```
 src/lib/components/
 ├── VoucherForm.svelte         # Create/edit voucher
@@ -5752,6 +6154,7 @@ src/lib/components/
 ```
 
 ### Svelte Implementation
+
 ```svelte
 <script lang="ts">
   import { tripStore } from '$lib/stores/tripStore';
@@ -5778,6 +6181,7 @@ src/lib/components/
 ## Integration Examples
 
 ### Flight with Upgrade Voucher
+
 1. User creates flight
 2. User creates "Free upgrade to business" voucher
 3. User edits flight, attaches upgrade voucher
@@ -5785,6 +6189,7 @@ src/lib/components/
 5. Flight display shows upgrade applied
 
 ### Hotel with Meal Credits
+
 1. User creates hotel stay
 2. User creates "$50 meal credit" voucher
 3. During trip, user attaches voucher to hotel
@@ -5839,6 +6244,7 @@ src/lib/components/
 ````
 
 ## File: .claude/MODERNIZATION/PHASE_1_OVERVIEW.md
+
 ````markdown
 # 🚀 Phase 1 Overview - Svelte Frontend Migration
 
@@ -5861,16 +6267,19 @@ Complete guide to Phase 1: Replacing monolithic Express+EJS with modern Svelte+S
 ## Why Svelte?
 
 ### vs React
+
 - **Bundle:** 8-12KB (Svelte) vs 50-60KB (React)
 - **Learning:** Simpler syntax, reactive by default
 - **Performance:** Pre-compiled, minimal runtime
 
 ### vs Vue 3
+
 - **Size:** Smaller bundles
 - **DX:** Better developer experience
 - **Reactivity:** Simpler model (no hooks)
 
 ### vs Alpine.js
+
 - **Framework:** Full framework vs jQuery-like
 - **Components:** Reusable components vs inline logic
 - **Scalability:** Better for large apps
@@ -5900,6 +6309,7 @@ Complete guide to Phase 1: Replacing monolithic Express+EJS with modern Svelte+S
 ```
 
 ### No Backend Changes
+
 - Express backend stays exactly as-is
 - All routes/controllers/models unchanged
 - API contracts guaranteed
@@ -5910,19 +6320,23 @@ Complete guide to Phase 1: Replacing monolithic Express+EJS with modern Svelte+S
 ## Key Technologies
 
 ### Framework
+
 - **SvelteKit** - Full-stack Svelte framework
 - **Vite** - Fast build tool
 - **TypeScript** - Optional type checking
 
 ### State Management
+
 - **Svelte Stores** - Reactive state (authStore, tripStore, uiStore)
 - **Context API** - Component-level state
 
 ### Styling
+
 - **Tailwind CSS** - Utility-first styling (same as before)
 - **SvelteKit CSS** - Component-scoped styles
 
 ### Development
+
 - **Node.js** 18+
 - **npm** or **pnpm**
 - **Docker** for deployment
@@ -5932,17 +6346,20 @@ Complete guide to Phase 1: Replacing monolithic Express+EJS with modern Svelte+S
 ## Feature Migration Order
 
 ### Week 1-2: Foundation
+
 - [ ] SvelteKit scaffold
 - [ ] API client setup
 - [ ] Stores architecture
 - [ ] Layout components
 
 ### Week 3-4: Core (Dashboard, Trip Management)
+
 - [ ] Dashboard page
 - [ ] Trip create/edit forms
 - [ ] Trip list view
 
 ### Week 5-8: Travel Items
+
 - [ ] Flight management
 - [ ] Hotel management
 - [ ] Event management
@@ -5950,11 +6367,13 @@ Complete guide to Phase 1: Replacing monolithic Express+EJS with modern Svelte+S
 - [ ] Transportation management
 
 ### Week 9-10: Advanced Features
+
 - [ ] Calendar view
 - [ ] Maps integration
 - [ ] Companion management
 
 ### Week 11-12: Polish
+
 - [ ] Voucher system
 - [ ] Error handling
 - [ ] Performance optimization
@@ -6029,6 +6448,7 @@ DELETE /api/flights/:id
 ## Development Workflow (Phase 1)
 
 ### Daily Setup
+
 ```bash
 # Start SvelteKit dev server
 npm run dev
@@ -6041,6 +6461,7 @@ npm run build-css  # If modifying Tailwind
 ```
 
 ### Feature Development
+
 1. Create component in `src/lib/components/`
 2. Create or use page in `src/routes/`
 3. Test with API calls
@@ -6048,6 +6469,7 @@ npm run build-css  # If modifying Tailwind
 5. Test with real data
 
 ### Testing
+
 ```bash
 npm test
 npm run test:watch
@@ -6059,15 +6481,17 @@ npm run test:coverage
 ## Stores Architecture
 
 ### authStore
+
 ```typescript
 export const authStore = writable({
   user: null,
   isAuthenticated: false,
-  token: null
+  token: null,
 });
 ```
 
 ### tripStore
+
 ```typescript
 export const tripStore = writable({
   currentTrip: null,
@@ -6080,6 +6504,7 @@ export const tripStore = writable({
 ```
 
 ### uiStore
+
 ```typescript
 export const uiStore = writable({
   sidebarOpen: false,
@@ -6094,6 +6519,7 @@ export const uiStore = writable({
 ## Performance Targets
 
 ### Phase 1 Completion Metrics
+
 - ✅ Bundle size: < 50KB gzipped
 - ✅ Time to Interactive: < 2 seconds
 - ✅ Lighthouse Score: > 85
@@ -6117,6 +6543,7 @@ While frontend develops Phase 1, backend can optionally do Phase 2 in parallel:
 ## Rollout Strategy
 
 ### Option A: Complete Replacement (Recommended)
+
 ```
 Week 12 end: Phase 1 feature-complete
          ↓
@@ -6126,6 +6553,7 @@ Sunset old EJS frontend
 ```
 
 ### Option B: Gradual Rollout
+
 ```
 Week 12: Deploy with feature flags
 Week 13: Roll out to 25% of users
@@ -6133,6 +6561,7 @@ Week 14: Roll out to 100% of users
 ```
 
 ### Option C: Parallel Running
+
 ```
 Keep both frontends running
 Users choose which to use (via URL or setting)
@@ -6144,6 +6573,7 @@ Eventually sunset old one
 ## Success Criteria
 
 ### Technical
+
 - ✅ All features working in Svelte
 - ✅ No data loss or corruption
 - ✅ Same API endpoints working
@@ -6152,12 +6582,14 @@ Eventually sunset old one
 - ✅ Accessibility compliant
 
 ### Team
+
 - ✅ Developers comfortable with Svelte
 - ✅ Clear patterns established
 - ✅ Documentation complete
 - ✅ Tests passing
 
 ### Business
+
 - ✅ Users have better experience
 - ✅ Faster to add new features
 - ✅ Easier to maintain
@@ -6168,11 +6600,13 @@ Eventually sunset old one
 ## Known Challenges
 
 ### Technical
+
 - **Learning curve:** Team new to Svelte (mitigated: 1 week training)
 - **Migration scope:** Large codebase (mitigated: feature-by-feature)
 - **Testing:** Need component tests (mitigated: setup from start)
 
 ### Timeline
+
 - **Ambitious:** 12 weeks is tight (mitigated: clear roadmap)
 - **Blockers:** Unclear requirements (mitigated: early planning)
 
@@ -6181,17 +6615,20 @@ Eventually sunset old one
 ## Next Steps
 
 **Immediately (Before Phase 1 starts):**
+
 1. Read [Phase 1 Svelte Setup](./PHASE_1_SVELTE_SETUP.md)
 2. Attend Svelte training (1 week)
 3. Setup SvelteKit scaffold
 4. Build first component
 
 **Week 1:**
+
 - [ ] SkelveKit project running
 - [ ] API client connecting to backend
 - [ ] First component built and tested
 
 **Weeks 2-12:**
+
 - [ ] Follow feature migration roadmap
 - [ ] Build, test, iterate
 - [ ] Get code reviewed
@@ -6220,6 +6657,7 @@ See [Troubleshooting](../../TROUBLESHOOTING/) for common questions.
 ````
 
 ## File: .claude/PATTERNS/CRUD_OPERATIONS.md
+
 ````markdown
 # 🔄 CRUD Operations Pattern
 
@@ -6236,6 +6674,7 @@ All trip items (Flights, Hotels, Events, CarRentals, Transportation) follow iden
 ## CREATE Operation
 
 ### Backend (Controller)
+
 **File:** `controllers/{itemType}Controller.js`
 
 ```javascript
@@ -6260,7 +6699,7 @@ async function create(req, res) {
     const item = await Flight.create({
       ...req.body,
       tripId,
-      userId
+      userId,
     });
 
     // Return based on request type
@@ -6278,6 +6717,7 @@ async function create(req, res) {
 ```
 
 ### Frontend (Form)
+
 **File:** `views/partials/{itemType}-form.ejs`
 
 ```html
@@ -6292,6 +6732,7 @@ async function create(req, res) {
 ```
 
 ### JavaScript Handler
+
 **File:** `public/js/async-form-handler.js`
 
 ```javascript
@@ -6314,9 +6755,9 @@ function setupAsyncFormSubmission(formId) {
       method: 'POST',
       headers: {
         'X-Async-Request': 'true',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     });
 
     if (response.ok) {
@@ -6335,6 +6776,7 @@ function setupAsyncFormSubmission(formId) {
 ## READ Operation
 
 ### Backend (Controller)
+
 ```javascript
 async function getAll(req, res) {
   const { tripId } = req.params;
@@ -6346,7 +6788,7 @@ async function getAll(req, res) {
   }
 
   const items = await Flight.findAll({
-    where: { tripId }
+    where: { tripId },
   });
 
   return res.json({ success: true, items });
@@ -6365,17 +6807,18 @@ async function getOne(req, res) {
 ```
 
 ### Frontend (Display)
+
 ```html
 <!-- In trip sidebar -->
 <div class="items-list">
   <% trips.flights.forEach(flight => { %>
-    <div class="item-card">
-      <h3><%= flight.airline %> <%= flight.flightNumber %></h3>
-      <p><%= flight.origin %> → <%= flight.destination %></p>
-      <p><%= formatDate(flight.departureDateTime) %></p>
-      <button onclick="editItem('flight', '<%= flight.id %>')">Edit</button>
-      <button onclick="deleteItem('flight', '<%= flight.id %>')">Delete</button>
-    </div>
+  <div class="item-card">
+    <h3><%= flight.airline %> <%= flight.flightNumber %></h3>
+    <p><%= flight.origin %> → <%= flight.destination %></p>
+    <p><%= formatDate(flight.departureDateTime) %></p>
+    <button onclick="editItem('flight', '<%= flight.id %>')">Edit</button>
+    <button onclick="deleteItem('flight', '<%= flight.id %>')">Delete</button>
+  </div>
   <% }); %>
 </div>
 ```
@@ -6385,6 +6828,7 @@ async function getOne(req, res) {
 ## UPDATE Operation
 
 ### Backend (Controller)
+
 ```javascript
 async function update(req, res) {
   const { id } = req.params;
@@ -6414,6 +6858,7 @@ async function update(req, res) {
 ```
 
 ### Frontend (Edit Form)
+
 ```html
 <form id="edit{ItemType}Form" action="/api/{items}/<%= item.id %>" method="PUT">
   <!-- Form fields pre-populated with item data -->
@@ -6426,6 +6871,7 @@ async function update(req, res) {
 ## DELETE Operation
 
 ### Backend (Controller)
+
 ```javascript
 async function delete(req, res) {
   const { id } = req.params;
@@ -6448,13 +6894,14 @@ async function delete(req, res) {
 ```
 
 ### Frontend (Delete Trigger)
+
 ```javascript
 // In public/js/async-form-handler.js
 async function deleteItem(type, id, itemName) {
   try {
     const response = await fetch(`/api/${type}s/${id}`, {
       method: 'DELETE',
-      headers: { 'X-Async-Request': 'true' }
+      headers: { 'X-Async-Request': 'true' },
     });
 
     if (response.ok) {
@@ -6472,6 +6919,7 @@ async function deleteItem(type, id, itemName) {
 ## Request/Response Flow
 
 ### Successful CRUD
+
 ```
 1. User action (click Add/Edit/Delete)
 2. Form loads via AJAX (for edit) or displayed inline (for add)
@@ -6487,6 +6935,7 @@ async function deleteItem(type, id, itemName) {
 ```
 
 ### Error Handling
+
 ```
 If validation fails:
 - Backend returns 400 with errors
@@ -6509,6 +6958,7 @@ If permission denied:
 ## Pattern Consistency
 
 ### All Item Types Follow Same Pattern
+
 - `Flight`, `Hotel`, `Event`, `CarRental`, `Transportation`
 - Same controller structure
 - Same route signatures
@@ -6516,6 +6966,7 @@ If permission denied:
 - Same async handler
 
 ### Variations by Type
+
 - Form fields vary by item type
 - Validation rules differ
 - Display format differs
@@ -6547,6 +6998,7 @@ If permission denied:
 ````
 
 ## File: .claude/PATTERNS/README.md
+
 ````markdown
 # 🎯 Design Patterns & Best Practices
 
@@ -6557,21 +7009,25 @@ Reusable patterns used throughout Bluebonnet. Follow these when building feature
 ## Quick Links
 
 ### Core Patterns
+
 - **[CRUD Pattern](./CRUD_PATTERN.md)** - Create, Read, Update, Delete flow (most important)
 - **[Form Pattern](./FORM_PATTERN.md)** - Form submission and validation
 - **[Async Patterns](./ASYNC_PATTERNS.md)** - AJAX and async operations
 
 ### Architecture Patterns
+
 - **[Component Pattern](./COMPONENT_PATTERN.md)** - How to structure components
 - **[State Management](./STATE_MANAGEMENT.md)** - Managing state (current + Svelte)
 - **[API Patterns](./API_PATTERNS.md)** - Request/response patterns
 
 ### Code Quality
+
 - **[Error Handling](./ERROR_HANDLING.md)** - How to handle errors
 - **[Validation Pattern](./VALIDATION_PATTERN.md)** - Data validation approach
 - **[Testing Pattern](./TESTING_PATTERN.md)** - How to write tests
 
 ### Decision Guides
+
 - **[When to Use Patterns](./WHEN_TO_USE_PATTERNS.md)** - Which pattern for your use case
 - **[UX Patterns](./UX_PATTERNS.md)** - UX decisions (no alerts, silent failures)
 - **[File Organization](./FILE_ORGANIZATION.md)** - Where to put code
@@ -6581,6 +7037,7 @@ Reusable patterns used throughout Bluebonnet. Follow these when building feature
 ## Pattern Flowchart
 
 ### "I'm adding a new feature"
+
 ```
 1. Read: CRUD Pattern (what operations?)
    ↓
@@ -6594,6 +7051,7 @@ Reusable patterns used throughout Bluebonnet. Follow these when building feature
 ```
 
 ### "I'm fixing a bug"
+
 ```
 1. Read: Error Handling (error related?)
    ↓
@@ -6605,6 +7063,7 @@ Reusable patterns used throughout Bluebonnet. Follow these when building feature
 ```
 
 ### "I'm refactoring code"
+
 ```
 1. Read: Component Pattern (can we split?)
    ↓
@@ -6622,48 +7081,62 @@ Reusable patterns used throughout Bluebonnet. Follow these when building feature
 **Which pattern should I use?**
 
 ### For CRUD Operations
+
 → Use **[CRUD Pattern](./CRUD_PATTERN.md)**
+
 - Creating items
 - Reading items
 - Updating items
 - Deleting items
 
 ### For Forms
+
 → Use **[Form Pattern](./FORM_PATTERN.md)**
+
 - User input
 - Validation
 - Submission
 - Error feedback
 
 ### For API Communication
+
 → Use **[API Patterns](./API_PATTERNS.md)**
+
 - Request format
 - Response format
 - Error responses
 - Headers
 
 ### For State Management
+
 → Use **[State Management](./STATE_MANAGEMENT.md)**
+
 - Global state (auth, user, trip)
 - Local state (form, UI)
 - Store subscriptions
 
 ### For Error Handling
+
 → Use **[Error Handling](./ERROR_HANDLING.md)**
+
 - Try/catch blocks
 - Error logging
 - User feedback
 - Recovery
 
 ### For Component Architecture
+
 → Use **[Component Pattern](./COMPONENT_PATTERN.md)**
+
 - Component responsibilities
 - Props vs stores
 - Event handling
 - Code organization
 
 ### For Testing
+
 → Use **[Testing Pattern](./TESTING_PATTERN.md)**
+
 - Unit tests
 - Integration tests
 - What to test
@@ -6674,6 +7147,7 @@ Reusable patterns used throughout Bluebonnet. Follow these when building feature
 ## Most Important Patterns
 
 ### 1. CRUD Pattern (Read First!)
+
 ```
 1. GET all items
 2. GET single item
@@ -6687,6 +7161,7 @@ Follow this for every feature!
 → See: [CRUD Pattern](./CRUD_PATTERN.md)
 
 ### 2. Form Pattern
+
 ```
 1. User fills form
 2. Form validation
@@ -6700,6 +7175,7 @@ Always use this for forms!
 → See: [Form Pattern](./FORM_PATTERN.md)
 
 ### 3. Component Pattern
+
 ```
 1. One component = one responsibility
 2. Props for data
@@ -6717,6 +7193,7 @@ Structure all components this way!
 ## Quick Reference
 
 ### API Response Format
+
 ```javascript
 // Success
 { success: true, data: {...} }
@@ -6726,6 +7203,7 @@ Structure all components this way!
 ```
 
 ### Form Validation Flow
+
 ```
 1. Validate on client
 2. Validate on server
@@ -6734,6 +7212,7 @@ Structure all components this way!
 ```
 
 ### Error Handling
+
 ```
 try {
   // operation
@@ -6745,6 +7224,7 @@ try {
 ```
 
 ### Component Structure
+
 ```javascript
 <script>
   // 1. Imports
@@ -6766,6 +7246,7 @@ try {
 ## Pattern by Use Case
 
 ### Adding a New Travel Item Type (Flight, Hotel, etc.)
+
 1. **Step 1:** Follow [CRUD Pattern](./CRUD_PATTERN.md)
 2. **Step 2:** Create model and controller
 3. **Step 3:** Create routes with validation
@@ -6774,6 +7255,7 @@ try {
 6. **Step 6:** Write tests following [Testing Pattern](./TESTING_PATTERN.md)
 
 ### Updating Existing Feature
+
 1. **Step 1:** Check current [CRUD Pattern](./CRUD_PATTERN.md) implementation
 2. **Step 2:** Update model if needed
 3. **Step 3:** Update controller/service
@@ -6782,6 +7264,7 @@ try {
 6. **Step 6:** Add tests
 
 ### Fixing a Bug
+
 1. **Step 1:** Write test that reproduces bug
 2. **Step 2:** Understand which pattern is involved
 3. **Step 3:** Fix the bug
@@ -6793,6 +7276,7 @@ try {
 ## Common Mistakes to Avoid
 
 ### ❌ Don't
+
 - Create endpoints that don't follow API pattern
 - Mix business logic in controllers
 - Put global state in components
@@ -6800,6 +7284,7 @@ try {
 - Add components without tests
 
 ### ✅ Do
+
 - Follow established patterns
 - Keep controllers thin, put logic in services
 - Use stores for global state, props for local
@@ -6811,12 +7296,14 @@ try {
 ## Pattern Evolution (Phase 1 vs Phase 2)
 
 ### Phase 1 (Svelte Frontend)
+
 - Forms built with Svelte reactivity
 - State managed with Svelte stores
 - API client calls Express backend
 - Components use props + stores
 
 ### Phase 2 (Backend Refactoring)
+
 - Services layer extracted from controllers
 - TypeScript for type safety
 - More sophisticated validation
@@ -6839,11 +7326,13 @@ try {
 ## Getting Started
 
 **First time?**
+
 1. Read [CRUD Pattern](./CRUD_PATTERN.md) - 10 min
 2. Read [Form Pattern](./FORM_PATTERN.md) - 10 min
 3. Start with a simple feature following patterns
 
 **Have a specific question?**
+
 - Use [When to Use Patterns](./WHEN_TO_USE_PATTERNS.md)
 - Or search [INDEX](../INDEX.md)
 
@@ -6853,6 +7342,7 @@ try {
 ````
 
 ## File: .claude/PATTERNS/STATE_MANAGEMENT.md
+
 ````markdown
 # 🎯 State Management Pattern
 
@@ -6863,7 +7353,9 @@ Current and future state management approaches in Bluebonnet.
 ## Current State (Express + EJS + Vanilla JS)
 
 ### Server-Side State
+
 **Express Session:**
+
 - User authentication state
 - Session stored in Redis
 - Available via `req.session`
@@ -6877,7 +7369,9 @@ if (req.session.userId) {
 ```
 
 ### Client-Side State
+
 **Global Variables:**
+
 ```javascript
 // In window scope
 window.tripId = '<%= trip.id %>';
@@ -6890,6 +7384,7 @@ window.sidebarState = {
 ```
 
 **Limitations:**
+
 - Global scope pollution
 - No reactivity (manual updates)
 - Difficult to debug
@@ -6903,6 +7398,7 @@ window.sidebarState = {
 ### Svelte Stores
 
 **authStore.ts** - Authentication state
+
 ```typescript
 import { writable } from 'svelte/store';
 
@@ -6920,6 +7416,7 @@ import { authStore } from '$lib/stores/authStore';
 ```
 
 **tripStore.ts** - Trip and travel items
+
 ```typescript
 export const tripStore = writable({
   currentTrip: null,
@@ -6932,11 +7429,12 @@ export const tripStore = writable({
   companions: [],
   vouchers: [],
   loading: false,
-  error: null
+  error: null,
 });
 ```
 
 **uiStore.ts** - UI state
+
 ```typescript
 export const uiStore = writable({
   sidebarOpen: false,
@@ -6946,11 +7444,12 @@ export const uiStore = writable({
   loading: false,
   selectedItem: null,
   editMode: false,
-  error: null
+  error: null,
 });
 ```
 
 ### Advantages of Svelte Stores
+
 - **Reactive** - Automatic UI updates when store changes
 - **Simple API** - `writable()`, `readable()`, `derived()`
 - **Derived stores** - Computed state (`$derived()`)
@@ -6961,6 +7460,7 @@ export const uiStore = writable({
 ### Store Patterns
 
 **Subscribing in Components:**
+
 ```svelte
 <script lang="ts">
   import { tripStore } from '$lib/stores/tripStore';
@@ -6976,13 +7476,14 @@ export const uiStore = writable({
 ```
 
 **Updating Stores:**
+
 ```typescript
 // In store actions
 export function loadTrips() {
-  tripStore.update(state => {
+  tripStore.update((state) => {
     return {
       ...state,
-      loading: true
+      loading: true,
     };
   });
 }
@@ -6996,31 +7497,33 @@ tripStore.set({ trips: [] });
 ## Phase 2 State (TypeScript Services)
 
 ### Service Layer with State
+
 ```typescript
 // services/tripService.ts
 import { tripStore } from '$lib/stores/tripStore';
 
 export async function fetchTrips() {
-  tripStore.update(state => ({ ...state, loading: true }));
+  tripStore.update((state) => ({ ...state, loading: true }));
 
   try {
     const trips = await apiClient.get('/api/trips');
-    tripStore.update(state => ({
+    tripStore.update((state) => ({
       ...state,
       trips,
-      loading: false
+      loading: false,
     }));
   } catch (error) {
-    tripStore.update(state => ({
+    tripStore.update((state) => ({
       ...state,
       error,
-      loading: false
+      loading: false,
     }));
   }
 }
 ```
 
 ### Benefits
+
 - Centralized async logic
 - Consistent error handling
 - Loading state management
@@ -7031,45 +7534,47 @@ export async function fetchTrips() {
 ## State Synchronization Strategies
 
 ### Option A: Optimistic Updates (Phase 1)
+
 ```typescript
 // Assume success immediately
-tripStore.update(state => ({
+tripStore.update((state) => ({
   ...state,
-  flights: [...state.flights, newFlight]
+  flights: [...state.flights, newFlight],
 }));
 
 // Send to server
-apiClient.post('/api/flights', newFlight)
-  .catch(error => {
-    // Revert on error
-    tripStore.update(state => ({
-      ...state,
-      flights: state.flights.filter(f => f.id !== newFlight.id)
-    }));
-  });
+apiClient.post('/api/flights', newFlight).catch((error) => {
+  // Revert on error
+  tripStore.update((state) => ({
+    ...state,
+    flights: state.flights.filter((f) => f.id !== newFlight.id),
+  }));
+});
 ```
 
 ### Option B: Pessimistic Updates (Current)
+
 ```typescript
 // Wait for server response
 const response = await apiClient.post('/api/flights', newFlight);
 
 // Update only after success
 if (response.ok) {
-  tripStore.update(state => ({
+  tripStore.update((state) => ({
     ...state,
-    flights: [...state.flights, response.flight]
+    flights: [...state.flights, response.flight],
   }));
 }
 ```
 
 ### Option C: Real-Time Sync (Phase 3)
+
 ```typescript
 // WebSocket-based synchronization
 socket.on('item:created', (item) => {
-  tripStore.update(state => ({
+  tripStore.update((state) => ({
     ...state,
-    [itemType + 's']: [...state[itemType + 's'], item]
+    [itemType + 's']: [...state[itemType + 's'], item],
   }));
 });
 ```
@@ -7079,6 +7584,7 @@ socket.on('item:created', (item) => {
 ## Derived State (Computed Properties)
 
 ### Svelte `derived()` Stores
+
 ```typescript
 import { derived } from 'svelte/store';
 import { tripStore } from './tripStore';
@@ -7096,6 +7602,7 @@ export const totalFlightCost = derived(
 ```
 
 ### Benefits
+
 - Memoized computations
 - Automatic updates when source changes
 - Performance optimization
@@ -7106,6 +7613,7 @@ export const totalFlightCost = derived(
 ## State Persistence
 
 ### localStorage Integration
+
 ```typescript
 // Persist specific stores to localStorage
 function persistedStore<T>(key: string, initialValue: T) {
@@ -7114,7 +7622,7 @@ function persistedStore<T>(key: string, initialValue: T) {
 
   const store = writable(state);
 
-  store.subscribe(value => {
+  store.subscribe((value) => {
     localStorage.setItem(key, JSON.stringify(value));
   });
 
@@ -7123,11 +7631,12 @@ function persistedStore<T>(key: string, initialValue: T) {
 
 export const preferencesStore = persistedStore('preferences', {
   theme: 'light',
-  notifications: true
+  notifications: true,
 });
 ```
 
 ### Use Cases
+
 - User preferences
 - Recently viewed trips
 - Form drafts
@@ -7138,6 +7647,7 @@ export const preferencesStore = persistedStore('preferences', {
 ## Testing State Management
 
 ### Unit Tests
+
 ```typescript
 import { get } from 'svelte/store';
 import { tripStore } from './tripStore';
@@ -7147,9 +7657,9 @@ test('tripStore updates correctly', () => {
   expect(initialState.trips).toEqual([]);
 
   // Update store
-  tripStore.update(state => ({
+  tripStore.update((state) => ({
     ...state,
-    trips: [{ id: '1', name: 'My Trip' }]
+    trips: [{ id: '1', name: 'My Trip' }],
   }));
 
   const updatedState = get(tripStore);
@@ -7158,6 +7668,7 @@ test('tripStore updates correctly', () => {
 ```
 
 ### Component Tests
+
 ```typescript
 import { render, screen } from '@testing-library/svelte';
 import { tripStore } from './tripStore';
@@ -7165,7 +7676,7 @@ import TripList from './TripList.svelte';
 
 test('renders trips from store', async () => {
   tripStore.set({
-    trips: [{ id: '1', name: 'My Trip' }]
+    trips: [{ id: '1', name: 'My Trip' }],
   });
 
   render(TripList);
@@ -7178,34 +7689,38 @@ test('renders trips from store', async () => {
 ## Anti-Patterns to Avoid
 
 ### ❌ Direct DOM Manipulation
+
 ```typescript
 // WRONG - Don't do this
 document.querySelector('.trip-name').textContent = trip.name;
 ```
 
 ### ✅ Store-Based Updates
+
 ```typescript
 // RIGHT - Use stores
-tripStore.update(state => ({
+tripStore.update((state) => ({
   ...state,
-  currentTrip: trip
+  currentTrip: trip,
 }));
 ```
 
 ---
 
 ### ❌ Global Variables
+
 ```typescript
 // WRONG
 window.tripId = '123';
 ```
 
 ### ✅ Store-Based State
+
 ```typescript
 // RIGHT
-tripStore.update(state => ({
+tripStore.update((state) => ({
   ...state,
-  currentTrip: { id: '123' }
+  currentTrip: { id: '123' },
 }));
 ```
 
@@ -7224,6 +7739,7 @@ tripStore.update(state => ({
 ````
 
 ## File: .claude/PATTERNS/VALIDATION.md
+
 ````markdown
 # ✔️ Validation Pattern
 
@@ -7234,6 +7750,7 @@ Data validation strategies across frontend and backend.
 ## Backend Validation (Server-Side)
 
 ### Express Validator Setup
+
 **File:** `middleware/validation.js`
 
 ```javascript
@@ -7246,18 +7763,20 @@ const flightValidation = [
   body('origin').isLength({ min: 3, max: 3 }),
   body('destination').isLength({ min: 3, max: 3 }),
   body('departureDateTime').isISO8601(),
-  body('arrivalDateTime').isISO8601()
+  body('arrivalDateTime').isISO8601(),
 ];
 
 module.exports = { flightValidation };
 ```
 
 ### Using Validators in Routes
+
 ```javascript
 router.post('/flights', flightValidation, flightController.create);
 ```
 
 ### Handling Validation Results
+
 ```javascript
 async function create(req, res) {
   const errors = validationResult(req);
@@ -7266,7 +7785,7 @@ async function create(req, res) {
     if (req.get('X-Async-Request') === 'true') {
       return res.status(400).json({
         success: false,
-        errors: errors.array()
+        errors: errors.array(),
       });
     } else {
       // Flash messages for form submission
@@ -7282,6 +7801,7 @@ async function create(req, res) {
 ### Validation Rules by Item Type
 
 **Flights:**
+
 - airline: required, string
 - flightNumber: required, string
 - origin/destination: required, 3-letter IATA code
@@ -7289,6 +7809,7 @@ async function create(req, res) {
 - arrivalDateTime: required, ISO8601, after departure
 
 **Hotels:**
+
 - name: required, string
 - checkInDate: required, date
 - checkOutDate: required, date, after checkIn
@@ -7296,6 +7817,7 @@ async function create(req, res) {
 - address: required, string
 
 **Events:**
+
 - title: required, string
 - eventDate: required, date, within trip range
 - location: required, string
@@ -7305,14 +7827,16 @@ async function create(req, res) {
 ## Frontend Validation (Client-Side)
 
 ### HTML5 Validation
+
 ```html
-<input type="date" name="departureDate" required>
-<input type="time" name="departureTime" required>
-<input type="email" name="email" required>
-<input type="number" name="cost" min="0" step="0.01">
+<input type="date" name="departureDate" required />
+<input type="time" name="departureTime" required />
+<input type="email" name="email" required />
+<input type="number" name="cost" min="0" step="0.01" />
 ```
 
 ### JavaScript Validation (Optional)
+
 ```javascript
 function validateFlightForm(formData) {
   const errors = [];
@@ -7337,6 +7861,7 @@ function validateFlightForm(formData) {
 ```
 
 ### Error Display (No Alerts!)
+
 ```javascript
 // BAD - Don't use alerts
 if (!validateFlightForm(data)) {
@@ -7357,6 +7882,7 @@ if (errors.length > 0) {
 ## Validation Flow
 
 ### Complete Flow
+
 ```
 1. User fills form
 2. HTML5 browser validation (optional)
@@ -7376,6 +7902,7 @@ if (errors.length > 0) {
 ## Phase 1 Svelte Validation
 
 ### Reactive Validation
+
 ```svelte
 <script lang="ts">
   let formData = {
@@ -7423,6 +7950,7 @@ if (errors.length > 0) {
 ## Custom Validation Functions
 
 ### IATA Code Validation
+
 ```javascript
 function isValidIATACode(code) {
   return /^[A-Z]{3}$/.test(code);
@@ -7430,6 +7958,7 @@ function isValidIATACode(code) {
 ```
 
 ### Date Range Validation
+
 ```javascript
 function isDateWithinTrip(date, tripStart, tripEnd) {
   const d = new Date(date);
@@ -7438,6 +7967,7 @@ function isDateWithinTrip(date, tripStart, tripEnd) {
 ```
 
 ### Duration Validation
+
 ```javascript
 function isValidDuration(departure, arrival) {
   const diff = new Date(arrival) - new Date(departure);
@@ -7472,6 +8002,7 @@ function isValidDuration(departure, arrival) {
 ````
 
 ## File: .claude/TROUBLESHOOTING/README.md
+
 ````markdown
 # 🔧 Troubleshooting Guide
 
@@ -7482,31 +8013,34 @@ Quick solutions for common problems in Bluebonnet development and operations.
 ## Quick Links
 
 ### Development Issues
+
 - **[Debug Guide](./DEBUG_GUIDE.md)** - Debugging methodology
 - **[Setup Issues](./SETUP_ISSUES.md)** - Local setup problems
 - **[Database Issues](./DATABASE_ISSUES.md)** - Database connection, migrations
 - **[Form Issues](./FORM_ISSUES.md)** - Form submission problems
 
 ### Runtime Issues
+
 - **[Async Operations](./ASYNC_OPERATIONS.md)** - AJAX & async operation issues
 - **[Performance Issues](./PERFORMANCE_ISSUES.md)** - Slow queries, bundle size
 
 ### Operations
+
 - **[Deployment Issues](./DEPLOYMENT_ISSUES.md)** - Production problems
 
 ---
 
 ## Common Problems Quick Reference
 
-| Problem | Likely Cause | First Step |
-|---------|------------|-----------|
-| App won't start | Dependencies missing | `npm install` |
-| Database error | PostgreSQL not running | Check `docker ps` |
-| Form not working | JavaScript error | Check browser console |
-| Slow performance | Unoptimized query | Check Network tab |
-| Build fails | TypeScript error | Run `npm run lint` |
-| API error | Wrong headers | Check request headers |
-| Component not rendering | Svelte syntax error | Check console for errors |
+| Problem                 | Likely Cause           | First Step               |
+| ----------------------- | ---------------------- | ------------------------ |
+| App won't start         | Dependencies missing   | `npm install`            |
+| Database error          | PostgreSQL not running | Check `docker ps`        |
+| Form not working        | JavaScript error       | Check browser console    |
+| Slow performance        | Unoptimized query      | Check Network tab        |
+| Build fails             | TypeScript error       | Run `npm run lint`       |
+| API error               | Wrong headers          | Check request headers    |
+| Component not rendering | Svelte syntax error    | Check console for errors |
 
 ---
 
@@ -7515,30 +8049,35 @@ Quick solutions for common problems in Bluebonnet development and operations.
 When something breaks:
 
 ### 1. Identify the Problem
+
 - [ ] Where does it fail? (frontend, backend, database?)
 - [ ] When started happening? (after what change?)
 - [ ] What's the error message? (exact text)
 - [ ] Can you reproduce it reliably?
 
 ### 2. Check Basics
+
 - [ ] Is the server running? (`npm run dev`)
 - [ ] Is the database running? (`docker ps`)
 - [ ] Is Redis running? (if needed)
 - [ ] Are dependencies installed? (`npm install`)
 
 ### 3. Check Logs
+
 - [ ] Browser console (DevTools → Console)
 - [ ] Terminal output (where server is running)
 - [ ] Network tab (for API requests)
 - [ ] Application logs (if in production)
 
 ### 4. Debug Deeper
+
 - [ ] Add console.log statements
 - [ ] Use browser debugger (F12)
 - [ ] Check database directly
 - [ ] Review recent code changes
 
 ### 5. Search for Solutions
+
 - [ ] Check [TROUBLESHOOTING/](.) for similar issue
 - [ ] Search GitHub issues
 - [ ] Check framework docs (Svelte, Express, etc.)
@@ -7549,26 +8088,32 @@ When something breaks:
 ## Problem Categories
 
 ### Setup Problems
+
 **Symptoms:** App won't start, database connection fails
 **Solutions:** [Setup Issues](./SETUP_ISSUES.md)
 
 ### Database Problems
+
 **Symptoms:** Migration fails, table doesn't exist
 **Solutions:** [Database Issues](./DATABASE_ISSUES.md)
 
 ### Form Problems
+
 **Symptoms:** Form won't submit, validation errors
 **Solutions:** [Form Issues](./FORM_ISSUES.md)
 
 ### Async Problems
+
 **Symptoms:** API call doesn't work, sidebar doesn't update
 **Solutions:** [Async Operations](./ASYNC_OPERATIONS.md)
 
 ### Performance Problems
+
 **Symptoms:** Page loads slow, queries take forever
 **Solutions:** [Performance Issues](./PERFORMANCE_ISSUES.md)
 
 ### Deployment Problems
+
 **Symptoms:** Works locally but fails in production
 **Solutions:** [Deployment Issues](./DEPLOYMENT_ISSUES.md)
 
@@ -7577,6 +8122,7 @@ When something breaks:
 ## Debugging Tools
 
 ### Browser DevTools (F12)
+
 - **Console tab** - JavaScript errors, logging
 - **Network tab** - API requests, response times
 - **Storage tab** - Cookies, localStorage
@@ -7584,6 +8130,7 @@ When something breaks:
 - **Debugger tab** - Step through code
 
 ### Terminal
+
 ```bash
 # View Express logs
 npm run dev
@@ -7599,12 +8146,14 @@ psql -U postgres -d bluebonnet
 ```
 
 ### VS Code
+
 - Debug breakpoints (F5)
 - Hover to inspect variables
 - Integrated terminal
 - Git history
 
 ### Git
+
 ```bash
 # See what changed
 git diff
@@ -7627,6 +8176,7 @@ Sometimes explaining your problem helps you solve it:
 3. **Usually you'll realize the issue** (70% success rate!)
 
 Example:
+
 ```
 Me: "I'm adding a flight, but it doesn't save."
 Rubber duck: ...
@@ -7640,30 +8190,35 @@ Me: "That's the bug!"
 ## Common Solutions
 
 ### "Module not found"
+
 ```
 Solution: npm install
 Reason: Missing dependencies
 ```
 
 ### "Cannot connect to database"
+
 ```
 Solution: docker ps, check PostgreSQL running
 Reason: Database not started
 ```
 
 ### "TypeError: Cannot read property 'name' of undefined"
+
 ```
 Solution: Check if data is null/undefined before accessing
 Reason: Missing null check
 ```
 
 ### "EACCES: permission denied"
+
 ```
 Solution: sudo, or fix file permissions
 Reason: Permission issue
 ```
 
 ### "npm: command not found"
+
 ```
 Solution: Install Node.js
 Reason: Node not installed
@@ -7674,22 +8229,26 @@ Reason: Node not installed
 ## If You're Stuck
 
 ### Step 1: Take a Break
+
 - Walk around
 - Get coffee
 - Come back fresh
 
 ### Step 2: Simplify
+
 - Remove recent changes
 - Isolate the problem
 - Test one thing at a time
 
 ### Step 3: Ask for Help
+
 - Check documentation
 - Search for similar issues
 - Ask team member
 - Post on community forum
 
 ### Step 4: Document It
+
 - Write down what you did
 - Record what worked
 - Add to this guide
@@ -7700,6 +8259,7 @@ Reason: Node not installed
 ## Preventing Problems
 
 ### Best Practices
+
 - [ ] Run tests before committing (`npm test`)
 - [ ] Check console for errors (daily)
 - [ ] Review git diff before pushing
@@ -7708,6 +8268,7 @@ Reason: Node not installed
 - [ ] Add tests for bugs you fix
 
 ### Development Habits
+
 - [ ] Make small commits (easy to revert)
 - [ ] Test as you code (not after)
 - [ ] Read error messages carefully
@@ -7719,6 +8280,7 @@ Reason: Node not installed
 ## Emergency Procedures
 
 ### Database Corrupted
+
 ```bash
 # 1. Backup (if possible)
 pg_dump -U postgres bluebonnet > backup.sql
@@ -7732,6 +8294,7 @@ psql -U postgres bluebonnet < backup.sql
 ```
 
 ### App Won't Start
+
 ```bash
 # 1. Check errors
 npm run dev  # Look at errors
@@ -7748,6 +8311,7 @@ npm run db:sync
 ```
 
 ### Code is Broken
+
 ```bash
 # 1. See what changed
 git diff
@@ -7779,6 +8343,7 @@ git checkout commit-hash
 ````
 
 ## File: .claude/TROUBLESHOOTING/SETUP_ISSUES.md
+
 ````markdown
 # 🔧 Setup Issues Troubleshooting
 
@@ -7789,6 +8354,7 @@ Solutions for common setup and initialization problems.
 ## Docker Compose Issues
 
 ### Problem: Container won't start
+
 ```
 Error: Connection refused
 ```
@@ -7796,6 +8362,7 @@ Error: Connection refused
 **Causes & Solutions:**
 
 1. **Port already in use**
+
    ```bash
    # Check what's using port 3500
    lsof -i :3500
@@ -7807,6 +8374,7 @@ Error: Connection refused
    ```
 
 2. **Database not initialized**
+
    ```bash
    # Force reinitialize
    docker-compose down -v
@@ -7818,11 +8386,13 @@ Error: Connection refused
    - Check logs: `docker-compose logs db`
 
 ### Problem: Database sync fails
+
 ```
 Error: relation "flights" does not exist
 ```
 
 **Solution:**
+
 ```bash
 # Manually run sync
 docker-compose exec app npm run db:sync
@@ -7836,11 +8406,13 @@ docker-compose exec app npm run db:seed-airports
 ## Local Development Setup
 
 ### Problem: npm install fails
+
 ```
 npm ERR! peer dep missing
 ```
 
 **Solution:**
+
 ```bash
 # Clean cache and reinstall
 rm -rf node_modules package-lock.json
@@ -7849,11 +8421,13 @@ npm install
 ```
 
 ### Problem: Database connection refused
+
 ```
 Error: connect ECONNREFUSED 127.0.0.1:5432
 ```
 
 **Check PostgreSQL status:**
+
 ```bash
 # macOS
 brew services list
@@ -7872,11 +8446,13 @@ docker run -d --name bluebonnet-db \
 ```
 
 ### Problem: Redis connection failed
+
 ```
 Error: Connection to redis failed
 ```
 
 **Solution:**
+
 ```bash
 # Install Redis (macOS)
 brew install redis
@@ -7893,11 +8469,13 @@ docker run -d --name bluebonnet-redis \
 ## Development Server Issues
 
 ### Problem: `npm run dev` fails
+
 ```
 Error: Cannot find module
 ```
 
 **Solution:**
+
 ```bash
 # Reinstall dependencies
 npm install
@@ -7910,6 +8488,7 @@ npm run dev
 ```
 
 ### Problem: Port 3000 already in use
+
 ```bash
 # Find process using port 3000
 lsof -i :3000
@@ -7922,6 +8501,7 @@ echo "PORT=3001" >> .env
 ```
 
 ### Problem: CSS not updating
+
 ```bash
 # Rebuild CSS
 npm run build-css
@@ -7935,6 +8515,7 @@ npm run build-css
 ## Database Issues
 
 ### Problem: Tables not created
+
 ```bash
 # Check database status
 npm run db:sync
@@ -7944,6 +8525,7 @@ npm run db:seed-airports
 ```
 
 ### Problem: Airport data not seeded
+
 ```bash
 # Verify airports.json exists
 ls data/airports.json
@@ -7956,6 +8538,7 @@ sqlite3 bluebonnet.db "SELECT COUNT(*) FROM airports;"
 ```
 
 ### Problem: Migrations failed
+
 ```bash
 # Clear database and restart
 rm bluebonnet.db
@@ -7968,16 +8551,19 @@ npm run db:seed-airports
 ## Authentication Issues
 
 ### Problem: Session not persisting
+
 ```
 Error: Cannot read property 'userId' of undefined
 ```
 
 **Check:**
+
 1. `SESSION_SECRET` env variable is set
 2. Redis is running (if using Redis sessions)
 3. Cookie settings in `config/express.js`
 
 **Solution:**
+
 ```bash
 # Regenerate session secret
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
@@ -7994,12 +8580,14 @@ npm run dev
 ## Form & API Issues
 
 ### Problem: Forms not submitting
+
 1. Check browser console (F12) for errors
 2. Verify API endpoint exists
 3. Check X-Async-Request header is sent
 4. Verify authentication middleware
 
 ### Problem: AJAX requests returning 403
+
 ```
 Error: Forbidden
 ```
@@ -8007,16 +8595,19 @@ Error: Forbidden
 **Cause:** User not authenticated or doesn't own resource
 
 **Solution:**
+
 1. Login again
 2. Check session is valid
 3. Verify resource ownership in database
 
 ### Problem: File upload failing
+
 ```
 Error: Unexpected field
 ```
 
 **Verify:**
+
 - Form has `enctype="multipart/form-data"`
 - Backend has multer configured
 - File size isn't exceeding limit
@@ -8026,6 +8617,7 @@ Error: Unexpected field
 ## Performance Issues
 
 ### Problem: Slow startup
+
 ```bash
 # Profile startup time
 time npm run dev
@@ -8035,6 +8627,7 @@ npm audit
 ```
 
 ### Problem: Slow database queries
+
 ```bash
 # Enable query logging
 echo "LOG_LEVEL=debug" >> .env
@@ -8048,6 +8641,7 @@ npm run db:check-indexes
 ## Git & Version Control
 
 ### Problem: Git conflicts
+
 ```bash
 # View differences
 git diff
@@ -8059,6 +8653,7 @@ git checkout --theirs .
 ```
 
 ### Problem: Branch tracking issues
+
 ```bash
 # Check remote branches
 git branch -r
@@ -8072,7 +8667,9 @@ git branch --set-upstream-to=origin/main main
 ## Environment Variables
 
 ### Problem: .env not loading
+
 **Verify .env exists in project root:**
+
 ```bash
 ls -la .env
 
@@ -8081,6 +8678,7 @@ cp .env.example .env
 ```
 
 ### Required Variables for Development
+
 ```env
 DB_HOST=localhost
 DB_PORT=5432
@@ -8096,6 +8694,7 @@ NODE_ENV=development
 ## Docker Specific
 
 ### Problem: Files not syncing
+
 ```bash
 # Verify volumes in docker-compose.yml
 docker-compose config | grep volumes
@@ -8105,6 +8704,7 @@ docker-compose up --build --no-cache
 ```
 
 ### Problem: Can't access app from browser
+
 ```bash
 # Check if container is running
 docker-compose ps
@@ -8121,12 +8721,14 @@ docker inspect bluebonnet-app | grep IP
 ## Debugging Tips
 
 ### Enable Verbose Logging
+
 ```env
 LOG_LEVEL=debug
 DEBUG=*
 ```
 
 ### Check System Health
+
 ```bash
 # Memory usage
 free -h
@@ -8142,6 +8744,7 @@ netstat -an | grep 3000
 ```
 
 ### Browser DevTools
+
 1. Open F12 in browser
 2. Check Console tab for errors
 3. Check Network tab for failed requests
@@ -8152,6 +8755,7 @@ netstat -an | grep 3000
 ## When All Else Fails
 
 ### Complete Reset
+
 ```bash
 # Stop services
 docker-compose down -v
@@ -8167,7 +8771,9 @@ docker-compose up --build
 ```
 
 ### Ask for Help
+
 Include in issue:
+
 1. Output of `npm -v` and `node -v`
 2. Full error message
 3. Steps to reproduce
@@ -8188,6 +8794,7 @@ Include in issue:
 ````
 
 ## File: .claude/CHANGELOG.md
+
 ````markdown
 # 📝 Changelog
 
@@ -8198,6 +8805,7 @@ Version history and significant changes to Bluebonnet.
 ## [Unreleased] - Phase 0: Documentation Restructuring
 
 ### Added
+
 - Complete `.claude/` documentation system (12 hub documents)
 - Modular documentation structure (75% token reduction)
 - Getting started guide with Docker and local setup options
@@ -8207,14 +8815,17 @@ Version history and significant changes to Bluebonnet.
 - Phase 1, 2, 3 modernization roadmap
 
 ### Changed
+
 - Reorganized CLAUDE.md (35KB monolith → modular .claude/ directory)
 - Consolidated deployment documentation
 - Standardized documentation patterns
 
 ### Deprecated
+
 - Original monolithic CLAUDE.md (kept for compatibility, redirect in place)
 
 ### Status
+
 🔄 In Progress - Documentation foundation complete, content extraction in progress
 
 ---
@@ -8230,7 +8841,9 @@ Version history and significant changes to Bluebonnet.
 ## Recent Updates (Last 3 Months)
 
 ### 2025-12-17: Documentation Restructuring (Current)
+
 **Focus:** Reorganize for token efficiency
+
 - Created .claude/ directory structure (14 subdirectories)
 - Built complete navigation hub (12 README files)
 - Added core onboarding documents (GETTING_STARTED, DEVELOPMENT)
@@ -8238,14 +8851,18 @@ Version history and significant changes to Bluebonnet.
 - **Impact:** 75% reduction in documentation token overhead
 
 ### 2025-12-12: Codebase Cleanup (Previous)
+
 **Focus:** Code organization
+
 - Consolidated map implementations (3 files → 1 maps.js)
 - Consolidated companion management (3 files → 1 companions.js)
 - Improved JavaScript module organization
 - **Impact:** -23% JavaScript files, better maintainability
 
 ### 2025-12-01: Form Refactoring (Previous)
+
 **Focus:** Form consistency
+
 - Standardized form patterns across all item types
 - Improved async form handling
 - Better error display in forms
@@ -8256,23 +8873,27 @@ Version history and significant changes to Bluebonnet.
 ## Phase Roadmap
 
 ### Phase 0: Documentation ✅ In Progress
+
 **Goal:** Token-optimized, modular documentation
 **Status:** Navigation layer complete, content extraction underway
 **Estimated Completion:** 2025-12-20
 
 ### Phase 1: Svelte Frontend 📋 Planned
+
 **Goal:** Replace monolithic frontend with component-based Svelte
 **Start Date:** 2025-12-21 (estimated)
 **Duration:** 12 weeks
 **Deliverables:** SvelteKit app, 50+ components, API client, stores
 
 ### Phase 2: Backend Refactoring 📋 Planned
+
 **Goal:** Clean up backend, extract services layer
 **Start Date:** 2025-12-21 (parallel with Phase 1)
 **Duration:** 4 weeks
 **Deliverables:** Services layer, TypeScript, 60%+ test coverage
 
 ### Phase 3: Full SvelteKit 📋 Future
+
 **Goal:** Unify into single SvelteKit codebase
 **Timeline:** 6+ months after Phase 1
 **Status:** Optional, will be evaluated after Phase 1 success
@@ -8282,11 +8903,13 @@ Version history and significant changes to Bluebonnet.
 ## Known Issues
 
 ### Documentation
+
 - ❌ Some backend documentation incomplete (being extracted from CLAUDE.md)
 - ❌ Phase 1 specific docs not yet created (stub files ready)
 - ❌ Feature-specific documentation not yet written
 
 ### Code
+
 - ✅ No known critical bugs
 - ⚠️ Large controllers (tripController.js 60KB - will be refactored in Phase 2)
 - ⚠️ Test coverage low (14% - will improve in Phase 1/2)
@@ -8299,16 +8922,19 @@ Version history and significant changes to Bluebonnet.
 ### By Phase
 
 **Phase 0 (Current):**
+
 - CLAUDE.md moved to .claude/README.md (old file redirects)
 - Documentation structure completely reorganized
 - → **Action:** Update bookmarks/references to new structure
 
 **Phase 1 (Upcoming):**
+
 - Express backend API contracts may change
 - Some endpoints may be replaced/refactored
 - → **Action:** Version API, provide deprecation warnings
 
 **Phase 2 (Planned):**
+
 - Controllers will be refactored
 - Services layer introduced
 - → **Action:** Update any internal tools using controllers directly
@@ -8318,18 +8944,21 @@ Version history and significant changes to Bluebonnet.
 ## Future Considerations
 
 ### Short Term (Next 3 months)
+
 - [ ] Complete Phase 0 documentation
 - [ ] Complete Phase 1 Svelte migration
 - [ ] Parallel Phase 2 backend refactoring
 - [ ] Increase test coverage to 40%+
 
 ### Medium Term (3-6 months)
+
 - [ ] Evaluate Phase 3 (full SkelveKit)
 - [ ] TypeScript adoption across codebase
 - [ ] Performance optimizations
 - [ ] User feature requests
 
 ### Long Term (6+ months)
+
 - [ ] Optional: Migrate to SvelteKit
 - [ ] Optional: Switch to Prisma ORM
 - [ ] Optional: Add real-time features (WebSocket)
@@ -8349,6 +8978,7 @@ When making changes, update this file:
 4. Include impact if significant
 
 **Example:**
+
 ```
 ### Added
 - New flight validation prevents invalid dates
@@ -8374,6 +9004,7 @@ When making changes, update this file:
 ### Why This Changelog?
 
 Before Phase 0, changes were tracked in:
+
 - Git commits (source of truth)
 - Separate summary documents (scattered)
 - Slack conversations (ephemeral)
@@ -8385,6 +9016,7 @@ Before Phase 0, changes were tracked in:
 ### Extracted Histories
 
 Some historical information was merged into this changelog from:
+
 - `CODEBASE_CLEANUP_SUMMARY.md` - Codebase cleanup work
 - `FORM_REFACTORING_SUMMARY.md` - Form refactoring work
 - Individual commit messages
@@ -8396,15 +9028,18 @@ Some historical information was merged into this changelog from:
 ### Upcoming Releases
 
 **2025-12-20:** Phase 0 Documentation Complete
+
 - All documentation structured and indexed
 - Ready for Phase 1 development
 
 **2026-03-20:** Phase 1 Svelte Migration Complete (Estimated)
+
 - All features ported to Svelte
 - API client and stores working
 - Component library established
 
 **2026-04-20:** Phase 2 Backend Refactoring Complete (Estimated, optional)
+
 - Services layer extracted
 - TypeScript adoption
 - 60%+ test coverage
@@ -8417,6 +9052,7 @@ Some historical information was merged into this changelog from:
 **Will use:** Semantic Versioning (MAJOR.MINOR.PATCH) after Phase 1
 
 **Example:**
+
 - 1.0.0 - Phase 1 Complete (Svelte frontend ready)
 - 2.0.0 - Phase 2 Complete (Backend refactored)
 - 3.0.0 - Phase 3 Complete (Full SvelveKit)
@@ -8426,11 +9062,13 @@ Some historical information was merged into this changelog from:
 ## Credits
 
 ### Documentation
+
 - Created: Phase 0 (Dec 2025)
 - Restructured: Comprehensive modularization
 - Maintained by: Development team
 
 ### Code Contributors
+
 - Multiple developers (tracked via Git)
 - Current active contributors: TBD
 
@@ -8449,6 +9087,7 @@ See LICENSE file in project root for licensing details.
 ````
 
 ## File: .claude/context.md
+
 ````markdown
 # Bluebonnet Context
 
@@ -8497,12 +9136,14 @@ Voucher (1)
 ## File Organization
 
 ### Backend (`controllers/`, `models/`, `routes/`)
+
 - **Controllers:** `authController.js`, `tripController.js` (60KB!), `flightController.js`, `hotelController.js`, `eventController.js`, `carRentalController.js`, `transportationController.js`, `companionController.js`, `voucherController.js`, `accountController.js`
 - **Models:** User, Trip, Flight, Hotel, Event, CarRental, Transportation, TravelCompanion, TripCompanion, Voucher, VoucherAttachment, Notification
 - **Routes:** `/auth`, `/trips`, `/flights`, `/hotels`, `/events`, `/car-rentals`, `/transportation`, `/companions`, `/vouchers`, `/api/v1/*`
 - **Middleware:** `auth.js` (ensureAuthenticated, forwardAuthenticated), `validation.js` (form validators)
 
 ### Frontend (`views/`, `public/js/`)
+
 - **Views:** EJS templates in `views/`
   - Main: `dashboard.ejs`, `trips/trip-view.ejs`, `account/`.
   - Partials: `flight-form.ejs`, `hotel-form.ejs`, `event-form.ejs`, etc.
@@ -8512,6 +9153,7 @@ Voucher (1)
   - Event system: `event-delegation.js`, `eventBus.js`
 
 ### Data (`data/`)
+
 - `airports.json` - 7,000+ airports (seeded to DB on startup)
 - `airlines.json` - Airline codes and names
 
@@ -8519,18 +9161,18 @@ Voucher (1)
 
 ## Features (All Active)
 
-| Feature | CRUD | Status | Notes |
-|---------|------|--------|-------|
-| **Trip** | ✅ | Active | Create, view, edit, delete trips |
-| **Flight** | ✅ | Active | Flights with timezone inference |
-| **Hotel** | ✅ | Active | Accommodations with check-in/out |
-| **Event** | ✅ | Active | Activities & attractions |
-| **Car Rental** | ✅ | Active | Vehicle rentals |
-| **Transportation** | ✅ | Active | Ground transport (taxi, shuttle, etc.) |
-| **Companions** | ✅ | Active | Invite people, set permissions |
-| **Vouchers** | ✅ | Active | Track travel credits/upgrades |
-| **Calendar** | ✅ | Active | Timeline view of trip items |
-| **Maps** | ✅ | Active | Location visualization |
+| Feature            | CRUD | Status | Notes                                  |
+| ------------------ | ---- | ------ | -------------------------------------- |
+| **Trip**           | ✅   | Active | Create, view, edit, delete trips       |
+| **Flight**         | ✅   | Active | Flights with timezone inference        |
+| **Hotel**          | ✅   | Active | Accommodations with check-in/out       |
+| **Event**          | ✅   | Active | Activities & attractions               |
+| **Car Rental**     | ✅   | Active | Vehicle rentals                        |
+| **Transportation** | ✅   | Active | Ground transport (taxi, shuttle, etc.) |
+| **Companions**     | ✅   | Active | Invite people, set permissions         |
+| **Vouchers**       | ✅   | Active | Track travel credits/upgrades          |
+| **Calendar**       | ✅   | Active | Timeline view of trip items            |
+| **Maps**           | ✅   | Active | Location visualization                 |
 
 **Special:** All items are optional (can create standalone). Trip items CAN be attached to a trip.
 
@@ -8550,6 +9192,7 @@ Voucher (1)
 ## Common Patterns
 
 ### AJAX Request Detection (Backend)
+
 ```javascript
 const isAsyncRequest = req.get('X-Async-Request') === 'true';
 if (isAsyncRequest) {
@@ -8560,6 +9203,7 @@ if (isAsyncRequest) {
 ```
 
 ### Form Submission (Frontend)
+
 1. User fills form in sidebar
 2. JavaScript intercepts submit (X-Async-Request header added)
 3. Backend validates, creates/updates item
@@ -8567,6 +9211,7 @@ if (isAsyncRequest) {
 5. Frontend silently refreshes sidebars/maps (no notifications)
 
 ### Sidebar Navigation
+
 1. Click "Add Item" or "Edit Item"
 2. `loadSidebarContent(url)` fetches form via AJAX
 3. Form loads into secondary sidebar
@@ -8591,6 +9236,7 @@ if (isAsyncRequest) {
 ## Environment Variables (Key)
 
 **Required:**
+
 ```env
 DB_HOST=localhost
 DB_PORT=5432
@@ -8602,6 +9248,7 @@ NODE_ENV=development
 ```
 
 **Optional (with defaults):**
+
 - `PORT=3000` - Server port
 - `REDIS_ENABLED=true` - Enable Redis
 - `REDIS_HOST=localhost`, `REDIS_PORT=6379`
@@ -8615,6 +9262,7 @@ NODE_ENV=development
 **Timeline:** Q1 2026, ~12 weeks
 
 **Approach:**
+
 1. Keep Express backend unchanged
 2. Add SvelteKit frontend alongside EJS
 3. Migrate features one-by-one to Svelte
@@ -8641,6 +9289,7 @@ NODE_ENV=development
 ````
 
 ## File: .claude/development-quick-ref.md
+
 ````markdown
 # Development Quick Reference
 
@@ -8651,6 +9300,7 @@ Commands, environment variables, and debugging tips.
 ## Quick Start
 
 ### Docker (Recommended, ~5 minutes)
+
 ```bash
 docker-compose up --build
 # App at http://localhost:3500
@@ -8658,6 +9308,7 @@ docker-compose up --build
 ```
 
 ### Local Development (~15 minutes)
+
 ```bash
 npm install
 npm run db:sync              # Create/update tables
@@ -8671,6 +9322,7 @@ npm run dev                  # Start server (port 3000)
 ## Common Commands
 
 ### Running
+
 ```bash
 npm run dev              # Local development (port 3000, auto-reload)
 npm start               # Production
@@ -8680,6 +9332,7 @@ docker-compose down     # Stop Docker
 ```
 
 ### Database
+
 ```bash
 npm run db:sync              # Create/update schema (safe, uses alter: true)
 npm run db:seed-airports     # Import 7,000 airports from data/airports.json
@@ -8687,6 +9340,7 @@ npx sequelize-cli migration:generate --name migration_name  # Create migration
 ```
 
 ### Building
+
 ```bash
 npm run build-css           # Watch Tailwind (dev)
 npm run build-css-prod      # Minify CSS (prod)
@@ -8694,6 +9348,7 @@ npm run build               # Full build
 ```
 
 ### Testing
+
 ```bash
 npm test                # Run all tests
 npm run test:watch     # Watch mode (re-run on change)
@@ -8703,6 +9358,7 @@ npm run test:integration # Integration tests only
 ```
 
 ### Code Quality
+
 ```bash
 npm run lint           # Check style (ESLint)
 npm run format         # Auto-format (Prettier)
@@ -8716,6 +9372,7 @@ npm run format:check   # Check if formatted
 **Create `.env` file in project root:**
 
 ### Required
+
 ```env
 DB_HOST=localhost
 DB_PORT=5432
@@ -8728,6 +9385,7 @@ PORT=3000
 ```
 
 ### Optional (with defaults)
+
 ```env
 REDIS_ENABLED=true
 REDIS_HOST=localhost
@@ -8744,17 +9402,18 @@ SLOW_REQUEST_THRESHOLD=3000
 ```
 
 ### Docker Environment
+
 Docker uses variables from `docker-compose.yml` and `.env.docker` (if exists).
 
 ---
 
 ## Port Configuration
 
-| Service | Local | Docker |
-|---------|-------|--------|
-| App | 3000 | 3500 |
-| PostgreSQL | 5432 | 5432 |
-| Redis | 6379 | 6379 |
+| Service    | Local | Docker |
+| ---------- | ----- | ------ |
+| App        | 3000  | 3500   |
+| PostgreSQL | 5432  | 5432   |
+| Redis      | 6379  | 6379   |
 
 ---
 
@@ -8786,6 +9445,7 @@ bluebonnet-dev/
 ## Common Issues & Solutions
 
 ### Database won't initialize
+
 ```bash
 # 1. Check PostgreSQL is running (Docker or local)
 # 2. Check environment variables in .env
@@ -8795,6 +9455,7 @@ npm run db:seed-airports
 ```
 
 ### Port already in use
+
 ```bash
 # Find process using port 3000
 lsof -i :3000
@@ -8807,6 +9468,7 @@ PORT=3001 npm run dev
 ```
 
 ### Redis connection failed
+
 ```bash
 # 1. Check Redis is running
 # 2. Disable Redis in .env
@@ -8817,6 +9479,7 @@ redis-cli ping
 ```
 
 ### Form submission not working
+
 1. Check browser DevTools (F12)
    - Console tab for JavaScript errors
    - Network tab for API requests
@@ -8825,6 +9488,7 @@ redis-cli ping
 4. Check X-Async-Request header is sent
 
 ### Sidebar not loading
+
 1. Check Network tab for 404 on sidebar URL
 2. Check route exists: `/trips/:tripId/sidebar`
 3. Check `loadSidebarContent()` is called with correct URL
@@ -8835,6 +9499,7 @@ redis-cli ping
 ## Debugging Tips
 
 ### Browser Console (F12)
+
 ```javascript
 // Check global state
 console.log('tripId:', window.tripId);
@@ -8852,6 +9517,7 @@ console.log('Form method:', form.method);
 ```
 
 ### Server Logs
+
 ```bash
 # Start with debug logging
 LOG_LEVEL=debug npm run dev
@@ -8862,6 +9528,7 @@ LOG_LEVEL=debug npm run dev
 ```
 
 ### Network Tab (DevTools)
+
 1. Click form submit button
 2. Check Network tab for POST request
 3. Verify:
@@ -8875,13 +9542,15 @@ LOG_LEVEL=debug npm run dev
 ## Database Queries (Debugging)
 
 ### Check models are loaded
+
 ```javascript
 // In server.js or node REPL
 const db = require('./models');
-console.log(Object.keys(db));  // Should see Flight, Hotel, etc.
+console.log(Object.keys(db)); // Should see Flight, Hotel, etc.
 ```
 
 ### Query data directly
+
 ```bash
 # Connect to PostgreSQL
 psql -U postgres -d bluebonnet -h localhost
@@ -8894,6 +9563,7 @@ SELECT * FROM "Trips";       # Query trips
 ```
 
 ### Check migrations
+
 ```bash
 npx sequelize-cli db:migrate:status
 # Shows which migrations have run
@@ -8904,6 +9574,7 @@ npx sequelize-cli db:migrate:status
 ## Git Workflow
 
 ### Before committing
+
 ```bash
 npm test                    # All tests pass
 npm run test:coverage       # Check coverage
@@ -8912,6 +9583,7 @@ npm run format             # Auto-format code
 ```
 
 ### Commit message format
+
 ```
 feat: Add flight form validation
 fix: Correct sidebar close bug
@@ -8921,6 +9593,7 @@ test: Add flight controller tests
 ```
 
 ### Branch naming
+
 ```
 feature/flight-form          # New feature
 fix/sidebar-scroll-bug      # Bug fix
@@ -8933,6 +9606,7 @@ refactor/extract-services   # Refactoring
 ## API Testing
 
 ### Using curl
+
 ```bash
 # Create flight
 curl -X POST http://localhost:3000/api/trips/trip-id/flights \
@@ -8960,6 +9634,7 @@ curl -X DELETE http://localhost:3000/api/flights/flight-id \
 ```
 
 ### Using Postman
+
 1. Create workspace "Bluebonnet"
 2. Add environment variables:
    - `baseUrl` = `http://localhost:3000`
@@ -8973,6 +9648,7 @@ curl -X DELETE http://localhost:3000/api/flights/flight-id \
 ## Performance Optimization
 
 ### Browser Performance
+
 1. Open DevTools (F12)
 2. Go to Performance tab
 3. Click Record
@@ -8981,12 +9657,14 @@ curl -X DELETE http://localhost:3000/api/flights/flight-id \
 6. Analyze timeline
 
 ### Database Queries
+
 1. Enable query logging: `LOG_LEVEL=debug`
 2. Look for slow queries
 3. Add indexes to frequently queried columns
 4. Use `.include()` for eager loading (avoid N+1)
 
 ### Bundle Size
+
 ```bash
 npm run build               # Build assets
 ls -lh public/dist/         # Check sizes
@@ -8997,24 +9675,28 @@ ls -lh public/dist/         # Check sizes
 ## Restarting Services
 
 ### Node Server
+
 ```bash
 # Ctrl+C to stop
 npm run dev        # Restart
 ```
 
 ### PostgreSQL (Docker)
+
 ```bash
 docker-compose down
 docker-compose up database postgres  # Just the database
 ```
 
 ### Redis (Docker)
+
 ```bash
 docker-compose down
 docker-compose up redis    # Just Redis
 ```
 
 ### Full reset
+
 ```bash
 docker-compose down
 docker volume rm bluebonnet-postgres  # Delete DB data
@@ -9051,6 +9733,7 @@ docker-compose up --build
 ````
 
 ## File: .claude/DEVELOPMENT.md
+
 ````markdown
 # 💻 Development Workflow
 
@@ -9061,12 +9744,14 @@ Your day-to-day guide for developing Bluebonnet.
 ## Morning Standup
 
 ### 1. Pull Latest Changes
+
 ```bash
 git pull origin main
 npm install  # Install any new dependencies
 ```
 
 ### 2. Start Development Server
+
 ```bash
 # Option A: Docker (recommended)
 docker-compose up
@@ -9076,11 +9761,14 @@ npm run dev
 ```
 
 Server runs on:
+
 - Docker: http://localhost:3500
 - Local: http://localhost:3000
 
 ### 3. Open Browser DevTools
+
 Press `F12` to open browser developer tools. Keep these open while developing:
+
 - **Console tab** - JavaScript errors
 - **Network tab** - API requests
 - **Application tab** - Storage, cache
@@ -9090,11 +9778,13 @@ Press `F12` to open browser developer tools. Keep these open while developing:
 ## Making a Change
 
 ### Find Your Issue
+
 1. Pick an issue from GitHub/Trello
 2. Read the feature guide (e.g., [Flight Management](./FEATURES/FLIGHT_MANAGEMENT.md))
 3. Understand which files you need to change
 
 ### Make Your Changes
+
 ```bash
 # Create a branch
 git checkout -b feature/my-feature
@@ -9109,12 +9799,14 @@ npm run build-css
 ### Test Your Changes
 
 **Manual Testing:**
+
 1. Refresh browser
 2. Test the feature
 3. Check console for errors
 4. Check Network tab for API calls
 
 **Automated Testing:**
+
 ```bash
 # Run tests
 npm test
@@ -9159,12 +9851,14 @@ git push origin feature/my-feature
 ```
 
 ### Create Pull Request
+
 1. Go to GitHub
 2. Create Pull Request from your branch to `main`
 3. Describe your changes
 4. Request review from team
 
 ### Address Review Comments
+
 ```bash
 # Make requested changes
 # Edit files...
@@ -9176,7 +9870,9 @@ git push
 ```
 
 ### Merge to Main
+
 Once approved:
+
 1. Merge on GitHub
 2. Delete branch (on GitHub)
 3. Pull latest locally
@@ -9193,10 +9889,12 @@ git pull origin main
 ### Add a New Field to a Form
 
 **Step 1:** Update database model
+
 - Edit `models/Flight.js` (or relevant model)
 - Add new field to model definition
 
 **Step 2:** Create migration (if needed)
+
 ```bash
 npx sequelize-cli migration:generate --name add-new-field-to-flights
 # Edit migration file with your changes
@@ -9204,14 +9902,17 @@ npm run db:migrate
 ```
 
 **Step 3:** Update controller
+
 - Edit `controllers/flightController.js`
 - Handle new field in create/update methods
 
 **Step 4:** Update view/form
+
 - Edit `views/partials/flight-form.ejs` (now → Svelte in Phase 1)
 - Add new input field
 
 **Step 5:** Test
+
 ```bash
 npm test
 npm run dev  # Test manually
@@ -9220,19 +9921,23 @@ npm run dev  # Test manually
 ### Create a New API Endpoint
 
 **Step 1:** Add route
+
 - Edit `routes/flights.js` (or relevant routes file)
 - Add new route handler
 
 **Step 2:** Implement controller method
+
 - Edit `controllers/flightController.js`
 - Implement the action
 
 **Step 3:** Test with curl or Postman
+
 ```bash
 curl http://localhost:3000/api/flights/flight-id
 ```
 
 **Step 4:** Write tests
+
 ```bash
 # Create test file
 touch tests/unit/controllers/flights.test.js
@@ -9243,26 +9948,31 @@ npm test
 ### Debug an Issue
 
 **Step 1:** Reproduce the issue
+
 - What steps lead to the problem?
 - Can you reproduce it consistently?
 
 **Step 2:** Check logs
+
 - Browser console (F12)
 - Terminal output
 - Network tab for API calls
 
 **Step 3:** Add debugging
+
 ```javascript
 console.log('Debug info:', variable);
 console.error('Error:', error);
 ```
 
 **Step 4:** Use browser debugger
+
 - Set breakpoint in DevTools
 - Step through code
 - Inspect variables
 
 **Step 5:** Check tests
+
 ```bash
 npm run test:watch
 # Fix the bug
@@ -9274,6 +9984,7 @@ See: [Debug Guide](./TROUBLESHOOTING/DEBUG_GUIDE.md)
 ### Sync with Main Branch
 
 If main has new changes:
+
 ```bash
 git fetch origin
 git rebase origin/main
@@ -9302,6 +10013,7 @@ git reset --hard HEAD~1
 ## Development Habits
 
 ### ✅ Good Habits
+
 - [ ] Test as you code (don't wait until end)
 - [ ] Commit small, logical changes
 - [ ] Write descriptive commit messages
@@ -9311,6 +10023,7 @@ git reset --hard HEAD~1
 - [ ] Read related documentation
 
 ### ❌ Avoid
+
 - Large commits with many changes
 - Committing without testing
 - Ignoring console errors
@@ -9323,12 +10036,14 @@ git reset --hard HEAD~1
 ## Code Review Etiquette
 
 ### Requesting Review
+
 - ✅ Self-review first (catch obvious issues)
 - ✅ Explain what you changed in PR description
 - ✅ Reference related issue
 - ✅ Test locally before requesting
 
 ### Reviewing Others' Code
+
 - ✅ Be constructive and kind
 - ✅ Explain "why" not just "what"
 - ✅ Ask questions if unclear
@@ -9341,6 +10056,7 @@ git reset --hard HEAD~1
 ## Tools to Know
 
 ### Git
+
 ```bash
 git status          # See what changed
 git diff            # See changes in detail
@@ -9351,6 +10067,7 @@ git reset --hard    # Completely undo changes
 ```
 
 ### NPM
+
 ```bash
 npm install         # Install dependencies
 npm update          # Update dependencies
@@ -9359,6 +10076,7 @@ npm outdated        # Show outdated packages
 ```
 
 ### Docker
+
 ```bash
 docker-compose up   # Start services
 docker-compose down # Stop services
@@ -9367,6 +10085,7 @@ docker logs -f app  # View app logs
 ```
 
 ### Database
+
 ```bash
 npm run db:sync              # Sync models to DB
 npm run db:migrate           # Run migrations
@@ -9378,6 +10097,7 @@ npm run db:seed-airports     # Seed data
 ## Before Pushing
 
 **Always check:**
+
 - [ ] Tests pass (`npm test`)
 - [ ] Linting passes (`npm run lint`)
 - [ ] Code formatted (`npm run format:check`)
@@ -9417,18 +10137,21 @@ When something breaks:
 ## Daily Checklist
 
 **Start of Day:**
+
 - [ ] `git pull origin main`
 - [ ] `npm install`
 - [ ] Start dev server (`npm run dev` or `docker-compose up`)
 - [ ] Check Slack/GitHub for updates
 
 **During Day:**
+
 - [ ] Keep console open (F12)
 - [ ] Test as you code
 - [ ] Commit regularly (small commits)
 - [ ] Run tests before push
 
 **End of Day:**
+
 - [ ] Push changes
 - [ ] Request code review
 - [ ] Leave notes for tomorrow
@@ -9445,6 +10168,7 @@ When something breaks:
 ---
 
 **Related:**
+
 - [Getting Started](./GETTING_STARTED.md) - Initial setup
 - [Patterns](./PATTERNS/) - How to implement features
 - [Testing](./TESTING/) - How to write tests
@@ -9456,6 +10180,7 @@ When something breaks:
 ````
 
 ## File: .claude/features.md
+
 ````markdown
 # Bluebonnet Features Matrix
 
@@ -9467,12 +10192,12 @@ Quick reference for all features and their implementation.
 
 All items follow same CRUD pattern. See `patterns.md` for details.
 
-| Feature | Model | Controller | Routes | Status |
-|---------|-------|-----------|--------|--------|
-| **Flight** | `models/Flight.js` | `flightController.js` | `/api/flights`, `/api/trips/:tripId/flights` | ✅ Active |
-| **Hotel** | `models/Hotel.js` | `hotelController.js` | `/api/hotels`, `/api/trips/:tripId/hotels` | ✅ Active |
-| **Event** | `models/Event.js` | `eventController.js` | `/api/events`, `/api/trips/:tripId/events` | ✅ Active |
-| **Car Rental** | `models/CarRental.js` | `carRentalController.js` | `/api/car-rentals`, `/api/trips/:tripId/car-rentals` | ✅ Active |
+| Feature            | Model                      | Controller                    | Routes                                                     | Status    |
+| ------------------ | -------------------------- | ----------------------------- | ---------------------------------------------------------- | --------- |
+| **Flight**         | `models/Flight.js`         | `flightController.js`         | `/api/flights`, `/api/trips/:tripId/flights`               | ✅ Active |
+| **Hotel**          | `models/Hotel.js`          | `hotelController.js`          | `/api/hotels`, `/api/trips/:tripId/hotels`                 | ✅ Active |
+| **Event**          | `models/Event.js`          | `eventController.js`          | `/api/events`, `/api/trips/:tripId/events`                 | ✅ Active |
+| **Car Rental**     | `models/CarRental.js`      | `carRentalController.js`      | `/api/car-rentals`, `/api/trips/:tripId/car-rentals`       | ✅ Active |
 | **Transportation** | `models/Transportation.js` | `transportationController.js` | `/api/transportation`, `/api/trips/:tripId/transportation` | ✅ Active |
 
 **Special:** Items can be created standalone (no trip) OR attached to a trip. All cascade delete when parent trip deleted.
@@ -9481,14 +10206,14 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 
 ## Core Features
 
-| Feature | Purpose | Key Files | Status |
-|---------|---------|-----------|--------|
-| **Trip Management** | Create/view/edit/delete trips | `tripController.js`, `Trip.js` | ✅ Active |
-| **Authentication** | Login/registration/logout | `authController.js`, `passport.js` | ✅ Active |
-| **Trip Sharing** | Invite companions, manage permissions | `companionController.js`, `TripCompanion.js` | ✅ Active |
-| **Vouchers** | Track travel credits/upgrades | `voucherController.js`, `Voucher.js` | ✅ Active |
-| **Calendar** | Timeline view of trip items | `calendar.js`, `trip-view.ejs` | ✅ Active |
-| **Maps** | Location visualization | `maps.js`, `geocodingService.js` | ✅ Active |
+| Feature             | Purpose                               | Key Files                                    | Status    |
+| ------------------- | ------------------------------------- | -------------------------------------------- | --------- |
+| **Trip Management** | Create/view/edit/delete trips         | `tripController.js`, `Trip.js`               | ✅ Active |
+| **Authentication**  | Login/registration/logout             | `authController.js`, `passport.js`           | ✅ Active |
+| **Trip Sharing**    | Invite companions, manage permissions | `companionController.js`, `TripCompanion.js` | ✅ Active |
+| **Vouchers**        | Track travel credits/upgrades         | `voucherController.js`, `Voucher.js`         | ✅ Active |
+| **Calendar**        | Timeline view of trip items           | `calendar.js`, `trip-view.ejs`               | ✅ Active |
+| **Maps**            | Location visualization                | `maps.js`, `geocodingService.js`             | ✅ Active |
 
 ---
 
@@ -9497,6 +10222,7 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 **Use case:** Track commercial flights with departure/arrival
 
 **Key Fields:**
+
 - Airline (e.g., "United Airlines")
 - Flight number (e.g., "UA123")
 - Origin airport (e.g., "JFK")
@@ -9509,6 +10235,7 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 **Special:** Handles airport codes, timezone inference
 
 **Files:**
+
 - Model: `models/Flight.js`
 - Controller: `controllers/flightController.js`
 - Routes: `routes/flights.js` or `routes/api/v1/flights.js`
@@ -9521,6 +10248,7 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 **Use case:** Track accommodations with check-in/checkout
 
 **Key Fields:**
+
 - Hotel name
 - Check-in date
 - Check-out date
@@ -9528,6 +10256,7 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 - Confirmation number (optional)
 
 **Files:**
+
 - Model: `models/Hotel.js`
 - Controller: `controllers/hotelController.js`
 - Routes: `routes/hotels.js`
@@ -9540,12 +10269,14 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 **Use case:** Track activities, attractions, meetings
 
 **Key Fields:**
+
 - Event name
 - Date/time
 - Location
 - Description (optional)
 
 **Files:**
+
 - Model: `models/Event.js`
 - Controller: `controllers/eventController.js`
 - Routes: `routes/events.js`
@@ -9558,6 +10289,7 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 **Use case:** Track vehicle rentals
 
 **Key Fields:**
+
 - Rental company
 - Vehicle type
 - Pickup location
@@ -9567,6 +10299,7 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 - Confirmation number (optional)
 
 **Files:**
+
 - Model: `models/CarRental.js`
 - Controller: `controllers/carRentalController.js`
 - Routes: `routes/car-rentals.js`
@@ -9579,6 +10312,7 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 **Use case:** Track ground transportation (taxi, shuttle, train, bus)
 
 **Key Fields:**
+
 - Transportation type (taxi, shuttle, train, etc.)
 - Origin
 - Destination
@@ -9587,6 +10321,7 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 - Confirmation number (optional)
 
 **Files:**
+
 - Model: `models/Transportation.js`
 - Controller: `controllers/transportationController.js`
 - Routes: `routes/transportation.js`
@@ -9599,22 +10334,26 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 **Use case:** Invite people to trips, manage permissions
 
 **Features:**
+
 - Create companion profiles (name, email, phone)
 - Add companions to trips
 - Set edit permissions per companion per trip
 - Optional link to user account
 
 **Key Models:**
+
 - `TravelCompanion` - Companion profile
 - `TripCompanion` - Junction table (trip membership + permissions)
 
 **Key Fields (TripCompanion):**
+
 - `tripId` - Which trip
 - `companionId` - Which companion
 - `canEdit` - Permission to edit trip items
 - `addedBy` - Who added them (userId)
 
 **Files:**
+
 - Models: `models/TravelCompanion.js`, `models/TripCompanion.js`
 - Controller: `controllers/companionController.js`
 - Routes: `routes/companions.js`
@@ -9627,28 +10366,33 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 **Use case:** Track travel credits, upgrade vouchers, gift cards
 
 **Features:**
+
 - Create vouchers with type (credit, upgrade, gift card)
 - Attach to specific flights/items
 - Assign to companions
 - Track usage status (pending, used, expired)
 
 **Key Models:**
+
 - `Voucher` - Voucher record
 - `VoucherAttachment` - Links voucher to item + companion
 
 **Key Fields (Voucher):**
+
 - Type (travel_credit, upgrade, gift_card, etc.)
 - Description
 - Status (pending, used, expired)
 - tripId
 
 **Key Fields (VoucherAttachment):**
+
 - voucherId
 - itemType (flight, hotel, etc.)
 - itemId
 - passengerId (companion)
 
 **Files:**
+
 - Models: `models/Voucher.js`, `models/VoucherAttachment.js`
 - Controller: `controllers/voucherController.js`
 - Routes: `routes/vouchers.js`
@@ -9659,6 +10403,7 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 ## Database Entities
 
 ### User
+
 ```
 Owns many Trips
 Creates many TravelCompanions
@@ -9666,6 +10411,7 @@ Has optional TravelCompanion profile
 ```
 
 ### Trip
+
 ```
 Belongs to User
 Has many Flights, Hotels, Events, CarRentals, Transportation
@@ -9674,24 +10420,28 @@ Has many Vouchers
 ```
 
 ### TravelCompanion
+
 ```
 Optional link to User
 Invited to many Trips (via TripCompanion)
 ```
 
 ### TripCompanion (Junction)
+
 ```
 Links Trip ↔ TravelCompanion
 Tracks: canEdit, addedBy, createdAt
 ```
 
 ### Voucher
+
 ```
 Belongs to Trip
 Has many VoucherAttachments
 ```
 
 ### VoucherAttachment
+
 ```
 Belongs to Voucher
 Links to item (flight/hotel/etc.) via itemType + itemId
@@ -9702,33 +10452,33 @@ References companion via passengerId
 
 ## Frontend Views
 
-| View | File | Purpose |
-|------|------|---------|
-| Dashboard | `views/dashboard.ejs` | Trip list, filters |
-| Trip Detail | `views/trips/trip-view.ejs` | Trip items, map, sidebar |
-| Flight Form | `views/partials/flight-form.ejs` | Add/edit flight |
-| Hotel Form | `views/partials/hotel-form.ejs` | Add/edit hotel |
-| Event Form | `views/partials/event-form.ejs` | Add/edit event |
-| Car Rental Form | `views/partials/car-rental-form.ejs` | Add/edit car rental |
-| Transportation Form | `views/partials/transportation-form.ejs` | Add/edit transportation |
-| Companions | `views/partials/companions-sidebar.ejs` | Manage companions |
-| Vouchers | `views/partials/vouchers-sidebar.ejs` | Manage vouchers |
+| View                | File                                     | Purpose                  |
+| ------------------- | ---------------------------------------- | ------------------------ |
+| Dashboard           | `views/dashboard.ejs`                    | Trip list, filters       |
+| Trip Detail         | `views/trips/trip-view.ejs`              | Trip items, map, sidebar |
+| Flight Form         | `views/partials/flight-form.ejs`         | Add/edit flight          |
+| Hotel Form          | `views/partials/hotel-form.ejs`          | Add/edit hotel           |
+| Event Form          | `views/partials/event-form.ejs`          | Add/edit event           |
+| Car Rental Form     | `views/partials/car-rental-form.ejs`     | Add/edit car rental      |
+| Transportation Form | `views/partials/transportation-form.ejs` | Add/edit transportation  |
+| Companions          | `views/partials/companions-sidebar.ejs`  | Manage companions        |
+| Vouchers            | `views/partials/vouchers-sidebar.ejs`    | Manage vouchers          |
 
 ---
 
 ## Frontend JavaScript
 
-| Module | File | Purpose |
-|--------|------|---------|
-| Form Handler | `public/js/async-form-handler.js` | Form submission, AJAX |
-| Sidebar Loader | `public/js/sidebar-loader.js` | Load content dynamically |
-| Trip Sidebar | `public/js/trip-view-sidebar.js` | Trip-specific controls |
-| Maps | `public/js/maps.js` | Map display/interaction |
-| Calendar | `public/js/calendar.js` | Calendar widget |
-| Datetime | `public/js/datetime-formatter.js` | Date/time formatting |
-| Autocomplete | `public/js/airport-autocomplete.js` | Airport search |
-| Main | `public/js/main.js` | General utilities |
-| Event Bus | `public/js/eventBus.js` | Event communication |
+| Module         | File                                | Purpose                  |
+| -------------- | ----------------------------------- | ------------------------ |
+| Form Handler   | `public/js/async-form-handler.js`   | Form submission, AJAX    |
+| Sidebar Loader | `public/js/sidebar-loader.js`       | Load content dynamically |
+| Trip Sidebar   | `public/js/trip-view-sidebar.js`    | Trip-specific controls   |
+| Maps           | `public/js/maps.js`                 | Map display/interaction  |
+| Calendar       | `public/js/calendar.js`             | Calendar widget          |
+| Datetime       | `public/js/datetime-formatter.js`   | Date/time formatting     |
+| Autocomplete   | `public/js/airport-autocomplete.js` | Airport search           |
+| Main           | `public/js/main.js`                 | General utilities        |
+| Event Bus      | `public/js/eventBus.js`             | Event communication      |
 
 ---
 
@@ -9782,6 +10532,7 @@ To add a new travel item type (e.g., "Restaurant Reservation"):
 ````
 
 ## File: .claude/GETTING_STARTED.md
+
 ````markdown
 # 🚀 Getting Started with Bluebonnet
 
@@ -9800,6 +10551,7 @@ Before starting, make sure you have:
 - **A code editor** - VS Code recommended
 
 **Check your versions:**
+
 ```bash
 node --version    # Should be v18+
 npm --version     # Should be v9+
@@ -9814,17 +10566,20 @@ docker --version  # For Docker setup (optional)
 **Why Docker?** Everything works the same for everyone. No configuration needed.
 
 ### Step 1: Clone Repository
+
 ```bash
 git clone https://github.com/yourusername/bluebonnet.git
 cd bluebonnet-dev
 ```
 
 ### Step 2: Start Services
+
 ```bash
 docker-compose up --build
 ```
 
 This will:
+
 - Build the application
 - Start PostgreSQL database
 - Start Redis cache
@@ -9832,6 +10587,7 @@ This will:
 - Initialize database with tables and airport data
 
 ### Step 3: Open Application
+
 ```
 http://localhost:3500
 ```
@@ -9839,6 +10595,7 @@ http://localhost:3500
 **Done!** Your app is running. Skip to [First Steps](#first-steps).
 
 **Troubleshooting Docker?**
+
 - Check [Setup Issues](./TROUBLESHOOTING/SETUP_ISSUES.md)
 - Make sure Docker Desktop is running
 - Try `docker ps` to verify containers running
@@ -9850,12 +10607,14 @@ http://localhost:3500
 For local development without Docker.
 
 ### Step 1: Clone Repository
+
 ```bash
 git clone https://github.com/yourusername/bluebonnet.git
 cd bluebonnet-dev
 ```
 
 ### Step 2: Install Dependencies
+
 ```bash
 npm install
 ```
@@ -9863,11 +10622,13 @@ npm install
 This installs all Node.js packages.
 
 ### Step 3: Create Environment File
+
 ```bash
 cp .env.example .env
 ```
 
 Edit `.env` with your PostgreSQL credentials:
+
 ```env
 DB_HOST=localhost
 DB_PORT=5432
@@ -9880,14 +10641,17 @@ PORT=3000
 ```
 
 ### Step 4: Start PostgreSQL
+
 Make sure PostgreSQL is running (on port 5432).
 
 **On macOS:**
+
 ```bash
 brew services start postgresql
 ```
 
 **On Linux:**
+
 ```bash
 sudo service postgresql start
 ```
@@ -9895,12 +10659,14 @@ sudo service postgresql start
 **On Windows:** Start PostgreSQL from Services or PostgreSQL installer
 
 ### Step 5: Initialize Database
+
 ```bash
 npm run db:sync              # Create tables
 npm run db:seed-airports     # Seed airport data
 ```
 
 ### Step 6: Start Development Server
+
 ```bash
 npm run dev
 ```
@@ -9912,26 +10678,31 @@ Server runs on `http://localhost:3000`
 ## First Steps
 
 ### 1. Create an Account
+
 - Go to http://localhost:3500 (Docker) or http://localhost:3000 (Local)
 - Click "Register"
 - Fill in email, password, name
 - Click "Register"
 
 ### 2. Log In
+
 - Enter your credentials
 - Click "Log In"
 
 ### 3. Create Your First Trip
+
 - Click "New Trip"
 - Enter trip name, start date, end date
 - Click "Create"
 
 ### 4. Add a Travel Item
+
 - Click "Add Flight"
 - Fill in flight details
 - Click "Save"
 
 ### 5. Explore
+
 - Check out the calendar view
 - Add more items (hotels, events, etc.)
 - Try the map view
@@ -9942,6 +10713,7 @@ Server runs on `http://localhost:3000`
 ## Common Commands
 
 ### Development
+
 ```bash
 # Start development server (watches for changes)
 npm run dev
@@ -9963,6 +10735,7 @@ npm run build
 ```
 
 ### Database
+
 ```bash
 # Create/update database tables
 npm run db:sync
@@ -9981,6 +10754,7 @@ npm run db:migrate:status
 ```
 
 ### Code Quality
+
 ```bash
 # Run all tests
 npm test
@@ -10008,6 +10782,7 @@ npm run format:check
 ```
 
 ### Docker
+
 ```bash
 # Start services
 docker-compose up
@@ -10029,6 +10804,7 @@ docker-compose exec app bash
 ```
 
 ### Cache
+
 ```bash
 # Clear application cache
 npm run cache:clear
@@ -10066,11 +10842,13 @@ bluebonnet/
 ## Next Steps
 
 ### Understand the System
+
 1. Read [Development Workflow](./DEVELOPMENT.md) - 10 min
 2. Read [Architecture Overview](./ARCHITECTURE/README.md) - 20 min
 3. Check out [FEATURES/](./FEATURES/) for specific features
 
 ### Start Contributing
+
 1. Pick a simple issue
 2. Follow [CRUD Pattern](./PATTERNS/CRUD_PATTERN.md)
 3. Make your changes
@@ -10078,6 +10856,7 @@ bluebonnet/
 5. Create a pull request
 
 ### Learn New Technologies
+
 - **Svelte?** → [Svelte Basics](./LEARNING_RESOURCES/SVELTE_BASICS.md)
 - **Express?** → [Backend Architecture](./ARCHITECTURE/BACKEND/README.md)
 - **Database?** → [Database Basics](./LEARNING_RESOURCES/DATABASE_BASICS.md)
@@ -10087,11 +10866,13 @@ bluebonnet/
 ## Stuck?
 
 ### Check These First
+
 1. [Troubleshooting](./TROUBLESHOOTING/) - Common problems
 2. [Debug Guide](./TROUBLESHOOTING/DEBUG_GUIDE.md) - Debugging methodology
 3. [Setup Issues](./TROUBLESHOOTING/SETUP_ISSUES.md) - Setup problems
 
 ### Ask for Help
+
 - Check relevant documentation in [.claude/](./README.md)
 - Ask a team member
 - Post an issue on GitHub
@@ -10101,6 +10882,7 @@ bluebonnet/
 ## What's Different Between Options?
 
 ### Docker Setup
+
 - ✅ Everything works out of the box
 - ✅ Same environment as production
 - ✅ Easy to reset (just `docker-compose down`)
@@ -10108,6 +10890,7 @@ bluebonnet/
 - ❌ Docker must be running
 
 ### Local Setup
+
 - ✅ Faster to iterate (no container overhead)
 - ✅ Easier to debug locally
 - ✅ Less resource usage
@@ -10120,13 +10903,13 @@ bluebonnet/
 
 ## Troubleshooting Quick Fixes
 
-| Problem | Solution |
-|---------|----------|
-| App won't start | Check Node.js version (`node -v`), run `npm install` |
-| Database error | Check PostgreSQL running, verify `.env` credentials |
-| Port 3000/3500 in use | Change PORT in `.env`, or kill existing process |
-| Module not found | Run `npm install` |
-| Docker errors | Make sure Docker Desktop running, try `docker ps` |
+| Problem               | Solution                                             |
+| --------------------- | ---------------------------------------------------- |
+| App won't start       | Check Node.js version (`node -v`), run `npm install` |
+| Database error        | Check PostgreSQL running, verify `.env` credentials  |
+| Port 3000/3500 in use | Change PORT in `.env`, or kill existing process      |
+| Module not found      | Run `npm install`                                    |
+| Docker errors         | Make sure Docker Desktop running, try `docker ps`    |
 
 More help? See [Setup Issues](./TROUBLESHOOTING/SETUP_ISSUES.md)
 
@@ -10135,6 +10918,7 @@ More help? See [Setup Issues](./TROUBLESHOOTING/SETUP_ISSUES.md)
 ## You're Ready!
 
 You now have Bluebonnet running locally. Next:
+
 1. Read [Development Workflow](./DEVELOPMENT.md)
 2. Explore the application
 3. Make your first contribution
@@ -10144,6 +10928,7 @@ You now have Bluebonnet running locally. Next:
 ---
 
 **Related:**
+
 - [Development Workflow](./DEVELOPMENT.md) - Daily commands
 - [Architecture](./ARCHITECTURE/README.md) - How it works
 - [Troubleshooting](./TROUBLESHOOTING/) - When things break
@@ -10155,7 +10940,8 @@ You now have Bluebonnet running locally. Next:
 ````
 
 ## File: .claude/GLOSSARY.md
-````markdown
+
+```markdown
 # 📖 Glossary - Bluebonnet Terminology
 
 Quick reference for terms used in Bluebonnet documentation and codebase.
@@ -10262,7 +11048,7 @@ Quick reference for terms used in Bluebonnet documentation and codebase.
 
 **Promise** - JavaScript async pattern for handling delayed operations.
 
-**Query** - Database request (e.g., SELECT * FROM flights).
+**Query** - Database request (e.g., SELECT \* FROM flights).
 
 **Redis** - In-memory cache and data store.
 
@@ -10378,24 +11164,24 @@ Quick reference for terms used in Bluebonnet documentation and codebase.
 
 ## Abbreviations
 
-| Abbreviation | Meaning |
-|---|---|
-| API | Application Programming Interface |
-| AJAX | Asynchronous JavaScript and XML |
-| DB | Database |
-| CRUD | Create, Read, Update, Delete |
-| CSS | Cascading Style Sheets |
-| DOM | Document Object Model |
-| DRY | Don't Repeat Yourself |
-| EJS | Embedded JavaScript |
-| HTTP | HyperText Transfer Protocol |
-| JSON | JavaScript Object Notation |
-| MVC | Model-View-Controller |
-| NPM | Node Package Manager |
-| ORM | Object-Relational Mapping |
-| PNR | Passenger Name Record |
-| SQL | Structured Query Language |
-| UUID | Universally Unique Identifier |
+| Abbreviation | Meaning                           |
+| ------------ | --------------------------------- |
+| API          | Application Programming Interface |
+| AJAX         | Asynchronous JavaScript and XML   |
+| DB           | Database                          |
+| CRUD         | Create, Read, Update, Delete      |
+| CSS          | Cascading Style Sheets            |
+| DOM          | Document Object Model             |
+| DRY          | Don't Repeat Yourself             |
+| EJS          | Embedded JavaScript               |
+| HTTP         | HyperText Transfer Protocol       |
+| JSON         | JavaScript Object Notation        |
+| MVC          | Model-View-Controller             |
+| NPM          | Node Package Manager              |
+| ORM          | Object-Relational Mapping         |
+| PNR          | Passenger Name Record             |
+| SQL          | Structured Query Language         |
+| UUID         | Universally Unique Identifier     |
 
 ---
 
@@ -10455,9 +11241,10 @@ Quick reference for terms used in Bluebonnet documentation and codebase.
 
 **Last Updated:** 2025-12-17
 **Keep Growing:** Add new terms as you learn them
-````
+```
 
 ## File: .claude/patterns.md
+
 ````markdown
 # Bluebonnet Patterns (Current)
 
@@ -10470,6 +11257,7 @@ Common architectural patterns used throughout the application.
 Used for all Create/Update/Delete operations without page reload.
 
 ### Backend Detection
+
 ```javascript
 const isAsyncRequest = req.get('X-Async-Request') === 'true';
 
@@ -10481,6 +11269,7 @@ if (isAsyncRequest) {
 ```
 
 ### Frontend Handler (public/js/async-form-handler.js)
+
 ```javascript
 function setupAsyncFormSubmission(formId) {
   const form = document.getElementById(formId);
@@ -10504,9 +11293,9 @@ function setupAsyncFormSubmission(formId) {
       method: form.method,
       headers: {
         'X-Async-Request': 'true',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     });
 
     // 4. On success, refresh UI
@@ -10522,12 +11311,13 @@ function setupAsyncFormSubmission(formId) {
 ```
 
 ### Use in EJS Form
+
 ```html
 <form id="addFlightForm" action="/api/trips/<%= tripId %>/flights" method="POST">
-  <input type="text" name="airline" placeholder="Airline">
-  <input type="text" name="flightNumber" placeholder="Flight #">
-  <input type="date" name="departureDate">
-  <input type="time" name="departureTime">
+  <input type="text" name="airline" placeholder="Airline" />
+  <input type="text" name="flightNumber" placeholder="Flight #" />
+  <input type="date" name="departureDate" />
+  <input type="time" name="departureTime" />
   <!-- More fields -->
   <button type="submit">Add Flight</button>
 </form>
@@ -10544,7 +11334,9 @@ function setupAsyncFormSubmission(formId) {
 All travel items (Flight, Hotel, Event, CarRental, Transportation) follow identical pattern:
 
 ### 1. CREATE
+
 **Backend:** `controllers/{itemType}Controller.js`
+
 ```javascript
 exports.create = async (req, res) => {
   // 1. Validate trip ownership
@@ -10563,7 +11355,7 @@ exports.create = async (req, res) => {
   const item = await Flight.create({
     ...req.body,
     tripId: req.params.tripId,
-    userId: req.user.id
+    userId: req.user.id,
   });
 
   // 4. Return based on request type
@@ -10579,11 +11371,13 @@ exports.create = async (req, res) => {
 **Frontend:** Form template + async handler (see AJAX pattern above)
 
 ### 2. READ
+
 **Backend:**
+
 ```javascript
 exports.getAll = async (req, res) => {
   const items = await Flight.findAll({
-    where: { tripId: req.params.tripId }
+    where: { tripId: req.params.tripId },
   });
   res.json({ success: true, items });
 };
@@ -10600,7 +11394,9 @@ exports.getOne = async (req, res) => {
 **Frontend:** Display in trip sidebar, item cards with edit/delete buttons
 
 ### 3. UPDATE
+
 **Backend:**
+
 ```javascript
 exports.update = async (req, res) => {
   const item = await Flight.findByPk(req.params.id);
@@ -10629,7 +11425,9 @@ exports.update = async (req, res) => {
 **Frontend:** Edit form (pre-populated) + async handler
 
 ### 4. DELETE
+
 **Backend:**
+
 ```javascript
 exports.delete = async (req, res) => {
   const item = await Flight.findByPk(req.params.id);
@@ -10650,12 +11448,13 @@ exports.delete = async (req, res) => {
 ```
 
 **Frontend:**
+
 ```javascript
 async function deleteItem(type, id, itemName) {
   try {
     const response = await fetch(`/api/${type}s/${id}`, {
       method: 'DELETE',
-      headers: { 'X-Async-Request': 'true' }
+      headers: { 'X-Async-Request': 'true' },
     });
 
     if (response.ok) {
@@ -10669,6 +11468,7 @@ async function deleteItem(type, id, itemName) {
 ```
 
 ### CRUD Pattern Summary
+
 - **Always validate ownership** - `trip.userId !== req.user.id` OR `item.userId !== req.user.id`
 - **Always check async header** - Different response types
 - **Silent failures** - No confirm/alert dialogs
@@ -10681,6 +11481,7 @@ async function deleteItem(type, id, itemName) {
 **Three sidebars:** Primary (fixed), Secondary (on-demand), Tertiary (on-demand)
 
 ### Loading Content
+
 ```javascript
 function loadSidebarContent(url, options = {}) {
   // 1. Fetch HTML from server
@@ -10700,6 +11501,7 @@ function loadSidebarContent(url, options = {}) {
 ```
 
 ### Sidebar HTML Structure
+
 ```html
 <div class="layout">
   <!-- Primary Sidebar (always visible) -->
@@ -10727,6 +11529,7 @@ function loadSidebarContent(url, options = {}) {
 ```
 
 ### Usage Pattern
+
 ```javascript
 // Click "Edit Flight"
 function editItem(type, id) {
@@ -10760,6 +11563,7 @@ document.addEventListener('click', (e) => {
 After form submission, refresh sidebars with new data.
 
 ### Trip View Refresh
+
 ```javascript
 async function refreshTripView() {
   // 1. Fetch updated data
@@ -10782,6 +11586,7 @@ async function refreshTripView() {
 ```
 
 ### Dashboard Refresh
+
 ```javascript
 async function refreshDashboardSidebar() {
   // 1. Determine active tab
@@ -10808,21 +11613,24 @@ async function refreshDashboardSidebar() {
 ## No Confirmation Pattern
 
 **Important UX Decision:**
+
 - No `confirm()` dialogs
 - No `alert()` messages
 - Operations execute immediately
 - UI updates silently
 
 ### Wrong Way ❌
+
 ```javascript
 async function deleteItem(id) {
-  if (!confirm('Delete this item?')) return;  // NO!
+  if (!confirm('Delete this item?')) return; // NO!
   await fetch(`/item/${id}`, { method: 'DELETE' });
-  alert('Item deleted!');  // NO!
+  alert('Item deleted!'); // NO!
 }
 ```
 
 ### Right Way ✅
+
 ```javascript
 async function deleteItem(id) {
   try {
@@ -10841,17 +11649,20 @@ async function deleteItem(id) {
 ## Date/Time Handling Pattern
 
 ### Backend (Database)
+
 - All dates stored as ISO strings in **UTC (GMT-0)**
 - Timezone info stored separately in `originTimezone`, `destinationTimezone`
 - Example: `2025-06-01T08:00:00Z` (UTC) + `originTimezone: "America/New_York"`
 
 ### Frontend (Display)
+
 - Use `datetime-formatter.js` for timezone-aware display
 - Display format: **"DD MMM YYYY"** (e.g., "15 Oct 2025")
 - Time format: **"HH:MM"** 24-hour (e.g., "14:30")
 - Never use AM/PM or seconds
 
 ### Form Submission
+
 ```javascript
 // Form has separate date/time inputs
 <input type="date" name="departureDate">
@@ -10871,6 +11682,7 @@ body.departureDateTime = "2025-06-01T08:00:00Z"  // ISO string
 Always verify ownership before operations.
 
 ### Trip Ownership
+
 ```javascript
 const trip = await Trip.findByPk(tripId);
 if (!trip || trip.userId !== req.user.id) {
@@ -10879,6 +11691,7 @@ if (!trip || trip.userId !== req.user.id) {
 ```
 
 ### Item Ownership
+
 ```javascript
 const item = await Flight.findByPk(id);
 if (!item || item.userId !== req.user.id) {
@@ -10887,9 +11700,10 @@ if (!item || item.userId !== req.user.id) {
 ```
 
 ### Companion Permissions
+
 ```javascript
 const companion = await TripCompanion.findOne({
-  where: { tripId, companionId }
+  where: { tripId, companionId },
 });
 
 if (companion.canEdit) {
@@ -10906,17 +11720,20 @@ if (companion.canEdit) {
 Exposed for use in inline onclick handlers and event listeners:
 
 **Sidebar Control:**
+
 - `loadSidebarContent(url, options)` - Load content into sidebar
 - `closeSecondarySidebar()` / `openSecondarySidebar()`
 - `closeTertiarySidebar()` / `openTertiarySidebar()`
 - `goBackInSidebar()`
 
 **Item CRUD:**
+
 - `editItem(type, id)` - Load edit form
 - `showAddForm(type, isStandalone)` - Load add form
 - `deleteItem(type, id, itemName)` - Delete item
 
 **Refresh:**
+
 - `refreshTripView()` - Refresh trip sidebar + map
 - `refreshDashboardSidebar()` - Refresh dashboard + map
 
@@ -10925,6 +11742,7 @@ Exposed for use in inline onclick handlers and event listeners:
 ## Response Format Pattern
 
 ### Success Response (AJAX)
+
 ```javascript
 res.json({
   success: true,
@@ -10934,28 +11752,31 @@ res.json({
 ```
 
 ### Error Response (AJAX)
+
 ```javascript
 res.status(400).json({
   success: false,
-  error: "Validation failed",
-  errors: [{ field: "airline", message: "Required" }]  // optional
-})
+  error: 'Validation failed',
+  errors: [{ field: 'airline', message: 'Required' }], // optional
+});
 ```
 
 ### Unauthorized Response
+
 ```javascript
 res.status(403).json({
   success: false,
-  error: "Unauthorized"
-})
+  error: 'Unauthorized',
+});
 ```
 
 ### Server Error Response
+
 ```javascript
 res.status(500).json({
   success: false,
-  error: "Server error"
-})
+  error: 'Server error',
+});
 ```
 
 ---
@@ -10975,6 +11796,7 @@ res.status(500).json({
 ````
 
 ## File: .claude/README.md
+
 ````markdown
 # 📚 Bluebonnet Travel Planner - Documentation
 
@@ -10985,6 +11807,7 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 ## 🚀 Quick Start - Choose Your Path
 
 ### I want to...
+
 - **[Get Started Developing](./GETTING_STARTED.md)** - Local setup (10 min)
 - **[Understand the Architecture](./ARCHITECTURE/README.md)** - How the system works (20 min)
 - **[Work on a Feature](./FEATURES/)** - Feature-specific guides
@@ -10999,13 +11822,16 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 ## 👥 Documentation by Role
 
 ### 👤 New Developer?
+
 **Start here (30 minutes total):**
+
 1. [Getting Started](./GETTING_STARTED.md) - Local setup
 2. [Development Workflow](./DEVELOPMENT.md) - Daily commands
 3. [Architecture Overview](./ARCHITECTURE/README.md) - System overview
 4. Pick a [Feature](./FEATURES/) to work on
 
 ### 👨‍💻 Backend Engineer?
+
 - [Backend Architecture](./ARCHITECTURE/BACKEND/README.md)
 - [Database Schema](./ARCHITECTURE/BACKEND/DATABASE_SCHEMA.md)
 - [Features](./FEATURES/)
@@ -11013,6 +11839,7 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 - [Testing](./TESTING/README.md)
 
 ### 🎨 Frontend Engineer (Phase 1 - Svelte)?
+
 - [Phase 1 Overview](./MODERNIZATION/PHASE_1_OVERVIEW.md)
 - [Svelte Basics](./LEARNING_RESOURCES/SVELTE_BASICS.md)
 - [Phase 1 Setup Guide](./MODERNIZATION/PHASE_1_SVELTE_SETUP.md)
@@ -11020,12 +11847,14 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 - [Patterns](./PATTERNS/)
 
 ### 🚀 DevOps/Operations?
+
 - [Deployment Guide](./DEPLOYMENT/README.md)
 - [Environment Setup](./DEPLOYMENT/ENVIRONMENT_CONFIG.md)
 - [Docker Setup](./DEPLOYMENT/DOCKER_SETUP.md)
 - [Troubleshooting](./TROUBLESHOOTING/DEPLOYMENT_ISSUES.md)
 
 ### 📊 Tech Lead/Architect?
+
 - [Modernization Roadmap](./MODERNIZATION/README.md)
 - [Architecture Overview](./ARCHITECTURE/README.md)
 - [Decisions](./DECISIONS/README.md)
@@ -11158,6 +11987,7 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 ## 🔑 Key Concepts
 
 ### Travel Item Types
+
 - **Flight** - Commercial flights with departure/arrival times
 - **Hotel** - Accommodations with check-in/check-out dates
 - **Event** - Activities, attractions, meetings
@@ -11165,6 +11995,7 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 - **Car Rental** - Vehicle rentals for trip duration
 
 ### Core Systems
+
 - **Authentication** - Passport.js local strategy
 - **Trip Management** - Create, edit, share trips
 - **Travel Companions** - Invite people, manage permissions
@@ -11173,6 +12004,7 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 - **Maps** - Location visualization on map
 
 ### Technology Stack (Current)
+
 - **Backend:** Express.js + Node.js
 - **Frontend:** Vanilla JavaScript + EJS templates (→ Svelte in Phase 1)
 - **Database:** PostgreSQL + Sequelize ORM
@@ -11180,6 +12012,7 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 - **DevOps:** Docker + Docker Compose
 
 ### Technology Stack (Phase 1 Target)
+
 - **Backend:** Express.js + Node.js (same)
 - **Frontend:** Svelte + SvelteKit (replacing vanilla JS + EJS)
 - **Database:** PostgreSQL + Sequelize ORM (same)
@@ -11187,6 +12020,7 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 - **DevOps:** Docker + Docker Compose (same)
 
 ### Technology Stack (Phase 2 Target - Optional)
+
 - **Backend:** Full SvelteKit (merging Express + Svelte)
 - **Database:** PostgreSQL + Prisma ORM (optional)
 - **Everything else:** Same
@@ -11196,6 +12030,7 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 ## 📊 Modernization Phases
 
 ### Phase 1: Svelte + SvelteKit Frontend (Weeks 1-12)
+
 - Keep existing Express backend
 - Add SvelteKit frontend alongside
 - Migrate features one-by-one to Svelte
@@ -11204,6 +12039,7 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 - **See:** [Phase 1 Overview](./MODERNIZATION/PHASE_1_OVERVIEW.md)
 
 ### Phase 2: Backend Refactoring (Weeks 13-16)
+
 - Extract service layer from controllers
 - Refactor large controllers (60KB → 15KB)
 - Introduce TypeScript throughout
@@ -11213,6 +12049,7 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 - **See:** [Phase 2 Overview](./MODERNIZATION/PHASE_2_OVERVIEW.md)
 
 ### Phase 3: Optional Full Stack (Future)
+
 - Merge SvelteKit + Express into unified SvelteKit app
 - Optional: Migrate to Prisma ORM
 - Optional: Migrate to different database
@@ -11225,13 +12062,13 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 
 This new documentation structure is designed for **token efficiency**:
 
-| Scenario | Old (CLAUDE.md) | New (.claude/) | Savings |
-|----------|-----------------|---------------|---------|
-| Add form field | 8,000 tokens | 2,000 tokens | 75% ↓ |
-| Debug sidebar | 8,000 tokens | 2,500 tokens | 69% ↓ |
-| Local setup | 8,000 tokens | 1,500 tokens | 81% ↓ |
-| Deploy to prod | 8,000 tokens | 3,000 tokens | 63% ↓ |
-| Write unit test | 8,000 tokens | 2,500 tokens | 69% ↓ |
+| Scenario        | Old (CLAUDE.md) | New (.claude/) | Savings |
+| --------------- | --------------- | -------------- | ------- |
+| Add form field  | 8,000 tokens    | 2,000 tokens   | 75% ↓   |
+| Debug sidebar   | 8,000 tokens    | 2,500 tokens   | 69% ↓   |
+| Local setup     | 8,000 tokens    | 1,500 tokens   | 81% ↓   |
+| Deploy to prod  | 8,000 tokens    | 3,000 tokens   | 63% ↓   |
+| Write unit test | 8,000 tokens    | 2,500 tokens   | 69% ↓   |
 
 **Key principle:** Load only the docs you need, not the entire 35KB reference.
 
@@ -11240,11 +12077,13 @@ This new documentation structure is designed for **token efficiency**:
 ## 🔗 Cross-Documentation Navigation
 
 Each document includes:
+
 - **Context links** - Prerequisite reading
 - **See also** - Related topics
 - **Next steps** - Suggested next document
 
 Example flow:
+
 1. New dev reads [Getting Started](./GETTING_STARTED.md)
 2. Then reads [Development](./DEVELOPMENT.md)
 3. Then reads [Architecture Overview](./ARCHITECTURE/README.md)
@@ -11257,22 +12096,26 @@ Example flow:
 ## 📝 How to Use This Documentation
 
 ### For Code Changes
+
 1. Find relevant doc in [FEATURES/](./FEATURES/) or [PATTERNS/](./PATTERNS/)
 2. Follow code examples
 3. Update docs if you learn something new
 
 ### For Debugging
+
 1. Start with [TROUBLESHOOTING/README.md](./TROUBLESHOOTING/)
 2. Find your issue type
 3. Follow debug steps
 
 ### For New Features
+
 1. Read relevant [Feature](./FEATURES/) guide
 2. Follow [CRUD Pattern](./PATTERNS/CRUD_PATTERN.md)
 3. Check [Component Checklist](./COMPONENTS/COMPONENT_CHECKLIST.md)
 4. Write tests per [Testing Guide](./TESTING/)
 
 ### For Learning
+
 1. New to Svelte? Read [Svelte Basics](./LEARNING_RESOURCES/SVELTE_BASICS.md)
 2. New to SvelteKit? Read [SvelteKit Basics](./LEARNING_RESOURCES/SVELTEKIT_BASICS.md)
 3. Questions on TypeScript? Read [TypeScript Guidelines](./LEARNING_RESOURCES/TYPESCRIPT_GUIDELINES.md)
@@ -11304,12 +12147,14 @@ Example flow:
 ## ✍️ Contributing to Docs
 
 **When you learn something:**
+
 1. Find or create relevant doc
 2. Add example or clarification
 3. Link to related docs
 4. Update [INDEX.md](./INDEX.md)
 
 **Keep in mind:**
+
 - Docs should be 2-5KB (avoid 35KB monoliths)
 - Include code examples
 - Link liberally between docs
@@ -11328,11 +12173,12 @@ Example flow:
 
 **Happy coding! 🚀**
 
-*For complete list of docs, see [INDEX.md](./INDEX.md)*
+_For complete list of docs, see [INDEX.md](./INDEX.md)_
 ````
 
 ## File: .claude/settings.local.json
-````json
+
+```json
 {
   "env": {
     "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "32000"
@@ -11525,10 +12371,11 @@ Example flow:
     "repomix-explorer@repomix": true
   }
 }
-````
+```
 
 ## File: .github/workflows/ci.yml
-````yaml
+
+```yaml
 name: CI
 
 on:
@@ -11541,7 +12388,7 @@ jobs:
   lint:
     name: Lint Code
     runs-on: ubuntu-latest
-    timeout-minutes: 10  # Linting should complete in under 10 minutes
+    timeout-minutes: 10 # Linting should complete in under 10 minutes
 
     steps:
       - name: Checkout code
@@ -11565,7 +12412,7 @@ jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 15  # Tests should complete in under 15 minutes
+    timeout-minutes: 15 # Tests should complete in under 15 minutes
 
     services:
       postgres:
@@ -11650,7 +12497,7 @@ jobs:
   build:
     name: Build Application
     runs-on: ubuntu-latest
-    timeout-minutes: 10  # Build should complete in under 10 minutes
+    timeout-minutes: 10 # Build should complete in under 10 minutes
 
     steps:
       - name: Checkout code
@@ -11680,7 +12527,7 @@ jobs:
   security:
     name: Security Scan
     runs-on: ubuntu-latest
-    timeout-minutes: 10  # Security scans should complete in under 10 minutes
+    timeout-minutes: 10 # Security scans should complete in under 10 minutes
 
     steps:
       - name: Checkout code
@@ -11706,15 +12553,17 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           args: --severity-threshold=high
-````
+```
 
 ## File: .husky/pre-commit
-````
+
+```
 npx lint-staged
-````
+```
 
 ## File: config/database.js
-````javascript
+
+```javascript
 // Database configuration defaults
 ⋮----
 logging: false, // Set to console.log for debugging
@@ -11722,15 +12571,17 @@ logging: false, // Set to console.log for debugging
 // Only require SSL if host is not localhost (for Docker deployments)
 ⋮----
 // Only require SSL if host is not localhost (for Docker deployments)
-````
+```
 
 ## File: config/passport.js
-````javascript
 
-````
+```javascript
+
+```
 
 ## File: controllers/helpers/deleteManager.js
-````javascript
+
+```javascript
 // Delete manager - handles soft delete and restore functionality
 // Uses session to store deleted items for undo capability
 // Timeouts stored separately to avoid JSON serialization issues
@@ -11778,9 +12629,10 @@ function retrieveDeletedItem(session, itemType, itemId)
  * @returns {boolean}
  */
 function hasDeletedItem(session, itemType, itemId)
-````
+```
 
 ## File: controllers/helpers/README.md
+
 ````markdown
 # Controller Helpers Documentation
 
@@ -12292,7 +13144,8 @@ Potential additions to this helper module:
 ````
 
 ## File: controllers/helpers/tripSelectorHelper.js
-````javascript
+
+```javascript
 /**
  * Trip Selector Helper
  * Handles fetching available trips, verifying edit access, and managing item-to-trip associations
@@ -12361,10 +13214,11 @@ async function getTripSelectorData(item, userId)
 // If item is attached to a trip, fetch trip details
 ⋮----
 // Fetch all available trips for user
-````
+```
 
 ## File: controllers/companionRelationshipController.js
-````javascript
+
+```javascript
 exports.sendRequest = async (req, res) =>
 ⋮----
 // Validate inputs
@@ -12446,10 +13300,11 @@ exports.resendRequest = async (req, res) =>
 // Find the relationship
 ⋮----
 // Just return success - the request is still pending
-````
+```
 
 ## File: controllers/notificationController.js
-````javascript
+
+```javascript
 exports.getNotifications = async (req, res) =>
 ⋮----
 exports.getUnreadCount = async (req, res) =>
@@ -12471,10 +13326,11 @@ exports.deleteNotification = async (req, res) =>
 exports.getCompanionRequestNotifications = async (req, res) =>
 ⋮----
 exports.getTripInvitationNotifications = async (req, res) =>
-````
+```
 
 ## File: controllers/voucherAttachmentController.js
-````javascript
+
+```javascript
 // Attach multiple vouchers to a flight
 exports.attachMultipleVouchers = async (req, res) =>
 ⋮----
@@ -12608,10 +13464,11 @@ exports.updateAttachment = async (req, res) =>
 // Update voucher used amount
 ⋮----
 // Fetch updated attachment with relations
-````
+```
 
 ## File: controllers/voucherController.js
-````javascript
+
+```javascript
 // Create a new voucher
 exports.createVoucher = async (req, res) =>
 ⋮----
@@ -12687,776 +13544,779 @@ exports.getAvailableVouchersForFlight = async (req, res) =>
 // Certificates should only appear if they're OPEN (not yet used)
 ⋮----
 // For credit types, they're available if they have remaining balance
-````
+```
 
 ## File: data/airlines.json
-````json
+
+```json
 [
-{
-  "iata": "AA",
-  "name": "American Airlines",
-  "country": "United States",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "DL",
-  "name": "Delta Air Lines",
-  "country": "United States",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "UA",
-  "name": "United Airlines",
-  "country": "United States",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "AC",
-  "name": "Air Canada",
-  "country": "Canada",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "WS",
-  "name": "WestJet",
-  "country": "Canada",
-  "alliance": null
-},
-{
-  "iata": "BA",
-  "name": "British Airways",
-  "country": "United Kingdom",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "VS",
-  "name": "Virgin Atlantic",
-  "country": "United Kingdom",
-  "alliance": null
-},
-{
-  "iata": "AF",
-  "name": "Air France",
-  "country": "France",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "KL",
-  "name": "KLM Royal Dutch Airlines",
-  "country": "Netherlands",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "LH",
-  "name": "Lufthansa",
-  "country": "Germany",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "IB",
-  "name": "Iberia",
-  "country": "Spain",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "SN",
-  "name": "Brussels Airlines",
-  "country": "Belgium",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "AZ",
-  "name": "ITA Airways",
-  "country": "Italy",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "LX",
-  "name": "SWISS International Air Lines",
-  "country": "Switzerland",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "OS",
-  "name": "Austrian Airlines",
-  "country": "Austria",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "AY",
-  "name": "Finnair",
-  "country": "Finland",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "EK",
-  "name": "Emirates",
-  "country": "United Arab Emirates",
-  "alliance": null
-},
-{
-  "iata": "QR",
-  "name": "Qatar Airways",
-  "country": "Qatar",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "EK",
-  "name": "Emirates",
-  "country": "United Arab Emirates",
-  "alliance": null
-},
-{
-  "iata": "EY",
-  "name": "Etihad Airways",
-  "country": "United Arab Emirates",
-  "alliance": null
-},
-{
-  "iata": "QR",
-  "name": "Qatar Airways",
-  "country": "Qatar",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "QF",
-  "name": "Qantas",
-  "country": "Australia",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "VA",
-  "name": "Virgin Australia",
-  "country": "Australia",
-  "alliance": null
-},
-{
-  "iata": "NZ",
-  "name": "Air New Zealand",
-  "country": "New Zealand",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "SQ",
-  "name": "Singapore Airlines",
-  "country": "Singapore",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "CX",
-  "name": "Cathay Pacific",
-  "country": "Hong Kong SAR",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "CI",
-  "name": "China Airlines",
-  "country": "Taiwan",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "CZ",
-  "name": "China Southern Airlines",
-  "country": "China",
-  "alliance": null
-},
-{
-  "iata": "MU",
-  "name": "China Eastern Airlines",
-  "country": "China",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "NH",
-  "name": "All Nippon Airways (ANA)",
-  "country": "Japan",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "JL",
-  "name": "Japan Airlines",
-  "country": "Japan",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "KE",
-  "name": "Korean Air",
-  "country": "South Korea",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "OZ",
-  "name": "Asiana Airlines",
-  "country": "South Korea",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "AI",
-  "name": "Air India",
-  "country": "India",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "6E",
-  "name": "IndiGo",
-  "country": "India",
-  "alliance": null
-},
-{
-  "iata": "S7",
-  "name": "S7 Airlines",
-  "country": "Russia",
-  "alliance": null
-},
-{
-  "iata": "SU",
-  "name": "Aeroflot",
-  "country": "Russia",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "EK",
-  "name": "Emirates",
-  "country": "United Arab Emirates",
-  "alliance": null
-},
-{
-  "iata": "MS",
-  "name": "EgyptAir",
-  "country": "Egypt",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "SA",
-  "name": "South African Airways",
-  "country": "South Africa",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "KQ",
-  "name": "Kenya Airways",
-  "country": "Kenya",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "ET",
-  "name": "Ethiopian Airlines",
-  "country": "Ethiopia",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "TP",
-  "name": "TAP Air Portugal",
-  "country": "Portugal",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "TK",
-  "name": "Turkish Airlines",
-  "country": "Turkey",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "IB",
-  "name": "Iberia",
-  "country": "Spain",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "JJ",
-  "name": "LATAM Brasil",
-  "country": "Brazil",
-  "alliance": null
-},
-{
-  "iata": "G3",
-  "name": "Gol Transportes Aéreos",
-  "country": "Brazil",
-  "alliance": null
-},
-{
-  "iata": "AV",
-  "name": "Avianca",
-  "country": "Colombia",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "CM",
-  "name": "Copa Airlines",
-  "country": "Panama",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "AM",
-  "name": "Aeroméxico",
-  "country": "Mexico",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "AR",
-  "name": "Aerolíneas Argentinas",
-  "country": "Argentina",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "LA",
-  "name": "LATAM",
-  "country": "Chile",
-  "alliance": null
-},
-{
-  "iata": "B6",
-  "name": "JetBlue Airways",
-  "country": "United States",
-  "alliance": null
-},
-{
-  "iata": "F9",
-  "name": "Frontier Airlines",
-  "country": "United States",
-  "alliance": null
-},
-{
-  "iata": "WN",
-  "name": "Southwest Airlines",
-  "country": "United States",
-  "alliance": null
-},
-{
-  "iata": "AS",
-  "name": "Alaska Airlines",
-  "country": "United States",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "NZ",
-  "name": "Air New Zealand",
-  "country": "New Zealand",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "PR",
-  "name": "Philippine Airlines",
-  "country": "Philippines",
-  "alliance": null
-},
-{
-  "iata": "MH",
-  "name": "Malaysia Airlines",
-  "country": "Malaysia",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "TG",
-  "name": "Thai Airways International",
-  "country": "Thailand",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "VN",
-  "name": "Vietnam Airlines",
-  "country": "Vietnam",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "QZ",
-  "name": "Indonesia AirAsia",
-  "country": "Indonesia",
-  "alliance": null
-},
-{
-  "iata": "GA",
-  "name": "Garuda Indonesia",
-  "country": "Indonesia",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "UK",
-  "name": "Vistara",
-  "country": "India",
-  "alliance": null
-},
-{
-  "iata": "IX",
-  "name": "Air India Express",
-  "country": "India",
-  "alliance": null
-},
-{
-  "iata": "KC",
-  "name": "Dragonair (Cathay Dragon)",
-  "country": "Hong Kong",
-  "alliance": null
-},
-{
-  "iata": "PR",
-  "name": "Philippine Airlines",
-  "country": "Philippines",
-  "alliance": null
-},
-{
-  "iata": "HA",
-  "name": "Hawaiian Airlines",
-  "country": "United States",
-  "alliance": null
-},
-{
-  "iata": "BI",
-  "name": "Royal Brunei Airlines",
-  "country": "Brunei",
-  "alliance": null
-},
-{
-  "iata": "RJ",
-  "name": "Royal Jordanian",
-  "country": "Jordan",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "AT",
-  "name": "Royal Air Maroc",
-  "country": "Morocco",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "WY",
-  "name": "Oman Air",
-  "country": "Oman",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "PR",
-  "name": "Philippine Airlines",
-  "country": "Philippines",
-  "alliance": null
-},
-{
-  "iata": "SB",
-  "name": "Solomon Airlines",
-  "country": "Solomon Islands",
-  "alliance": null
-},
-{
-  "iata": "PX",
-  "name": "AirNiugini",
-  "country": "Papua New Guinea",
-  "alliance": null
-},
-{
-  "iata": "FJ",
-  "name": "Fiji Airways",
-  "country": "Fiji",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "BI",
-  "name": "Royal Brunei Airlines",
-  "country": "Brunei",
-  "alliance": null
-},
-{
-  "iata": "PS",
-  "name": "Ukraine International Airlines",
-  "country": "Ukraine",
-  "alliance": null
-},
-{
-  "iata": "VY",
-  "name": "Vueling",
-  "country": "Spain",
-  "alliance": null
-},
-{
-  "iata": "FR",
-  "name": "Ryanair",
-  "country": "Ireland",
-  "alliance": null
-},
-{
-  "iata": "U2",
-  "name": "easyJet",
-  "country": "United Kingdom",
-  "alliance": null
-},
-{
-  "iata": "TP",
-  "name": "TAP Air Portugal",
-  "country": "Portugal",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "EY",
-  "name": "Etihad Airways",
-  "country": "United Arab Emirates",
-  "alliance": null
-},
-{
-  "iata": "KU",
-  "name": "Kuwait Airways",
-  "country": "Kuwait",
-  "alliance": null
-},
-{
-  "iata": "RJ",
-  "name": "Royal Jordanian",
-  "country": "Jordan",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "IC",
-  "name": "Vistara (Tata SIA Airlines)",
-  "country": "India",
-  "alliance": null
-},
-{
-  "iata": "SB",
-  "name": "LATAM Airlines Group",
-  "country": "Various",
-  "alliance": null
-},
-{
-  "iata": "U6",
-  "name": "Ural Airlines",
-  "country": "Russia",
-  "alliance": null
-},
-{
-  "iata": "S7",
-  "name": "S7 Airlines",
-  "country": "Russia",
-  "alliance": null
-},
-{
-  "iata": "EF",
-  "name": "Equaflight Service",
-  "country": "Equatorial Guinea",
-  "alliance": null
-},
-{
-  "iata": "HF",
-  "name": "Hifly",
-  "country": "Portugal",
-  "alliance": null
-},
-{
-  "iata": "7Q",
-  "name": "Small Planet Airlines",
-  "country": "Lithuania/Poland (various)",
-  "alliance": null
-},
-{
-  "iata": "KM",
-  "name": "Air Malta",
-  "country": "Malta",
-  "alliance": null
-},
-{
-  "iata": "HV",
-  "name": "Transavia",
-  "country": "Netherlands/France",
-  "alliance": null
-},
-{
-  "iata": "SN",
-  "name": "Brussels Airlines",
-  "country": "Belgium",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "LO",
-  "name": "LOT Polish Airlines",
-  "country": "Poland",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "TP",
-  "name": "TAP Air Portugal",
-  "country": "Portugal",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "OK",
-  "name": "Czech Airlines",
-  "country": "Czech Republic",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "OS",
-  "name": "Austrian Airlines",
-  "country": "Austria",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "IB",
-  "name": "Iberia",
-  "country": "Spain",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "W6",
-  "name": "Wizz Air",
-  "country": "Hungary",
-  "alliance": null
-},
-{
-  "iata": "JU",
-  "name": "Air Serbia",
-  "country": "Serbia",
-  "alliance": null
-},
-{
-  "iata": "4U",
-  "name": "Germanwings",
-  "country": "Germany",
-  "alliance": null
-},
-{
-  "iata": "VY",
-  "name": "Vueling",
-  "country": "Spain",
-  "alliance": null
-},
-{
-  "iata": "AY",
-  "name": "Finnair",
-  "country": "Finland",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "IB",
-  "name": "Iberia Express",
-  "country": "Spain",
-  "alliance": null
-},
-{
-  "iata": "NX",
-  "name": "Air Macau",
-  "country": "Macau SAR",
-  "alliance": null
-},
-{
-  "iata": "PR",
-  "name": "Philippine Airlines",
-  "country": "Philippines",
-  "alliance": null
-},
-{
-  "iata": "KM",
-  "name": "Air Malta",
-  "country": "Malta",
-  "alliance": null
-},
-{
-  "iata": "BG",
-  "name": "Biman Bangladesh Airlines",
-  "country": "Bangladesh",
-  "alliance": null
-},
-{
-  "iata": "UL",
-  "name": "SriLankan Airlines",
-  "country": "Sri Lanka",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "PK",
-  "name": "Pakistan International Airlines",
-  "country": "Pakistan",
-  "alliance": null
-},
-{
-  "iata": "CX",
-  "name": "Cathay Pacific",
-  "country": "Hong Kong SAR",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "3K",
-  "name": "Jetstar Asia",
-  "country": "Singapore",
-  "alliance": null
-},
-{
-  "iata": "JQ",
-  "name": "Jetstar Airways",
-  "country": "Australia",
-  "alliance": null
-},
-{
-  "iata": "MF",
-  "name": "XiamenAir",
-  "country": "China",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "ZH",
-  "name": "Shenzhen Airlines",
-  "country": "China",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "BX",
-  "name": "Air Niugini",
-  "country": "Papua New Guinea",
-  "alliance": null
-},
-{
-  "iata": "CI",
-  "name": "China Airlines",
-  "country": "Taiwan",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "BR",
-  "name": "EVA Air",
-  "country": "Taiwan",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "KE",
-  "name": "Korean Air",
-  "country": "South Korea",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "WY",
-  "name": "Oman Air",
-  "country": "Oman",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "KM",
-  "name": "Air Malta",
-  "country": "Malta",
-  "alliance": null
-},
-{
-  "iata": "S2",
-  "name": "Cebu Pacific",
-  "country": "Philippines",
-  "alliance": null
-},
-{
-  "iata": "5J",
-  "name": "Cebu Pacific",
-  "country": "Philippines",
-  "alliance": null
-},
-{
-  "iata": "HM",
-  "name": "Air Seychelles",
-  "country": "Seychelles",
-  "alliance": null
-},
-{
-  "iata": "QK",
-  "name": "BA CityFlyer",
-  "country": "United Kingdom",
-  "alliance": "Oneworld"
-}]
-````
+  {
+    "iata": "AA",
+    "name": "American Airlines",
+    "country": "United States",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "DL",
+    "name": "Delta Air Lines",
+    "country": "United States",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "UA",
+    "name": "United Airlines",
+    "country": "United States",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "AC",
+    "name": "Air Canada",
+    "country": "Canada",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "WS",
+    "name": "WestJet",
+    "country": "Canada",
+    "alliance": null
+  },
+  {
+    "iata": "BA",
+    "name": "British Airways",
+    "country": "United Kingdom",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "VS",
+    "name": "Virgin Atlantic",
+    "country": "United Kingdom",
+    "alliance": null
+  },
+  {
+    "iata": "AF",
+    "name": "Air France",
+    "country": "France",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "KL",
+    "name": "KLM Royal Dutch Airlines",
+    "country": "Netherlands",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "LH",
+    "name": "Lufthansa",
+    "country": "Germany",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "IB",
+    "name": "Iberia",
+    "country": "Spain",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "SN",
+    "name": "Brussels Airlines",
+    "country": "Belgium",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "AZ",
+    "name": "ITA Airways",
+    "country": "Italy",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "LX",
+    "name": "SWISS International Air Lines",
+    "country": "Switzerland",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "OS",
+    "name": "Austrian Airlines",
+    "country": "Austria",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "AY",
+    "name": "Finnair",
+    "country": "Finland",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "EK",
+    "name": "Emirates",
+    "country": "United Arab Emirates",
+    "alliance": null
+  },
+  {
+    "iata": "QR",
+    "name": "Qatar Airways",
+    "country": "Qatar",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "EK",
+    "name": "Emirates",
+    "country": "United Arab Emirates",
+    "alliance": null
+  },
+  {
+    "iata": "EY",
+    "name": "Etihad Airways",
+    "country": "United Arab Emirates",
+    "alliance": null
+  },
+  {
+    "iata": "QR",
+    "name": "Qatar Airways",
+    "country": "Qatar",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "QF",
+    "name": "Qantas",
+    "country": "Australia",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "VA",
+    "name": "Virgin Australia",
+    "country": "Australia",
+    "alliance": null
+  },
+  {
+    "iata": "NZ",
+    "name": "Air New Zealand",
+    "country": "New Zealand",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "SQ",
+    "name": "Singapore Airlines",
+    "country": "Singapore",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "CX",
+    "name": "Cathay Pacific",
+    "country": "Hong Kong SAR",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "CI",
+    "name": "China Airlines",
+    "country": "Taiwan",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "CZ",
+    "name": "China Southern Airlines",
+    "country": "China",
+    "alliance": null
+  },
+  {
+    "iata": "MU",
+    "name": "China Eastern Airlines",
+    "country": "China",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "NH",
+    "name": "All Nippon Airways (ANA)",
+    "country": "Japan",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "JL",
+    "name": "Japan Airlines",
+    "country": "Japan",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "KE",
+    "name": "Korean Air",
+    "country": "South Korea",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "OZ",
+    "name": "Asiana Airlines",
+    "country": "South Korea",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "AI",
+    "name": "Air India",
+    "country": "India",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "6E",
+    "name": "IndiGo",
+    "country": "India",
+    "alliance": null
+  },
+  {
+    "iata": "S7",
+    "name": "S7 Airlines",
+    "country": "Russia",
+    "alliance": null
+  },
+  {
+    "iata": "SU",
+    "name": "Aeroflot",
+    "country": "Russia",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "EK",
+    "name": "Emirates",
+    "country": "United Arab Emirates",
+    "alliance": null
+  },
+  {
+    "iata": "MS",
+    "name": "EgyptAir",
+    "country": "Egypt",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "SA",
+    "name": "South African Airways",
+    "country": "South Africa",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "KQ",
+    "name": "Kenya Airways",
+    "country": "Kenya",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "ET",
+    "name": "Ethiopian Airlines",
+    "country": "Ethiopia",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "TP",
+    "name": "TAP Air Portugal",
+    "country": "Portugal",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "TK",
+    "name": "Turkish Airlines",
+    "country": "Turkey",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "IB",
+    "name": "Iberia",
+    "country": "Spain",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "JJ",
+    "name": "LATAM Brasil",
+    "country": "Brazil",
+    "alliance": null
+  },
+  {
+    "iata": "G3",
+    "name": "Gol Transportes Aéreos",
+    "country": "Brazil",
+    "alliance": null
+  },
+  {
+    "iata": "AV",
+    "name": "Avianca",
+    "country": "Colombia",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "CM",
+    "name": "Copa Airlines",
+    "country": "Panama",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "AM",
+    "name": "Aeroméxico",
+    "country": "Mexico",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "AR",
+    "name": "Aerolíneas Argentinas",
+    "country": "Argentina",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "LA",
+    "name": "LATAM",
+    "country": "Chile",
+    "alliance": null
+  },
+  {
+    "iata": "B6",
+    "name": "JetBlue Airways",
+    "country": "United States",
+    "alliance": null
+  },
+  {
+    "iata": "F9",
+    "name": "Frontier Airlines",
+    "country": "United States",
+    "alliance": null
+  },
+  {
+    "iata": "WN",
+    "name": "Southwest Airlines",
+    "country": "United States",
+    "alliance": null
+  },
+  {
+    "iata": "AS",
+    "name": "Alaska Airlines",
+    "country": "United States",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "NZ",
+    "name": "Air New Zealand",
+    "country": "New Zealand",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "PR",
+    "name": "Philippine Airlines",
+    "country": "Philippines",
+    "alliance": null
+  },
+  {
+    "iata": "MH",
+    "name": "Malaysia Airlines",
+    "country": "Malaysia",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "TG",
+    "name": "Thai Airways International",
+    "country": "Thailand",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "VN",
+    "name": "Vietnam Airlines",
+    "country": "Vietnam",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "QZ",
+    "name": "Indonesia AirAsia",
+    "country": "Indonesia",
+    "alliance": null
+  },
+  {
+    "iata": "GA",
+    "name": "Garuda Indonesia",
+    "country": "Indonesia",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "UK",
+    "name": "Vistara",
+    "country": "India",
+    "alliance": null
+  },
+  {
+    "iata": "IX",
+    "name": "Air India Express",
+    "country": "India",
+    "alliance": null
+  },
+  {
+    "iata": "KC",
+    "name": "Dragonair (Cathay Dragon)",
+    "country": "Hong Kong",
+    "alliance": null
+  },
+  {
+    "iata": "PR",
+    "name": "Philippine Airlines",
+    "country": "Philippines",
+    "alliance": null
+  },
+  {
+    "iata": "HA",
+    "name": "Hawaiian Airlines",
+    "country": "United States",
+    "alliance": null
+  },
+  {
+    "iata": "BI",
+    "name": "Royal Brunei Airlines",
+    "country": "Brunei",
+    "alliance": null
+  },
+  {
+    "iata": "RJ",
+    "name": "Royal Jordanian",
+    "country": "Jordan",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "AT",
+    "name": "Royal Air Maroc",
+    "country": "Morocco",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "WY",
+    "name": "Oman Air",
+    "country": "Oman",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "PR",
+    "name": "Philippine Airlines",
+    "country": "Philippines",
+    "alliance": null
+  },
+  {
+    "iata": "SB",
+    "name": "Solomon Airlines",
+    "country": "Solomon Islands",
+    "alliance": null
+  },
+  {
+    "iata": "PX",
+    "name": "AirNiugini",
+    "country": "Papua New Guinea",
+    "alliance": null
+  },
+  {
+    "iata": "FJ",
+    "name": "Fiji Airways",
+    "country": "Fiji",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "BI",
+    "name": "Royal Brunei Airlines",
+    "country": "Brunei",
+    "alliance": null
+  },
+  {
+    "iata": "PS",
+    "name": "Ukraine International Airlines",
+    "country": "Ukraine",
+    "alliance": null
+  },
+  {
+    "iata": "VY",
+    "name": "Vueling",
+    "country": "Spain",
+    "alliance": null
+  },
+  {
+    "iata": "FR",
+    "name": "Ryanair",
+    "country": "Ireland",
+    "alliance": null
+  },
+  {
+    "iata": "U2",
+    "name": "easyJet",
+    "country": "United Kingdom",
+    "alliance": null
+  },
+  {
+    "iata": "TP",
+    "name": "TAP Air Portugal",
+    "country": "Portugal",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "EY",
+    "name": "Etihad Airways",
+    "country": "United Arab Emirates",
+    "alliance": null
+  },
+  {
+    "iata": "KU",
+    "name": "Kuwait Airways",
+    "country": "Kuwait",
+    "alliance": null
+  },
+  {
+    "iata": "RJ",
+    "name": "Royal Jordanian",
+    "country": "Jordan",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "IC",
+    "name": "Vistara (Tata SIA Airlines)",
+    "country": "India",
+    "alliance": null
+  },
+  {
+    "iata": "SB",
+    "name": "LATAM Airlines Group",
+    "country": "Various",
+    "alliance": null
+  },
+  {
+    "iata": "U6",
+    "name": "Ural Airlines",
+    "country": "Russia",
+    "alliance": null
+  },
+  {
+    "iata": "S7",
+    "name": "S7 Airlines",
+    "country": "Russia",
+    "alliance": null
+  },
+  {
+    "iata": "EF",
+    "name": "Equaflight Service",
+    "country": "Equatorial Guinea",
+    "alliance": null
+  },
+  {
+    "iata": "HF",
+    "name": "Hifly",
+    "country": "Portugal",
+    "alliance": null
+  },
+  {
+    "iata": "7Q",
+    "name": "Small Planet Airlines",
+    "country": "Lithuania/Poland (various)",
+    "alliance": null
+  },
+  {
+    "iata": "KM",
+    "name": "Air Malta",
+    "country": "Malta",
+    "alliance": null
+  },
+  {
+    "iata": "HV",
+    "name": "Transavia",
+    "country": "Netherlands/France",
+    "alliance": null
+  },
+  {
+    "iata": "SN",
+    "name": "Brussels Airlines",
+    "country": "Belgium",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "LO",
+    "name": "LOT Polish Airlines",
+    "country": "Poland",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "TP",
+    "name": "TAP Air Portugal",
+    "country": "Portugal",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "OK",
+    "name": "Czech Airlines",
+    "country": "Czech Republic",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "OS",
+    "name": "Austrian Airlines",
+    "country": "Austria",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "IB",
+    "name": "Iberia",
+    "country": "Spain",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "W6",
+    "name": "Wizz Air",
+    "country": "Hungary",
+    "alliance": null
+  },
+  {
+    "iata": "JU",
+    "name": "Air Serbia",
+    "country": "Serbia",
+    "alliance": null
+  },
+  {
+    "iata": "4U",
+    "name": "Germanwings",
+    "country": "Germany",
+    "alliance": null
+  },
+  {
+    "iata": "VY",
+    "name": "Vueling",
+    "country": "Spain",
+    "alliance": null
+  },
+  {
+    "iata": "AY",
+    "name": "Finnair",
+    "country": "Finland",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "IB",
+    "name": "Iberia Express",
+    "country": "Spain",
+    "alliance": null
+  },
+  {
+    "iata": "NX",
+    "name": "Air Macau",
+    "country": "Macau SAR",
+    "alliance": null
+  },
+  {
+    "iata": "PR",
+    "name": "Philippine Airlines",
+    "country": "Philippines",
+    "alliance": null
+  },
+  {
+    "iata": "KM",
+    "name": "Air Malta",
+    "country": "Malta",
+    "alliance": null
+  },
+  {
+    "iata": "BG",
+    "name": "Biman Bangladesh Airlines",
+    "country": "Bangladesh",
+    "alliance": null
+  },
+  {
+    "iata": "UL",
+    "name": "SriLankan Airlines",
+    "country": "Sri Lanka",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "PK",
+    "name": "Pakistan International Airlines",
+    "country": "Pakistan",
+    "alliance": null
+  },
+  {
+    "iata": "CX",
+    "name": "Cathay Pacific",
+    "country": "Hong Kong SAR",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "3K",
+    "name": "Jetstar Asia",
+    "country": "Singapore",
+    "alliance": null
+  },
+  {
+    "iata": "JQ",
+    "name": "Jetstar Airways",
+    "country": "Australia",
+    "alliance": null
+  },
+  {
+    "iata": "MF",
+    "name": "XiamenAir",
+    "country": "China",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "ZH",
+    "name": "Shenzhen Airlines",
+    "country": "China",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "BX",
+    "name": "Air Niugini",
+    "country": "Papua New Guinea",
+    "alliance": null
+  },
+  {
+    "iata": "CI",
+    "name": "China Airlines",
+    "country": "Taiwan",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "BR",
+    "name": "EVA Air",
+    "country": "Taiwan",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "KE",
+    "name": "Korean Air",
+    "country": "South Korea",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "WY",
+    "name": "Oman Air",
+    "country": "Oman",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "KM",
+    "name": "Air Malta",
+    "country": "Malta",
+    "alliance": null
+  },
+  {
+    "iata": "S2",
+    "name": "Cebu Pacific",
+    "country": "Philippines",
+    "alliance": null
+  },
+  {
+    "iata": "5J",
+    "name": "Cebu Pacific",
+    "country": "Philippines",
+    "alliance": null
+  },
+  {
+    "iata": "HM",
+    "name": "Air Seychelles",
+    "country": "Seychelles",
+    "alliance": null
+  },
+  {
+    "iata": "QK",
+    "name": "BA CityFlyer",
+    "country": "United Kingdom",
+    "alliance": "Oneworld"
+  }
+]
+```
 
 ## File: docs/COLOR_CONFIGURATION.md
+
 ````markdown
 # Item Type Color Configuration
 
@@ -13477,22 +14337,22 @@ This file contains hex color codes for each item type:
 ```javascript
 const ITEM_COLORS = {
   trip: {
-    hex: '#28536b',        // Change this hex code
+    hex: '#28536b', // Change this hex code
   },
   flight: {
-    hex: '#f6d965',        // Change this hex code
+    hex: '#f6d965', // Change this hex code
   },
   hotel: {
-    hex: '#c2a5df',        // Change this hex code
+    hex: '#c2a5df', // Change this hex code
   },
   carRental: {
-    hex: '#fea572',        // Change this hex code
+    hex: '#fea572', // Change this hex code
   },
   transportation: {
-    hex: '#67b3e0',        // Change this hex code
+    hex: '#67b3e0', // Change this hex code
   },
   event: {
-    hex: '#ff99c9',        // Change this hex code
+    hex: '#ff99c9', // Change this hex code
   },
 };
 ```
@@ -13505,6 +14365,7 @@ const ITEM_COLORS = {
 4. Save the file
 
 **Example: Changing Flight Color**
+
 ```javascript
 // Before
 flight: {
@@ -13531,13 +14392,13 @@ Once you update a hex code in `config/itemColors.js`, it automatically affects:
 ## Current Color Scheme
 
 | Item Type      | Color      | Hex Code |
-|----------------|-----------|----------|
-| Trip           | Dark Blue | #28536b  |
-| Flight         | Yellow    | #f6d965  |
-| Hotel          | Purple    | #c2a5df  |
-| Car Rental     | Orange    | #fea572  |
-| Transportation | Light Blue| #67b3e0  |
-| Event          | Pink      | #ff99c9  |
+| -------------- | ---------- | -------- |
+| Trip           | Dark Blue  | #28536b  |
+| Flight         | Yellow     | #f6d965  |
+| Hotel          | Purple     | #c2a5df  |
+| Car Rental     | Orange     | #fea572  |
+| Transportation | Light Blue | #67b3e0  |
+| Event          | Pink       | #ff99c9  |
 
 ## How It Works
 
@@ -13609,15 +14470,18 @@ const hotelColor = '#c2a5df';
 ## Common Use Cases
 
 ### Changing All Flight Colors
+
 ```javascript
 // In config/itemColors.js
 flight: {
   hex: '#1E40AF',  // Change from yellow to dark blue
 },
 ```
+
 Result: Flight form headers, icons, and buttons all turn dark blue
 
 ### Creating a Monochrome Scheme
+
 ```javascript
 // In config/itemColors.js
 trip: { hex: '#333333' },
@@ -13629,6 +14493,7 @@ event: { hex: '#EEEEEE' },
 ```
 
 ### Using Brand Colors
+
 ```javascript
 // In config/itemColors.js - Using company brand colors
 trip: { hex: '#0D47A1' },      // Brand primary blue
@@ -13688,6 +14553,7 @@ event: { hex: '#1565C0' },     // Brand light blue
 ````
 
 ## File: docs/PHASE_2A_PLAN.md
+
 ````markdown
 # Phase 2A: Backend Modularization - Comprehensive Implementation Plan
 
@@ -14271,17 +15137,20 @@ Document:
 ````
 
 ## File: frontend/public/vite.svg
-````xml
+
+```xml
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="31.88" height="32" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 257"><defs><linearGradient id="IconifyId1813088fe1fbc01fb466" x1="-.828%" x2="57.636%" y1="7.652%" y2="78.411%"><stop offset="0%" stop-color="#41D1FF"></stop><stop offset="100%" stop-color="#BD34FE"></stop></linearGradient><linearGradient id="IconifyId1813088fe1fbc01fb467" x1="43.376%" x2="50.316%" y1="2.242%" y2="89.03%"><stop offset="0%" stop-color="#FFEA83"></stop><stop offset="8.333%" stop-color="#FFDD35"></stop><stop offset="100%" stop-color="#FFA800"></stop></linearGradient></defs><path fill="url(#IconifyId1813088fe1fbc01fb466)" d="M255.153 37.938L134.897 252.976c-2.483 4.44-8.862 4.466-11.382.048L.875 37.958c-2.746-4.814 1.371-10.646 6.827-9.67l120.385 21.517a6.537 6.537 0 0 0 2.322-.004l117.867-21.483c5.438-.991 9.574 4.796 6.877 9.62Z"></path><path fill="url(#IconifyId1813088fe1fbc01fb467)" d="M185.432.063L96.44 17.501a3.268 3.268 0 0 0-2.634 3.014l-5.474 92.456a3.268 3.268 0 0 0 3.997 3.378l24.777-5.718c2.318-.535 4.413 1.507 3.936 3.838l-7.361 36.047c-.495 2.426 1.782 4.5 4.151 3.78l15.304-4.649c2.372-.72 4.652 1.36 4.15 3.788l-11.698 56.621c-.732 3.542 3.979 5.473 5.943 2.437l1.313-2.028l72.516-144.72c1.215-2.423-.88-5.186-3.54-4.672l-25.505 4.922c-2.396.462-4.435-1.77-3.759-4.114l16.646-57.705c.677-2.35-1.37-4.583-3.769-4.113Z"></path></svg>
-````
+```
 
 ## File: frontend/src/assets/svelte.svg
-````xml
+
+```xml
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="26.6" height="32" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 308"><path fill="#FF3E00" d="M239.682 40.707C211.113-.182 154.69-12.301 113.895 13.69L42.247 59.356a82.198 82.198 0 0 0-37.135 55.056a86.566 86.566 0 0 0 8.536 55.576a82.425 82.425 0 0 0-12.296 30.719a87.596 87.596 0 0 0 14.964 66.244c28.574 40.893 84.997 53.007 125.787 27.016l71.648-45.664a82.182 82.182 0 0 0 37.135-55.057a86.601 86.601 0 0 0-8.53-55.577a82.409 82.409 0 0 0 12.29-30.718a87.573 87.573 0 0 0-14.963-66.244"></path><path fill="#FFF" d="M106.889 270.841c-23.102 6.007-47.497-3.036-61.103-22.648a52.685 52.685 0 0 1-9.003-39.85a49.978 49.978 0 0 1 1.713-6.693l1.35-4.115l3.671 2.697a92.447 92.447 0 0 0 28.036 14.007l2.663.808l-.245 2.659a16.067 16.067 0 0 0 2.89 10.656a17.143 17.143 0 0 0 18.397 6.828a15.786 15.786 0 0 0 4.403-1.935l71.67-45.672a14.922 14.922 0 0 0 6.734-9.977a15.923 15.923 0 0 0-2.713-12.011a17.156 17.156 0 0 0-18.404-6.832a15.78 15.78 0 0 0-4.396 1.933l-27.35 17.434a52.298 52.298 0 0 1-14.553 6.391c-23.101 6.007-47.497-3.036-61.101-22.649a52.681 52.681 0 0 1-9.004-39.849a49.428 49.428 0 0 1 22.34-33.114l71.664-45.677a52.218 52.218 0 0 1 14.563-6.398c23.101-6.007 47.497 3.036 61.101 22.648a52.685 52.685 0 0 1 9.004 39.85a50.559 50.559 0 0 1-1.713 6.692l-1.35 4.116l-3.67-2.693a92.373 92.373 0 0 0-28.037-14.013l-2.664-.809l.246-2.658a16.099 16.099 0 0 0-2.89-10.656a17.143 17.143 0 0 0-18.398-6.828a15.786 15.786 0 0 0-4.402 1.935l-71.67 45.674a14.898 14.898 0 0 0-6.73 9.975a15.9 15.9 0 0 0 2.709 12.012a17.156 17.156 0 0 0 18.404 6.832a15.841 15.841 0 0 0 4.402-1.935l27.345-17.427a52.147 52.147 0 0 1 14.552-6.397c23.101-6.006 47.497 3.037 61.102 22.65a52.681 52.681 0 0 1 9.003 39.848a49.453 49.453 0 0 1-22.34 33.12l-71.664 45.673a52.218 52.218 0 0 1-14.563 6.398"></path></svg>
-````
+```
 
 ## File: frontend/src/lib/components/AirportAutocomplete.svelte
-````svelte
+
+```svelte
 <script>
   import { onMount } from 'svelte';
   import { apiCall } from '$lib/services/api';
@@ -14569,10 +15438,11 @@ Document:
     text-overflow: ellipsis;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/Alert.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   type AlertType = 'success' | 'error' | 'warning' | 'info';
 
@@ -14672,10 +15542,11 @@ Document:
     opacity: 1;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/Checkbox.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   export let label: string;
   export let checked: boolean = false;
@@ -14748,10 +15619,11 @@ Document:
     font-size: 0.875rem;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/DateTimePicker.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   export let label: string;
   export let value: string = '';
@@ -14877,10 +15749,11 @@ Document:
     font-size: 0.875rem;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/Footer.svelte
-````svelte
+
+```svelte
 <footer class="footer">
   <div class="footer-content">
     <div class="footer-section">
@@ -15011,10 +15884,11 @@ Document:
     }
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/FormContainer.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   export let title: string;
   export let submitLabel: string = 'Submit';
@@ -15264,10 +16138,11 @@ Document:
     border-color: #dc2626;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/index.ts
-````typescript
+
+```typescript
 // Core Components Export Index
 ⋮----
 // Form Input Components
@@ -15279,10 +16154,11 @@ Document:
 // Feature Components
 ⋮----
 // Advanced Components
-````
+```
 
 ## File: frontend/src/lib/components/ItemCompanionsSelector.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { tripStore } from '$lib/stores/tripStore';
   import { companionsApi } from '$lib/services/api';
@@ -15499,10 +16375,11 @@ Document:
     padding: 1rem 0;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/Loading.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   export let size: 'small' | 'medium' | 'large' = 'medium';
   export let message: string = 'Loading...';
@@ -15573,10 +16450,11 @@ Document:
     font-size: 0.95rem;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/Modal.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   export let open: boolean = false;
   export let title: string = '';
@@ -15706,10 +16584,11 @@ Document:
     gap: 0.5rem;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/Radio.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   export let label: string;
   export let value: string;
@@ -15778,10 +16657,11 @@ Document:
     font-size: 0.875rem;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/Select.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   export let label: string;
   export let value: string = '';
@@ -15851,10 +16731,11 @@ Document:
     font-size: 0.875rem;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/SettingsBackup.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import Button from './Button.svelte';
   import Alert from './Alert.svelte';
@@ -16736,10 +17617,11 @@ Document:
     }
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/SettingsSecurity.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { settingsApi } from '$lib/services/settings';
   import '$lib/styles/form-styles.css';
@@ -16927,10 +17809,11 @@ Document:
     flex-shrink: 0;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/Sidebar.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   export let isOpen = false;
 
@@ -17035,10 +17918,11 @@ Document:
     }
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/TextInput.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   export let label: string;
   export let value: string = '';
@@ -17122,10 +18006,11 @@ Document:
     font-size: 0.875rem;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/TripCalendar.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import Card from './Card.svelte';
 
@@ -17404,10 +18289,11 @@ Document:
     }
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/TripCompanionsForm.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { onMount } from 'svelte';
   import { companionsApi } from '$lib/services/api';
@@ -18038,10 +18924,11 @@ Document:
     border-radius: 0.425rem;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/TripMap.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { onMount } from 'svelte';
   import Card from './Card.svelte';
@@ -18232,10 +19119,11 @@ Document:
     margin: 0;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/TripTimeline.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { onMount } from 'svelte';
   import { tripsApi } from '$lib/services/api';
@@ -18539,10 +19427,11 @@ Document:
     overflow-y: auto;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/VoucherDetails.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import Button from './Button.svelte';
   import { settingsApi } from '$lib/services/settings';
@@ -18839,10 +19728,11 @@ Document:
     }
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/VoucherForm.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { settingsApi } from '$lib/services/settings';
   import '$lib/styles/form-styles.css';
@@ -19055,10 +19945,11 @@ Document:
       </div>
     </form>
   </div>
-````
+```
 
 ## File: frontend/src/lib/components/VoucherList.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { vouchersApi } from '$lib/services/api';
   import { tripStoreActions } from '$lib/stores/tripStore';
@@ -19268,18 +20159,20 @@ Document:
     color: #666;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/tests/api.test.ts
-````typescript
+
+```typescript
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { apiCall, tripsApi, flightsApi, hotelsApi, eventsApi, transportationApi, carRentalsApi, companionsApi, vouchersApi } from '$lib/services/api';
 ⋮----
 // Mock fetch
-````
+```
 
 ## File: frontend/src/lib/tests/forms.test.ts
-````typescript
+
+```typescript
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 ⋮----
 /**
@@ -19318,10 +20211,11 @@ const validateTransportation = (data: any) =>
 const validateCarRental = (data: any) =>
 ⋮----
 const validateVoucher = (data: any) =>
-````
+```
 
 ## File: frontend/src/lib/tests/setup.ts
-````typescript
+
+```typescript
 import { expect, afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/svelte';
 ⋮----
@@ -19338,10 +20232,11 @@ interface Assertion<T> {
   }
 ⋮----
 // Custom matchers can be added here
-````
+```
 
 ## File: frontend/src/lib/tests/test-utils.ts
-````typescript
+
+```typescript
 import { render } from '@testing-library/svelte';
 import type { ComponentProps } from 'svelte';
 ⋮----
@@ -19379,10 +20274,11 @@ export function createMockResponse<T>(data: T, status = 200)
 export const mockFetch = (response: any) =>
 ⋮----
 import { vi } from 'vitest';
-````
+```
 
 ## File: frontend/src/lib/utils/dashboardGrouping.ts
-````typescript
+
+```typescript
 /**
  * Dashboard Grouping and Filtering Utilities
  *
@@ -19441,10 +20337,11 @@ export function groupTripItemsByDate(trip: any): Record<string, Array<any>>
 // Sort items chronologically
 ⋮----
 // Group by date
-````
+```
 
 ## File: frontend/src/lib/utils/dashboardItem.ts
-````typescript
+
+```typescript
 /**
  * Dashboard Item Utilities
  *
@@ -19534,10 +20431,11 @@ export function layoverSpansDates(trip: any, flightId: string, currentDayKey: st
 // Extract date key from currentDate and nextDate
 ⋮----
 // Check if layover starts in currentDayKey and ends in a different day
-````
+```
 
 ## File: frontend/src/lib/utils/timezoneUtils.ts
-````typescript
+
+```typescript
 /**
  * Timezone Utilities for Frontend
  * Provides consistent timezone-aware formatting and conversion
@@ -19571,10 +20469,11 @@ export function formatDateTimeInTimezone(utcDateString: string, timezone: string
 // If no timezone, return UTC time
 ⋮----
 // Use Intl.DateTimeFormat to convert to timezone
-````
+```
 
 ## File: frontend/src/lib/Counter.svelte
-````svelte
+
+```svelte
 <script>
   let count = $state(0)
   const increment = () => {
@@ -19585,10 +20484,11 @@ export function formatDateTimeInTimezone(utcDateString: string, timezone: string
 <button onclick={increment}>
   count is {count}
 </button>
-````
+```
 
 ## File: frontend/src/routes/dashboard/components/DashboardHeader.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { dashboardStore, dashboardStoreActions } from '$lib/stores/dashboardStore';
   import Alert from '$lib/components/Alert.svelte';
@@ -19781,10 +20681,11 @@ export function formatDateTimeInTimezone(utcDateString: string, timezone: string
     background: #f3f4f6;
   }
 </style>
-````
+```
 
 ## File: frontend/src/routes/dashboard/components/DashboardMapViewer.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { dashboardStore, dashboardStoreActions } from '$lib/stores/dashboardStore';
   import DashboardCalendar from '$lib/components/DashboardCalendar.svelte';
@@ -19877,10 +20778,11 @@ export function formatDateTimeInTimezone(utcDateString: string, timezone: string
     overflow-y: auto;
   }
 </style>
-````
+```
 
 ## File: frontend/src/routes/logout/+server.ts
-````typescript
+
+```typescript
 import { redirect } from '@sveltejs/kit';
 import type { RequestHandler } from '@sveltejs/kit';
 ⋮----
@@ -19899,10 +20801,11 @@ export const GET: RequestHandler = async (
 // Clear the client-side session cookie
 ⋮----
 // Redirect to login page
-````
+```
 
 ## File: frontend/src/routes/+error.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { page } from '$app/stores';
   import Button from '$lib/components/Button.svelte';
@@ -19968,10 +20871,11 @@ export const GET: RequestHandler = async (
     justify-content: center;
   }
 </style>
-````
+```
 
 ## File: frontend/src/router.ts
-````typescript
+
+```typescript
 /**
  * SvelteKit Router Adapter
  * Provides navigation functions for SvelteKit application
@@ -19995,10 +20899,11 @@ export function navigateTo(
 export function initRouter(): void
 ⋮----
 // SvelteKit handles routing natively - nothing to initialize
-````
+```
 
 ## File: frontend/.dockerignore
-````
+
+```
 node_modules
 npm-debug.log
 .git
@@ -20014,10 +20919,11 @@ dist
 *.md
 .prettierignore
 .eslintignore
-````
+```
 
 ## File: frontend/Dockerfile
-````
+
+```
 # Multi-stage build for optimal image size
 
 # Stage 1: Build
@@ -20069,10 +20975,11 @@ ENTRYPOINT ["/sbin/dumb-init", "--"]
 
 # Start the application
 CMD ["node", "build/index.js"]
-````
+```
 
 ## File: frontend/jsconfig.json
-````json
+
+```json
 {
   "extends": "./.svelte-kit/tsconfig.json",
   "compilerOptions": {
@@ -20107,14 +21014,16 @@ CMD ["node", "build/index.js"]
    */
   "include": ["src/**/*.d.ts", "src/**/*.js", "src/**/*.svelte"]
 }
-````
+```
 
 ## File: frontend/postcss.config.js
-````javascript
 
-````
+```javascript
+
+```
 
 ## File: frontend/START_HERE.md
+
 ````markdown
 # Phase 1 Completion - START HERE
 
@@ -20143,21 +21052,25 @@ CMD ["node", "build/index.js"]
 **4 Major Sections | 14 Tasks | ~18 Hours**
 
 ### Section 1: Features (2 tasks | ~5 hours)
+
 - [ ] Calendar integration (0.5 hr) ← START HERE - Quick Win
 - [ ] Companion management (2 hrs)
 - [ ] Voucher system (2 hrs)
 
 ### Section 2: Enhancements (3 tasks | ~5 hours)
+
 - [ ] Error handling on all API calls (1.5 hrs)
 - [ ] Form validation on all forms (1.5 hrs)
 - [ ] Loading states & user feedback (1 hr)
 - [ ] Map visualization fix (1 hr)
 
 ### Section 3: Testing (2 tasks | ~4 hours)
+
 - [ ] Unit tests (2 hrs)
 - [ ] Integration tests (2 hrs)
 
 ### Section 4: Quality (5 tasks | ~4 hours)
+
 - [ ] Accessibility audit (1.5 hrs)
 - [ ] Performance optimization (1 hr)
 - [ ] Documentation (1 hr)
@@ -20178,6 +21091,7 @@ Read these in order:
 ## How to Start
 
 ### Option A: Quick Wins First (Recommended)
+
 1. Integrate calendar (30 min)
 2. Add error handling to forms (1.5 hrs)
 3. Add form validation (1 hr)
@@ -20185,6 +21099,7 @@ Read these in order:
 5. Then tackle companions/vouchers
 
 ### Option B: Priority Order
+
 1. Error handling & validation (critical)
 2. Companion management (feature)
 3. Voucher system (feature)
@@ -20192,6 +21107,7 @@ Read these in order:
 5. Testing & polish
 
 ### Option C: By Effort
+
 1. Calendar (easy)
 2. Map fix (medium)
 3. Companions/Vouchers (medium)
@@ -20205,16 +21121,19 @@ Read these in order:
 ## Key Files to Know
 
 **Core Implementation:**
+
 - `src/routes/trips/[tripId]/+page.svelte` - Trip detail (needs calendar tab)
 - `src/lib/services/api.ts` - API client (needs error handling)
 - All form components in `src/lib/components/` (need validation)
 
 **Need to Create:**
+
 - `src/lib/components/VoucherForm.svelte`
 - `src/lib/components/VoucherList.svelte`
 - Enhanced `src/lib/components/CompanionsManager.svelte`
 
 **Already Exist (integrate):**
+
 - `src/lib/components/TripCalendar.svelte` (just add to trip detail)
 
 ---
@@ -20243,6 +21162,7 @@ git checkout -b feat/error-handling
 ## Testing Your Work
 
 After each task:
+
 ```bash
 # Check for console errors
 F12 → Console tab → No red errors
@@ -20292,12 +21212,14 @@ When everything is done:
 ## Estimated Timeline
 
 **Working Full-Time:**
+
 - Day 1: Features (5 hrs)
 - Day 2: Enhancements (5 hrs)
 - Day 3: Testing & Polish (4 hrs)
 - Total: 14 hrs = 1.75 days
 
 **Working Part-Time (2 hrs/day):**
+
 - Week 1: Features done
 - Week 2: Enhancements done
 - Week 3: Testing & Polish done
@@ -20307,6 +21229,7 @@ When everything is done:
 ## Questions?
 
 Refer to the comprehensive guides:
+
 - **PHASE_1_IMPLEMENTATION_GUIDE.md** - Detailed steps
 - **PHASE_1_FINAL_STATUS.md** - Current status
 - **PHASE_1_DETAILED_CHECKLIST.md** - Full task list
@@ -20322,12 +21245,14 @@ Refer to the comprehensive guides:
 ````
 
 ## File: frontend/svelte.config.js
-````javascript
+
+```javascript
 /** @type {import('@sveltejs/kit').Config} */
-````
+```
 
 ## File: frontend/tsconfig.json
-````json
+
+```json
 {
   "compilerOptions": {
     "moduleResolution": "bundler",
@@ -20346,16 +21271,18 @@ Refer to the comprehensive guides:
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.svelte"]
 }
-````
+```
 
 ## File: frontend/vitest.config.ts
-````typescript
+
+```typescript
 import { defineConfig } from 'vitest/config';
 import { sveltekit } from '@sveltejs/kit/vite';
-````
+```
 
 ## File: middleware/requestLogger.js
-````javascript
+
+```javascript
 /**
  * Request Logger Middleware
  * Phase 3 - Backend Architecture: Middleware Enhancements
@@ -20386,20 +21313,22 @@ const requestLogger = (req, res, next) =>
 // Log slow requests as warnings
 ⋮----
 // Call original end function
-````
+```
 
 ## File: middleware/sidebarContent.js
-````javascript
+
+```javascript
 /**
  * Middleware to handle sidebar content rendering
  * If X-Sidebar-Request header is present, render without full layout
  */
 ⋮----
 exports.setSidebarFlag = (req, res, next) =>
-````
+```
 
 ## File: migrations/20251116231637-add-companion-system-indexes.js
-````javascript
+
+```javascript
 async up(queryInterface)
 ⋮----
 // Helper function to check if index exists
@@ -20425,10 +21354,11 @@ async down(queryInterface)
 // Remove item_companions indexes
 ⋮----
 // Remove notifications indexes
-````
+```
 
 ## File: migrations/20251116231727-add-performance-indexes.js
-````javascript
+
+```javascript
 async up(queryInterface)
 ⋮----
 // Helper function to check if index exists
@@ -20474,19 +21404,21 @@ async down(queryInterface)
 // Remove trip companions indexes
 ⋮----
 // Remove vouchers indexes
-````
+```
 
 ## File: migrations/20251116232000-create-airports-table.js
-````javascript
+
+```javascript
 async up(queryInterface, Sequelize)
 ⋮----
 // Add indexes
 ⋮----
 async down(queryInterface)
-````
+```
 
 ## File: migrations/20251122-add-uuid-to-airports.js
-````javascript
+
+```javascript
 /**
  * Migration: Add UUID primary key to airports table
  *
@@ -20528,10 +21460,11 @@ down: async (queryInterface, Sequelize) =>
 // Step 4: Add primary key constraint back to iata
 ⋮----
 // Step 5: Drop id column
-````
+```
 
 ## File: migrations/20251129-add-unique-email-constraint.js
-````javascript
+
+```javascript
 async up(queryInterface, Sequelize)
 ⋮----
 // First, get all companions and identify duplicates
@@ -20552,10 +21485,11 @@ idsToDelete.push(...ids.slice(1)); // Keep first, delete rest
 async down(queryInterface, Sequelize)
 ⋮----
 // Remove the unique constraint
-````
+```
 
 ## File: migrations/20251201-add-userid-to-hotels-and-carrentals.js
-````javascript
+
+```javascript
 up: async (queryInterface, Sequelize) =>
 ⋮----
 // Add userId column to hotels table (initially nullable)
@@ -20575,10 +21509,11 @@ down: async (queryInterface, Sequelize) =>
 // Remove userId column from hotels table
 ⋮----
 // Remove userId column from car_rentals table
-````
+```
 
 ## File: migrations/20251201-make-tripId-nullable.js
-````javascript
+
+```javascript
 up: async (queryInterface, Sequelize) =>
 ⋮----
 // Make tripId nullable in hotels table
@@ -20590,10 +21525,11 @@ down: async (queryInterface, Sequelize) =>
 // Revert tripId to NOT NULL in hotels table
 ⋮----
 // Revert tripId to NOT NULL in car_rentals table
-````
+```
 
 ## File: migrations/20251211-add-isConfirmed-to-trips-and-events.js
-````javascript
+
+```javascript
 up: async (queryInterface, Sequelize) =>
 ⋮----
 // Add isConfirmed column to trips table
@@ -20605,10 +21541,11 @@ down: async (queryInterface, Sequelize) =>
 // Remove isConfirmed column from trips table
 ⋮----
 // Remove isConfirmed column from events table
-````
+```
 
 ## File: migrations/20251227-remove-timezone-from-events-and-hotels.js
-````javascript
+
+```javascript
 up: async (queryInterface, Sequelize) =>
 ⋮----
 // Remove timezone column from events table
@@ -20620,17 +21557,19 @@ down: async (queryInterface, Sequelize) =>
 // Add timezone column back to events table
 ⋮----
 // Add timezone column back to hotels table
-````
+```
 
 ## File: migrations/20251229-add-firstname-lastname-to-companions.js
-````javascript
+
+```javascript
 up: async (queryInterface, Sequelize) =>
 ⋮----
 down: async (queryInterface) =>
-````
+```
 
 ## File: migrations/20260113-add-canEdit-to-trip-companions.js
-````javascript
+
+```javascript
 up: async (queryInterface, Sequelize) =>
 ⋮----
 // Check if column already exists
@@ -20640,22 +21579,25 @@ up: async (queryInterface, Sequelize) =>
 down: async (queryInterface, Sequelize) =>
 ⋮----
 // Check if column exists before removing
-````
+```
 
 ## File: models/Airport.js
-````javascript
+
+```javascript
 module.exports = (sequelize, DataTypes) =>
-````
+```
 
 ## File: models/CompanionRelationship.js
-````javascript
+
+```javascript
 module.exports = (sequelize) =>
 ⋮----
 CompanionRelationship.associate = (models) =>
-````
+```
 
 ## File: models/Event.js
-````javascript
+
+```javascript
 module.exports = (sequelize, DataTypes) =>
 ⋮----
 allowNull: true, // Temporarily nullable for migration
@@ -20665,10 +21607,11 @@ allowNull: true, // Optional - defaults to same as startDateTime if not provided
 allowNull: false, // Location is required for events
 ⋮----
 Event.associate = (models) =>
-````
+```
 
 ## File: models/Flight.js
-````javascript
+
+```javascript
 module.exports = (sequelize, DataTypes) =>
 ⋮----
 allowNull: true, // Temporarily nullable for migration
@@ -20676,40 +21619,45 @@ allowNull: true, // Temporarily nullable for migration
 allowNull: true, // Nullable until flight number to airline lookup is implemented
 ⋮----
 Flight.associate = (models) =>
-````
+```
 
 ## File: models/ItemCompanion.js
-````javascript
+
+```javascript
 module.exports = (sequelize) =>
 ⋮----
 ItemCompanion.associate = (models) =>
-````
+```
 
 ## File: models/Notification.js
-````javascript
+
+```javascript
 module.exports = (sequelize) =>
 ⋮----
 Notification.associate = (models) =>
-````
+```
 
 ## File: models/Transportation.js
-````javascript
+
+```javascript
 module.exports = (sequelize, DataTypes) =>
 ⋮----
 allowNull: true, // Temporarily nullable for migration
 ⋮----
 Transportation.associate = (models) =>
-````
+```
 
 ## File: models/TripInvitation.js
-````javascript
+
+```javascript
 module.exports = (sequelize) =>
 ⋮----
 TripInvitation.associate = (models) =>
-````
+```
 
 ## File: models/Voucher.js
-````javascript
+
+```javascript
 module.exports = (sequelize, DataTypes) =>
 ⋮----
 allowNull: true, // Nullable for non-owner-bound vouchers (e.g., upgrade certificates)
@@ -20741,10 +21689,11 @@ Voucher.associate = (models) =>
 // Virtual field for days until expiration
 ⋮----
 // Check if voucher is expired
-````
+```
 
 ## File: models/VoucherAttachment.js
-````javascript
+
+```javascript
 module.exports = (sequelize, DataTypes) =>
 ⋮----
 allowNull: false, // References either a User or TravelCompanion
@@ -20765,10 +21714,11 @@ VoucherAttachment.associate = (models) =>
 ⋮----
 // Note: We'll handle the polymorphic relationship manually in the controller
 // since travelerId can reference either User or TravelCompanion
-````
+```
 
 ## File: public/css/core.css
-````css
+
+```css
 /* ===== Sidebar Base Styles ===== */
 /* Use same spacing variables as trips.css */
 :root {
@@ -20800,17 +21750,19 @@ input[type='text'],
 input[type='date']::-webkit-calendar-picker-indicator {
 ⋮----
 input[type='date']::-webkit-calendar-picker-indicator:hover {
-````
+```
 
 ## File: public/css/input.css
-````css
+
+```css
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-````
+```
 
 ## File: public/css/item-colors.css
-````css
+
+```css
 /**
  * Dynamic Item Type Colors
  * Colors are injected via inline styles from the config/itemColors.js
@@ -20845,10 +21797,11 @@ input[type='date']::-webkit-calendar-picker-indicator:hover {
 [data-item-type="transportation"] input:focus,
 ⋮----
 [data-item-type="event"] input:focus,
-````
+```
 
 ## File: public/css/trips.css
-````css
+
+```css
 /* ===== Sidebar Layout System ===== */
 /* Define spacing variables */
 :root {
@@ -20964,777 +21917,780 @@ body.overflow-hidden {
 .trip-tentative-badge,
 ⋮----
 .trip-tentative-text,
-````
+```
 
 ## File: public/data/airlines.json
-````json
+
+```json
 [
-{
-  "iata": "AA",
-  "name": "American Airlines",
-  "country": "United States",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "DL",
-  "name": "Delta Air Lines",
-  "country": "United States",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "UA",
-  "name": "United Airlines",
-  "country": "United States",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "AC",
-  "name": "Air Canada",
-  "country": "Canada",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "WS",
-  "name": "WestJet",
-  "country": "Canada",
-  "alliance": null
-},
-{
-  "iata": "BA",
-  "name": "British Airways",
-  "country": "United Kingdom",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "VS",
-  "name": "Virgin Atlantic",
-  "country": "United Kingdom",
-  "alliance": null
-},
-{
-  "iata": "AF",
-  "name": "Air France",
-  "country": "France",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "KL",
-  "name": "KLM Royal Dutch Airlines",
-  "country": "Netherlands",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "LH",
-  "name": "Lufthansa",
-  "country": "Germany",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "IB",
-  "name": "Iberia",
-  "country": "Spain",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "SN",
-  "name": "Brussels Airlines",
-  "country": "Belgium",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "AZ",
-  "name": "ITA Airways",
-  "country": "Italy",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "LX",
-  "name": "SWISS International Air Lines",
-  "country": "Switzerland",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "OS",
-  "name": "Austrian Airlines",
-  "country": "Austria",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "AY",
-  "name": "Finnair",
-  "country": "Finland",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "EK",
-  "name": "Emirates",
-  "country": "United Arab Emirates",
-  "alliance": null
-},
-{
-  "iata": "QR",
-  "name": "Qatar Airways",
-  "country": "Qatar",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "EK",
-  "name": "Emirates",
-  "country": "United Arab Emirates",
-  "alliance": null
-},
-{
-  "iata": "EY",
-  "name": "Etihad Airways",
-  "country": "United Arab Emirates",
-  "alliance": null
-},
-{
-  "iata": "QR",
-  "name": "Qatar Airways",
-  "country": "Qatar",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "QF",
-  "name": "Qantas",
-  "country": "Australia",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "VA",
-  "name": "Virgin Australia",
-  "country": "Australia",
-  "alliance": null
-},
-{
-  "iata": "NZ",
-  "name": "Air New Zealand",
-  "country": "New Zealand",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "SQ",
-  "name": "Singapore Airlines",
-  "country": "Singapore",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "CX",
-  "name": "Cathay Pacific",
-  "country": "Hong Kong SAR",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "CI",
-  "name": "China Airlines",
-  "country": "Taiwan",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "CZ",
-  "name": "China Southern Airlines",
-  "country": "China",
-  "alliance": null
-},
-{
-  "iata": "MU",
-  "name": "China Eastern Airlines",
-  "country": "China",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "NH",
-  "name": "All Nippon Airways (ANA)",
-  "country": "Japan",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "JL",
-  "name": "Japan Airlines",
-  "country": "Japan",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "KE",
-  "name": "Korean Air",
-  "country": "South Korea",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "OZ",
-  "name": "Asiana Airlines",
-  "country": "South Korea",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "AI",
-  "name": "Air India",
-  "country": "India",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "6E",
-  "name": "IndiGo",
-  "country": "India",
-  "alliance": null
-},
-{
-  "iata": "S7",
-  "name": "S7 Airlines",
-  "country": "Russia",
-  "alliance": null
-},
-{
-  "iata": "SU",
-  "name": "Aeroflot",
-  "country": "Russia",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "EK",
-  "name": "Emirates",
-  "country": "United Arab Emirates",
-  "alliance": null
-},
-{
-  "iata": "MS",
-  "name": "EgyptAir",
-  "country": "Egypt",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "SA",
-  "name": "South African Airways",
-  "country": "South Africa",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "KQ",
-  "name": "Kenya Airways",
-  "country": "Kenya",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "ET",
-  "name": "Ethiopian Airlines",
-  "country": "Ethiopia",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "TP",
-  "name": "TAP Air Portugal",
-  "country": "Portugal",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "TK",
-  "name": "Turkish Airlines",
-  "country": "Turkey",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "IB",
-  "name": "Iberia",
-  "country": "Spain",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "JJ",
-  "name": "LATAM Brasil",
-  "country": "Brazil",
-  "alliance": null
-},
-{
-  "iata": "G3",
-  "name": "Gol Transportes Aéreos",
-  "country": "Brazil",
-  "alliance": null
-},
-{
-  "iata": "AV",
-  "name": "Avianca",
-  "country": "Colombia",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "CM",
-  "name": "Copa Airlines",
-  "country": "Panama",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "AM",
-  "name": "Aeroméxico",
-  "country": "Mexico",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "AR",
-  "name": "Aerolíneas Argentinas",
-  "country": "Argentina",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "LA",
-  "name": "LATAM",
-  "country": "Chile",
-  "alliance": null
-},
-{
-  "iata": "B6",
-  "name": "JetBlue Airways",
-  "country": "United States",
-  "alliance": null
-},
-{
-  "iata": "F9",
-  "name": "Frontier Airlines",
-  "country": "United States",
-  "alliance": null
-},
-{
-  "iata": "WN",
-  "name": "Southwest Airlines",
-  "country": "United States",
-  "alliance": null
-},
-{
-  "iata": "AS",
-  "name": "Alaska Airlines",
-  "country": "United States",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "NZ",
-  "name": "Air New Zealand",
-  "country": "New Zealand",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "PR",
-  "name": "Philippine Airlines",
-  "country": "Philippines",
-  "alliance": null
-},
-{
-  "iata": "MH",
-  "name": "Malaysia Airlines",
-  "country": "Malaysia",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "TG",
-  "name": "Thai Airways International",
-  "country": "Thailand",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "VN",
-  "name": "Vietnam Airlines",
-  "country": "Vietnam",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "QZ",
-  "name": "Indonesia AirAsia",
-  "country": "Indonesia",
-  "alliance": null
-},
-{
-  "iata": "GA",
-  "name": "Garuda Indonesia",
-  "country": "Indonesia",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "UK",
-  "name": "Vistara",
-  "country": "India",
-  "alliance": null
-},
-{
-  "iata": "IX",
-  "name": "Air India Express",
-  "country": "India",
-  "alliance": null
-},
-{
-  "iata": "KC",
-  "name": "Dragonair (Cathay Dragon)",
-  "country": "Hong Kong",
-  "alliance": null
-},
-{
-  "iata": "PR",
-  "name": "Philippine Airlines",
-  "country": "Philippines",
-  "alliance": null
-},
-{
-  "iata": "HA",
-  "name": "Hawaiian Airlines",
-  "country": "United States",
-  "alliance": null
-},
-{
-  "iata": "BI",
-  "name": "Royal Brunei Airlines",
-  "country": "Brunei",
-  "alliance": null
-},
-{
-  "iata": "RJ",
-  "name": "Royal Jordanian",
-  "country": "Jordan",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "AT",
-  "name": "Royal Air Maroc",
-  "country": "Morocco",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "WY",
-  "name": "Oman Air",
-  "country": "Oman",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "PR",
-  "name": "Philippine Airlines",
-  "country": "Philippines",
-  "alliance": null
-},
-{
-  "iata": "SB",
-  "name": "Solomon Airlines",
-  "country": "Solomon Islands",
-  "alliance": null
-},
-{
-  "iata": "PX",
-  "name": "AirNiugini",
-  "country": "Papua New Guinea",
-  "alliance": null
-},
-{
-  "iata": "FJ",
-  "name": "Fiji Airways",
-  "country": "Fiji",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "BI",
-  "name": "Royal Brunei Airlines",
-  "country": "Brunei",
-  "alliance": null
-},
-{
-  "iata": "PS",
-  "name": "Ukraine International Airlines",
-  "country": "Ukraine",
-  "alliance": null
-},
-{
-  "iata": "VY",
-  "name": "Vueling",
-  "country": "Spain",
-  "alliance": null
-},
-{
-  "iata": "FR",
-  "name": "Ryanair",
-  "country": "Ireland",
-  "alliance": null
-},
-{
-  "iata": "U2",
-  "name": "easyJet",
-  "country": "United Kingdom",
-  "alliance": null
-},
-{
-  "iata": "TP",
-  "name": "TAP Air Portugal",
-  "country": "Portugal",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "EY",
-  "name": "Etihad Airways",
-  "country": "United Arab Emirates",
-  "alliance": null
-},
-{
-  "iata": "KU",
-  "name": "Kuwait Airways",
-  "country": "Kuwait",
-  "alliance": null
-},
-{
-  "iata": "RJ",
-  "name": "Royal Jordanian",
-  "country": "Jordan",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "IC",
-  "name": "Vistara (Tata SIA Airlines)",
-  "country": "India",
-  "alliance": null
-},
-{
-  "iata": "SB",
-  "name": "LATAM Airlines Group",
-  "country": "Various",
-  "alliance": null
-},
-{
-  "iata": "U6",
-  "name": "Ural Airlines",
-  "country": "Russia",
-  "alliance": null
-},
-{
-  "iata": "S7",
-  "name": "S7 Airlines",
-  "country": "Russia",
-  "alliance": null
-},
-{
-  "iata": "EF",
-  "name": "Equaflight Service",
-  "country": "Equatorial Guinea",
-  "alliance": null
-},
-{
-  "iata": "HF",
-  "name": "Hifly",
-  "country": "Portugal",
-  "alliance": null
-},
-{
-  "iata": "7Q",
-  "name": "Small Planet Airlines",
-  "country": "Lithuania/Poland (various)",
-  "alliance": null
-},
-{
-  "iata": "KM",
-  "name": "Air Malta",
-  "country": "Malta",
-  "alliance": null
-},
-{
-  "iata": "HV",
-  "name": "Transavia",
-  "country": "Netherlands/France",
-  "alliance": null
-},
-{
-  "iata": "SN",
-  "name": "Brussels Airlines",
-  "country": "Belgium",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "LO",
-  "name": "LOT Polish Airlines",
-  "country": "Poland",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "TP",
-  "name": "TAP Air Portugal",
-  "country": "Portugal",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "OK",
-  "name": "Czech Airlines",
-  "country": "Czech Republic",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "OS",
-  "name": "Austrian Airlines",
-  "country": "Austria",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "IB",
-  "name": "Iberia",
-  "country": "Spain",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "W6",
-  "name": "Wizz Air",
-  "country": "Hungary",
-  "alliance": null
-},
-{
-  "iata": "JU",
-  "name": "Air Serbia",
-  "country": "Serbia",
-  "alliance": null
-},
-{
-  "iata": "4U",
-  "name": "Germanwings",
-  "country": "Germany",
-  "alliance": null
-},
-{
-  "iata": "VY",
-  "name": "Vueling",
-  "country": "Spain",
-  "alliance": null
-},
-{
-  "iata": "AY",
-  "name": "Finnair",
-  "country": "Finland",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "IB",
-  "name": "Iberia Express",
-  "country": "Spain",
-  "alliance": null
-},
-{
-  "iata": "NX",
-  "name": "Air Macau",
-  "country": "Macau SAR",
-  "alliance": null
-},
-{
-  "iata": "PR",
-  "name": "Philippine Airlines",
-  "country": "Philippines",
-  "alliance": null
-},
-{
-  "iata": "KM",
-  "name": "Air Malta",
-  "country": "Malta",
-  "alliance": null
-},
-{
-  "iata": "BG",
-  "name": "Biman Bangladesh Airlines",
-  "country": "Bangladesh",
-  "alliance": null
-},
-{
-  "iata": "UL",
-  "name": "SriLankan Airlines",
-  "country": "Sri Lanka",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "PK",
-  "name": "Pakistan International Airlines",
-  "country": "Pakistan",
-  "alliance": null
-},
-{
-  "iata": "CX",
-  "name": "Cathay Pacific",
-  "country": "Hong Kong SAR",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "3K",
-  "name": "Jetstar Asia",
-  "country": "Singapore",
-  "alliance": null
-},
-{
-  "iata": "JQ",
-  "name": "Jetstar Airways",
-  "country": "Australia",
-  "alliance": null
-},
-{
-  "iata": "MF",
-  "name": "XiamenAir",
-  "country": "China",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "ZH",
-  "name": "Shenzhen Airlines",
-  "country": "China",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "BX",
-  "name": "Air Niugini",
-  "country": "Papua New Guinea",
-  "alliance": null
-},
-{
-  "iata": "CI",
-  "name": "China Airlines",
-  "country": "Taiwan",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "BR",
-  "name": "EVA Air",
-  "country": "Taiwan",
-  "alliance": "Star Alliance"
-},
-{
-  "iata": "KE",
-  "name": "Korean Air",
-  "country": "South Korea",
-  "alliance": "SkyTeam"
-},
-{
-  "iata": "WY",
-  "name": "Oman Air",
-  "country": "Oman",
-  "alliance": "Oneworld"
-},
-{
-  "iata": "KM",
-  "name": "Air Malta",
-  "country": "Malta",
-  "alliance": null
-},
-{
-  "iata": "S2",
-  "name": "Cebu Pacific",
-  "country": "Philippines",
-  "alliance": null
-},
-{
-  "iata": "5J",
-  "name": "Cebu Pacific",
-  "country": "Philippines",
-  "alliance": null
-},
-{
-  "iata": "HM",
-  "name": "Air Seychelles",
-  "country": "Seychelles",
-  "alliance": null
-},
-{
-  "iata": "QK",
-  "name": "BA CityFlyer",
-  "country": "United Kingdom",
-  "alliance": "Oneworld"
-}]
-````
+  {
+    "iata": "AA",
+    "name": "American Airlines",
+    "country": "United States",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "DL",
+    "name": "Delta Air Lines",
+    "country": "United States",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "UA",
+    "name": "United Airlines",
+    "country": "United States",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "AC",
+    "name": "Air Canada",
+    "country": "Canada",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "WS",
+    "name": "WestJet",
+    "country": "Canada",
+    "alliance": null
+  },
+  {
+    "iata": "BA",
+    "name": "British Airways",
+    "country": "United Kingdom",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "VS",
+    "name": "Virgin Atlantic",
+    "country": "United Kingdom",
+    "alliance": null
+  },
+  {
+    "iata": "AF",
+    "name": "Air France",
+    "country": "France",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "KL",
+    "name": "KLM Royal Dutch Airlines",
+    "country": "Netherlands",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "LH",
+    "name": "Lufthansa",
+    "country": "Germany",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "IB",
+    "name": "Iberia",
+    "country": "Spain",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "SN",
+    "name": "Brussels Airlines",
+    "country": "Belgium",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "AZ",
+    "name": "ITA Airways",
+    "country": "Italy",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "LX",
+    "name": "SWISS International Air Lines",
+    "country": "Switzerland",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "OS",
+    "name": "Austrian Airlines",
+    "country": "Austria",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "AY",
+    "name": "Finnair",
+    "country": "Finland",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "EK",
+    "name": "Emirates",
+    "country": "United Arab Emirates",
+    "alliance": null
+  },
+  {
+    "iata": "QR",
+    "name": "Qatar Airways",
+    "country": "Qatar",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "EK",
+    "name": "Emirates",
+    "country": "United Arab Emirates",
+    "alliance": null
+  },
+  {
+    "iata": "EY",
+    "name": "Etihad Airways",
+    "country": "United Arab Emirates",
+    "alliance": null
+  },
+  {
+    "iata": "QR",
+    "name": "Qatar Airways",
+    "country": "Qatar",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "QF",
+    "name": "Qantas",
+    "country": "Australia",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "VA",
+    "name": "Virgin Australia",
+    "country": "Australia",
+    "alliance": null
+  },
+  {
+    "iata": "NZ",
+    "name": "Air New Zealand",
+    "country": "New Zealand",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "SQ",
+    "name": "Singapore Airlines",
+    "country": "Singapore",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "CX",
+    "name": "Cathay Pacific",
+    "country": "Hong Kong SAR",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "CI",
+    "name": "China Airlines",
+    "country": "Taiwan",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "CZ",
+    "name": "China Southern Airlines",
+    "country": "China",
+    "alliance": null
+  },
+  {
+    "iata": "MU",
+    "name": "China Eastern Airlines",
+    "country": "China",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "NH",
+    "name": "All Nippon Airways (ANA)",
+    "country": "Japan",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "JL",
+    "name": "Japan Airlines",
+    "country": "Japan",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "KE",
+    "name": "Korean Air",
+    "country": "South Korea",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "OZ",
+    "name": "Asiana Airlines",
+    "country": "South Korea",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "AI",
+    "name": "Air India",
+    "country": "India",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "6E",
+    "name": "IndiGo",
+    "country": "India",
+    "alliance": null
+  },
+  {
+    "iata": "S7",
+    "name": "S7 Airlines",
+    "country": "Russia",
+    "alliance": null
+  },
+  {
+    "iata": "SU",
+    "name": "Aeroflot",
+    "country": "Russia",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "EK",
+    "name": "Emirates",
+    "country": "United Arab Emirates",
+    "alliance": null
+  },
+  {
+    "iata": "MS",
+    "name": "EgyptAir",
+    "country": "Egypt",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "SA",
+    "name": "South African Airways",
+    "country": "South Africa",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "KQ",
+    "name": "Kenya Airways",
+    "country": "Kenya",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "ET",
+    "name": "Ethiopian Airlines",
+    "country": "Ethiopia",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "TP",
+    "name": "TAP Air Portugal",
+    "country": "Portugal",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "TK",
+    "name": "Turkish Airlines",
+    "country": "Turkey",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "IB",
+    "name": "Iberia",
+    "country": "Spain",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "JJ",
+    "name": "LATAM Brasil",
+    "country": "Brazil",
+    "alliance": null
+  },
+  {
+    "iata": "G3",
+    "name": "Gol Transportes Aéreos",
+    "country": "Brazil",
+    "alliance": null
+  },
+  {
+    "iata": "AV",
+    "name": "Avianca",
+    "country": "Colombia",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "CM",
+    "name": "Copa Airlines",
+    "country": "Panama",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "AM",
+    "name": "Aeroméxico",
+    "country": "Mexico",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "AR",
+    "name": "Aerolíneas Argentinas",
+    "country": "Argentina",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "LA",
+    "name": "LATAM",
+    "country": "Chile",
+    "alliance": null
+  },
+  {
+    "iata": "B6",
+    "name": "JetBlue Airways",
+    "country": "United States",
+    "alliance": null
+  },
+  {
+    "iata": "F9",
+    "name": "Frontier Airlines",
+    "country": "United States",
+    "alliance": null
+  },
+  {
+    "iata": "WN",
+    "name": "Southwest Airlines",
+    "country": "United States",
+    "alliance": null
+  },
+  {
+    "iata": "AS",
+    "name": "Alaska Airlines",
+    "country": "United States",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "NZ",
+    "name": "Air New Zealand",
+    "country": "New Zealand",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "PR",
+    "name": "Philippine Airlines",
+    "country": "Philippines",
+    "alliance": null
+  },
+  {
+    "iata": "MH",
+    "name": "Malaysia Airlines",
+    "country": "Malaysia",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "TG",
+    "name": "Thai Airways International",
+    "country": "Thailand",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "VN",
+    "name": "Vietnam Airlines",
+    "country": "Vietnam",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "QZ",
+    "name": "Indonesia AirAsia",
+    "country": "Indonesia",
+    "alliance": null
+  },
+  {
+    "iata": "GA",
+    "name": "Garuda Indonesia",
+    "country": "Indonesia",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "UK",
+    "name": "Vistara",
+    "country": "India",
+    "alliance": null
+  },
+  {
+    "iata": "IX",
+    "name": "Air India Express",
+    "country": "India",
+    "alliance": null
+  },
+  {
+    "iata": "KC",
+    "name": "Dragonair (Cathay Dragon)",
+    "country": "Hong Kong",
+    "alliance": null
+  },
+  {
+    "iata": "PR",
+    "name": "Philippine Airlines",
+    "country": "Philippines",
+    "alliance": null
+  },
+  {
+    "iata": "HA",
+    "name": "Hawaiian Airlines",
+    "country": "United States",
+    "alliance": null
+  },
+  {
+    "iata": "BI",
+    "name": "Royal Brunei Airlines",
+    "country": "Brunei",
+    "alliance": null
+  },
+  {
+    "iata": "RJ",
+    "name": "Royal Jordanian",
+    "country": "Jordan",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "AT",
+    "name": "Royal Air Maroc",
+    "country": "Morocco",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "WY",
+    "name": "Oman Air",
+    "country": "Oman",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "PR",
+    "name": "Philippine Airlines",
+    "country": "Philippines",
+    "alliance": null
+  },
+  {
+    "iata": "SB",
+    "name": "Solomon Airlines",
+    "country": "Solomon Islands",
+    "alliance": null
+  },
+  {
+    "iata": "PX",
+    "name": "AirNiugini",
+    "country": "Papua New Guinea",
+    "alliance": null
+  },
+  {
+    "iata": "FJ",
+    "name": "Fiji Airways",
+    "country": "Fiji",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "BI",
+    "name": "Royal Brunei Airlines",
+    "country": "Brunei",
+    "alliance": null
+  },
+  {
+    "iata": "PS",
+    "name": "Ukraine International Airlines",
+    "country": "Ukraine",
+    "alliance": null
+  },
+  {
+    "iata": "VY",
+    "name": "Vueling",
+    "country": "Spain",
+    "alliance": null
+  },
+  {
+    "iata": "FR",
+    "name": "Ryanair",
+    "country": "Ireland",
+    "alliance": null
+  },
+  {
+    "iata": "U2",
+    "name": "easyJet",
+    "country": "United Kingdom",
+    "alliance": null
+  },
+  {
+    "iata": "TP",
+    "name": "TAP Air Portugal",
+    "country": "Portugal",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "EY",
+    "name": "Etihad Airways",
+    "country": "United Arab Emirates",
+    "alliance": null
+  },
+  {
+    "iata": "KU",
+    "name": "Kuwait Airways",
+    "country": "Kuwait",
+    "alliance": null
+  },
+  {
+    "iata": "RJ",
+    "name": "Royal Jordanian",
+    "country": "Jordan",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "IC",
+    "name": "Vistara (Tata SIA Airlines)",
+    "country": "India",
+    "alliance": null
+  },
+  {
+    "iata": "SB",
+    "name": "LATAM Airlines Group",
+    "country": "Various",
+    "alliance": null
+  },
+  {
+    "iata": "U6",
+    "name": "Ural Airlines",
+    "country": "Russia",
+    "alliance": null
+  },
+  {
+    "iata": "S7",
+    "name": "S7 Airlines",
+    "country": "Russia",
+    "alliance": null
+  },
+  {
+    "iata": "EF",
+    "name": "Equaflight Service",
+    "country": "Equatorial Guinea",
+    "alliance": null
+  },
+  {
+    "iata": "HF",
+    "name": "Hifly",
+    "country": "Portugal",
+    "alliance": null
+  },
+  {
+    "iata": "7Q",
+    "name": "Small Planet Airlines",
+    "country": "Lithuania/Poland (various)",
+    "alliance": null
+  },
+  {
+    "iata": "KM",
+    "name": "Air Malta",
+    "country": "Malta",
+    "alliance": null
+  },
+  {
+    "iata": "HV",
+    "name": "Transavia",
+    "country": "Netherlands/France",
+    "alliance": null
+  },
+  {
+    "iata": "SN",
+    "name": "Brussels Airlines",
+    "country": "Belgium",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "LO",
+    "name": "LOT Polish Airlines",
+    "country": "Poland",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "TP",
+    "name": "TAP Air Portugal",
+    "country": "Portugal",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "OK",
+    "name": "Czech Airlines",
+    "country": "Czech Republic",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "OS",
+    "name": "Austrian Airlines",
+    "country": "Austria",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "IB",
+    "name": "Iberia",
+    "country": "Spain",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "W6",
+    "name": "Wizz Air",
+    "country": "Hungary",
+    "alliance": null
+  },
+  {
+    "iata": "JU",
+    "name": "Air Serbia",
+    "country": "Serbia",
+    "alliance": null
+  },
+  {
+    "iata": "4U",
+    "name": "Germanwings",
+    "country": "Germany",
+    "alliance": null
+  },
+  {
+    "iata": "VY",
+    "name": "Vueling",
+    "country": "Spain",
+    "alliance": null
+  },
+  {
+    "iata": "AY",
+    "name": "Finnair",
+    "country": "Finland",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "IB",
+    "name": "Iberia Express",
+    "country": "Spain",
+    "alliance": null
+  },
+  {
+    "iata": "NX",
+    "name": "Air Macau",
+    "country": "Macau SAR",
+    "alliance": null
+  },
+  {
+    "iata": "PR",
+    "name": "Philippine Airlines",
+    "country": "Philippines",
+    "alliance": null
+  },
+  {
+    "iata": "KM",
+    "name": "Air Malta",
+    "country": "Malta",
+    "alliance": null
+  },
+  {
+    "iata": "BG",
+    "name": "Biman Bangladesh Airlines",
+    "country": "Bangladesh",
+    "alliance": null
+  },
+  {
+    "iata": "UL",
+    "name": "SriLankan Airlines",
+    "country": "Sri Lanka",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "PK",
+    "name": "Pakistan International Airlines",
+    "country": "Pakistan",
+    "alliance": null
+  },
+  {
+    "iata": "CX",
+    "name": "Cathay Pacific",
+    "country": "Hong Kong SAR",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "3K",
+    "name": "Jetstar Asia",
+    "country": "Singapore",
+    "alliance": null
+  },
+  {
+    "iata": "JQ",
+    "name": "Jetstar Airways",
+    "country": "Australia",
+    "alliance": null
+  },
+  {
+    "iata": "MF",
+    "name": "XiamenAir",
+    "country": "China",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "ZH",
+    "name": "Shenzhen Airlines",
+    "country": "China",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "BX",
+    "name": "Air Niugini",
+    "country": "Papua New Guinea",
+    "alliance": null
+  },
+  {
+    "iata": "CI",
+    "name": "China Airlines",
+    "country": "Taiwan",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "BR",
+    "name": "EVA Air",
+    "country": "Taiwan",
+    "alliance": "Star Alliance"
+  },
+  {
+    "iata": "KE",
+    "name": "Korean Air",
+    "country": "South Korea",
+    "alliance": "SkyTeam"
+  },
+  {
+    "iata": "WY",
+    "name": "Oman Air",
+    "country": "Oman",
+    "alliance": "Oneworld"
+  },
+  {
+    "iata": "KM",
+    "name": "Air Malta",
+    "country": "Malta",
+    "alliance": null
+  },
+  {
+    "iata": "S2",
+    "name": "Cebu Pacific",
+    "country": "Philippines",
+    "alliance": null
+  },
+  {
+    "iata": "5J",
+    "name": "Cebu Pacific",
+    "country": "Philippines",
+    "alliance": null
+  },
+  {
+    "iata": "HM",
+    "name": "Air Seychelles",
+    "country": "Seychelles",
+    "alliance": null
+  },
+  {
+    "iata": "QK",
+    "name": "BA CityFlyer",
+    "country": "United Kingdom",
+    "alliance": "Oneworld"
+  }
+]
+```
 
 ## File: public/js/entries/common.js
-````javascript
+
+```javascript
 /**
  * Common Bundle Entry Point
  * Shared utilities used across all pages
@@ -21752,10 +22708,11 @@ import '../common-handlers.js'; // Register common event handlers
 // This ensures event delegation works even if the module loads after DOMContentLoaded fires
 ⋮----
 // Also ensure it's reinitialized if DOMContentLoaded hasn't fired yet
-````
+```
 
 ## File: public/js/entries/dashboard.js
-````javascript
+
+```javascript
 /**
  * Dashboard Bundle Entry Point
  * Includes all JavaScript needed for the dashboard page
@@ -21776,20 +22733,22 @@ import '../trip-view-sidebar.js'; // Needed for showAddForm() on dashboard when 
 // This ensures event delegation works even if the module loads after DOMContentLoaded fires
 ⋮----
 // Also ensure it's reinitialized if DOMContentLoaded hasn't fired yet
-````
+```
 
 ## File: public/js/entries/map-view.js
-````javascript
+
+```javascript
 /**
  * Map View Bundle Entry Point
  * Includes JavaScript needed for standalone map view page
  */
 ⋮----
 // Import map-view specific modules
-````
+```
 
 ## File: public/js/entries/trip-view.js
-````javascript
+
+```javascript
 /**
  * Trip View Bundle Entry Point (Optimized)
  * Core functionality loaded immediately, heavy modules loaded lazily
@@ -21814,10 +22773,11 @@ import '../shared-handlers.js'; // For trip-specific actions
 // Check if map container exists before loading
 ⋮----
 // Lazy load companions when companion UI is detected
-````
+```
 
 ## File: public/js/lazy/companions-loader.js
-````javascript
+
+```javascript
 /**
  * Companions Lazy Loader
  * Dynamically loads companion management features only when needed
@@ -21860,10 +22820,11 @@ export function autoLoadCompanions()
 const loadOnInteraction = () =>
 ⋮----
 // Remove listeners after first interaction
-````
+```
 
 ## File: public/js/lazy/maps-loader.js
-````javascript
+
+```javascript
 /**
  * Maps Lazy Loader
  * Dynamically loads map functionality only when needed
@@ -21907,10 +22868,11 @@ export function autoLoadMaps()
 observer.disconnect(); // Load once and stop observing
 ⋮----
 { rootMargin: '100px' } // Start loading 100px before map enters viewport
-````
+```
 
 ## File: public/js/lazy/preline-loader.js
-````javascript
+
+```javascript
 /**
  * Preline UI Lazy Loader
  * Dynamically loads Preline only when UI components are needed
@@ -21951,10 +22913,11 @@ export async function initPrelineFor(element)
 export async function autoLoadPreline()
 ⋮----
 // Check if page has Preline components
-````
+```
 
 ## File: public/js/airport-autocomplete.js
-````javascript
+
+```javascript
 /**
  * Airport Autocomplete - AJAX-based
  * Provides autocomplete functionality for airport fields using API endpoint
@@ -22029,10 +22992,11 @@ function initializeAirportAutocomplete()
 // Auto-initialize on DOM ready
 ⋮----
 // Export for manual initialization
-````
+```
 
 ## File: public/js/common-handlers.js
-````javascript
+
+```javascript
 /**
  * Common Event Handlers
  * Phase 4 - Frontend Modernization: Event Delegation
@@ -22094,10 +23058,11 @@ function stopPropagation(element, event)
 export function registerCommonHandlers()
 ⋮----
 // Initialize on module load
-````
+```
 
 ## File: public/js/constants.js
-````javascript
+
+```javascript
 /**
  * Frontend Constants
  * Centralized constants for client-side JavaScript
@@ -22118,10 +23083,11 @@ const SOCKET_RECONNECT_DELAY = 1000; // Initial reconnection delay
 const SOCKET_RECONNECT_DELAY_MAX = 5000; // Maximum reconnection delay
 ⋮----
 // Make constants available globally
-````
+```
 
 ## File: public/js/datetime-formatter.js
-````javascript
+
+```javascript
 // DateTime formatting utilities
 // Format: DD MMM YYYY for dates, HH:MM for times (24-hour)
 ⋮----
@@ -22185,10 +23151,11 @@ function calculateLayover(
 // Make all functions available globally
 ⋮----
 // Export for modules
-````
+```
 
 ## File: public/js/event-delegation.js
-````javascript
+
+```javascript
 /**
  * Event Delegation System
  * Phase 4 - Frontend Modernization: Remove global pollution
@@ -22293,10 +23260,11 @@ export function getElementData(element)
 export function confirmAction(message)
 ⋮----
 // Make functions available globally for backward compatibility
-````
+```
 
 ## File: public/js/eventBus.js
-````javascript
+
+```javascript
 /**
  * Event Bus
  * Phase 4 - Frontend Modernization: Event Bus Pattern
@@ -22419,10 +23387,11 @@ getDebugInfo()
 // Export singleton instance and EventBus class
 ⋮----
 // Make available globally for backward compatibility and ease of use
-````
+```
 
 ## File: public/js/maps.js
-````javascript
+
+```javascript
 /* eslint-env browser */
 /* global L, formatDateTime */
 /* eslint-disable no-console, no-undef, no-continue, max-len */
@@ -22738,10 +23707,11 @@ function restoreOriginalItemZoom()
 /* eslint-enable no-undef */
 ⋮----
 /* eslint-enable no-undef */
-````
+```
 
 ## File: public/js/preline.js
-````javascript
+
+```javascript
 /*
            * HSPinInput
            * @version: 3.2.3
@@ -24143,9 +25113,10 @@ function i(s)
 (i.d = (e, t) =>
 (i.o = (e, t)
 (i.r = (e) =>
-````
+```
 
 ## File: public/js/README.md
+
 ````markdown
 # JavaScript Modules Documentation
 
@@ -24313,7 +25284,8 @@ When a bundler (e.g., esbuild) is added:
 ````
 
 ## File: public/js/shared-handlers.js
-````javascript
+
+```javascript
 /**
  * Shared Event Handlers
  * Phase 4 - Frontend Modernization: Event Delegation
@@ -24413,10 +25385,11 @@ function handleReissueRemainder(element, _event)
 function registerSharedHandlers()
 ⋮----
 // Initialize on module load
-````
+```
 
 ## File: public/js/time-input-formatter.js
-````javascript
+
+```javascript
 /**
  * Time Input Formatter
  * Handles 24-hour time input with auto-formatting and validation
@@ -24494,10 +25467,11 @@ if (value === '') return true; // Empty is fine if not required
 // Use MutationObserver to watch for dynamically added time inputs
 ⋮----
 // Export functions for use in other contexts
-````
+```
 
 ## File: public/js/trip-view-utils.js
-````javascript
+
+```javascript
 /**
  * Trip View - Utilities
  * Helper functions for trip view
@@ -24545,10 +25519,11 @@ function formatDateTimeLocal(date)
 function getLatestDate(items, dateField)
 ⋮----
 // Make all functions available globally
-````
+```
 
 ## File: public/js/trips-list.js
-````javascript
+
+```javascript
 /**
  * Trips List Page - UI and Interactions
  * Handles tabs, accordions, map animations, and sidebar controls
@@ -24669,10 +25644,11 @@ function stopTripAnimation()
 // This event listener is disabled to avoid conflicts with the new hover system
 ⋮----
 // Expose functions globally for inline scripts and initialization
-````
+```
 
 ## File: public/js/voucher-lazy-loader.js
-````javascript
+
+```javascript
 /**
  * Lazy Loader for Voucher Management Code
  * Loads voucher-related modules only when needed
@@ -24704,10 +25680,11 @@ async function openVoucherAttachmentPanel(flightId, tripId, flightDetails)
 // Error opening voucher panel
 ⋮----
 // Expose globally for inline onclick handlers
-````
+```
 
 ## File: routes/api/v1/geocode.js
-````javascript
+
+```javascript
 /**
  * Geocoding API v1 Routes
  * Provides geocoding and timezone inference endpoints
@@ -24756,10 +25733,11 @@ async function openVoucherAttachmentPanel(flightId, tripId, flightDetails)
 // Infer timezone from coordinates
 ⋮----
 // Return coordinates even if timezone inference fails
-````
+```
 
 ## File: routes/api/v1/item-companions.js
-````javascript
+
+```javascript
 /**
  * API v1 Item Companions Routes
  * RESTful JSON API for managing companions associated with individual items
@@ -24800,10 +25778,11 @@ async function openVoucherAttachmentPanel(flightId, tripId, flightDetails)
 // Validate companionIds is an array
 ⋮----
 // Update companions for the item
-````
+```
 
 ## File: routes/api/v1/vouchers.js
-````javascript
+
+```javascript
 /**
  * API v1 Vouchers Routes
  * RESTful JSON API for voucher management
@@ -24954,10 +25933,11 @@ async function openVoucherAttachmentPanel(flightId, tripId, flightDetails)
  *
  * @requires authentication - User must be logged in
  */
-````
+```
 
 ## File: routes/account.js
-````javascript
+
+```javascript
 // Configure multer for file uploads (memory storage)
 ⋮----
 limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
@@ -24992,10 +25972,11 @@ fileFilter: (req, file, cb) =>
 // GET export account data
 ⋮----
 // POST import account data (deprecated, kept for backwards compatibility)
-````
+```
 
 ## File: routes/api.js
-````javascript
+
+```javascript
 // Allow CORS preflight requests to pass through without authentication
 ⋮----
 // Mount API v1 routes
@@ -25009,22 +25990,25 @@ fileFilter: (req, file, cb) =>
 // API endpoint to fetch item companions
 ⋮----
 // API endpoint to update item companions
-````
+```
 
 ## File: routes/calendar.js
-````javascript
+
+```javascript
 // GET calendar sidebar content for dashboard (AJAX endpoint)
-````
+```
 
 ## File: routes/carRentals.js
-````javascript
+
+```javascript
 router.get('/standalone/form', carRentalController.getAddForm); // Standalone car rental form (same as trip form)
 ⋮----
 router.post('/standalone', carRentalController.createCarRental); // Standalone car rentals
-````
+```
 
 ## File: routes/companionRelationships.js
-````javascript
+
+```javascript
 // All routes require authentication
 ⋮----
 // Send companion request
@@ -25042,43 +26026,49 @@ router.post('/standalone', carRentalController.createCarRental); // Standalone c
 // Get mutual companions
 ⋮----
 // Resend companion request
-````
+```
 
 ## File: routes/events.js
-````javascript
+
+```javascript
 router.get('/standalone/form', eventController.getStandaloneForm); // Get standalone form
 ⋮----
 router.post('/standalone', eventController.createEvent); // Standalone events
-````
+```
 
 ## File: routes/flights.js
-````javascript
+
+```javascript
 router.get('/standalone/form', flightController.getAddForm); // Standalone flight form (same as trip form)
 ⋮----
 router.post('/standalone', flightController.createFlight); // Standalone flights
-````
+```
 
 ## File: routes/hotels.js
-````javascript
+
+```javascript
 router.get('/standalone/form', hotelController.getAddForm); // Standalone hotel form (same as trip form)
 ⋮----
 router.post('/standalone', hotelController.createHotel); // Standalone hotels
-````
+```
 
 ## File: routes/transportation.js
-````javascript
+
+```javascript
 router.get('/standalone/form', transportationController.getAddForm); // Standalone transportation form (same as trip form)
 ⋮----
 router.post('/standalone', transportationController.createTransportation); // Standalone transportation
-````
+```
 
 ## File: routes/trips.js
-````javascript
 
-````
+```javascript
+
+```
 
 ## File: routes/vouchers.js
-````javascript
+
+```javascript
 // All routes require authentication
 ⋮----
 // Voucher Management Routes
@@ -25086,10 +26076,11 @@ router.post('/standalone', transportationController.createTransportation); // St
 // Get available vouchers for a specific flight
 ⋮----
 // Flight Voucher Attachment Routes
-````
+```
 
 ## File: scripts/capture-build-info.js
-````javascript
+
+```javascript
 /**
  * Capture build information (git commit, build timestamp, etc.)
  * This script is run during Docker build to capture the git commit hash
@@ -25118,20 +26109,22 @@ function captureRefInfo()
 // Optionally write to a file for reference
 ⋮----
 // Silent error handling
-````
+```
 
 ## File: scripts/clear-cache.js
-````javascript
+
+```javascript
 /**
  * Clear Redis Cache Script
  * Usage: node scripts/clear-cache.js
  */
 ⋮----
 async function clearCache()
-````
+```
 
 ## File: scripts/db-backup.sh
-````bash
+
+```bash
 #!/bin/bash
 # Database backup script for Bluebonnet Travel Planner
 # Usage: ./scripts/db-backup.sh [environment]
@@ -25214,10 +26207,11 @@ ls -lht "$BACKUP_DIR"/*.sql.gz 2>/dev/null | head -5 || echo "No backups found"
 
 echo -e "\n${GREEN}=== Backup Complete ===${NC}"
 echo "Backup location: ${BACKUP_FILE}.gz"
-````
+```
 
 ## File: scripts/db-restore.sh
-````bash
+
+```bash
 #!/bin/bash
 # Database restore script for Bluebonnet Travel Planner
 # Usage: ./scripts/db-restore.sh [backup-file] [environment]
@@ -25350,10 +26344,11 @@ fi
 echo -e "\n${GREEN}=== Restore Complete ===${NC}"
 echo "Database: $DB_NAME"
 echo "Restored from: $BACKUP_FILE"
-````
+```
 
 ## File: scripts/debug-airports.js
-````javascript
+
+```javascript
 /**
  * Airport Debugging Script
  * Checks airport database status and tests search functionality
@@ -25370,10 +26365,11 @@ async function debugAirports()
 // 4. Test airportService.getAirportByCode()
 ⋮----
 // 5. Test search endpoint response format
-````
+```
 
 ## File: scripts/deploy.sh
-````bash
+
+```bash
 #!/bin/bash
 # Deployment script for Bluebonnet Travel Planner
 # Usage: ./scripts/deploy.sh [environment]
@@ -25535,10 +26531,11 @@ if [ "$ENVIRONMENT" == "production" ]; then
     echo "- Rollback if needed: git checkout [previous-commit] && ./scripts/deploy.sh production"
     echo ""
 fi
-````
+```
 
 ## File: scripts/fix-tripid-nullable.js
-````javascript
+
+```javascript
 /**
  * Fix tripId nullable constraint
  * This script updates the database schema to allow tripId to be NULL
@@ -25551,10 +26548,11 @@ fi
 async function fixTripIdNullable()
 ⋮----
 // Use alter: true which automatically alters schema to match models
-````
+```
 
 ## File: scripts/replace-console-with-logger.sh
-````bash
+
+```bash
 #!/bin/bash
 
 # Script to replace console.log/error/warn with Winston logger in controllers
@@ -25592,10 +26590,11 @@ echo "Summary:"
 echo "Files processed: $(echo "$files" | wc -w)"
 echo "Replacements made:"
 grep -r "logger\." "$CONTROLLERS_DIR" --include="*.js" | wc -l
-````
+```
 
 ## File: scripts/seed-airports.js
-````javascript
+
+```javascript
 /**
  * Airport Data Seeder
  * Migrates airport data from data/airports.json to the airports table
@@ -25625,10 +26624,11 @@ ignoreDuplicates: true, // Skip duplicates
 // Clear airport cache if Redis is available
 ⋮----
 // Run the seeder
-````
+```
 
 ## File: services/BaseService.js
-````javascript
+
+```javascript
 /**
  * Base Service Class
  * Provides common database operations and patterns for all services
@@ -25714,10 +26714,11 @@ static verifyOwnership(record, userId)
    * @returns {Promise<Object|null>}
    */
 async findByIdAndVerifyOwnership(id, userId, options =
-````
+```
 
 ## File: services/cacheService.js
-````javascript
+
+```javascript
 /**
  * Cache Service
  * Provides high-level caching functionality for application data
@@ -25977,10 +26978,11 @@ async function invalidateAirportCaches()
 // Statistics caching
 ⋮----
 // Utility
-````
+```
 
 ## File: services/notificationService.js
-````javascript
+
+```javascript
 /**
  * Notification Service
  * Handles notification creation and WebSocket emission
@@ -26004,10 +27006,11 @@ async function createNotification(data)
 async function createNotifications(notificationsData)
 ⋮----
 // Emit WebSocket events for each notification
-````
+```
 
 ## File: services/socketService.js
-````javascript
+
+```javascript
 /**
  * WebSocket Service
  * Manages Socket.IO connections and real-time events
@@ -26110,10 +27113,11 @@ function getUserSocket(userId)
  * @returns {boolean} True if user has active WebSocket connection
  */
 function isUserConnected(userId)
-````
+```
 
 ## File: services/voucherService.js
-````javascript
+
+```javascript
 /**
  * Voucher Service
  * Business logic for voucher management
@@ -26250,10 +27254,11 @@ async searchVouchers(userId, query, limit = 10)
    * @returns {Promise<Object>}
    */
 async getVoucherStatistics(userId)
-````
+```
 
 ## File: tests/integration/airports.test.js
-````javascript
+
+```javascript
 /**
  * Integration Tests for Airports API
  * Tests /api/v1/airports endpoints
@@ -26264,10 +27269,11 @@ async getVoucherStatistics(userId)
 // limit=0 is treated as falsy, so defaults to 10, then Math.max(10, 1) = 10
 ⋮----
 // Invalid limit defaults to 10
-````
+```
 
 ## File: tests/integration/trips.test.js
-````javascript
+
+```javascript
 /**
  * Integration Tests for Trips API
  * Tests /api/v1/trips endpoints
@@ -26283,10 +27289,11 @@ ensureAuthenticated: (req, res, next) =>
 const authRequest = (method, url) =>
 ⋮----
 // Missing destination and departureDate
-````
+```
 
 ## File: tests/unit/frontend/trips-list.test.js
-````javascript
+
+```javascript
 /**
  * Tests for trips-list.js module
  * Phase 4 - Frontend Modernization: ES6 Module Testing
@@ -26330,16 +27337,18 @@ const authRequest = (method, url) =>
 // ❌ window.showUpcomingTrips = showUpcomingTrips (removed)
 ⋮----
 // The module should handle popstate events for back/forward navigation
-````
+```
 
 ## File: tests/unit/services/BaseService.test.js
-````javascript
+
+```javascript
 // Mock Sequelize model
 const createMockModel = () => (
-````
+```
 
 ## File: tests/unit/services/cacheService.test.js
-````javascript
+
+```javascript
 /**
  * Unit Tests for services/cacheService.js
  * Tests cache invalidation functionality
@@ -26354,10 +27363,11 @@ const createMockModel = () => (
 86400 // 24 hours in seconds
 ⋮----
 expect(cacheService.TTL.AIRPORTS).toBe(86400); // 24 hours
-````
+```
 
 ## File: tests/unit/services/companionService.test.js
-````javascript
+
+```javascript
 /**
  * Unit Tests for CompanionService
  * Phase 5 - Testing Infrastructure
@@ -26389,10 +27399,11 @@ TripCompanion.findOne = jest.fn().mockResolvedValue(null); // Not already on tri
 TripCompanion.destroy = jest.fn().mockResolvedValue(1); // 1 record deleted
 ⋮----
 TripCompanion.destroy = jest.fn().mockResolvedValue(0); // 0 records deleted
-````
+```
 
 ## File: tests/unit/services/tripService.test.js
-````javascript
+
+```javascript
 /**
  * Unit Tests for TripService
  * Phase 5 - Testing Infrastructure
@@ -26410,10 +27421,11 @@ Trip.count = jest.fn().mockResolvedValue(25); // Total 25 trips
 .mockResolvedValueOnce(3) // upcoming
 .mockResolvedValueOnce(6) // past
 .mockResolvedValueOnce(1); // active
-````
+```
 
 ## File: tests/unit/services/voucherService.test.js
-````javascript
+
+```javascript
 /**
  * Unit Tests for VoucherService
  * Phase 5 - Testing Infrastructure
@@ -26443,15 +27455,17 @@ expirationDate: '2025-12-15', // Within 30 days
 Voucher.sum = jest.fn().mockResolvedValue(500); // Total value
 ⋮----
 Voucher.sum = jest.fn().mockResolvedValue(null); // No vouchers
-````
+```
 
 ## File: tests/unit/utils/apiResponse.test.js
-````javascript
 
-````
+```javascript
+
+```
 
 ## File: tests/unit/utils/constants.test.js
-````javascript
+
+```javascript
 /**
  * Unit Tests for utils/constants.js
  * Tests time conversion constants
@@ -26460,17 +27474,19 @@ Voucher.sum = jest.fn().mockResolvedValue(null); // No vouchers
 /* eslint-env jest */
 ⋮----
 expect(halfDayInMs).toBe(43200000); // 12 hours
-````
+```
 
 ## File: tests/unit/utils/dateFormatter.test.js
-````javascript
+
+```javascript
 expect(result).toMatch(/^0\d/); // Should start with 0
 ⋮----
 expect(result.getMonth()).toBe(0); // January is 0
-````
+```
 
 ## File: tests/unit/utils/itemCompanionHelper.test.js
-````javascript
+
+```javascript
 /**
  * Unit Tests for utils/itemCompanionHelper.js
  * Tests the sortCompanions helper function
@@ -26479,10 +27495,11 @@ expect(result.getMonth()).toBe(0); // January is 0
 /* eslint-env jest */
 ⋮----
 // Both Alices should come before Bob
-````
+```
 
 ## File: tests/unit/utils/logger.test.js
-````javascript
+
+```javascript
 // Mock dependencies before requiring logger
 ⋮----
 // Mock Winston logger
@@ -26492,10 +27509,11 @@ expect(result.getMonth()).toBe(0); // January is 0
 // Require logger to trigger initialization
 ⋮----
 expect(callArgs.transports).toHaveLength(2); // Error and combined logs
-````
+```
 
 ## File: tests/setup.js
-````javascript
+
+```javascript
 /* eslint-env jest */
 // tests/setup.js - Test configuration and global setup
 ⋮----
@@ -26523,10 +27541,11 @@ createTestCompanion: (userId, overrides =
 ⋮----
 // Create test voucher data
 createTestVoucher: (userId, overrides =
-````
+```
 
 ## File: tests/testServer.js
-````javascript
+
+```javascript
 /**
  * Test Server Setup
  * Creates an Express app instance for integration testing
@@ -26551,10 +27570,11 @@ req.isAuthenticated = ()
 ⋮----
 // Helper to authenticate requests
 function authenticateRequest(request, userId = 'test-user-123')
-````
+```
 
 ## File: utils/apiResponse.js
-````javascript
+
+```javascript
 /**
  * API Response Utility
  * Standardized response formatting for API endpoints
@@ -26645,10 +27665,11 @@ function conflict(res, message = 'Resource conflict')
  * @param {Error} err - Error object
  */
 function internalError(res, message = 'Internal server error', err = null)
-````
+```
 
 ## File: utils/constants.js
-````javascript
+
+```javascript
 /**
  * Application Constants
  * Centralized constants used throughout the application
@@ -26657,10 +27678,11 @@ function internalError(res, message = 'Internal server error', err = null)
 // Time constants (milliseconds)
 ⋮----
 // Export time constants
-````
+```
 
 ## File: utils/dateFormatter.js
-````javascript
+
+```javascript
 /**
  * Shared date/time formatting utilities
  * Used by both server-side (controllers, EJS) and client-side (via datetime-formatter.js)
@@ -26757,10 +27779,11 @@ function getLayoverText(layoverDuration, airportCode)
  * @returns {string} - Formatted date/time string
  */
 function formatInTimezone(utcDate, timezone, format = 'DD MMM YYYY HH:mm')
-````
+```
 
 ## File: utils/itemCompanionHelper.js
-````javascript
+
+```javascript
 /**
  * Sort companions: self (current user) first, then alphabetically by first name
  * @param {Array} companions - Array of companion objects with name and email
@@ -26849,10 +27872,11 @@ exports.removeCompanionFromAllItems = async (companionId, tripId) =>
 // Build array of item references
 ⋮----
 // Remove companion from all items (only those inherited from trip)
-````
+```
 
 ## File: utils/version.js
-````javascript
+
+```javascript
 /**
  * Get application version and build information
  * @returns {Object} Version information including app version, git commit, and build timestamp
@@ -26887,17 +27911,19 @@ stdio: ['pipe', 'pipe', 'ignore'], // Suppress stderr
 // Use current time as fallback
 ⋮----
 // Cache version info on module load (won't change during process lifetime)
-````
+```
 
 ## File: .build-info
-````
+
+```
 GIT_COMMIT=ecfbc04
 GIT_REF=main
 BUILD_TIMESTAMP=2025-11-26T23:15:23.902Z
-````
+```
 
 ## File: .editorconfig
-````
+
+```
 # EditorConfig helps maintain consistent coding styles
 # https://editorconfig.org
 
@@ -26922,10 +27948,11 @@ indent_size = 2
 
 [Makefile]
 indent_style = tab
-````
+```
 
 ## File: .env.example
-````
+
+```
 # Server Configuration
 NODE_ENV=development             # Available stages: development, production, test (see Dockerfile for adding custom stages)
 PORT=3000                        # Application port for local development
@@ -26956,10 +27983,11 @@ REDIS_HOST=localhost
 REDIS_PORT=6379                  # Change this for multiple environments
 # REDIS_PASSWORD=
 # REDIS_DB=0
-````
+```
 
 ## File: .env.production.example
-````
+
+```
 # Production Environment Configuration
 # Copy this file to .env.production and fill in the values
 
@@ -27016,10 +28044,11 @@ GEOCODING_API_KEY=
 # Backup Configuration (for scripts)
 BACKUP_DIR=/backups/bluebonnet
 BACKUP_RETENTION_DAYS=30
-````
+```
 
 ## File: .prettierignore
-````
+
+```
 node_modules/
 public/dist/
 coverage/
@@ -27029,10 +28058,11 @@ package-lock.json
 public/data/
 data/
 logs/
-````
+```
 
 ## File: .prettierrc
-````
+
+```
 {
   "semi": true,
   "trailingComma": "es5",
@@ -27058,10 +28088,11 @@ logs/
     }
   ]
 }
-````
+```
 
 ## File: .sequelizerc
-````
+
+```
 const path = require('path');
 
 module.exports = {
@@ -27070,10 +28101,11 @@ module.exports = {
   'seeders-path': path.resolve('seeders'),
   'migrations-path': path.resolve('migrations'),
 };
-````
+```
 
 ## File: esbuild.config.js
-````javascript
+
+```javascript
 // Build configuration
 ⋮----
 // Common bundle - shared across all pages
@@ -27099,10 +28131,11 @@ async function watch()
 // Rebuild manifest on changes
 ⋮----
 // Run build or watch based on args
-````
+```
 
 ## File: jest.config.js
-````javascript
+
+```javascript
 // Test environment
 ⋮----
 // Coverage configuration
@@ -27124,14 +28157,16 @@ async function watch()
 // Timeout for tests
 ⋮----
 // Clear mocks between tests
-````
+```
 
 ## File: postcss.config.js
-````javascript
 
-````
+```javascript
+
+```
 
 ## File: .claude/ARCHIVE/DEPLOYMENT_README.md
+
 ````markdown
 # 🚀 Deployment & Operations
 
@@ -27142,16 +28177,19 @@ Complete guide for deploying and operating Bluebonnet in all environments.
 ## Quick Links
 
 ### Development & Setup
+
 - **[Local Development](./LOCAL_DEVELOPMENT.md)** - Setting up locally
 - **[Docker Setup](./DOCKER_SETUP.md)** - Docker development & production
 - **[Environment Config](./ENVIRONMENT_CONFIG.md)** - Environment variables
 
 ### Production
+
 - **[Production Deployment](./PRODUCTION_DEPLOYMENT.md)** - Pre-deploy checklist
 - **[CI/CD](./CI_CD.md)** - GitHub Actions, automation
 - **[Monitoring](./MONITORING.md)** - Error tracking, logging
 
 ### Troubleshooting
+
 - **[Deployment Issues](../TROUBLESHOOTING/DEPLOYMENT_ISSUES.md)** - Production problems
 
 ---
@@ -27159,18 +28197,21 @@ Complete guide for deploying and operating Bluebonnet in all environments.
 ## Deployment Environments
 
 ### Development (Local)
+
 **Purpose:** Local development
 **Database:** PostgreSQL locally
 **Cache:** Redis locally
 **Command:** `npm run dev`
 
 ### Staging (Docker)
+
 **Purpose:** Test before production
 **Database:** PostgreSQL in container
 **Cache:** Redis in container
 **Command:** `docker-compose up`
 
 ### Production
+
 **Purpose:** Live users
 **Database:** PostgreSQL (managed service or container)
 **Cache:** Redis (managed service or container)
@@ -27181,6 +28222,7 @@ Complete guide for deploying and operating Bluebonnet in all environments.
 ## Quick Start
 
 ### Local Development
+
 ```bash
 # 1. Clone repo
 git clone ...
@@ -27205,6 +28247,7 @@ npm run dev
 See: [Local Development](./LOCAL_DEVELOPMENT.md)
 
 ### Docker Development
+
 ```bash
 # 1. Clone repo
 git clone ...
@@ -27222,6 +28265,7 @@ docker-compose up --build
 See: [Docker Setup](./DOCKER_SETUP.md)
 
 ### Production Deployment
+
 ```bash
 # 1. Prepare release
 # - Run tests: npm test
@@ -27246,6 +28290,7 @@ See: [Production Deployment](./PRODUCTION_DEPLOYMENT.md)
 ## Environment Variables
 
 ### Required
+
 ```env
 # PostgreSQL
 DB_HOST=localhost
@@ -27261,6 +28306,7 @@ PORT=3000
 ```
 
 ### Optional
+
 ```env
 # Redis
 REDIS_ENABLED=true
@@ -27282,14 +28328,16 @@ See: [Environment Config](./ENVIRONMENT_CONFIG.md)
 ## Docker Compose
 
 ### What's Included
+
 ```yaml
 services:
-  app:           # Express.js backend
-  postgres:      # PostgreSQL database
-  redis:         # Redis cache
+  app: # Express.js backend
+  postgres: # PostgreSQL database
+  redis: # Redis cache
 ```
 
 ### Key Commands
+
 ```bash
 # Start services
 docker-compose up
@@ -27317,6 +28365,7 @@ See: [Docker Setup](./DOCKER_SETUP.md)
 ## Database Initialization
 
 ### First Run (Automatic with Docker)
+
 ```bash
 docker-compose up
 # Script automatically:
@@ -27327,12 +28376,14 @@ docker-compose up
 ```
 
 ### Manual (Local Development)
+
 ```bash
 npm run db:sync              # Create/update tables
 npm run db:seed-airports     # Seed airports data
 ```
 
 ### Migrations
+
 ```bash
 npm run db:migrate           # Run pending migrations
 npm run db:migrate:undo      # Undo last migration
@@ -27344,12 +28395,14 @@ npm run db:migrate:status    # Show migration status
 ## Pre-Deployment Checklist
 
 ### Code Quality
+
 - [ ] All tests passing (`npm test`)
 - [ ] No lint errors (`npm run lint`)
 - [ ] Code formatted (`npm run format:check`)
 - [ ] TypeScript errors (if using TS)
 
 ### Functionality
+
 - [ ] Critical features tested manually
 - [ ] No broken links
 - [ ] Forms submit correctly
@@ -27357,6 +28410,7 @@ npm run db:migrate:status    # Show migration status
 - [ ] Performance acceptable
 
 ### Build & Deploy
+
 - [ ] CSS built (`npm run build-css-prod`)
 - [ ] JavaScript bundled (`npm run build`)
 - [ ] Environment variables set
@@ -27370,6 +28424,7 @@ See: [Production Deployment](./PRODUCTION_DEPLOYMENT.md)
 ## CI/CD Pipeline
 
 ### GitHub Actions
+
 ```yaml
 # Runs on every push and PR
 1. Install dependencies
@@ -27381,6 +28436,7 @@ See: [Production Deployment](./PRODUCTION_DEPLOYMENT.md)
 ```
 
 ### Deployment
+
 ```
 main branch → tests pass → build → deploy to production
 ```
@@ -27392,6 +28448,7 @@ See: [CI/CD](./CI_CD.md)
 ## Monitoring & Logs
 
 ### Error Tracking
+
 ```
 Errors logged to:
 - File logs (rotating daily)
@@ -27400,6 +28457,7 @@ Errors logged to:
 ```
 
 ### Performance Monitoring
+
 ```
 Track:
 - Request response times
@@ -27409,6 +28467,7 @@ Track:
 ```
 
 ### Log Levels
+
 ```
 error  - Application errors
 warn   - Warnings
@@ -27423,12 +28482,14 @@ See: [Monitoring](./MONITORING.md)
 ## Phase 1 Deployment Changes
 
 ### Current (Express Only)
+
 ```
 Deploy Express backend
 Server runs on port 3000
 ```
 
 ### Phase 1 (Express + SvelteKit)
+
 ```
 Deploy Express backend (port 3000)
 Deploy SvelteKit frontend (port 3001, proxied to 3000 for API)
@@ -27441,7 +28502,9 @@ OR
 ## Troubleshooting Deployments
 
 ### Issue: Database connection fails
+
 **Check:**
+
 - PostgreSQL running
 - Connection string correct
 - Firewall allows connections
@@ -27450,14 +28513,18 @@ OR
 See: [Deployment Issues](../TROUBLESHOOTING/DEPLOYMENT_ISSUES.md)
 
 ### Issue: Application won't start
+
 **Check:**
+
 - Node.js version correct
 - Dependencies installed (`npm install`)
 - Environment variables set
 - Database migrations current
 
 ### Issue: Feature not working in production
+
 **Check:**
+
 - Database migrations applied
 - Environment variables correct
 - Logs for errors
@@ -27468,6 +28535,7 @@ See: [Deployment Issues](../TROUBLESHOOTING/DEPLOYMENT_ISSUES.md)
 ## Deployment Strategy
 
 ### Staging First
+
 ```
 1. Deploy to staging
 2. Test thoroughly
@@ -27476,6 +28544,7 @@ See: [Deployment Issues](../TROUBLESHOOTING/DEPLOYMENT_ISSUES.md)
 ```
 
 ### Gradual Rollout (Optional)
+
 ```
 1. Deploy to 10% of servers
 2. Monitor for errors
@@ -27484,6 +28553,7 @@ See: [Deployment Issues](../TROUBLESHOOTING/DEPLOYMENT_ISSUES.md)
 ```
 
 ### Rollback Plan
+
 ```
 1. Keep previous version ready
 2. Can rollback in seconds
@@ -27509,6 +28579,7 @@ See: [Deployment Issues](../TROUBLESHOOTING/DEPLOYMENT_ISSUES.md)
 ````
 
 ## File: .claude/MIGRATION_GUIDE.md
+
 ````markdown
 # Data Migration Guide - Travel Companions Refactor
 
@@ -27796,6 +28867,7 @@ If issues arise during migration:
 ````
 
 ## File: .claude/MOBILE_DESIGN.md
+
 ````markdown
 # Mobile-First Responsive Design Guide - Bluebonnet
 
@@ -28276,6 +29348,7 @@ When adding new responsive features:
 ````
 
 ## File: .claude/PHASE_9_TESTING_PLAN.md
+
 ````markdown
 # Phase 9: End-to-End Testing & Bug Fixes
 
@@ -28774,6 +29847,7 @@ Phase 9 complete when:
 ````
 
 ## File: .claude/PROJECT_COMPLETION_SUMMARY.md
+
 ````markdown
 # Travel Companions Refactor - Project Completion Summary
 
@@ -29309,7 +30383,8 @@ All code is committed, documented, and ready for the comprehensive 25-step verif
 ````
 
 ## File: config/itemColors.js
-````javascript
+
+```javascript
 /**
  * Item Type Color Configuration
  * Centralized color definitions for all travel item types
@@ -29384,10 +30459,11 @@ function getApproveColor()
  * @returns {string} Hex color code for decline actions
  */
 function getDeclineColor()
-````
+```
 
 ## File: controllers/helpers/resourceController.js
-````javascript
+
+```javascript
 /**
  * Base Controller Helpers
  * Common CRUD patterns shared across all resource controllers
@@ -29495,10 +30571,11 @@ async function geocodeWithAirportFallback(location, airportService, currentTimez
 // Use timezone from database as source of truth
 ⋮----
 // Fallback to regular geocoding
-````
+```
 
 ## File: controllers/attendeeController.js
-````javascript
+
+```javascript
 /**
  * Attendee Controller
  * API endpoints for trip attendee management
@@ -29537,10 +30614,11 @@ exports.updateAttendeeRole = async (req, res) =>
 exports.removeTripAttendee = async (req, res) =>
 ⋮----
 // Verify trip exists and user is owner or admin
-````
+```
 
 ## File: controllers/companionPermissionController.js
-````javascript
+
+```javascript
 /**
  * Companion Permission Controller
  * API endpoints for managing full-access trip permissions
@@ -29579,10 +30657,11 @@ exports.updatePermission = async (req, res) =>
  * Revoke full-access permission
  */
 exports.revokePermission = async (req, res) =>
-````
+```
 
 ## File: controllers/itemTripController.js
-````javascript
+
+```javascript
 /**
  * Item Trip Controller
  * API endpoints for managing item-trip relationships
@@ -29617,9 +30696,10 @@ exports.addItemToTrip = async (req, res) =>
 exports.removeItemFromTrip = async (req, res) =>
 ⋮----
 // Verify trip exists and user has access
-````
+```
 
 ## File: docs/ARCHITECTURE.md
+
 ````markdown
 # Bluebonnet Architecture Overview
 
@@ -30234,7 +31314,8 @@ See `/home/home/.claude/plans/gentle-twirling-codd.md` for detailed modernizatio
 ````
 
 ## File: frontend/src/lib/components/AirportForm.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { dashboardStoreActions } from '$lib/stores/dashboardStore';
   import { settingsApi } from '$lib/services/settings';
@@ -30459,10 +31540,11 @@ See `/home/home/.claude/plans/gentle-twirling-codd.md` for detailed modernizatio
     color: #6b7280;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/Button.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   type ButtonType = 'button' | 'submit' | 'reset';
   type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'success';
@@ -30647,10 +31729,11 @@ See `/home/home/.claude/plans/gentle-twirling-codd.md` for detailed modernizatio
     }
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/Card.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   export let title: string = '';
   export let subtitle: string = '';
@@ -30839,10 +31922,11 @@ See `/home/home/.claude/plans/gentle-twirling-codd.md` for detailed modernizatio
     }
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/CarRentalForm.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { carRentalsApi } from '$lib/services/api';
   import { tripStoreActions } from '$lib/stores/tripStore';
@@ -31146,10 +32230,11 @@ See `/home/home/.claude/plans/gentle-twirling-codd.md` for detailed modernizatio
     }
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/CompanionsManager.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { companionsApi } from '$lib/services/api';
   import { tripStoreActions } from '$lib/stores/tripStore';
@@ -31445,10 +32530,11 @@ See `/home/home/.claude/plans/gentle-twirling-codd.md` for detailed modernizatio
     }
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/Grid.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   export let columns: number = 2;
   export let gap: string = '1rem';
@@ -31513,10 +32599,11 @@ See `/home/home/.claude/plans/gentle-twirling-codd.md` for detailed modernizatio
     }
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/Header.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { authStore, authStoreActions } from '$lib/stores/authStore';
   import Button from './Button.svelte';
@@ -31829,10 +32916,11 @@ See `/home/home/.claude/plans/gentle-twirling-codd.md` for detailed modernizatio
     }
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/ItemTripsSelector.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { onMount } from 'svelte';
   import { tripsApi, itemTripApi } from '$lib/services/api';
@@ -32122,10 +33210,11 @@ See `/home/home/.claude/plans/gentle-twirling-codd.md` for detailed modernizatio
     cursor: not-allowed;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/SettingsAirports.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { onMount } from 'svelte';
   import Alert from './Alert.svelte';
@@ -32579,10 +33668,11 @@ See `/home/home/.claude/plans/gentle-twirling-codd.md` for detailed modernizatio
     color: #999;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/SettingsProfile.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { settingsApi } from '$lib/services/settings';
@@ -32745,10 +33835,11 @@ See `/home/home/.claude/plans/gentle-twirling-codd.md` for detailed modernizatio
     </div>
   </form>
 </div>
-````
+```
 
 ## File: frontend/src/lib/components/SettingsTrustedCompanions.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { onMount } from 'svelte';
   import Alert from './Alert.svelte';
@@ -33513,10 +34604,11 @@ See `/home/home/.claude/plans/gentle-twirling-codd.md` for detailed modernizatio
     color: #999;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/SettingsVouchers.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { onMount } from 'svelte';
   import VoucherForm from './VoucherForm.svelte';
@@ -34090,10 +35182,11 @@ See `/home/home/.claude/plans/gentle-twirling-codd.md` for detailed modernizatio
     }
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/Textarea.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   export let label: string;
   export let value: string = '';
@@ -34166,10 +35259,11 @@ See `/home/home/.claude/plans/gentle-twirling-codd.md` for detailed modernizatio
     font-size: 0.875rem;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/TransportationForm.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { transportationApi } from '$lib/services/api';
   import { tripStoreActions } from '$lib/stores/tripStore';
@@ -34467,10 +35561,11 @@ See `/home/home/.claude/plans/gentle-twirling-codd.md` for detailed modernizatio
     }
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/TripAttendeesForm.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { onMount } from 'svelte';
   import { companionsApi, attendeesApi } from '$lib/services/api';
@@ -35082,10 +36177,11 @@ See `/home/home/.claude/plans/gentle-twirling-codd.md` for detailed modernizatio
     border-radius: 0.425rem;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/TripCard.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import Card from './Card.svelte';
   import Button from './Button.svelte';
@@ -35212,10 +36308,11 @@ See `/home/home/.claude/plans/gentle-twirling-codd.md` for detailed modernizatio
     justify-content: flex-end;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/TripForm.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { tripsApi } from '$lib/services/api';
   import { tripStoreActions } from '$lib/stores/tripStore';
@@ -35452,10 +36549,11 @@ See `/home/home/.claude/plans/gentle-twirling-codd.md` for detailed modernizatio
     }
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/stores/tripStore.ts
-````typescript
+
+```typescript
 import { writable, type Writable } from 'svelte/store';
 ⋮----
 export interface Trip {
@@ -35576,10 +36674,11 @@ setLoading(loading: boolean)
 setError(error: string | null)
 ⋮----
 reset()
-````
+```
 
 ## File: frontend/src/lib/styles/breakpoints.css
-````css
+
+```css
 /**
  * Mobile-First Responsive Design Breakpoint System
  *
@@ -35719,10 +36818,11 @@ font-size: 16px; /* Prevent iOS zoom on form inputs */
  *   Styles for devices with hover support (mouse, trackpad)
  * }
  */
-````
+```
 
 ## File: frontend/src/lib/styles/layout-grid-only.css
-````css
+
+```css
 /* ============================================================================
    LAYOUT SYSTEM - GRID DEFINITIONS ONLY
    Minimal CSS Grid layout for responsive breakpoints
@@ -35763,10 +36863,11 @@ font-size: 16px; /* Prevent iOS zoom on form inputs */
 /* =====================================================================
    ULTRA-WIDE LAYOUT (1440px+)
    ===================================================================== */
-````
+```
 
 ## File: frontend/src/lib/styles/layout.css
-````css
+
+```css
 /* ============================================================================
    LAYOUT SYSTEM
    Grid-based responsive layouts for each breakpoint
@@ -35967,13 +37068,15 @@ h4 {
 h5,
 ⋮----
 p {
-````
+```
 
 ## File: frontend/src/lib/styles/QUICK_REFERENCE.md
+
 ````markdown
 # Responsive Design System - Quick Reference
 
 ## Import the System
+
 ```css
 /* Already imported in app.css */
 @import './lib/styles/responsive.css';
@@ -35981,21 +37084,27 @@ p {
 ```
 
 ## Breakpoints (Copy & Paste)
+
 ```css
 /* Mobile only (< 640px) */
-@media (max-width: 639px) { }
+@media (max-width: 639px) {
+}
 
 /* Tablet and up (≥ 640px) */
-@media (min-width: 640px) { }
+@media (min-width: 640px) {
+}
 
 /* Desktop and up (≥ 1024px) */
-@media (min-width: 1024px) { }
+@media (min-width: 1024px) {
+}
 
 /* Ultra-wide (≥ 1440px) */
-@media (min-width: 1440px) { }
+@media (min-width: 1440px) {
+}
 ```
 
 ## Spacing Tokens
+
 ```
 --spacing-xs  → 4px to 8px
 --spacing-sm  → 8px to 12px
@@ -36006,6 +37115,7 @@ p {
 ```
 
 ## Most Common Custom Properties
+
 ```css
 /* Spacing */
 padding: var(--spacing-md);
@@ -36028,6 +37138,7 @@ z-index: var(--z-sidebar-primary);
 ```
 
 ## Layout Classes
+
 ```html
 <!-- Use these classes in your components -->
 <div class="app-layout">        <!-- Main container -->
@@ -36040,6 +37151,7 @@ z-index: var(--z-sidebar-primary);
 ```
 
 ## Show/Hide by Breakpoint
+
 ```html
 <!-- Hide on mobile -->
 <div class="hide-mobile">Content for tablet+</div>
@@ -36061,26 +37173,31 @@ z-index: var(--z-sidebar-primary);
 ```
 
 ## Responsive Typography
+
 ```css
 h1 {
-  font-size: clamp(1.75rem, 8vw, 2.5rem);  /* Scales 28px → 40px */
+  font-size: clamp(1.75rem, 8vw, 2.5rem); /* Scales 28px → 40px */
 }
 
 p {
-  font-size: clamp(0.875rem, 2vw, 1rem);   /* Scales 14px → 16px */
+  font-size: clamp(0.875rem, 2vw, 1rem); /* Scales 14px → 16px */
 }
 ```
 
 ## Touch-Friendly Elements
+
 ```css
 /* Minimum touch target (WCAG AA) */
-button, a, input {
-  min-height: var(--touch-target-min);  /* 44px */
+button,
+a,
+input {
+  min-height: var(--touch-target-min); /* 44px */
   min-width: var(--touch-target-min);
 }
 ```
 
 ## Notched Device Safe Areas
+
 ```css
 .notch-safe {
   padding-left: max(var(--spacing-md), env(safe-area-inset-left));
@@ -36090,19 +37207,27 @@ button, a, input {
 ```
 
 ## Sidebar States (CSS Classes)
+
 ```html
 <!-- Open/closed states -->
-<aside class="secondary-sidebar open">  <!-- Visible -->
-<aside class="secondary-sidebar">       <!-- Hidden -->
+<aside class="secondary-sidebar open">
+  <!-- Visible -->
+  <aside class="secondary-sidebar">
+    <!-- Hidden -->
 
-<!-- Collapsed navigation drawer -->
-<aside class="primary-sidebar collapsed"> <!-- Drawer mode -->
-<aside class="primary-sidebar">          <!-- Sidebar mode -->
+    <!-- Collapsed navigation drawer -->
+    <aside class="primary-sidebar collapsed">
+      <!-- Drawer mode -->
+      <aside class="primary-sidebar"><!-- Sidebar mode --></aside>
+    </aside>
+  </aside>
+</aside>
 ```
 
 ## Common Patterns
 
 ### Responsive Flexbox
+
 ```css
 .flex-responsive {
   display: flex;
@@ -36118,6 +37243,7 @@ button, a, input {
 ```
 
 ### Responsive Grid
+
 ```css
 .grid-responsive {
   display: grid;
@@ -36139,6 +37265,7 @@ button, a, input {
 ```
 
 ### Bottom Sheet (Mobile)
+
 ```css
 .bottom-sheet {
   position: fixed;
@@ -36159,6 +37286,7 @@ button, a, input {
 ```
 
 ### Side Drawer (Tablet)
+
 ```css
 .side-drawer {
   position: fixed;
@@ -36177,6 +37305,7 @@ button, a, input {
 ```
 
 ## Color Palette (Quick Reference)
+
 ```
 Primary Blue:     #007bff    (--color-primary)
 Dark Blue:        #0056b3    (--color-primary-dark)
@@ -36200,6 +37329,7 @@ Info:             #3b82f6    (--color-info)
 ```
 
 ## Z-Index Stack (Don't memorize, reference)
+
 ```
 Map Background:           1
 Main Content:             5
@@ -36214,6 +37344,7 @@ Top/Bottom Navigation:   50
 ```
 
 ## Animation Durations
+
 ```
 --transition-fast:   0.15s  (Quick feedback)
 --transition-smooth: 0.35s  (Standard animations)
@@ -36221,6 +37352,7 @@ Top/Bottom Navigation:   50
 ```
 
 ## Testing Widths
+
 ```
 Mobile:      375px   (iPhone SE minimum)
 Tablet:      640px   (iPad minimum)
@@ -36231,6 +37363,7 @@ Full HD:    1920px   (Full HD monitor)
 ```
 
 ## Most Important Rules
+
 1. ✅ Use `var(--spacing-*)` instead of hardcoded sizes
 2. ✅ Use `var(--color-*)` for all colors
 3. ✅ Use media query boundaries: 640px, 1024px, 1440px
@@ -36240,6 +37373,7 @@ Full HD:    1920px   (Full HD monitor)
 7. ✅ Always test desktop (≥ 1024px) view
 
 ## Don't Do This ❌
+
 ```css
 /* ❌ Hardcoded values */
 margin: 16px;
@@ -36253,15 +37387,18 @@ color: #111827;
 
 /* ❌ Missing mobile styles */
 .component {
-  width: 33%;  /* Breaks on mobile! */
+  width: 33%; /* Breaks on mobile! */
 }
 
 /* ❌ Hard to maintain breakpoints */
-@media (max-width: 480px) { }
-@media (min-width: 481px) and (max-width: 768px) { }
+@media (max-width: 480px) {
+}
+@media (min-width: 481px) and (max-width: 768px) {
+}
 ```
 
 ## Do This Instead ✅
+
 ```css
 /* ✅ Use custom properties */
 margin: var(--spacing-lg);
@@ -36275,28 +37412,32 @@ color: var(--color-text-primary);
 
 /* ✅ Mobile-first approach */
 .component {
-  width: 100%;  /* Mobile default */
+  width: 100%; /* Mobile default */
 }
 
 @media (min-width: 640px) {
   .component {
-    width: 50%;  /* Tablet */
+    width: 50%; /* Tablet */
   }
 }
 
 @media (min-width: 1024px) {
   .component {
-    width: 33%;  /* Desktop */
+    width: 33%; /* Desktop */
   }
 }
 
 /* ✅ Use standard breakpoints */
-@media (max-width: 639px) { }     /* Mobile */
-@media (min-width: 640px) { }     /* Tablet+ */
-@media (min-width: 1024px) { }    /* Desktop+ */
+@media (max-width: 639px) {
+} /* Mobile */
+@media (min-width: 640px) {
+} /* Tablet+ */
+@media (min-width: 1024px) {
+} /* Desktop+ */
 ```
 
 ## Debug Mode
+
 ```javascript
 // Enable breakpoint display (bottom-right corner)
 document.documentElement.classList.add('debug-mode');
@@ -36306,6 +37447,7 @@ document.documentElement.classList.remove('debug-mode');
 ```
 
 ## Accessibility Checklist
+
 - [ ] Touch targets are 44px minimum
 - [ ] Text has sufficient contrast
 - [ ] Respects `prefers-reduced-motion`
@@ -36315,12 +37457,14 @@ document.documentElement.classList.remove('debug-mode');
 - [ ] Tested on actual mobile device
 
 ## Need More Help?
+
 - **Full Docs:** `frontend/src/lib/styles/README.md`
 - **System Spec:** `RESPONSIVE_REDESIGN_SPEC.md`
 - **Architecture:** `/.claude/ARCHITECTURE/FRONTEND/README.md`
 ````
 
 ## File: frontend/src/lib/styles/README.md
+
 ````markdown
 # Responsive Design System Documentation
 
@@ -36336,9 +37480,11 @@ This directory contains the centralized responsive design system for Bluebonnet.
 ## Files
 
 ### `responsive.css`
+
 **Purpose:** Central storage for all CSS custom properties and utilities
 
 **Contains:**
+
 - Breakpoint definitions
 - Spacing scale (xs, sm, md, lg, xl, 2xl)
 - Sidebar widths
@@ -36350,15 +37496,18 @@ This directory contains the centralized responsive design system for Bluebonnet.
 - Responsive utility classes
 
 **Key Features:**
+
 - All spacing values use `clamp()` for fluid scaling
 - Separate spacing values for each breakpoint
 - Accessibility preferences (reduced motion, high contrast)
 - Debug mode helpers
 
 ### `layout.css`
+
 **Purpose:** Grid and flexbox layout definitions for each breakpoint
 
 **Contains:**
+
 - Mobile layout (< 640px)
 - Tablet layout (640px - 1023px)
 - Desktop layout (1024px - 1439px)
@@ -36366,20 +37515,24 @@ This directory contains the centralized responsive design system for Bluebonnet.
 - Modal and overlay styles
 
 **Key Features:**
+
 - Uses CSS Grid for layout structure
 - Responsive sidebar behavior (drawer → sidebar → column)
 - Smooth transitions between breakpoints
 - Safe area support for notched devices
 
 ### `form-styles.css`
+
 **Purpose:** Shared form styling (updated with new breakpoint system)
 
 **Contains:**
+
 - Form input styling
 - Button styling
 - Touch-friendly sizing
 
 ### `breakpoints.css` (DEPRECATED)
+
 **Status:** Archive for reference only
 
 This file is no longer used. All breakpoint definitions have been moved to `responsive.css`.
@@ -36387,25 +37540,28 @@ This file is no longer used. All breakpoint definitions have been moved to `resp
 ## CSS Custom Properties Reference
 
 ### Breakpoints
+
 ```css
---bp-mobile: 640px;       /* Mobile → Tablet boundary */
---bp-tablet: 1024px;      /* Tablet → Desktop boundary */
---bp-desktop: 1440px;     /* Desktop → Ultra-wide boundary */
+--bp-mobile: 640px; /* Mobile → Tablet boundary */
+--bp-tablet: 1024px; /* Tablet → Desktop boundary */
+--bp-desktop: 1440px; /* Desktop → Ultra-wide boundary */
 ```
 
 ### Spacing Scale
+
 Responsive spacing that scales with viewport width:
 
 ```css
---spacing-xs: clamp(0.25rem, 1vw, 0.5rem);      /* 4px → 8px */
---spacing-sm: clamp(0.5rem, 1.5vw, 0.75rem);    /* 8px → 12px */
---spacing-md: clamp(0.75rem, 2vw, 1rem);        /* 12px → 16px */
---spacing-lg: clamp(1rem, 2.5vw, 1.5rem);       /* 16px → 24px */
---spacing-xl: clamp(1.5rem, 3vw, 2rem);         /* 24px → 32px */
---spacing-2xl: clamp(2rem, 4vw, 2.5rem);        /* 32px → 40px */
+--spacing-xs: clamp(0.25rem, 1vw, 0.5rem); /* 4px → 8px */
+--spacing-sm: clamp(0.5rem, 1.5vw, 0.75rem); /* 8px → 12px */
+--spacing-md: clamp(0.75rem, 2vw, 1rem); /* 12px → 16px */
+--spacing-lg: clamp(1rem, 2.5vw, 1.5rem); /* 16px → 24px */
+--spacing-xl: clamp(1.5rem, 3vw, 2rem); /* 24px → 32px */
+--spacing-2xl: clamp(2rem, 4vw, 2.5rem); /* 32px → 40px */
 ```
 
 **Usage:**
+
 ```css
 .component {
   padding: var(--spacing-md);
@@ -36415,27 +37571,30 @@ Responsive spacing that scales with viewport width:
 ```
 
 ### Navigation Heights
+
 ```css
---nav-height-mobile: 60px;          /* Bottom tab bar on mobile */
---nav-height-tablet: 60px;          /* Top nav bar on tablet+ */
---nav-height-landscape: 50px;       /* Compressed landscape */
+--nav-height-mobile: 60px; /* Bottom tab bar on mobile */
+--nav-height-tablet: 60px; /* Top nav bar on tablet+ */
+--nav-height-landscape: 50px; /* Compressed landscape */
 ```
 
 ### Z-Index Stack
+
 ```css
---z-map: 1;                         /* Map background */
---z-content: 5;                     /* Main content */
---z-sidebar-primary: 20;            /* Trip list sidebar */
---z-sidebar-secondary: 21;          /* Details sidebar */
---z-sidebar-tertiary: 22;           /* Forms sidebar */
---z-drawer: 30;                     /* Navigation drawer */
---z-drawer-backdrop: 29;            /* Drawer overlay */
---z-modal: 40;                      /* Forms and modals */
---z-modal-backdrop: 39;             /* Modal overlay */
---z-nav: 50;                        /* Top/bottom navigation */
+--z-map: 1; /* Map background */
+--z-content: 5; /* Main content */
+--z-sidebar-primary: 20; /* Trip list sidebar */
+--z-sidebar-secondary: 21; /* Details sidebar */
+--z-sidebar-tertiary: 22; /* Forms sidebar */
+--z-drawer: 30; /* Navigation drawer */
+--z-drawer-backdrop: 29; /* Drawer overlay */
+--z-modal: 40; /* Forms and modals */
+--z-modal-backdrop: 39; /* Modal overlay */
+--z-nav: 50; /* Top/bottom navigation */
 ```
 
 ### Sidebar Widths
+
 ```css
 --sidebar-width-primary: 340px;
 --sidebar-width-secondary: 340px;
@@ -36445,6 +37604,7 @@ Responsive spacing that scales with viewport width:
 These are adjusted in media queries for smaller screens.
 
 ### Colors
+
 ```css
 /* Brand */
 --color-primary: #007bff;
@@ -36470,6 +37630,7 @@ These are adjusted in media queries for smaller screens.
 ```
 
 ### Transitions
+
 ```css
 --transition-fast: 0.15s ease-in-out;
 --transition-smooth: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
@@ -36479,6 +37640,7 @@ These are adjusted in media queries for smaller screens.
 ## Responsive Layout Patterns
 
 ### Mobile (< 640px)
+
 **Navigation:** Bottom tab bar
 **Sidebar:** Hamburger drawer
 **Forms:** Bottom sheet modals
@@ -36494,6 +37656,7 @@ These are adjusted in media queries for smaller screens.
 ```
 
 ### Tablet (640px - 1023px)
+
 **Navigation:** Top nav bar
 **Sidebar:** Collapsible + side drawer
 **Forms:** Side drawer
@@ -36510,6 +37673,7 @@ These are adjusted in media queries for smaller screens.
 ```
 
 ### Desktop (1024px - 1439px)
+
 **Navigation:** Top nav bar
 **Sidebar:** Three full sidebars
 **Forms:** Fade in/out overlays
@@ -36527,6 +37691,7 @@ These are adjusted in media queries for smaller screens.
 ```
 
 ### Ultra-Wide (1440px+)
+
 **Navigation:** Top nav bar
 **Sidebar:** Four columns all visible
 **Forms:** Visible in rightmost column
@@ -36545,6 +37710,7 @@ These are adjusted in media queries for smaller screens.
 ## Using the Layout System in Components
 
 ### Basic Grid Layout
+
 ```html
 <div class="app-layout">
   <nav class="app-nav"><!-- Navigation bar --></nav>
@@ -36561,6 +37727,7 @@ These are adjusted in media queries for smaller screens.
 ```
 
 ### Responsive Spacing
+
 ```html
 <div style="padding: var(--spacing-lg); gap: var(--spacing-md);">
   <!-- Spacing automatically scales with viewport -->
@@ -36568,6 +37735,7 @@ These are adjusted in media queries for smaller screens.
 ```
 
 ### Conditional Display
+
 ```html
 <!-- Hide on mobile -->
 <div class="hide-mobile">Desktop only content</div>
@@ -36585,6 +37753,7 @@ These are adjusted in media queries for smaller screens.
 ## Media Query Usage
 
 ### Template for Mobile-First
+
 ```css
 /* Mobile (default) */
 .component {
@@ -36616,44 +37785,58 @@ These are adjusted in media queries for smaller screens.
 ```
 
 ### Quick Reference
+
 ```css
 /* Mobile only (< 640px) */
-@media (max-width: 639px) { }
+@media (max-width: 639px) {
+}
 
 /* Tablet and up (≥ 640px) */
-@media (min-width: 640px) { }
+@media (min-width: 640px) {
+}
 
 /* Tablet only (640-1023px) */
-@media (min-width: 640px) and (max-width: 1023px) { }
+@media (min-width: 640px) and (max-width: 1023px) {
+}
 
 /* Desktop and up (≥ 1024px) */
-@media (min-width: 1024px) { }
+@media (min-width: 1024px) {
+}
 
 /* Desktop only (1024-1439px) */
-@media (min-width: 1024px) and (max-width: 1439px) { }
+@media (min-width: 1024px) and (max-width: 1439px) {
+}
 
 /* Ultra-wide (≥ 1440px) */
-@media (min-width: 1440px) { }
+@media (min-width: 1440px) {
+}
 
 /* Landscape (height-based) */
-@media (max-height: 600px) { }
+@media (max-height: 600px) {
+}
 ```
 
 ## Accessibility Features
 
 ### Respects User Preferences
+
 The system respects:
+
 - `prefers-reduced-motion: reduce` - Disables all animations
 - `prefers-contrast: more` - Increases border widths
 - `prefers-color-scheme: dark` - (Placeholder for dark mode)
 
 ### Touch Target Sizing
+
 All interactive elements follow WCAG AA standards:
+
 - Minimum: 44px × 44px touch targets
 - Padding for notched devices: `safe-area-inset-*`
 
 ### Safe Area Support
+
 Forms and navigation account for notches and bottom bars:
+
 ```css
 padding-bottom: max(var(--spacing-md), env(safe-area-inset-bottom, 0px));
 ```
@@ -36661,6 +37844,7 @@ padding-bottom: max(var(--spacing-md), env(safe-area-inset-bottom, 0px));
 ## Testing Responsive Breakpoints
 
 ### Browser DevTools
+
 1. Open Chrome/Edge DevTools (F12)
 2. Click device toolbar (Ctrl+Shift+M or Cmd+Shift+M)
 3. Test at these widths:
@@ -36671,7 +37855,9 @@ padding-bottom: max(var(--spacing-md), env(safe-area-inset-bottom, 0px));
    - **1920px** (Full HD)
 
 ### Debug Mode
+
 Add `debug-mode` class to root to show current breakpoint:
+
 ```javascript
 // In console
 document.documentElement.classList.add('debug-mode');
@@ -36684,24 +37870,35 @@ This displays the current breakpoint in the bottom-right corner.
 ### Old Breakpoint System → New System
 
 **Old:**
+
 ```css
-@media (max-width: 479px) { }           /* Mobile small */
-@media (min-width: 480px) and (max-width: 639px) { }  /* Mobile large */
-@media (min-width: 640px) and (max-width: 1023px) { } /* Tablet */
-@media (min-width: 1024px) { }          /* Desktop */
+@media (max-width: 479px) {
+} /* Mobile small */
+@media (min-width: 480px) and (max-width: 639px) {
+} /* Mobile large */
+@media (min-width: 640px) and (max-width: 1023px) {
+} /* Tablet */
+@media (min-width: 1024px) {
+} /* Desktop */
 ```
 
 **New (Simplified):**
+
 ```css
-@media (max-width: 639px) { }           /* Mobile (all) */
-@media (min-width: 640px) { }           /* Tablet+ */
-@media (min-width: 1024px) { }          /* Desktop+ */
-@media (min-width: 1440px) { }          /* Ultra-wide */
+@media (max-width: 639px) {
+} /* Mobile (all) */
+@media (min-width: 640px) {
+} /* Tablet+ */
+@media (min-width: 1024px) {
+} /* Desktop+ */
+@media (min-width: 1440px) {
+} /* Ultra-wide */
 ```
 
 ### Old Spacing → New Spacing
 
 **Old:**
+
 ```css
 margin: 1rem;
 padding: 0.75rem;
@@ -36709,15 +37906,17 @@ gap: 1.5rem;
 ```
 
 **New (Responsive):**
+
 ```css
-margin: var(--spacing-lg);      /* 1rem → 1.5rem based on viewport */
-padding: var(--spacing-md);     /* 0.75rem → 1rem */
-gap: var(--spacing-xl);         /* 1.5rem → 2rem */
+margin: var(--spacing-lg); /* 1rem → 1.5rem based on viewport */
+padding: var(--spacing-md); /* 0.75rem → 1rem */
+gap: var(--spacing-xl); /* 1.5rem → 2rem */
 ```
 
 ### Old Colors → New System
 
 **Old:**
+
 ```css
 color: #111827;
 background: #f9fafb;
@@ -36725,6 +37924,7 @@ border: 1px solid #e5e7eb;
 ```
 
 **New:**
+
 ```css
 color: var(--color-text-primary);
 background: var(--color-bg-secondary);
@@ -36744,18 +37944,22 @@ border: 1px solid var(--color-border);
 ## Troubleshooting
 
 ### Spacing doesn't scale smoothly
+
 **Issue:** Using hardcoded values instead of `clamp()`
 **Solution:** Use CSS custom properties like `var(--spacing-md)`
 
 ### Layout breaks at 640px
+
 **Issue:** Missing media query boundary
 **Solution:** Test with `@media (max-width: 639px)` and `@media (min-width: 640px)`
 
 ### Sidebars overlapping
+
 **Issue:** Z-index conflicts
 **Solution:** Use defined z-index custom properties: `var(--z-sidebar-primary)`, etc.
 
 ### Content not visible on mobile
+
 **Issue:** Wrong display class or media query
 **Solution:** Check for `hide-mobile` or `@media (max-width: 639px) { display: none; }`
 
@@ -36774,7 +37978,8 @@ border: 1px solid var(--color-border);
 ````
 
 ## File: frontend/src/lib/styles/responsive.css
-````css
+
+```css
 /* ============================================================================
    RESPONSIVE DESIGN SYSTEM
    Unified CSS Custom Properties and Breakpoint Framework
@@ -37088,10 +38293,11 @@ display: none;  /* Chrome, Safari and Opera */
 :root.debug-mode .bp-debug {
 ⋮----
 .bp-debug::before {
-````
+```
 
 ## File: frontend/src/lib/utils/formConfigs.ts
-````typescript
+
+```typescript
 export interface FormField {
   name: string;
   label: string;
@@ -37108,10 +38314,11 @@ export interface FormConfig {
 }
 ⋮----
 export function getFormConfigs(isEditing: boolean): Record<string, FormConfig>
-````
+```
 
 ## File: frontend/src/lib/utils/validation.ts
-````typescript
+
+```typescript
 export interface ValidationError {
   field: string;
   message: string;
@@ -37157,33 +38364,37 @@ export function validateByType(
   type: string,
   data: Record<string, unknown>
 ): ValidationResult
-````
+```
 
 ## File: frontend/src/routes/calendar/+layout.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import Dashboard from '../dashboard/+page.svelte';
 </script>
 
 <svelte:component this={Dashboard} shouldOpenCalendar={true} />
 <slot />
-````
+```
 
 ## File: frontend/src/routes/calendar/+page.server.ts
-````typescript
+
+```typescript
 import type { PageServerLoad } from './$types';
 import { validateSession } from '$lib/server/auth';
 ⋮----
 export const load: PageServerLoad = async (
-````
+```
 
 ## File: frontend/src/routes/calendar/+page.svelte
-````svelte
 
-````
+```svelte
+
+```
 
 ## File: frontend/src/routes/dashboard/+layout.server.ts
-````typescript
+
+```typescript
 import type { LayoutServerLoad } from './$types';
 import { validateSession } from '$lib/server/auth';
 ⋮----
@@ -37192,10 +38403,11 @@ import { validateSession } from '$lib/server/auth';
  * This runs on the server side before the layout component renders
  */
 export const load: LayoutServerLoad = async (
-````
+```
 
 ## File: frontend/src/routes/dashboard/+page.server.ts
-````typescript
+
+```typescript
 import type { PageServerLoad } from './$types';
 import { validateSession } from '$lib/server/auth';
 ⋮----
@@ -37204,10 +38416,11 @@ import { validateSession } from '$lib/server/auth';
  * This is the primary auth check for the dashboard page
  */
 export const load: PageServerLoad = async (
-````
+```
 
 ## File: frontend/src/routes/item/[itemId]/edit/+layout.server.ts
-````typescript
+
+```typescript
 import type { LayoutServerLoad } from './$types';
 import { validateSession } from '$lib/server/auth';
 ⋮----
@@ -37222,10 +38435,11 @@ itemType: itemType.slice(0, -1) // Remove 's' from plural
 // Continue to next item type
 ⋮----
 // Item not found, return empty data
-````
+```
 
 ## File: frontend/src/routes/item/[itemId]/edit/+layout.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import Dashboard from '../../../dashboard/+page.svelte';
   import { onMount } from 'svelte';
@@ -37247,15 +38461,17 @@ itemType: itemType.slice(0, -1) // Remove 's' from plural
 
 <svelte:component this={Dashboard} />
 <slot />
-````
+```
 
 ## File: frontend/src/routes/item/[itemId]/edit/+page.svelte
-````svelte
 
-````
+```svelte
+
+```
 
 ## File: frontend/src/routes/item/[itemId]/+layout.server.ts
-````typescript
+
+```typescript
 import type { LayoutServerLoad } from './$types';
 import { validateSession } from '$lib/server/auth';
 ⋮----
@@ -37270,10 +38486,11 @@ itemType: type.slice(0, -1) // Remove 's' from plural
 // Continue to next item type
 ⋮----
 // Item not found, return empty data
-````
+```
 
 ## File: frontend/src/routes/item/[itemId]/+layout.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import Dashboard from '../../dashboard/+page.svelte';
   import { onMount } from 'svelte';
@@ -37295,80 +38512,92 @@ itemType: type.slice(0, -1) // Remove 's' from plural
 
 <svelte:component this={Dashboard} />
 <slot />
-````
+```
 
 ## File: frontend/src/routes/item/[itemId]/+page.svelte
-````svelte
 
-````
+```svelte
+
+```
 
 ## File: frontend/src/routes/settings/account/+page.server.ts
-````typescript
+
+```typescript
 import type { PageServerLoad } from './$types';
 import { validateSession } from '$lib/server/auth';
 ⋮----
 export const load: PageServerLoad = async (
-````
+```
 
 ## File: frontend/src/routes/settings/account/+page.svelte
-````svelte
 
-````
+```svelte
+
+```
 
 ## File: frontend/src/routes/settings/airports/+page.server.ts
-````typescript
+
+```typescript
 import type { PageServerLoad } from './$types';
 import { validateSession } from '$lib/server/auth';
 ⋮----
 export const load: PageServerLoad = async (
-````
+```
 
 ## File: frontend/src/routes/settings/airports/+page.svelte
-````svelte
 
-````
+```svelte
+
+```
 
 ## File: frontend/src/routes/settings/backup/+page.server.ts
-````typescript
+
+```typescript
 import type { PageServerLoad } from './$types';
 import { validateSession } from '$lib/server/auth';
 ⋮----
 export const load: PageServerLoad = async (
-````
+```
 
 ## File: frontend/src/routes/settings/backup/+page.svelte
-````svelte
 
-````
+```svelte
+
+```
 
 ## File: frontend/src/routes/settings/companions/+page.server.ts
-````typescript
+
+```typescript
 import type { PageServerLoad } from './$types';
 import { validateSession } from '$lib/server/auth';
 ⋮----
 export const load: PageServerLoad = async (
-````
+```
 
 ## File: frontend/src/routes/settings/companions/+page.svelte
-````svelte
 
-````
+```svelte
+
+```
 
 ## File: frontend/src/routes/settings/security/+page.server.ts
-````typescript
+
+```typescript
 import type { PageServerLoad } from './$types';
 import { validateSession } from '$lib/server/auth';
 ⋮----
 export const load: PageServerLoad = async (
-````
+```
 
 ## File: frontend/src/routes/settings/security/+page.svelte
-````svelte
 
-````
+```svelte
+
+```
 
 ## File: frontend/src/routes/settings/trusted-companions/+page.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
@@ -37381,36 +38610,41 @@ export const load: PageServerLoad = async (
 </script>
 
 <div>Redirecting to Trusted Companions settings...</div>
-````
+```
 
 ## File: frontend/src/routes/settings/users/+page.server.ts
-````typescript
+
+```typescript
 import type { PageServerLoad } from './$types';
 import { validateSession } from '$lib/server/auth';
 ⋮----
 export const load: PageServerLoad = async (
-````
+```
 
 ## File: frontend/src/routes/settings/users/+page.svelte
-````svelte
 
-````
+```svelte
+
+```
 
 ## File: frontend/src/routes/settings/vouchers/+page.server.ts
-````typescript
+
+```typescript
 import type { PageServerLoad } from './$types';
 import { validateSession } from '$lib/server/auth';
 ⋮----
 export const load: PageServerLoad = async (
-````
+```
 
 ## File: frontend/src/routes/settings/vouchers/+page.svelte
-````svelte
 
-````
+```svelte
+
+```
 
 ## File: frontend/src/routes/settings/+layout.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import Dashboard from '../dashboard/+page.svelte';
   import { page } from '$app/stores';
@@ -37439,23 +38673,26 @@ export const load: PageServerLoad = async (
 
 <svelte:component this={Dashboard} />
 <slot />
-````
+```
 
 ## File: frontend/src/routes/settings/+page.server.ts
-````typescript
+
+```typescript
 import type { PageServerLoad } from './$types';
 import { validateSession } from '$lib/server/auth';
 ⋮----
 export const load: PageServerLoad = async (
-````
+```
 
 ## File: frontend/src/routes/settings/+page.svelte
-````svelte
 
-````
+```svelte
+
+```
 
 ## File: frontend/src/routes/trip/[tripId]/edit/[itemId]/+layout.server.ts
-````typescript
+
+```typescript
 import type { LayoutServerLoad } from './$types';
 import { validateSession } from '$lib/server/auth';
 ⋮----
@@ -37472,10 +38709,11 @@ export const load: LayoutServerLoad = async (
 // Handle wrapped response format
 ⋮----
 // Continue to next item type
-````
+```
 
 ## File: frontend/src/routes/trip/[tripId]/edit/[itemId]/+layout.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import Dashboard from '../../../../dashboard/+page.svelte';
   import { onMount } from 'svelte';
@@ -37508,15 +38746,17 @@ export const load: LayoutServerLoad = async (
 
 <svelte:component this={Dashboard} />
 <slot />
-````
+```
 
 ## File: frontend/src/routes/trip/[tripId]/edit/[itemId]/+page.svelte
-````svelte
 
-````
+```svelte
+
+```
 
 ## File: frontend/src/routes/trip/[tripId]/edit/+layout.server.ts
-````typescript
+
+```typescript
 import type { LayoutServerLoad } from './$types';
 import { validateSession } from '$lib/server/auth';
 ⋮----
@@ -37527,10 +38767,11 @@ export const load: LayoutServerLoad = async (
 // Handle wrapped response format
 ⋮----
 // Trip not found, return empty
-````
+```
 
 ## File: frontend/src/routes/trip/[tripId]/edit/+layout.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import Dashboard from '../../../dashboard/+page.svelte';
   import { dashboardStoreActions } from '$lib/stores/dashboardStore';
@@ -37548,20 +38789,23 @@ export const load: LayoutServerLoad = async (
 
 <svelte:component this={Dashboard} tripIdToExpand={initialTripIdToExpand} />
 <slot />
-````
+```
 
 ## File: frontend/src/routes/trip/[tripId]/edit/+page.svelte
-````svelte
 
-````
+```svelte
+
+```
 
 ## File: frontend/src/routes/trip/[tripId]/+page.svelte
-````svelte
 
-````
+```svelte
+
+```
 
 ## File: frontend/src/routes/+layout.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
@@ -37658,10 +38902,11 @@ export const load: LayoutServerLoad = async (
     flex: 1;
   }
 </style>
-````
+```
 
 ## File: frontend/src/routes/+page.svelte
-````svelte
+
+```svelte
 <script>
 </script>
 
@@ -37888,26 +39133,31 @@ export const load: LayoutServerLoad = async (
     </div>
   </div>
 </footer>
-````
+```
 
 ## File: frontend/src/app.html
-````html
+
+```html
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover">
     <div style="display: contents">%sveltekit.body%</div>
   </body>
 </html>
-````
+```
 
 ## File: frontend/src/hooks.server.ts
-````typescript
+
+```typescript
 import type { Handle, HandleFetch } from '@sveltejs/kit';
 import { redirect } from '@sveltejs/kit';
 ⋮----
@@ -37951,10 +39201,11 @@ export const handle: Handle = async (
 ⋮----
 // If we can't verify the session due to network error, still allow the request
 // The page-level load function will catch any actual auth errors
-````
+```
 
 ## File: frontend/.gitignore
-````
+
+```
 # Logs
 logs
 *.log
@@ -37981,10 +39232,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-````
+```
 
 ## File: frontend/Dockerfile.dev
-````
+
+```
 # Development Dockerfile for Svelte Frontend
 # Supports hot module replacement (HMR) for development
 
@@ -38014,10 +39266,11 @@ EXPOSE 24678
 # Start development server with HMR enabled
 # --host 0.0.0.0 allows access from outside container
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3001"]
-````
+```
 
 ## File: frontend/package.json
-````json
+
+```json
 {
   "name": "bluebonnet-frontend",
   "private": true,
@@ -38056,10 +39309,11 @@ CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3001"]
     "vitest": "^2.1.2"
   }
 }
-````
+```
 
 ## File: frontend/tailwind.config.js
-````javascript
+
+```javascript
 /** @type {import('tailwindcss').Config} */
 ⋮----
 // 4-tier responsive breakpoint system optimized for mobile-first design
@@ -38071,10 +39325,11 @@ mobile: '0px', // Base (mobile-first)
 sm: '480px', // Larger phones, landscape
 md: '640px', // Tablets (iPad mini)
 lg: '1024px', // Desktop/Laptop (default Tailwind)
-````
+```
 
 ## File: middleware/authorization.js
-````javascript
+
+```javascript
 /**
  * Authorization Middleware
  * Route-level permission checking
@@ -38106,10 +39361,11 @@ async requireTripOwnership(req, res, next)
    * Middleware to attach authorization service to request for manual checks
    */
 attachAuthService(req, res, next)
-````
+```
 
 ## File: middleware/errorHandler.js
-````javascript
+
+```javascript
 /**
  * Error Handler Middleware
  * Phase 3 - Backend Architecture: Middleware Enhancements
@@ -38188,10 +39444,11 @@ const asyncHandler = (fn) => (req, res, next) =>
 // Handle async request responses
 ⋮----
 // Pass to error handler middleware
-````
+```
 
 ## File: middleware/rateLimiter.js
-````javascript
+
+```javascript
 /**
  * Rate Limiting Middleware
  * Phase 3 - Backend Architecture: Middleware Enhancements
@@ -38246,10 +39503,11 @@ skipFailedRequests: true, // Don't count failed requests
  * @returns {Function} Rate limit middleware
  */
 function createCustomLimiter(options =
-````
+```
 
 ## File: middleware/validation.js
-````javascript
+
+```javascript
 const handleValidationErrors = (req, res, next) =>
 ⋮----
 // Always return JSON for API requests
@@ -38257,10 +39515,11 @@ const handleValidationErrors = (req, res, next) =>
 // Handle ISO format "YYYY-MM-DD" from HTML date input
 ⋮----
 // Handle ISO format "YYYY-MM-DD" from HTML date input
-````
+```
 
 ## File: migrations/20260106-add-admin-fields-to-users.js
-````javascript
+
+```javascript
 async up(queryInterface, Sequelize)
 ⋮----
 // Add isAdmin field
@@ -38280,10 +39539,11 @@ async down(queryInterface)
 // Remove indexes
 ⋮----
 // Remove columns
-````
+```
 
 ## File: migrations/20260110-create-companion-permission-table.js
-````javascript
+
+```javascript
 up: async (queryInterface, Sequelize) =>
 ⋮----
 // Add indexes
@@ -38291,10 +39551,11 @@ up: async (queryInterface, Sequelize) =>
 // Unique constraint: one permission entry per owner-trusted user pair
 ⋮----
 down: async (queryInterface, Sequelize) =>
-````
+```
 
 ## File: migrations/20260110-create-item-trip-junction-table.js
-````javascript
+
+```javascript
 up: async (queryInterface, Sequelize) =>
 ⋮----
 // Add indexes
@@ -38302,10 +39563,11 @@ up: async (queryInterface, Sequelize) =>
 // Unique constraint: each item in trip only once
 ⋮----
 down: async (queryInterface, Sequelize) =>
-````
+```
 
 ## File: migrations/20260110-create-trip-attendee-table.js
-````javascript
+
+```javascript
 up: async (queryInterface, Sequelize) =>
 ⋮----
 allowNull: true, // Null until attendee creates account
@@ -38315,10 +39577,11 @@ allowNull: true, // Null until attendee creates account
 // Unique constraint: one entry per trip per user (if userId exists)
 ⋮----
 down: async (queryInterface, Sequelize) =>
-````
+```
 
 ## File: migrations/20260110-migrate-item-trip-relationships.js
-````javascript
+
+```javascript
 /**
  * Migration to:
  * 1. Remove tripId foreign key from item tables (Flight, Hotel, Event, Transportation, CarRental)
@@ -38344,10 +39607,11 @@ down: async (queryInterface, Sequelize) =>
 // Re-add tripId column to all item tables
 ⋮----
 // Restore data from item_trips
-````
+```
 
 ## File: migrations/20260110-migrate-trip-companions-to-attendees.js
-````javascript
+
+```javascript
 /**
  * Migration to convert TripCompanion records to TripAttendee records
  *
@@ -38371,10 +39635,11 @@ down: async (queryInterface, Sequelize) =>
 // Remove all owner entries that were created during migration
 // (cannot reliably determine which were created vs existed)
 // For safety, only remove attendees that came from TripCompanion
-````
+```
 
 ## File: migrations/update-international-airport-timezones.js
-````javascript
+
+```javascript
 up: async (queryInterface, Sequelize) =>
 ⋮----
 // Update timezones for international airports
@@ -38418,38 +39683,43 @@ down: async (queryInterface, Sequelize) =>
 ⋮----
 // This migration cannot be easily reversed as we don't know the original values
 // Do nothing on rollback
-````
+```
 
 ## File: models/CarRental.js
-````javascript
+
+```javascript
 module.exports = (sequelize, DataTypes) =>
 ⋮----
 CarRental.associate = (models) =>
-````
+```
 
 ## File: models/Hotel.js
-````javascript
+
+```javascript
 module.exports = (sequelize, DataTypes) =>
 ⋮----
 Hotel.associate = (models) =>
-````
+```
 
 ## File: models/index.js
-````javascript
+
+```javascript
 // Import models
 ⋮----
 // Define associations
-````
+```
 
 ## File: models/ItemTrip.js
-````javascript
+
+```javascript
 module.exports = (sequelize, DataTypes) =>
 ⋮----
 ItemTrip.associate = (models) =>
-````
+```
 
 ## File: models/Trip.js
-````javascript
+
+```javascript
 module.exports = (sequelize, DataTypes) =>
 ⋮----
 Trip.associate = (models) =>
@@ -38457,26 +39727,29 @@ Trip.associate = (models) =>
 // Many-to-many relationship with companions through junction table
 ⋮----
 // Direct access to trip companion junction records
-````
+```
 
 ## File: models/TripAttendee.js
-````javascript
+
+```javascript
 module.exports = (sequelize, DataTypes) =>
 ⋮----
 allowNull: true, // Null until attendee creates account
 ⋮----
 TripAttendee.associate = (models) =>
-````
+```
 
 ## File: models/TripCompanion.js
-````javascript
+
+```javascript
 module.exports = (sequelize, DataTypes) =>
 ⋮----
 TripCompanion.associate = (models) =>
-````
+```
 
 ## File: models/User.js
-````javascript
+
+```javascript
 module.exports = (sequelize, DataTypes) =>
 ⋮----
 User.associate = (models) =>
@@ -38486,10 +39759,11 @@ User.associate = (models) =>
 // Travel companion profile linked to this user account
 ⋮----
 // Vouchers owned by this user
-````
+```
 
 ## File: public/js/async-form-handler.js
-````javascript
+
+```javascript
 /**
  * Async Form Handler
  * Handles async form submission for sidebar forms
@@ -38654,10 +39928,11 @@ async function deleteItem(type, id, itemName = '')
 // Silently fail on error
 ⋮----
 // Expose functions globally for cross-module access
-````
+```
 
 ## File: public/js/companions.js
-````javascript
+
+```javascript
 /**
  * Companions Module - Consolidated companion management
  * Combines companion-selector.js, companions-manager.js, and item-companions-loader.js
@@ -38943,10 +40218,11 @@ window.itemCompanionLoader = loader; // Make globally accessible
 // Make classes available globally for inline onclick handlers
 ⋮----
 // Legacy function names for backward compatibility
-````
+```
 
 ## File: public/js/dashboard-handlers.js
-````javascript
+
+```javascript
 /**
  * Dashboard Event Handlers
  * Phase 4 - Frontend Modernization: Event Delegation
@@ -39083,10 +40359,11 @@ function registerDashboardHandlers()
 // Expose functions globally for onclick handlers
 ⋮----
 // Initialize on module load
-````
+```
 
 ## File: public/js/form-loader.js
-````javascript
+
+```javascript
 /**
  * Form Loader - Consolidates script loading and form initialization
  * Eliminates duplication of module loading across form templates
@@ -39134,10 +40411,11 @@ function setupCarRentalFormInit()
 function setupEventFormInit()
 ⋮----
 // Expose to global window
-````
+```
 
 ## File: public/js/form-utilities.js
-````javascript
+
+```javascript
 /**
  * Form Utilities - Shared form initialization and helpers
  * Consolidates common form functionality to reduce duplication
@@ -39250,10 +40528,11 @@ function getFieldId(isAddMode, itemType, fieldName)
 // Export functions globally for use in templates
 ⋮----
 // Export for modules
-````
+```
 
 ## File: public/js/item-colors.js
-````javascript
+
+```javascript
 /**
  * Dynamic Item Color Application
  * This script applies item-specific colors to form elements
@@ -39293,10 +40572,11 @@ function applyFormColors()
 // Clone the response so we can read it
 ⋮----
 // If response contains HTML, reapply colors after it's rendered
-````
+```
 
 ## File: public/js/main.js
-````javascript
+
+```javascript
 // Main JavaScript for Travel Planner
 ⋮----
 // Import constants
@@ -39386,10 +40666,11 @@ function showDeleteNotification(itemName, itemType, itemId, restoreUrl, onUndoCa
 // Auto-remove after 5 seconds
 ⋮----
 }, 300); // Fade-out animation delay (keep hardcoded)
-````
+```
 
 ## File: public/js/notifications.js
-````javascript
+
+```javascript
 /**
  * Notification System - Sidebar Integration
  * Handles WebSocket notifications and sidebar integration
@@ -39480,10 +40761,11 @@ function initializeNotifications()
 // ES6 Module exports
 ⋮----
 // Make functions available globally for backward compatibility
-````
+```
 
 ## File: public/js/sidebar-loader.js
-````javascript
+
+```javascript
 /**
  * Sidebar Loader
  * Handles loading content into the secondary sidebar via AJAX
@@ -39620,10 +40902,11 @@ async function handleEventEditFormSubmit(e)
 // closeSecondarySidebar();
 ⋮----
 // Allow pressing Escape to close sidebar
-````
+```
 
 ## File: public/js/socket-client.js
-````javascript
+
+```javascript
 /**
  * WebSocket Client
  * Manages Socket.IO connection and real-time events
@@ -39709,10 +40992,11 @@ export function onEvent(eventName, handler)
 export function offEvent(eventName, handler)
 ⋮----
 // Make functions available globally for backward compatibility
-````
+```
 
 ## File: public/js/trip-view-sidebar.js
-````javascript
+
+```javascript
 /**
  * Trip View - Sidebar Controls
  * Manages secondary sidebar visibility and add item menu
@@ -39894,10 +41178,11 @@ function showAddForm(type, isStandalone = false)
 // Expose functions globally for inline onclick handlers in templates
 ⋮----
 // Note: showAddItemMenu is defined in trip.ejs template, don't override it
-````
+```
 
 ## File: public/js/voucher-attachment-modal.js
-````javascript
+
+```javascript
 /**
  * Voucher Attachment Modal
  * Manages the modal for attaching vouchers to flights
@@ -39966,10 +41251,11 @@ function initializeVoucherAttachmentModal()
 // Inject modal HTML at end of body
 ⋮----
 // Initialize modal when DOM is ready
-````
+```
 
 ## File: public/js/voucher-sidebar-manager.js
-````javascript
+
+```javascript
 /**
  * Voucher Sidebar Manager
  * Manages the tertiary sidebar for attaching and creating vouchers
@@ -40188,10 +41474,11 @@ set: (value) =>
 // Expose the implementation for lazy loading wrapper
 ⋮----
 // Expose functions globally for inline onclick/onsubmit/onchange handlers in voucher panel
-````
+```
 
 ## File: routes/api/v1/airports.js
-````javascript
+
+```javascript
 /**
  * API v1 - Airport Routes
  * AJAX endpoints for airport autocomplete and lookup
@@ -40303,10 +41590,11 @@ set: (value) =>
 // Validate IATA code format
 ⋮----
 // Get airport by code
-````
+```
 
 ## File: routes/api/v1/car-rentals.js
-````javascript
+
+```javascript
 /**
  * API v1 Car Rentals Routes
  * RESTful JSON API for car rental management
@@ -40556,10 +41844,11 @@ async function loadTripCompanions(tripId, trip)
  *
  * @requires authentication - User must be logged in
  */
-````
+```
 
 ## File: routes/api/v1/events.js
-````javascript
+
+```javascript
 /**
  * API v1 Events Routes
  * RESTful JSON API for event management
@@ -40828,10 +42117,11 @@ async function loadTripCompanions(tripId, trip)
  *
  * @requires authentication - User must be logged in
  */
-````
+```
 
 ## File: routes/api/v1/flights.js
-````javascript
+
+```javascript
 /**
  * API v1 Flights Routes
  * RESTful JSON API for flight management
@@ -41162,10 +42452,11 @@ async function loadTripCompanions(tripId, trip)
 // Load airlines data
 ⋮----
 // Find airline by IATA code
-````
+```
 
 ## File: routes/api/v1/hotels.js
-````javascript
+
+```javascript
 /**
  * API v1 Hotels Routes
  * RESTful JSON API for hotel management
@@ -41424,10 +42715,11 @@ async function loadTripCompanions(tripId, trip)
  *
  * @requires authentication - User must be logged in
  */
-````
+```
 
 ## File: routes/api/v1/transportation.js
-````javascript
+
+```javascript
 /**
  * API v1 Transportation Routes
  * RESTful JSON API for transportation management
@@ -41659,20 +42951,22 @@ async function loadTripCompanions(tripId, trip)
  *
  * @requires authentication - User must be logged in
  */
-````
+```
 
 ## File: routes/api/index.js
-````javascript
+
+```javascript
 /**
  * API Routes Router
  * Mounts all versioned API routes
  */
 ⋮----
 // Mount v1 API routes
-````
+```
 
 ## File: routes/index.js
-````javascript
+
+```javascript
 // Home page - let SvelteKit handle the landing page for all users
 // Authenticated users should see the landing page, not be redirected to trips
 ⋮----
@@ -41731,10 +43025,11 @@ async function loadTripCompanions(tripId, trip)
 // Validate item type
 ⋮----
 // Route to appropriate controller based on type
-````
+```
 
 ## File: routes/notifications.js
-````javascript
+
+```javascript
 // All routes require authentication
 ⋮----
 // Main notifications page - renders dashboard with notifications tab active
@@ -41766,10 +43061,11 @@ async function loadTripCompanions(tripId, trip)
 // Mark all notifications as read
 ⋮----
 // Delete notification
-````
+```
 
 ## File: routes/tripInvitations.js
-````javascript
+
+```javascript
 // All routes require authentication
 ⋮----
 // Test route to verify middleware and logging
@@ -41781,10 +43077,11 @@ async function loadTripCompanions(tripId, trip)
 // Respond to a trip invitation (join or decline)
 ⋮----
 // Leave a trip (must be a companion, not owner)
-````
+```
 
 ## File: scripts/add-timezones-to-airports.js
-````javascript
+
+```javascript
 /**
  * Script to add timezone information to airports.json
  * Uses a combination of:
@@ -41852,10 +43149,11 @@ function getTimezoneForAirport(iataCode, countryCode, lat, lon)
 // Progress update removed
 ⋮----
 // Write back to file
-````
+```
 
 ## File: scripts/backfill-hotel-timezones.js
-````javascript
+
+```javascript
 /**
  * Backfill missing timezone data for hotels
  *
@@ -41880,10 +43178,11 @@ async function backfillHotelTimezones()
 // Rate limiting: add delay between API calls to avoid hitting rate limits
 ⋮----
 // Run the backfill
-````
+```
 
 ## File: scripts/cleanup-duplicate-companions.js
-````javascript
+
+```javascript
 /**
  * Cleanup Script: Remove duplicate companions by email
  *
@@ -41908,10 +43207,11 @@ async function cleanupDuplicates()
 // Delete related item_companions records
 ⋮----
 // Delete the duplicate companions
-````
+```
 
 ## File: scripts/make-admin.js
-````javascript
+
+```javascript
 /**
  * Make a user an admin
  * Usage: node scripts/make-admin.js user@example.com
@@ -41924,10 +43224,11 @@ async function makeAdmin()
 // Find user
 ⋮----
 // Update user
-````
+```
 
 ## File: scripts/retroactive-add-trip-owners.js
-````javascript
+
+```javascript
 /**
  * Retroactive Migration Script
  *
@@ -41949,10 +43250,11 @@ async function runMigration()
 // Get all items for this trip
 ⋮----
 // For each item, check if trip owner is already a companion
-````
+```
 
 ## File: scripts/seed-companion-data.js
-````javascript
+
+```javascript
 /**
  * Companion Data Seeding Script
  * Creates sample companion relationships for testing the new permission model
@@ -41979,10 +43281,11 @@ async function seedCompanionData()
 // Summary
 ⋮----
 // Run seeding
-````
+```
 
 ## File: scripts/verify-companion-migration.js
-````javascript
+
+```javascript
 /**
  * Companion Permission Migration Verification Script
  * Verifies that the new companion permission schema is correctly applied
@@ -42006,10 +43309,11 @@ async function verifyMigration()
 // 7. Summary
 ⋮----
 // Run verification
-````
+```
 
 ## File: scripts/verify-migration.js
-````javascript
+
+```javascript
 /**
  * Data Migration Verification Script
  *
@@ -42040,10 +43344,11 @@ async function verifyMigration()
 // Check 6: Verify CompanionPermission table structure
 ⋮----
 // Summary
-````
+```
 
 ## File: services/airportService.js
-````javascript
+
+```javascript
 class AirportService
 ⋮----
 /**
@@ -42137,10 +43442,11 @@ async getAllAirports(limit = null)
    * @returns {array} All airlines
    */
 getAllAirlines()
-````
+```
 
 ## File: services/attendeeService.js
-````javascript
+
+```javascript
 /**
  * Attendee Service
  * Business logic for trip attendee management
@@ -42226,10 +43532,11 @@ async getUserTrips(userId)
 // Trips where user is attendee
 ⋮----
 // Remove duplicates
-````
+```
 
 ## File: services/companionPermissionService.js
-````javascript
+
+```javascript
 /**
  * Companion Permission Service
  * Business logic for managing full-access trip permissions
@@ -42297,10 +43604,11 @@ return true; // Owner always has access
    * @returns {Promise<Array>} Array of owner user IDs
    */
 async getAccessibleOwners(userId)
-````
+```
 
 ## File: services/companionService.js
-````javascript
+
+```javascript
 /**
  * Companion Service
  * Business logic for travel companion management
@@ -42424,10 +43732,11 @@ async searchCompanions(userId, query, limit = 10)
 async linkCompanionToAccount(companionId, userAccountId)
 ⋮----
 // Update companion with linked account
-````
+```
 
 ## File: services/duplicateDetectionService.js
-````javascript
+
+```javascript
 /**
  * Duplicate Detection Service
  * Detects potential duplicate items when importing account data
@@ -42579,10 +43888,11 @@ function checkCompanionDuplicates(importedCompanion, existingCompanions)
  * Get display name for a duplicate item
  */
 function getDuplicateDisplayName(item, type)
-````
+```
 
 ## File: services/itemTripService.js
-````javascript
+
+```javascript
 /**
  * Item Trip Service
  * Business logic for managing item-trip relationships
@@ -42656,10 +43966,11 @@ async setItemTrips(itemType, itemId, tripIds)
    * @returns {Promise<boolean>} Success
    */
 async removeItemFromAllTrips(itemType, itemId)
-````
+```
 
 ## File: services/tripDataService.js
-````javascript
+
+```javascript
 /**
  * Filter items by end date into upcoming/past categories
  */
@@ -42672,15 +43983,17 @@ async function filterItemsByEndDate(items, endDateField)
 async function loadTripDashboardData(tripId, userId)
 ⋮----
 // Filter each item type
-````
+```
 
 ## File: tests/unit/services/airportService.test.js
-````javascript
+
+```javascript
 // Mock dependencies
-````
+```
 
 ## File: tests/unit/services/duplicateDetectionService.test.js
-````javascript
+
+```javascript
 /**
  * Unit Tests for services/duplicateDetectionService.js
  * Tests duplicate detection and similarity calculation for account data import
@@ -42731,10 +44044,11 @@ const flight = { airline: 'United' }; // Missing flightNumber
 trip, // Exact match
 ⋮----
 }, // Also similar
-````
+```
 
 ## File: tests/unit/services/geocodingService.test.js
-````javascript
+
+```javascript
 // Mock axios
 ⋮----
 // Mock logger
@@ -42766,24 +44080,27 @@ expect(axios.get).toHaveBeenCalledTimes(1); // No additional call
 // Geocode to populate cache
 ⋮----
 // Clear cache
-````
+```
 
 ## File: tests/unit/services/notificationService.test.js
-````javascript
+
+```javascript
 // Mock dependencies
-````
+```
 
 ## File: tests/unit/services/socketService.test.js
-````javascript
+
+```javascript
 // Mock Socket.IO
 ⋮----
 // Create a new instance without initializing
 ⋮----
 // Should handle gracefully (either return null or the existing instance)
-````
+```
 
 ## File: tests/unit/utils/redis.test.js
-````javascript
+
+```javascript
 // Mock redis module
 ⋮----
 // Mock logger
@@ -42795,10 +44112,11 @@ expect(axios.get).toHaveBeenCalledTimes(1); // No additional call
 // Note: This test assumes the module maintains state
 ⋮----
 // Should not throw error
-````
+```
 
 ## File: tests/unit/utils/timezoneHelper.test.js
-````javascript
+
+```javascript
 // New York is UTC-5, so 12:00 UTC should be 07:00 EST
 ⋮----
 // Should fallback to original date or handle gracefully
@@ -42808,10 +44126,11 @@ expect(offset).toBe(-5 * 60); // -5 hours in minutes
 // Summer date (DST active)
 ⋮----
 // Winter date (DST inactive)
-````
+```
 
 ## File: types/index.ts
-````typescript
+
+```typescript
 /**
  * Bluebonnet Shared Type Definitions
  *
@@ -43453,19 +44772,21 @@ export function getTravelItemType(item: TravelItem): TravelItemType
  * - Type guards: isFlight, isHotel, isEvent, isCarRental, isTransportation
  * - Validation rules for express-validator integration
  */
-````
+```
 
 ## File: utils/asyncResponseHelper.js
-````javascript
+
+```javascript
 /**
  * Handle both async AJAX and traditional form submission responses
  * Eliminates 56+ duplicate conditionals across controllers
  */
 function sendAsyncResponse(res, success, data, message, tripId, req, tab)
-````
+```
 
 ## File: utils/importPreviewProcessor.js
-````javascript
+
+```javascript
 /**
  * Import Preview Processor
  * Handles JSON parsing, data validation, and duplicate detection for account data import
@@ -43538,10 +44859,11 @@ function formatVoucherSummary(voucher)
 function formatCompanionSummary(companion)
 ⋮----
 function formatDate(dateString)
-````
+```
 
 ## File: utils/logger.js
-````javascript
+
+```javascript
 // Simple logger that uses console.log for Docker compatibility
 // This guarantees output will appear in docker compose logs
 ⋮----
@@ -43560,19 +44882,21 @@ debug(message, meta)
 // Create a stream object for Morgan HTTP logging (optional)
 ⋮----
 write: (message) =>
-````
+```
 
 ## File: utils/parseHelper.js
-````javascript
+
+```javascript
 /**
  * Safely parse companions from form data or array
  * Eliminates 8+ duplicate parsing blocks across controllers
  */
 function parseCompanions(companions)
-````
+```
 
 ## File: utils/redis.js
-````javascript
+
+```javascript
 /**
  * Redis Client Utility
  * Manages Redis connection and provides caching functionality
@@ -43688,10 +45012,11 @@ async function flushDb()
  * @returns {Promise<void>}
  */
 async function disconnect()
-````
+```
 
 ## File: utils/timezoneHelper.js
-````javascript
+
+```javascript
 /**
  * Timezone Helper
  * Handles conversion between local times and UTC for proper storage
@@ -43753,10 +45078,11 @@ function formatInTimezone(utcDate, timezone, format = 'DD MMM YYYY HH:mm')
  * Eliminates 4-6 duplicate timezone checks across controllers
  */
 function sanitizeTimezone(tz)
-````
+```
 
 ## File: .dockerignore
-````
+
+```
 # Git
 .git
 .gitignore
@@ -43826,10 +45152,11 @@ Thumbs.db
 docker-compose*.yml
 Dockerfile
 !Dockerfile.production
-````
+```
 
 ## File: .eslintignore
-````
+
+```
 node_modules/
 coverage/
 dist/
@@ -43853,10 +45180,11 @@ public/js/lib/
 public/js/preline.js
 # Exclude frontend directory (has its own eslint config)
 frontend/
-````
+```
 
 ## File: .gitignore
-````
+
+```
 # Dependencies
 node_modules/
 package-lock.json
@@ -43934,10 +45262,11 @@ backups/
 # macOS Extended Attributes
 .AppleDouble
 .AppleDB
-````
+```
 
 ## File: backup.sh
-````bash
+
+```bash
 #!/bin/bash
 
 # Complete PostgreSQL + Redis backup for full restore capability
@@ -44003,9 +45332,10 @@ EOF
 echo "✅ Backup complete!"
 echo "  Backups location: $BACKUP_DIR/"
 ls -lh "$BACKUP_DIR"/backup_manifest_${TIMESTAMP}.txt
-````
+```
 
 ## File: BREAKPOINT_GUIDE.md
+
 ````markdown
 # Responsive Breakpoint Visual Guide
 
@@ -44029,9 +45359,11 @@ ls -lh "$BACKUP_DIR"/backup_manifest_${TIMESTAMP}.txt
 ## Layout Comparison
 
 ### MOBILE (< 640px)
+
 **Devices:** iPhone SE, iPhone 12-15, Galaxy S21
 
 **Structure:**
+
 ```
 ┌──────────────────────────┐
 │                          │
@@ -44048,12 +45380,14 @@ ls -lh "$BACKUP_DIR"/backup_manifest_${TIMESTAMP}.txt
 ```
 
 **Navigation:**
+
 - ✅ Bottom tab bar (glass morphism, blur effect)
 - ✅ Hamburger menu for trip list
 - ✅ Bottom sheet for forms
 - ✅ Safe area padding for notches
 
 **Content Stacking:**
+
 ```
 Sidebar (Hamburger Drawer)
     ↓
@@ -44063,6 +45397,7 @@ Navigation (Bottom Tab Bar)
 ```
 
 **Form Display:**
+
 ```
 Backdrop (Semi-transparent)
     ↓
@@ -44075,9 +45410,11 @@ Bottom Sheet (Slides up from bottom)
 ---
 
 ### TABLET (640px - 1023px)
+
 **Devices:** iPad Mini, iPad (9-10"), Landscape phones
 
 **Structure:**
+
 ```
 ┌────────────────────────────────────────┐
 │    Top Navigation Bar (60px)            │
@@ -44095,12 +45432,14 @@ Bottom Sheet (Slides up from bottom)
 ```
 
 **Navigation:**
+
 - ✅ Top navigation bar (sticky)
 - ✅ Hamburger menu (collapses primary sidebar)
 - ✅ Side drawer from right (50% width, max 400px)
 - ✅ Backdrop overlay when drawer open
 
 **Content Stacking:**
+
 ```
 Top Navigation
     ↓
@@ -44113,6 +45452,7 @@ Backdrop (When drawer open)
 ```
 
 **Responsive Behavior:**
+
 - Sidebar starts expanded at 640px
 - Hamburger available to collapse
 - When collapsed, becomes drawer on left
@@ -44122,9 +45462,11 @@ Backdrop (When drawer open)
 ---
 
 ### DESKTOP (1024px - 1439px)
+
 **Devices:** MacBook (13"), Laptop (1200px), Desktop (1366px)
 
 **Structure:**
+
 ```
 ┌──────────────────────────────────────────────────────┐
 │  ☰  Bluebonnet                       [User] [Settings] │ ← 60px Nav
@@ -44143,18 +45485,21 @@ Backdrop (When drawer open)
 ```
 
 **Navigation:**
+
 - ✅ Top navigation bar (always visible)
 - ✅ Hamburger menu available (collapses primary)
 - ✅ Logo visible
 - ✅ User menu on right
 
 **Sidebar Behavior:**
+
 - Primary sidebar: Always visible (340px)
 - Secondary sidebar: Fades in/out (340px)
 - Tertiary sidebar: Floating, layered above content
 - Smooth opacity transitions
 
 **Content Stacking:**
+
 ```
 Top Navigation
     ↓
@@ -44167,6 +45512,7 @@ Top Navigation
 ```
 
 **Visual Appearance:**
+
 ```
 Sidebars:
   • White background: rgba(255, 255, 255, 0.7)
@@ -44178,9 +45524,11 @@ Sidebars:
 ---
 
 ### ULTRA-WIDE (≥ 1440px)
+
 **Devices:** Desktop (1440px+), Full HD (1920px), 4K (2560px)
 
 **Structure:**
+
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │  ☰  Bluebonnet                          [User] [Settings] [Logout] │ ← 60px
@@ -44200,12 +45548,14 @@ Sidebars:
 ```
 
 **Navigation:**
+
 - ✅ Top navigation bar (always visible)
 - ✅ Hamburger menu available
 - ✅ Full branding visible
 - ✅ User menu expanded
 
 **All Sidebars Always Visible:**
+
 - Primary (340px): Trip list
 - Secondary (340px): Details/content
 - Tertiary (340px): Forms/editor
@@ -44213,6 +45563,7 @@ Sidebars:
 - Maximum information density
 
 **Content Stacking:**
+
 ```
 Top Navigation
     ↓
@@ -44226,6 +45577,7 @@ No overlays, all columns in grid
 ```
 
 **Maximum Utilization:**
+
 ```
 Navigation: 60px
 Content: Full remaining height
@@ -44238,6 +45590,7 @@ Total Visible Width: 340 + 1fr + 340 + 340 = Full viewport
 ## Responsive Spacing
 
 ### How Spacing Scales
+
 ```
 --spacing-lg ranges from 16px to 24px depending on viewport
 
@@ -44251,6 +45604,7 @@ Using: clamp(1rem, 2.5vw, 1.5rem)
 ```
 
 ### Spacing Scale Reference
+
 ```
 --spacing-xs:  4px    (mobile) → 8px    (desktop)
 --spacing-sm:  8px    (mobile) → 12px   (desktop)
@@ -44265,6 +45619,7 @@ Using: clamp(1rem, 2.5vw, 1.5rem)
 ## Form Display Variations
 
 ### Mobile: Bottom Sheet
+
 ```
 ┌──────────────────────┐
 │                      │
@@ -44283,6 +45638,7 @@ Using: clamp(1rem, 2.5vw, 1.5rem)
 ```
 
 ### Tablet: Side Drawer
+
 ```
 ┌────────────────────────────────────────┐
 │ Top Nav                                 │
@@ -44300,6 +45656,7 @@ Using: clamp(1rem, 2.5vw, 1.5rem)
 ```
 
 ### Desktop: Side Panel (Fade)
+
 ```
 ┌──────────────────────────────────────────────┐
 │ Top Nav                                      │
@@ -44321,6 +45678,7 @@ Smooth transition: 0.35s
 ## Navigation Variations
 
 ### Mobile Navigation
+
 ```
 ┌──────────────────────────────┐
 │    Hamburger Drawer          │
@@ -44345,6 +45703,7 @@ Smooth transition: 0.35s
 ```
 
 ### Tablet/Desktop Navigation
+
 ```
 ┌──────────────────────────────────────┐
 │ ☰ Bluebonnet  [Search]  [User] [⚙]   │ ← Top Nav Bar
@@ -44359,6 +45718,7 @@ Smooth transition: 0.35s
 ## Hamburger Menu States
 
 ### Closed (Sidebar visible)
+
 ```
 ┌─────────────────┐
 │ ☰ (visible)     │  ← Hamburger icon visible
@@ -44368,6 +45728,7 @@ Smooth transition: 0.35s
 ```
 
 ### Open (Sidebar hidden)
+
 ```
 ┌─────────────────┐
 │ ✕ (visible)     │  ← X icon (close)
@@ -44382,6 +45743,7 @@ Smooth transition: 0.35s
 ## Touch Target Sizing
 
 ### WCAG AA Compliance
+
 ```
 Minimum touch target: 44px × 44px
 
@@ -44413,6 +45775,7 @@ Tab Navigation:
 ## Safe Area Support (Notched Devices)
 
 ### iPhone with Notch
+
 ```
 ┌────────┌────┐────────┐
 │        │ 🔆 │        │  ← Notch
@@ -44429,12 +45792,10 @@ Tab Navigation:
 ```
 
 ### CSS Implementation
+
 ```css
 .nav-bar {
-  padding-bottom: max(
-    var(--spacing-md),
-    env(safe-area-inset-bottom, 0px)
-  );
+  padding-bottom: max(var(--spacing-md), env(safe-area-inset-bottom, 0px));
 }
 ```
 
@@ -44443,6 +45804,7 @@ Tab Navigation:
 ## Landscape Mode Detection
 
 ### Tablet Landscape (max-height: 600px)
+
 ```
 Reduced spacing and nav height
 
@@ -44470,40 +45832,52 @@ Copy these for your component styling:
 
 ```css
 /* Mobile ONLY */
-@media (max-width: 639px) { }
+@media (max-width: 639px) {
+}
 
 /* Tablet and up */
-@media (min-width: 640px) { }
+@media (min-width: 640px) {
+}
 
 /* Tablet ONLY */
-@media (min-width: 640px) and (max-width: 1023px) { }
+@media (min-width: 640px) and (max-width: 1023px) {
+}
 
 /* Desktop and up */
-@media (min-width: 1024px) { }
+@media (min-width: 1024px) {
+}
 
 /* Desktop ONLY */
-@media (min-width: 1024px) and (max-width: 1439px) { }
+@media (min-width: 1024px) and (max-width: 1439px) {
+}
 
 /* Ultra-wide */
-@media (min-width: 1440px) { }
+@media (min-width: 1440px) {
+}
 
 /* Landscape mode */
-@media (max-height: 600px) { }
+@media (max-height: 600px) {
+}
 
 /* Hover capable devices */
-@media (hover: hover) { }
+@media (hover: hover) {
+}
 
 /* Touch-only devices */
-@media (hover: none) { }
+@media (hover: none) {
+}
 
 /* Reduced motion */
-@media (prefers-reduced-motion: reduce) { }
+@media (prefers-reduced-motion: reduce) {
+}
 
 /* High contrast mode */
-@media (prefers-contrast: more) { }
+@media (prefers-contrast: more) {
+}
 
 /* Dark mode */
-@media (prefers-color-scheme: dark) { }
+@media (prefers-color-scheme: dark) {
+}
 ```
 
 ---
@@ -44511,6 +45885,7 @@ Copy these for your component styling:
 ## Testing Checklist
 
 ### Test These Viewport Widths
+
 - [ ] 375px (iPhone SE)
 - [ ] 480px (Galaxy S21)
 - [ ] 640px (iPad boundary)
@@ -44522,22 +45897,26 @@ Copy these for your component styling:
 - [ ] 2560px (4K)
 
 ### Test These Device Orientations
+
 - [ ] Portrait (all mobile)
 - [ ] Landscape (mobile)
 - [ ] Landscape (tablet)
 
 ### Test Form Display
+
 - [ ] Mobile: Bottom sheet appears
 - [ ] Tablet: Side drawer appears
 - [ ] Desktop: Side panel fades in
 
 ### Test Navigation
+
 - [ ] Mobile: Bottom tab bar visible
 - [ ] Mobile: Hamburger drawer works
 - [ ] Tablet: Top nav visible, hamburger works
 - [ ] Desktop: Top nav visible, hamburger works
 
 ### Test Sidebars
+
 - [ ] Mobile: All hidden, drawer accessible
 - [ ] Tablet: Primary collapsible, secondary drawer
 - [ ] Desktop: Primary + Secondary visible, tertiary floating
@@ -44560,14 +45939,14 @@ Copy these for your component styling:
 
 ## Browser Compatibility
 
-| Feature | Chrome | Firefox | Safari | Edge |
-|---------|--------|---------|--------|------|
-| CSS Grid | ✅ | ✅ | ✅ | ✅ |
-| CSS Variables | ✅ | ✅ | ✅ | ✅ |
-| clamp() | ✅ | ✅ | ✅ | ✅ |
-| env() (safe area) | ✅ | ✅ | ✅ | ✅ |
-| Media Queries | ✅ | ✅ | ✅ | ✅ |
-| Backdrop-filter | ✅ | ✅ | ✅ (12.1+) | ✅ |
+| Feature           | Chrome | Firefox | Safari     | Edge |
+| ----------------- | ------ | ------- | ---------- | ---- |
+| CSS Grid          | ✅     | ✅      | ✅         | ✅   |
+| CSS Variables     | ✅     | ✅      | ✅         | ✅   |
+| clamp()           | ✅     | ✅      | ✅         | ✅   |
+| env() (safe area) | ✅     | ✅      | ✅         | ✅   |
+| Media Queries     | ✅     | ✅      | ✅         | ✅   |
+| Backdrop-filter   | ✅     | ✅      | ✅ (12.1+) | ✅   |
 
 ---
 
@@ -44576,6 +45955,7 @@ Copy these for your component styling:
 ````
 
 ## File: CLAUDE.md
+
 ````markdown
 # Bluebonnet - Development Quick Start
 
@@ -44590,6 +45970,7 @@ Copy these for your component styling:
 **Frontend & Backend Running Together:**
 
 ### Option 1: Docker (Recommended, 5 minutes)
+
 ```bash
 # Backend + Database + Frontend (all together)
 docker-compose up --build
@@ -44598,6 +45979,7 @@ docker-compose up --build
 ```
 
 ### Option 2: Local Development (15 minutes)
+
 ```bash
 # Backend setup
 npm install
@@ -44614,6 +45996,7 @@ npm run dev
 ```
 
 ### Frontend-Only Development
+
 ```bash
 cd ./frontend
 npm install
@@ -44629,18 +46012,21 @@ npm run dev
 All documentation is in `.claude/` directory for token efficiency.
 
 ### For New Developers (Start Here)
+
 1. **[Context](/.claude/context.md)** (5 min) - Stack, database, key decisions
 2. **[Quick Ref](/.claude/development-quick-ref.md)** (5 min) - Commands, environment vars
 3. **[Patterns](/.claude/patterns.md)** (10 min) - AJAX, CRUD, sidebar patterns
 4. **[Features](/.claude/features.md)** (10 min) - What's implemented, where
 
 ### For Code Changes
+
 - **[Patterns](/.claude/patterns.md)** - AJAX forms, CRUD operations, sidebar loading
 - **[Features](/.claude/features.md)** - Which features exist, file locations
 - **[Backend Details](/.claude/ARCHITECTURE/BACKEND/README.md)** - Controllers, models, routes
 - **[Frontend Details](/.claude/ARCHITECTURE/FRONTEND/README.md)** - JavaScript, forms, sidebars
 
 ### For Debugging
+
 - **[Quick Ref - Debugging](/.claude/development-quick-ref.md#debugging-tips)** - Browser console, network tab
 - **[Data Model](/.claude/ARCHITECTURE/DATA_MODEL/README.md)** - Database relationships
 - **[Troubleshooting](/.claude/TROUBLESHOOTING/README.md)** - Common issues
@@ -44650,12 +46036,14 @@ All documentation is in `.claude/` directory for token efficiency.
 ## 🎯 Common Tasks
 
 ### Add a form field to a feature
+
 1. Update model: `models/{Feature}.js`
 2. Update controller: `controllers/{feature}Controller.js`
 3. Update form: `views/partials/{feature}-form.ejs`
 4. Update JavaScript validation if needed
 
 ### Debug a feature not working
+
 1. Open DevTools (F12) → Console tab
    - Check: `window.tripId`, `window.tripData`, `typeof editItem`
 2. Check Network tab
@@ -44665,6 +46053,7 @@ All documentation is in `.claude/` directory for token efficiency.
    - `LOG_LEVEL=debug npm run dev`
 
 ### Create a new travel item type
+
 See [Features](/.claude/features.md#adding-a-new-feature-template)
 
 ---
@@ -44698,23 +46087,27 @@ npm run format         # Auto-format
 ## 📋 Key Concepts
 
 **All travel items** (Flight, Hotel, Event, Car Rental, Transportation):
+
 - Follow identical CRUD pattern
 - Can be created standalone or attached to trip
 - Cascade delete when trip deleted
 - Use AJAX forms with `X-Async-Request` header
 
 **Three-sidebar layout:**
+
 - Primary (fixed) - Navigation
 - Secondary (on-demand) - Forms/details
 - Tertiary (on-demand) - Maps/additional info
 
 **No confirmation pattern:**
+
 - No `confirm()` dialogs
 - No `alert()` messages
 - Operations execute silently
 - UI updates via AJAX
 
 **Authentication:**
+
 - Passport.js local strategy (email/password)
 - Session-based (express-session)
 - Redis caching
@@ -44747,6 +46140,7 @@ npm run format         # Auto-format
 ## 🔑 Environment Variables
 
 **Required (.env):**
+
 ```env
 DB_HOST=localhost
 DB_PORT=5432
@@ -44758,6 +46152,7 @@ NODE_ENV=development
 ```
 
 **Optional (with defaults):**
+
 - `PORT=3000` - Server port
 - `REDIS_ENABLED=true` - Redis caching
 - `LOG_LEVEL=info` - Winston log level
@@ -44769,11 +46164,10 @@ See [Quick Ref](/.claude/development-quick-ref.md#environment-variables) for all
 ## 📖 Pattern Examples
 
 ### AJAX Form Submission
+
 ```javascript
 // In form template
-<script>
-  setupAsyncFormSubmission('addFlightForm');
-</script>
+<script>setupAsyncFormSubmission('addFlightForm');</script>;
 
 // Backend detects X-Async-Request header
 const isAsyncRequest = req.get('X-Async-Request') === 'true';
@@ -44785,6 +46179,7 @@ if (isAsyncRequest) {
 ```
 
 ### Load Sidebar Content
+
 ```javascript
 // Click button → loads form
 function editItem(type, id) {
@@ -44793,6 +46188,7 @@ function editItem(type, id) {
 ```
 
 ### Refresh After CRUD
+
 ```javascript
 // After form submit success
 if (result.success) {
@@ -44826,6 +46222,7 @@ npm test -- tests/unit/models/Flight.test.js
 ## 🚀 What's Next?
 
 **Phase 1: Svelte Migration** ✅ COMPLETE (December 18, 2025)
+
 - ✅ All CRUD operations working
 - ✅ Full feature parity with EJS version
 - ✅ 33+ Svelte components created
@@ -44833,6 +46230,7 @@ npm test -- tests/unit/models/Flight.test.js
 - ✅ 90%+ complete (pending: integration tests, a11y audit, performance optimization)
 
 **Phase 2: Planned Enhancements**
+
 - Backend refactoring + TypeScript migration
 - Full-stack optimization
 - Integration tests & accessibility audit
@@ -44895,21 +46293,21 @@ Cache (Redis)
 
 ## 📊 Current Project Status
 
-| Component | Status | Details |
-|-----------|--------|---------|
-| **Frontend** | ✅ Integrated | SvelteKit + TypeScript, in `/frontend/` |
-| **Backend** | ✅ Complete | Express.js, REST API, authentication |
-| **Database** | ✅ Complete | PostgreSQL with full schema |
-| **Testing** | ✅ Complete | Vitest setup, 100+ test cases |
-| **Documentation** | ✅ Complete | Comprehensive guides in `.claude/` |
-| **Deployment** | ✅ Ready | Docker setup, can be deployed |
+| Component         | Status        | Details                                 |
+| ----------------- | ------------- | --------------------------------------- |
+| **Frontend**      | ✅ Integrated | SvelteKit + TypeScript, in `/frontend/` |
+| **Backend**       | ✅ Complete   | Express.js, REST API, authentication    |
+| **Database**      | ✅ Complete   | PostgreSQL with full schema             |
+| **Testing**       | ✅ Complete   | Vitest setup, 100+ test cases           |
+| **Documentation** | ✅ Complete   | Comprehensive guides in `.claude/`      |
+| **Deployment**    | ✅ Ready      | Docker setup, can be deployed           |
 
-**Architecture Note:** EVERYTHING IN THIS APPLICATION GOES IN THE DASHBOARD. The dashboard view is the ONLY view in this application. Everything is built on top of that one page, overlaid on top of the map.
----
+## **Architecture Note:** EVERYTHING IN THIS APPLICATION GOES IN THE DASHBOARD. The dashboard view is the ONLY view in this application. Everything is built on top of that one page, overlaid on top of the map.
 
 ## 🔄 Recent Migration (December 28, 2025)
 
 **What Changed:**
+
 - ✅ Svelte frontend copied to `/frontend/` subdirectory
 - ✅ Landing, login, register pages migrated with exact EJS styling
 - ✅ EJS views archived in `DEPRECATED_EJS_VIEWS_ARCHIVE/`
@@ -44917,6 +46315,7 @@ Cache (Redis)
 - ✅ Development environment fully functional
 
 **What Stayed the Same:**
+
 - Express backend (unchanged)
 - PostgreSQL database (unchanged)
 - API routes (unchanged)
@@ -44924,12 +46323,14 @@ Cache (Redis)
 ````
 
 ## File: DOCKER_PERMISSION_FIX.md
+
 ````markdown
 # Docker Permission Fix - Complete Resolution
 
 ## Problem Statement
 
 When rebuilding or restarting the app in the local environment:
+
 - `/frontend/node_modules/` was owned by `1001:1001` (uid 1001, gid 1001)
 - `/app/node_modules/` was owned by `nodejs:nodejs` (uid 1001, gid 1001)
 - All other directories were correctly owned by `home:home`
@@ -44948,6 +46349,7 @@ Replaced the custom `nodejs:1001:1001` user with the built-in `node:1000:1000` u
 #### 1. **Dockerfile** (All 8 stages)
 
 **Before:**
+
 ```dockerfile
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 && \
@@ -44957,6 +46359,7 @@ USER nodejs
 ```
 
 **After:**
+
 ```dockerfile
 RUN chown -R node:node /app
 COPY --chown=node:node package*.json ./
@@ -44964,6 +46367,7 @@ USER node
 ```
 
 **Changes applied to all stages:**
+
 - Base stage: Uses built-in `node` user instead of creating `nodejs:1001`
 - development-deps stage: `USER node` instead of `USER nodejs`
 - production-deps stage: `USER node` instead of `USER nodejs`
@@ -44976,8 +46380,9 @@ USER node
 #### 2. **docker-compose.yml**
 
 **Added to both services:**
+
 ```yaml
-user: "node"
+user: 'node'
 ```
 
 This ensures containers run as the `node` user, maintaining consistency between host and container.
@@ -44985,6 +46390,7 @@ This ensures containers run as the `node` user, maintaining consistency between 
 #### 3. **frontend/Dockerfile.dev**
 
 **Before:**
+
 ```dockerfile
 FROM node:20-alpine
 WORKDIR /app
@@ -44994,6 +46400,7 @@ COPY . .
 ```
 
 **After:**
+
 ```dockerfile
 FROM node:20-alpine
 WORKDIR /app
@@ -45007,6 +46414,7 @@ COPY --chown=node:node . .
 #### 4. **scripts/docker-entrypoint.sh**
 
 **Removed all permission-fixing logic:**
+
 - ❌ Removed ownership checks for `/app/node_modules`
 - ❌ Removed `chown -R nodejs:nodejs` operations
 - ❌ Removed root permission fixes
@@ -45019,11 +46427,13 @@ The script now runs cleanly without any permission operations, relying on the co
 ## User ID Mapping
 
 ### Built-in Node User (Used Now)
+
 - **Container:** `node` user, UID 1000, GID 1000
 - **Host:** `home` user, UID 1000, GID 1000 (typical)
 - **Match:** Perfect alignment ✅
 
 ### Old Custom User (No Longer Used)
+
 - **Container:** `nodejs` user, UID 1001, GID 1001
 - **Host:** Unmapped (creates 1001:1001 on mount)
 - **Issue:** Mismatch causes permission problems ❌
@@ -45033,6 +46443,7 @@ The script now runs cleanly without any permission operations, relying on the co
 ## File Ownership After Fix
 
 ### In Container
+
 ```
 /app                          → node:node (1000:1000)
 /app/node_modules             → node:node (1000:1000)
@@ -45043,6 +46454,7 @@ All build artifacts           → node:node (1000:1000)
 ```
 
 ### On Host (After Volume Mount)
+
 ```
 ./                            → home:home (1000:1000)
 ./node_modules                → home:home (1000:1000)
@@ -45055,6 +46467,7 @@ All files                     → home:home (1000:1000)
 ## Testing the Fix
 
 ### Clean Rebuild
+
 ```bash
 # Remove old volumes and containers
 docker compose down --volumes
@@ -45069,18 +46482,22 @@ docker compose up --build
 ### Verify Permissions
 
 **Inside container:**
+
 ```bash
 docker exec <container_id> ls -la / | grep app
 docker exec <container_id> ls -la /app/node_modules | head -5
 docker exec <container_id> ls -la /app/frontend/node_modules | head -5
 ```
+
 All should show `node` ownership.
 
 **On host:**
+
 ```bash
 ls -la node_modules | head -5
 ls -la frontend/node_modules | head -5
 ```
+
 All should show `home:home` ownership.
 
 ---
@@ -45108,6 +46525,7 @@ All should show `home:home` ownership.
 ## Rollback Plan
 
 If issues occur, revert to the commit before this fix:
+
 ```bash
 git revert <commit-hash>
 docker compose down --volumes
@@ -45129,11 +46547,13 @@ However, this fix addresses the core issue and should resolve all permission pro
 ````
 
 ## File: FETC
-````
 
-````
+```
+
+```
 
 ## File: IMPLEMENTATION_SUMMARY.md
+
 ````markdown
 # Travel Companions System - Implementation Summary
 
@@ -45627,6 +47047,7 @@ The system is ready for:
 ````
 
 ## File: PERMISSIONS_FIX_SUMMARY.md
+
 ````markdown
 # Permissions Fix Summary
 
@@ -45787,6 +47208,7 @@ The solution leverages the Node.js Alpine image's built-in `node` user (uid 1000
 ````
 
 ## File: PHASE_1_COMPLETION.md
+
 ````markdown
 # Phase 1: CSS Foundation - Completion Report
 
@@ -45804,9 +47226,11 @@ Phase 1 establishes the foundational CSS system for the entire responsive redesi
 ## Files Created
 
 ### 1. `/frontend/src/lib/styles/responsive.css` (17KB)
+
 **Purpose:** Central store for all CSS custom properties and responsive utilities
 
 **Contains:**
+
 - ✅ Breakpoint definitions (640px, 1024px, 1440px)
 - ✅ Spacing scale using `clamp()` for fluid scaling
 - ✅ Sidebar widths and navigation heights
@@ -45824,6 +47248,7 @@ Phase 1 establishes the foundational CSS system for the entire responsive redesi
 - ✅ Debug mode helper
 
 **Key Features:**
+
 - Breakpoint-specific CSS custom properties that override root values
 - All spacing scales with viewport using `clamp()`
 - Respects user preferences (prefers-reduced-motion, prefers-contrast-more)
@@ -45832,17 +47257,20 @@ Phase 1 establishes the foundational CSS system for the entire responsive redesi
 - 1000+ lines of organized, documented CSS
 
 ### 2. `/frontend/src/lib/styles/layout.css` (20KB)
+
 **Purpose:** Grid and flexbox layout definitions for each breakpoint
 
 **Contains:**
 
 #### Mobile Layout (< 640px)
+
 - ✅ Single column with bottom navigation
 - ✅ Bottom tab bar (60px height, glass morphism)
 - ✅ Safe area padding for notched devices
 - ✅ Landscape mode detection and adjustment
 
 #### Tablet Layout (640px - 1023px)
+
 - ✅ Top navigation bar
 - ✅ Collapsible primary sidebar (drawer mode)
 - ✅ Right-side drawer for forms (50% width, max 400px)
@@ -45851,6 +47279,7 @@ Phase 1 establishes the foundational CSS system for the entire responsive redesi
 - ✅ Smooth transitions between states
 
 #### Desktop Layout (1024px - 1439px)
+
 - ✅ Top navigation bar
 - ✅ Three-column grid layout
 - ✅ Floating tertiary sidebar with drop shadow
@@ -45858,12 +47287,14 @@ Phase 1 establishes the foundational CSS system for the entire responsive redesi
 - ✅ Fixed-position sidebars
 
 #### Ultra-Wide Layout (1440px+)
+
 - ✅ Four-column grid (all content visible)
 - ✅ No overlays or drawers
 - ✅ Full 340px sidebars
 - ✅ Maximum information density
 
 **Additional Features:**
+
 - ✅ Bottom sheet modals (slides up from bottom)
 - ✅ Side drawers (slides from right)
 - ✅ Modal backdrops with semi-transparent overlay
@@ -45871,9 +47302,11 @@ Phase 1 establishes the foundational CSS system for the entire responsive redesi
 - ✅ Smooth transitions between all states
 
 ### 3. `/frontend/src/lib/styles/README.md` (13KB)
+
 **Purpose:** Comprehensive documentation for the responsive system
 
 **Sections:**
+
 - ✅ System overview and file descriptions
 - ✅ CSS custom properties reference
 - ✅ Responsive layout patterns (visual diagrams)
@@ -45886,9 +47319,11 @@ Phase 1 establishes the foundational CSS system for the entire responsive redesi
 - ✅ Future enhancement ideas
 
 ### 4. `/frontend/src/lib/styles/QUICK_REFERENCE.md` (8KB)
+
 **Purpose:** Quick lookup guide for developers
 
 **Includes:**
+
 - ✅ Breakpoint copy-paste code
 - ✅ All spacing tokens quick reference
 - ✅ Most common custom properties
@@ -45905,7 +47340,9 @@ Phase 1 establishes the foundational CSS system for the entire responsive redesi
 ## Updated Files
 
 ### `/frontend/src/app.css`
+
 **Changes:**
+
 - ✅ Added imports for new `responsive.css` and `layout.css`
 - ✅ Maintains all existing global styles
 - ✅ New styles cascade properly without conflicts
@@ -45915,6 +47352,7 @@ Phase 1 establishes the foundational CSS system for the entire responsive redesi
 ## CSS Custom Properties Summary
 
 ### Spacing Scale (Mobile-First)
+
 ```
 --spacing-xs:  clamp(0.25rem, 1vw, 0.5rem)      /* 4px → 8px */
 --spacing-sm:  clamp(0.5rem, 1.5vw, 0.75rem)    /* 8px → 12px */
@@ -45925,6 +47363,7 @@ Phase 1 establishes the foundational CSS system for the entire responsive redesi
 ```
 
 ### Breakpoints
+
 ```
 --bp-mobile:  640px       (Mobile → Tablet)
 --bp-tablet:  1024px      (Tablet → Desktop)
@@ -45932,6 +47371,7 @@ Phase 1 establishes the foundational CSS system for the entire responsive redesi
 ```
 
 ### Navigation Heights
+
 ```
 --nav-height-mobile:     60px   (Bottom bar)
 --nav-height-tablet:     60px   (Top bar)
@@ -45939,6 +47379,7 @@ Phase 1 establishes the foundational CSS system for the entire responsive redesi
 ```
 
 ### Z-Index Stack
+
 ```
 --z-map:              1    (Background)
 --z-content:          5    (Main area)
@@ -45953,6 +47394,7 @@ Phase 1 establishes the foundational CSS system for the entire responsive redesi
 ```
 
 ### Color Palette
+
 ```
 Primary:        #007bff (--color-primary)
 Text Primary:   #111827 (--color-text-primary)
@@ -45969,6 +47411,7 @@ Info:           #3b82f6 (--color-info)
 ## Breakpoint Layouts Implemented
 
 ### Mobile (< 640px)
+
 ```
 ┌─────────────────────┐
 │  App Content (100%) │
@@ -45979,6 +47422,7 @@ Info:           #3b82f6 (--color-info)
 ```
 
 ### Tablet (640px - 1023px)
+
 ```
 ┌──────────────────────────────────┐
 │  Top Nav Bar (60px)              │
@@ -45990,6 +47434,7 @@ Info:           #3b82f6 (--color-info)
 ```
 
 ### Desktop (1024px - 1439px)
+
 ```
 ┌──────────────────────────────────────────┐
 │  Top Nav Bar (60px)                      │
@@ -46002,6 +47447,7 @@ Info:           #3b82f6 (--color-info)
 ```
 
 ### Ultra-Wide (1440px+)
+
 ```
 ┌──────────────────────────────────────────────────┐
 │  Top Nav Bar (60px)                              │
@@ -46017,28 +47463,33 @@ Info:           #3b82f6 (--color-info)
 ## Key Features
 
 ✅ **Unified System**
+
 - Single source of truth for all breakpoints
 - No conflicting styles
 - Easy to maintain and update
 
 ✅ **Responsive Scaling**
+
 - All spacing uses `clamp()` for fluid scaling
 - Smooth transitions between breakpoints
 - No hard layout jumps
 
 ✅ **Accessibility**
+
 - Touch targets: 44px minimum (WCAG AA)
 - Respects `prefers-reduced-motion`
 - Respects `prefers-contrast-more`
 - Safe area support for notched devices
 
 ✅ **Well-Documented**
+
 - 2 comprehensive markdown guides
 - Code comments throughout CSS
 - Quick reference for developers
 - Copy-paste media query templates
 
 ✅ **Developer-Friendly**
+
 - All hardcoded values eliminated
 - Easy to find and update values
 - Consistent naming conventions
@@ -46049,12 +47500,14 @@ Info:           #3b82f6 (--color-info)
 ## Testing Checklist
 
 ### CSS Compilation ✅
+
 - [x] No CSS syntax errors
 - [x] All imports resolve correctly
 - [x] Custom properties defined
 - [x] Breakpoint media queries valid
 
 ### Layout Testing (Next Phase)
+
 - [ ] Mobile layout (375px - 639px)
 - [ ] Tablet layout (640px - 1023px)
 - [ ] Desktop layout (1024px - 1439px)
@@ -46068,6 +47521,7 @@ Info:           #3b82f6 (--color-info)
 ## Integration Notes
 
 ### For Next Phase (Phase 2)
+
 The new CSS system is ready to be used in component development. When creating the ResponsiveLayout component:
 
 1. Reference CSS custom properties instead of hardcoded values
@@ -46077,6 +47531,7 @@ The new CSS system is ready to be used in component development. When creating t
 5. Test at all four breakpoints: 375px, 640px, 1024px, 1440px
 
 ### Component Structure Template
+
 ```html
 <div class="app-layout">
   <nav class="app-nav">
@@ -46112,6 +47567,7 @@ The new CSS system is ready to be used in component development. When creating t
 ## What Changed from Old System
 
 ### Old System Issues ❌
+
 - Mobile and desktop layouts separate (two different code paths)
 - Inconsistent breakpoint definitions scattered across files
 - Hardcoded spacing values (1rem, 1.5rem, etc.)
@@ -46119,6 +47575,7 @@ The new CSS system is ready to be used in component development. When creating t
 - Mobile-specific media queries (480px, 768px mixed)
 
 ### New System Advantages ✅
+
 - Single unified system for all breakpoints
 - Centralized, consistent definitions
 - All spacing responsive with `clamp()`
@@ -46131,6 +47588,7 @@ The new CSS system is ready to be used in component development. When creating t
 ## Files Preserved
 
 The following files remain available for reference but are no longer used:
+
 - `/frontend/src/lib/styles/breakpoints.css` (old system)
 - `/frontend/src/lib/components/MapLayout.svelte` (old component)
 - `/frontend/src/lib/components/MobileTabNavigation.svelte` (old component)
@@ -46143,30 +47601,35 @@ These will be deprecated in Phase 2 when new components are created.
 ## Next Steps
 
 ### Phase 2: Core Layout Component (6-8 hours)
+
 1. Create `ResponsiveLayout.svelte` (unified replacement for MapLayout)
 2. Implement grid layouts for each breakpoint
 3. Add sidebar drawer/collapse logic
 4. Test at all breakpoints
 
 ### Phase 3: Navigation System (4-6 hours)
+
 1. Create unified `Navigation.svelte`
 2. Implement hamburger menu
 3. Add drawer functionality
 4. Add bottom tab navigation for mobile
 
 ### Phase 4: Form System (6-8 hours)
+
 1. Create `FormModal.svelte` (unified forms)
 2. Implement bottom sheets (mobile)
 3. Implement side drawers (tablet)
 4. Implement side panels (desktop)
 
 ### Phase 5: Component Refactoring (8-12 hours)
+
 1. Refactor `dashboard/+page.svelte`
 2. Update all form components
 3. Update detail view components
 4. Remove old mobile-specific logic
 
 ### Phase 6: Testing & Polish (6-8 hours)
+
 1. Full breakpoint testing
 2. Edge case handling
 3. Accessibility audit
@@ -46185,18 +47648,18 @@ These will be deprecated in Phase 2 when new components are created.
 
 ## Summary Statistics
 
-| Metric | Value |
-|--------|-------|
-| New CSS Files | 2 (17KB + 20KB) |
-| Documentation Files | 2 (13KB + 8KB) |
-| CSS Custom Properties | 50+ |
-| Responsive Utilities | 15+ |
-| Breakpoint Definitions | 4 |
-| Color Tokens | 15+ |
-| Z-Index Stack Levels | 10 |
-| Media Queries Defined | 20+ |
-| Lines of CSS | 1000+ |
-| Lines of Documentation | 600+ |
+| Metric                 | Value           |
+| ---------------------- | --------------- |
+| New CSS Files          | 2 (17KB + 20KB) |
+| Documentation Files    | 2 (13KB + 8KB)  |
+| CSS Custom Properties  | 50+             |
+| Responsive Utilities   | 15+             |
+| Breakpoint Definitions | 4               |
+| Color Tokens           | 15+             |
+| Z-Index Stack Levels   | 10              |
+| Media Queries Defined  | 20+             |
+| Lines of CSS           | 1000+           |
+| Lines of Documentation | 600+            |
 
 ---
 
@@ -46210,7 +47673,8 @@ The CSS foundation is stable, well-tested, and ready for the next phase of compo
 ````
 
 ## File: PHASE_1_SUMMARY.txt
-````
+
+```
 ================================================================================
 BLUEBONNET RESPONSIVE REDESIGN - PHASE 1 SUMMARY
 ================================================================================
@@ -46583,9 +48047,10 @@ This phase delivers a unified, responsive CSS system that will serve as the
 foundation for all remaining phases of the redesign.
 
 ================================================================================
-````
+```
 
 ## File: PHASE_2_COMPLETE_SUMMARY.md
+
 ````markdown
 # Phase 2: Core Layout Component - Complete Summary
 
@@ -46598,11 +48063,13 @@ foundation for all remaining phases of the redesign.
 ## What Was Accomplished
 
 ### Phase 2 Deliverable: ResponsiveLayout.svelte
+
 **Location:** `/frontend/src/lib/components/ResponsiveLayout.svelte`
 **Size:** 260 lines
 **Type:** Unified responsive layout component (DROP-IN replacement for MapLayout)
 
 ### Key Features
+
 ✅ Single HTML structure for all breakpoints
 ✅ CSS Grid for automatic responsive adaptation
 ✅ Mobile (flexbox) + Desktop (grid) view switching
@@ -46615,6 +48082,7 @@ foundation for all remaining phases of the redesign.
 ## Technical Implementation
 
 ### Structure
+
 ```
 ResponsiveLayout.svelte
 ├── Imports CSS files (CRITICAL FIX)
@@ -46635,18 +48103,21 @@ ResponsiveLayout.svelte
 ### Responsive Breakpoints
 
 **Mobile (< 640px)**
+
 - Single column flexbox layout
 - MobileTabNavigation at bottom (60px)
 - Bottom tabs: List, Add, Calendar, Settings
 - `display: flex` on `.responsive-mobile`
 
 **Tablet (640px - 1023px)**
+
 - Two-column grid: `auto 1fr`
 - Left sidebar (collapsible)
 - Right content area (map + drawer)
 - `display: contents` on `.responsive-desktop`
 
 **Desktop (1024px - 1439px)**
+
 - Three-column grid: `auto 1fr auto`
 - Left sidebar (340px - trip list)
 - Center (fill - map background)
@@ -46654,6 +48125,7 @@ ResponsiveLayout.svelte
 - All sidebars visible simultaneously
 
 **Ultra-wide (1440px+)**
+
 - Four-column grid: `340px 1fr 340px 340px`
 - Left sidebar (trip list)
 - Center (map)
@@ -46666,26 +48138,32 @@ ResponsiveLayout.svelte
 ## Critical Fix: CSS Imports
 
 ### The Problem
+
 Phase 1 created comprehensive CSS files but they were never imported, so:
+
 - Grid layout rules didn't apply
 - Sidebars had no positioning
 - Layout collapsed to just the map
 - Desktop/tablet view completely broken
 
 ### The Solution
+
 Added to ResponsiveLayout.svelte:
+
 ```typescript
-import '$lib/styles/responsive.css';  // CSS custom properties
-import '$lib/styles/layout.css';      // Grid layout definitions
+import '$lib/styles/responsive.css'; // CSS custom properties
+import '$lib/styles/layout.css'; // Grid layout definitions
 ```
 
 ### Why This Works
+
 - CSS loads when dashboard renders
 - All grid rules apply at runtime
 - Responsive breakpoints activate correctly
 - Sidebars positioned by CSS Grid, not JavaScript
 
 ### Impact
+
 ✅ Fixes missing sidebars on desktop/tablet
 ✅ Enables responsive layout system
 ✅ No additional network requests (bundled with JS)
@@ -46696,6 +48174,7 @@ import '$lib/styles/layout.css';      // Grid layout definitions
 ## Component API
 
 ### Props
+
 ```typescript
 export let tripData: any = null;
 export let isPast: boolean = false;
@@ -46709,32 +48188,42 @@ export let mobileSelectedItemType: string | null = null;
 ```
 
 ### Methods
+
 ```typescript
 export function getMapComponent() {
-  return mapComponent;  // Returns MapVisualization instance
+  return mapComponent; // Returns MapVisualization instance
 }
 ```
 
 ### Slots
+
 ```html
 <!-- Desktop/Tablet content -->
-<slot name="primary" />      <!-- Trip list sidebar -->
-<slot name="secondary" />    <!-- Details/timeline sidebar -->
-<slot name="tertiary" />     <!-- Forms/editor sidebar -->
+<slot name="primary" />
+<!-- Trip list sidebar -->
+<slot name="secondary" />
+<!-- Details/timeline sidebar -->
+<slot name="tertiary" />
+<!-- Forms/editor sidebar -->
 
 <!-- Mobile content -->
-<slot name="mobile-list" />      <!-- List view -->
-<slot name="mobile-add" />       <!-- Add form -->
-<slot name="mobile-calendar" />  <!-- Calendar -->
-<slot name="mobile-settings" />  <!-- Settings -->
+<slot name="mobile-list" />
+<!-- List view -->
+<slot name="mobile-add" />
+<!-- Add form -->
+<slot name="mobile-calendar" />
+<!-- Calendar -->
+<slot name="mobile-settings" />
+<!-- Settings -->
 ```
 
 ### Events
+
 ```typescript
 // Dispatched by component
-dispatch('mobileEdit', event.detail);     // Item edit
-dispatch('mobileDelete', event.detail);   // Item delete
-dispatch('tabChange', { tabId });         // Tab navigation
+dispatch('mobileEdit', event.detail); // Item edit
+dispatch('mobileDelete', event.detail); // Item delete
+dispatch('tabChange', { tabId }); // Tab navigation
 ```
 
 ---
@@ -46742,12 +48231,14 @@ dispatch('tabChange', { tabId });         // Tab navigation
 ## Files Modified
 
 ### New Files Created
+
 1. **ResponsiveLayout.svelte** (260 lines)
    - Unified layout component
    - CSS imports for grid system
    - Mobile/desktop view switching
 
 ### Files Already Existed (Phase 1)
+
 1. **responsive.css** (537 lines)
    - CSS custom properties
    - Breakpoint variables
@@ -46760,6 +48251,7 @@ dispatch('tabChange', { tabId });         // Tab navigation
    - Modal/drawer styling
 
 ### Modified Files
+
 1. **dashboard/+page.svelte**
    - Import: `MapLayout` → `ResponsiveLayout`
    - Component tag: `<MapLayout>` → `<ResponsiveLayout>`
@@ -46770,12 +48262,14 @@ dispatch('tabChange', { tabId });         // Tab navigation
 ## Build Status
 
 ### Compilation
+
 ✅ **Builds successfully**
 ✅ **No errors or warnings**
 ✅ **All imports resolve**
 ✅ **TypeScript compiles**
 
 ### Bundle Sizes
+
 - common: 23.87 KB
 - dashboard: 0.54 KB
 - trip-view: 5.28 KB
@@ -46783,6 +48277,7 @@ dispatch('tabChange', { tabId });         // Tab navigation
 - Total: ~35 KB (baseline from Phase 1)
 
 ### CSS Integration
+
 ✅ responsive.css bundled into JS
 ✅ layout.css bundled into JS
 ✅ No additional HTTP requests
@@ -46795,6 +48290,7 @@ dispatch('tabChange', { tabId });         // Tab navigation
 ✅ **100% Backward Compatible**
 
 **Maintained:**
+
 - All props (including deprecated mobile-specific ones)
 - All slots (mobile and desktop)
 - All exported methods
@@ -46809,6 +48305,7 @@ dispatch('tabChange', { tabId });         // Tab navigation
 ## Testing Checklist
 
 ### Desktop Testing (1024px+)
+
 - [ ] Primary sidebar visible on left (trip list)
 - [ ] Map visible in center
 - [ ] Sidebar width is 340px
@@ -46817,6 +48314,7 @@ dispatch('tabChange', { tabId });         // Tab navigation
 - [ ] Click trip → secondary sidebar appears
 
 ### Tablet Testing (640-1023px)
+
 - [ ] Two-column layout
 - [ ] Sidebar on left with trips
 - [ ] Map fills right side
@@ -46824,6 +48322,7 @@ dispatch('tabChange', { tabId });         // Tab navigation
 - [ ] Drawer overlays on map
 
 ### Mobile Testing (< 640px)
+
 - [ ] Single column layout
 - [ ] Trip list shows properly
 - [ ] Bottom tabs visible (List, Add, Calendar, Settings)
@@ -46831,6 +48330,7 @@ dispatch('tabChange', { tabId });         // Tab navigation
 - [ ] Click trip → detail view with back button
 
 ### Responsive Testing
+
 - [ ] Smooth transitions when resizing
 - [ ] Grid updates at 640px breakpoint
 - [ ] Grid updates at 1024px breakpoint
@@ -46838,6 +48338,7 @@ dispatch('tabChange', { tabId });         // Tab navigation
 - [ ] No layout jumps or reflows
 
 ### DevTools Verification
+
 ```javascript
 // In browser console:
 
@@ -46861,16 +48362,19 @@ console.log('Width:', window.innerWidth);
 ## Known Limitations (For Future Phases)
 
 ### Navigation System (Phase 3)
+
 - No top navigation bar yet (mobile shows bottom tabs)
 - Hamburger menu for tablet navigation not implemented
 - Settings and profile dropdown not shown
 
 ### Form System (Phase 4)
+
 - Mobile modals existing but not fully integrated
 - Desktop floating panels not styled
 - Form validation styling pending
 
 ### State Management (Phase 5)
+
 - Still using mobileActiveTab, mobileSelectedItem (deprecated)
 - Will be unified in Phase 5
 - Works fine during transition period
@@ -46880,6 +48384,7 @@ console.log('Width:', window.innerWidth);
 ## Next Steps
 
 ### For Testing (Now)
+
 1. Start dev server: `npm run dev`
 2. Navigate to dashboard
 3. Test at different viewport sizes
@@ -46887,7 +48392,9 @@ console.log('Width:', window.innerWidth);
 5. Report any layout issues
 
 ### For Phase 3 (Navigation System)
+
 When ready to proceed:
+
 1. Create Navigation.svelte component
 2. Add top navigation bar for tablet+
 3. Implement hamburger drawer toggle
@@ -46895,6 +48402,7 @@ When ready to proceed:
 5. Style navigation UI
 
 **Dependencies:**
+
 - ✅ Phase 1: CSS Foundation (DONE)
 - ✅ Phase 2: ResponsiveLayout (DONE)
 - Ready to start Phase 3
@@ -46906,18 +48414,21 @@ When ready to proceed:
 ### Overall Design Pattern
 
 **Sidebar-to-Drawer Pattern:**
+
 - Mobile: Bottom tabs (single view)
 - Tablet: Collapsible sidebar (drawer overlay)
 - Desktop: Multiple sidebars visible
 - Ultra-wide: Maximum content visibility
 
 **CSS Grid Approach:**
+
 - Eliminates JavaScript branching
 - Single HTML structure for all breakpoints
 - Media queries handle layout changes
 - Reduces complexity and bugs
 
 **Component Hierarchy:**
+
 ```
 Dashboard (+page.svelte)
 └── ResponsiveLayout
@@ -46933,12 +48444,14 @@ Dashboard (+page.svelte)
 ## Performance Characteristics
 
 ### Bundle Impact
+
 - ResponsiveLayout component: +8 KB
 - CSS files: +50 KB (already Phase 1)
 - Total Phase 2 addition: +8 KB
 - **Total Phase 1+2: ~60 KB added**
 
 ### Runtime Performance
+
 ✅ No heavy calculations
 ✅ CSS transitions GPU-accelerated
 ✅ Minimal JavaScript (event handlers only)
@@ -46946,6 +48459,7 @@ Dashboard (+page.svelte)
 ✅ No re-render on resize (CSS handles it)
 
 ### Expected Lighthouse Impact
+
 - Performance: No degradation
 - Accessibility: Built-in support
 - Best Practices: Semantic HTML
@@ -46956,17 +48470,20 @@ Dashboard (+page.svelte)
 ## Common Issues & Solutions
 
 ### If Sidebars Don't Appear
+
 1. Check DevTools > Sources for layout.css/responsive.css
 2. Inspect .app-layout, verify `display: grid`
 3. Check grid-template-columns in Styles tab
 4. Verify media query applies at current width
 
 ### If Layout Shifts on Resize
+
 1. This is expected (grid changes at breakpoints)
 2. Should be smooth transition, not jumpy
 3. Check for CSS conflicts from other stylesheets
 
 ### If Mobile Tabs Don't Work
+
 1. Check MobileTabNavigation component
 2. Verify mobileActiveTab binding in dashboard
 3. Check event handlers in ResponsiveLayout
@@ -46984,6 +48501,7 @@ Dashboard (+page.svelte)
 **Status:** Ready for Phase 3 (Navigation System)
 
 **What Works:**
+
 - ✅ Mobile layout (single column with tabs)
 - ✅ Tablet layout (sidebar + map)
 - ✅ Desktop layout (3 columns)
@@ -46993,6 +48511,7 @@ Dashboard (+page.svelte)
 - ✅ Sidebar visibility
 
 **What's Next:**
+
 - Navigation bar (Phase 3)
 - Form styling (Phase 4)
 - State unification (Phase 5)
@@ -47003,22 +48522,26 @@ Dashboard (+page.svelte)
 ## Files Summary
 
 ### Created (Phase 2)
+
 ```
 frontend/src/lib/components/ResponsiveLayout.svelte    260 lines
 ```
 
 ### Used from Phase 1
+
 ```
 frontend/src/lib/styles/responsive.css    537 lines
 frontend/src/lib/styles/layout.css        786 lines
 ```
 
 ### Modified
+
 ```
 frontend/src/routes/dashboard/+page.svelte    2 changes (import + component tag)
 ```
 
 ### Total Phase 2 Addition
+
 ```
 New code: ~260 lines
 CSS integration: 2 imports
@@ -47036,6 +48559,7 @@ Removed dead code: ~150 lines
 4. **Monitor:** Check error logs, layout issues
 
 **Rollback plan:**
+
 - Revert dashboard import to MapLayout
 - No database changes
 - No breaking changes
@@ -47043,13 +48567,14 @@ Removed dead code: ~150 lines
 
 ---
 
-*Phase 2 Complete Summary*
-*Implementation Date: January 8, 2026*
-*Status: ✅ PRODUCTION-READY*
-*Next Phase: Phase 3 - Navigation System*
+_Phase 2 Complete Summary_
+_Implementation Date: January 8, 2026_
+_Status: ✅ PRODUCTION-READY_
+_Next Phase: Phase 3 - Navigation System_
 ````
 
 ## File: PHASE_2_COMPLETION.md
+
 ````markdown
 # Phase 2: Core Layout Component - Completion Report
 
@@ -47077,6 +48602,7 @@ Phase 2 successfully created the unified `ResponsiveLayout.svelte` component tha
 **Type:** Unified layout component
 
 **Features:**
+
 - ✅ Single HTML structure for all breakpoints
 - ✅ CSS Grid layout (no JavaScript branching)
 - ✅ Responsive sidebar behavior (drawer → column)
@@ -47087,6 +48613,7 @@ Phase 2 successfully created the unified `ResponsiveLayout.svelte` component tha
 - ✅ Backward compatible with old props
 
 **Structure:**
+
 ```
 <div class="app-layout">  <!-- CSS Grid container -->
   <nav class="app-nav">   <!-- Top nav (responsive via CSS) -->
@@ -47103,6 +48630,7 @@ Phase 2 successfully created the unified `ResponsiveLayout.svelte` component tha
 ### 2. Updated Files
 
 **`/frontend/src/routes/dashboard/+page.svelte`**
+
 - Changed import: `MapLayout` → `ResponsiveLayout`
 - Updated component tag
 - Removed old event handlers (`on:mobileEdit`, `on:mobileDelete`)
@@ -47110,6 +48638,7 @@ Phase 2 successfully created the unified `ResponsiveLayout.svelte` component tha
 - Kept backward compatibility with mobile state props
 
 **Changes:**
+
 ```diff
 - import MapLayout from '$lib/components/MapLayout.svelte';
 + import ResponsiveLayout from '$lib/components/ResponsiveLayout.svelte';
@@ -47136,6 +48665,7 @@ Phase 2 successfully created the unified `ResponsiveLayout.svelte` component tha
 ### 3. Implementation Details
 
 **JavaScript Logic (Minimal):**
+
 ```typescript
 // Navigation drawer toggle
 function toggleNavigation() {
@@ -47156,6 +48686,7 @@ export function getMapComponent() {
 ```
 
 **HTML Elements:**
+
 - 8 main container elements
 - 8 slot connection points
 - 2 event handlers (hamburger click)
@@ -47163,6 +48694,7 @@ export function getMapComponent() {
 - All using CSS classes from layout.css
 
 **CSS Integration:**
+
 - All styling in `/frontend/src/lib/styles/layout.css` (Phase 1)
 - All custom properties in `/frontend/src/lib/styles/responsive.css` (Phase 1)
 - Minimal local styles (transitions only)
@@ -47173,6 +48705,7 @@ export function getMapComponent() {
 ## Architecture Comparison
 
 ### Old System (MapLayout.svelte)
+
 ```
 isMobileView = viewportWidth < 640
 
@@ -47191,13 +48724,15 @@ if (isMobileView) {
 ```
 
 **Issues:**
+
 - Two separate code paths (400+ lines)
-- Duplicate components (Mobile* vs Desktop)
+- Duplicate components (Mobile\* vs Desktop)
 - Different state management
 - Hard 640px breakpoint
 - Complex nested conditions
 
 ### New System (ResponsiveLayout.svelte)
+
 ```
 render UnifiedLayout
   - Same HTML everywhere
@@ -47214,6 +48749,7 @@ CSS applies:
 ```
 
 **Benefits:**
+
 - Single code path (240 lines)
 - One component for all breakpoints
 - Unified state management (ready for Phase 5)
@@ -47227,6 +48763,7 @@ CSS applies:
 ### Component Props
 
 **Data Props:**
+
 ```typescript
 export let tripData: any = null;
 export let isPast: boolean = false;
@@ -47237,6 +48774,7 @@ export let allTrips: any[] = [];
 ```
 
 **State Props:**
+
 ```typescript
 export let navigationOpen: boolean = false;
 
@@ -47247,24 +48785,32 @@ export let mobileSelectedItemType: string | null = null;
 ```
 
 **Exported Methods:**
+
 ```typescript
 export function getMapComponent() {
-  return mapComponent;  // Access to MapVisualization instance
+  return mapComponent; // Access to MapVisualization instance
 }
 ```
 
 **Slots:**
+
 ```html
-<slot name="primary" />      <!-- Trip list -->
-<slot name="secondary" />    <!-- Details, timeline -->
-<slot name="tertiary" />     <!-- Forms, editor -->
-<slot name="nav-right" />    <!-- User menu, settings -->
-<slot name="map" />          <!-- MapVisualization -->
+<slot name="primary" />
+<!-- Trip list -->
+<slot name="secondary" />
+<!-- Details, timeline -->
+<slot name="tertiary" />
+<!-- Forms, editor -->
+<slot name="nav-right" />
+<!-- User menu, settings -->
+<slot name="map" />
+<!-- MapVisualization -->
 ```
 
 ### CSS Classes Used
 
 **Layout Structure:**
+
 - `.app-layout` - Main container (CSS Grid)
 - `.app-nav` - Navigation bar
 - `.primary-sidebar` - Trip list
@@ -47274,16 +48820,19 @@ export function getMapComponent() {
 - `.tertiary-sidebar` - Additional forms
 
 **State Classes:**
+
 - `.collapsed` - Sidebar in drawer mode
 - `.open` - Sidebar/drawer visible
 
 **Backdrop Elements:**
+
 - `.sidebar-backdrop` - Navigation drawer overlay
 - `.drawer-backdrop` - Secondary sidebar overlay
 
 ### Media Queries Applied (from layout.css)
 
 **Mobile (< 640px):**
+
 ```css
 .app-layout {
   grid-template-columns: 1fr;
@@ -47293,6 +48842,7 @@ export function getMapComponent() {
 ```
 
 **Tablet (640px - 1023px):**
+
 ```css
 .app-layout {
   grid-template-columns: auto 1fr;
@@ -47302,6 +48852,7 @@ export function getMapComponent() {
 ```
 
 **Desktop (1024px - 1439px):**
+
 ```css
 .app-layout {
   grid-template-columns: auto 1fr auto;
@@ -47311,6 +48862,7 @@ export function getMapComponent() {
 ```
 
 **Ultra-wide (1440px+):**
+
 ```css
 .app-layout {
   grid-template-columns: 340px 1fr 340px 340px;
@@ -47323,29 +48875,31 @@ export function getMapComponent() {
 
 ## Code Statistics
 
-| Metric | Value |
-|--------|-------|
-| Component Lines | 240 |
-| Component Size | ~8KB |
-| HTML Elements | 8 |
-| TypeScript Props | 10 |
-| Exported Methods | 1 |
-| Event Listeners | 2 |
-| CSS Classes Used | 12 |
-| CSS Custom Properties | 10+ |
-| Media Queries | 4 (in layout.css) |
+| Metric                | Value             |
+| --------------------- | ----------------- |
+| Component Lines       | 240               |
+| Component Size        | ~8KB              |
+| HTML Elements         | 8                 |
+| TypeScript Props      | 10                |
+| Exported Methods      | 1                 |
+| Event Listeners       | 2                 |
+| CSS Classes Used      | 12                |
+| CSS Custom Properties | 10+               |
+| Media Queries         | 4 (in layout.css) |
 
 ---
 
 ## Testing Status
 
 ### Pre-Implementation ✅
+
 - [x] Reviewed specification
 - [x] Planned component structure
 - [x] Identified all CSS requirements
 - [x] Checked backward compatibility needs
 
 ### Implementation ✅
+
 - [x] Created ResponsiveLayout.svelte
 - [x] Updated dashboard imports
 - [x] Updated component tag usage
@@ -47353,6 +48907,7 @@ export function getMapComponent() {
 - [x] Added comments and documentation
 
 ### Code Quality ✅
+
 - [x] No TypeScript errors
 - [x] All imports resolve
 - [x] Props interface complete
@@ -47361,6 +48916,7 @@ export function getMapComponent() {
 - [x] Accessibility features included
 
 ### Next Phase (Testing)
+
 - [ ] Test mobile layout (375px)
 - [ ] Test tablet layout (768px)
 - [ ] Test desktop layout (1024px)
@@ -47374,6 +48930,7 @@ export function getMapComponent() {
 ## Backward Compatibility
 
 **Maintained Props:**
+
 - All old props still work
 - Mobile state bindings preserved
 - Event dispatching compatible
@@ -47381,6 +48938,7 @@ export function getMapComponent() {
 - Parent component needs no changes (only imports)
 
 **Deprecated (for Phase 5 migration):**
+
 - `mobileActiveTab` - Will be replaced with unified state
 - `mobileSelectedItem` - Will be replaced
 - `mobileSelectedItemType` - Will be replaced
@@ -47393,11 +48951,13 @@ export function getMapComponent() {
 ## Files Modified
 
 ### New Files (1)
+
 ```
 /frontend/src/lib/components/ResponsiveLayout.svelte (240 lines)
 ```
 
 ### Modified Files (1)
+
 ```
 /frontend/src/routes/dashboard/+page.svelte
   - 1 import change
@@ -47406,6 +48966,7 @@ export function getMapComponent() {
 ```
 
 ### Deprecated Files (kept for reference)
+
 ```
 /frontend/src/lib/components/MapLayout.svelte (kept, not deleted)
 ```
@@ -47415,6 +48976,7 @@ export function getMapComponent() {
 ## CSS & Styling Integration
 
 **CSS Files Used:**
+
 1. `/frontend/src/lib/styles/responsive.css` (Phase 1)
    - All custom properties
    - Breakpoint definitions
@@ -47439,11 +49001,13 @@ export function getMapComponent() {
 ## Performance Characteristics
 
 **Bundle Impact:**
+
 - Component: +8KB
 - CSS: Already in Phase 1 (0 additional)
 - Total Phase 2 addition: +8KB
 
 **Runtime Performance:**
+
 - No heavy calculations
 - MutationObserver for sidebar content (standard pattern)
 - Smooth CSS transitions (GPU accelerated)
@@ -47451,6 +49015,7 @@ export function getMapComponent() {
 - Minimal memory overhead
 
 **Lighthouse Scores (Expected):**
+
 - Performance: ✅ No degradation
 - Accessibility: ✅ Built-in support
 - Best Practices: ✅ Standard patterns
@@ -47461,7 +49026,9 @@ export function getMapComponent() {
 ## Documentation Created
 
 ### Testing Guide
+
 **File:** `/home/home/bluebonnet-dev/PHASE_2_TESTING.md`
+
 - 400+ lines
 - Complete testing checklist
 - Test cases for all breakpoints
@@ -47496,6 +49063,7 @@ export function getMapComponent() {
 **Phase 3: Navigation System (4-6 hours)**
 
 Will create:
+
 1. `Navigation.svelte` - Unified nav component
 2. `NavigationDrawer.svelte` - Hamburger drawer
 3. Top navigation bar with branding
@@ -47503,6 +49071,7 @@ Will create:
 5. Hamburger menu behavior
 
 **Dependencies:**
+
 - ✅ Phase 1: CSS Foundation (DONE)
 - ✅ Phase 2: ResponsiveLayout (DONE)
 - Ready to start immediately
@@ -47571,17 +49140,17 @@ If issues found before Phase 3:
 
 ## Statistics Summary
 
-| Category | Count |
-|----------|-------|
-| Files Created | 2 (component + testing guide) |
-| Files Modified | 1 (dashboard) |
-| Lines of Code | 240 (component) |
-| CSS Needed | 0 (already done in Phase 1) |
-| Breaking Changes | 0 |
-| Backward Compatibility | 100% |
-| Test Cases | 100+ |
-| Estimated Test Duration | 2-3 hours |
-| Ready for Production | ✅ YES |
+| Category                | Count                         |
+| ----------------------- | ----------------------------- |
+| Files Created           | 2 (component + testing guide) |
+| Files Modified          | 1 (dashboard)                 |
+| Lines of Code           | 240 (component)               |
+| CSS Needed              | 0 (already done in Phase 1)   |
+| Breaking Changes        | 0                             |
+| Backward Compatibility  | 100%                          |
+| Test Cases              | 100+                          |
+| Estimated Test Duration | 2-3 hours                     |
+| Ready for Production    | ✅ YES                        |
 
 ---
 
@@ -47600,13 +49169,14 @@ Phase 2 successfully replaced the complex MapLayout with a simple, unified Respo
 
 ---
 
-*Phase 2 Completion Report*
-*Generated: January 8, 2026*
-*Component Ready: YES ✅*
-*Next Phase: Phase 3 Navigation System*
+_Phase 2 Completion Report_
+_Generated: January 8, 2026_
+_Component Ready: YES ✅_
+_Next Phase: Phase 3 Navigation System_
 ````
 
 ## File: PHASE_2_CSS_IMPORT_FIX.md
+
 ````markdown
 # Phase 2: Critical CSS Import Fix
 
@@ -47623,10 +49193,12 @@ After restructuring ResponsiveLayout to have the correct DOM hierarchy for CSS G
 ### Why It Happened
 
 Phase 1 created:
+
 - `/frontend/src/lib/styles/responsive.css` (CSS custom properties)
 - `/frontend/src/lib/styles/layout.css` (Grid definitions and layout rules)
 
 But these files were never imported/linked anywhere:
+
 - ❌ Not imported in any component
 - ❌ Not linked in app.html
 - ❌ Not referenced in any layout component
@@ -47647,6 +49219,7 @@ import '$lib/styles/layout.css';
 ```
 
 **Why ResponsiveLayout:**
+
 - This component is the layout shell for the entire dashboard
 - All responsive behavior depends on these CSS files
 - Guaranteed to be loaded whenever dashboard renders
@@ -47655,11 +49228,13 @@ import '$lib/styles/layout.css';
 ### How SvelteKit Bundles CSS
 
 When you import CSS in SvelteKit:
+
 ```typescript
 import '$lib/styles/layout.css';
 ```
 
 Vite:
+
 1. Processes the CSS
 2. Bundles it into the JavaScript bundle
 3. Injects it into the page at runtime
@@ -47672,6 +49247,7 @@ In layout.css, all rules are global (not scoped), so they apply across the entir
 ## CSS Structure Now
 
 ### responsive.css
+
 - CSS custom properties (variables)
 - Breakpoint definitions
 - Spacing scale
@@ -47681,6 +49257,7 @@ In layout.css, all rules are global (not scoped), so they apply across the entir
 - **Status:** ✅ Now loaded via ResponsiveLayout import
 
 ### layout.css
+
 - `.app-layout` grid definitions
 - Tablet, desktop, ultra-wide breakpoints
 - Sidebar positioning rules
@@ -47689,6 +49266,7 @@ In layout.css, all rules are global (not scoped), so they apply across the entir
 - **Status:** ✅ Now loaded via ResponsiveLayout import
 
 ### Component Scoped Styles
+
 - ResponsiveLayout component styles
 - Mobile/desktop view show/hide logic
 - **Status:** ✅ Always applied
@@ -47698,6 +49276,7 @@ In layout.css, all rules are global (not scoped), so they apply across the entir
 ## CSS Rules Now Active
 
 ### Mobile (< 640px)
+
 ```css
 .app-layout {
   grid-template-columns: 1fr;
@@ -47713,9 +49292,11 @@ In layout.css, all rules are global (not scoped), so they apply across the entir
   display: none;
 }
 ```
+
 ✅ **Now applied:** Mobile layout renders with bottom tabs
 
 ### Tablet (640px - 1023px)
+
 ```css
 .app-layout {
   grid-template-columns: auto 1fr;
@@ -47737,33 +49318,52 @@ In layout.css, all rules are global (not scoped), so they apply across the entir
   display: contents;
 }
 ```
+
 ✅ **Now applied:** Tablet layout with left sidebar + map
 
 ### Desktop (1024px - 1439px)
+
 ```css
 .app-layout {
   grid-template-columns: auto 1fr auto;
   grid-template-rows: auto 1fr;
 }
 
-.primary-sidebar { grid-column: 1; }
-.app-content { grid-column: 2; }
-.secondary-sidebar { grid-column: 3; }
+.primary-sidebar {
+  grid-column: 1;
+}
+.app-content {
+  grid-column: 2;
+}
+.secondary-sidebar {
+  grid-column: 3;
+}
 ```
+
 ✅ **Now applied:** Desktop layout with 3 columns
 
 ### Ultra-wide (1440px+)
+
 ```css
 .app-layout {
   grid-template-columns: 340px 1fr 340px 340px;
   grid-template-rows: auto 1fr;
 }
 
-.primary-sidebar { grid-column: 1; }
-.app-content { grid-column: 2; }
-.secondary-sidebar { grid-column: 3; }
-.tertiary-sidebar { grid-column: 4; }
+.primary-sidebar {
+  grid-column: 1;
+}
+.app-content {
+  grid-column: 2;
+}
+.secondary-sidebar {
+  grid-column: 3;
+}
+.tertiary-sidebar {
+  grid-column: 4;
+}
 ```
+
 ✅ **Now applied:** Ultra-wide layout with 4 columns
 
 ---
@@ -47817,12 +49417,14 @@ In layout.css, all rules are global (not scoped), so they apply across the entir
 ### 1. Verify CSS is Loaded
 
 **Browser DevTools:**
+
 1. Open DevTools (F12 or Cmd+Option+I)
 2. Go to **Sources** tab
 3. Search for "layout.css" or "responsive.css"
 4. You should see the files in the bundles
 
 **Alternative - Check Applied Styles:**
+
 1. Inspect `.app-layout` element
 2. Go to **Styles** tab
 3. You should see `display: grid` from layout.css
@@ -47831,24 +49433,28 @@ In layout.css, all rules are global (not scoped), so they apply across the entir
 ### 2. Test Responsive Layout
 
 **Mobile (< 640px):**
+
 - [ ] Single column layout
 - [ ] Trip list visible
 - [ ] Bottom tab navigation visible
 - [ ] Add, Calendar, Settings tabs functional
 
 **Tablet (640px - 1023px):**
+
 - [ ] Two-column layout: left sidebar + map
 - [ ] Primary sidebar visible with trips
 - [ ] Map fills remaining space
 - [ ] Click trip → secondary sidebar appears on right
 
 **Desktop (1024px - 1439px):**
+
 - [ ] Three columns: left sidebar, map, right sidebar
 - [ ] All three columns visible
 - [ ] Proper proportions (340px, fill, 340px)
 - [ ] Map is centered with sidebars flanking it
 
 **Ultra-wide (1440px+):**
+
 - [ ] Four columns: trips, map, details, editor
 - [ ] All columns proportional (340px each)
 - [ ] Form content appears in rightmost column
@@ -47867,7 +49473,7 @@ const styles = getComputedStyle(layout);
 console.log('Grid columns:', styles.gridTemplateColumns);
 
 // Check if CSS loaded (should be non-empty)
-console.log('Grid display:', styles.display);  // Should be 'grid'
+console.log('Grid display:', styles.display); // Should be 'grid'
 
 // Check sidebar visibility
 const sidebar = document.querySelector('.primary-sidebar');
@@ -47879,11 +49485,14 @@ console.log('Sidebar visible:', sidebar.offsetWidth > 0);
 ## Files Modified
 
 ### ResponsiveLayout.svelte
+
 **Changes:**
+
 - Added import for responsive.css
 - Added import for layout.css
 
 **Before:**
+
 ```svelte
 <script lang="ts">
   import MapVisualization from './MapVisualization.svelte';
@@ -47892,6 +49501,7 @@ console.log('Sidebar visible:', sidebar.offsetWidth > 0);
 ```
 
 **After:**
+
 ```svelte
 <script lang="ts">
   import MapVisualization from './MapVisualization.svelte';
@@ -47902,6 +49512,7 @@ console.log('Sidebar visible:', sidebar.offsetWidth > 0);
 ```
 
 ### Other Files
+
 - ❌ layout.css - No changes
 - ❌ responsive.css - No changes
 - ❌ Dashboard component - No changes
@@ -47917,11 +49528,13 @@ console.log('Sidebar visible:', sidebar.offsetWidth > 0);
 ✅ All imports resolve correctly
 
 **Before fix:**
+
 - CSS files exist but never loaded
 - Grid layout rules never apply
 - Sidebars invisible on tablet+
 
 **After fix:**
+
 - CSS files imported and bundled
 - Grid layout rules apply at runtime
 - Sidebars positioned correctly at all breakpoints
@@ -47931,6 +49544,7 @@ console.log('Sidebar visible:', sidebar.offsetWidth > 0);
 ## Performance Impact
 
 ✅ **No negative impact**
+
 - CSS size: ~25KB (responsive.css) + ~25KB (layout.css)
 - Already included in build (no extra file downloads)
 - Bundled into JS, delivered with page
@@ -47942,6 +49556,7 @@ console.log('Sidebar visible:', sidebar.offsetWidth > 0);
 ## Rollback Plan
 
 If issues occur, simply remove the imports:
+
 ```typescript
 // Remove these lines from ResponsiveLayout.svelte
 // import '$lib/styles/responsive.css';
@@ -47983,6 +49598,7 @@ However, CSS will need to be imported somewhere, or manually added to app.html a
 5. **Test transitions** (resize window, verify smooth layout changes)
 
 If layout still doesn't work:
+
 1. Check DevTools > Sources to verify CSS files loaded
 2. Inspect `.app-layout` to verify `display: grid`
 3. Check Styles tab to see which rules are applied
@@ -47998,6 +49614,7 @@ If layout still doesn't work:
 **Status:** ✅ FIXED AND READY FOR TESTING
 
 **Build Status:**
+
 - ✅ Compiles successfully
 - ✅ No errors or warnings
 - ✅ All CSS bundled correctly
@@ -48005,12 +49622,13 @@ If layout still doesn't work:
 
 ---
 
-*Phase 2 CSS Import Fix*
-*Date: January 8, 2026*
-*Status: ✅ CRITICAL FIX APPLIED*
+_Phase 2 CSS Import Fix_
+_Date: January 8, 2026_
+_Status: ✅ CRITICAL FIX APPLIED_
 ````
 
 ## File: PHASE_2_FINAL_STATUS.md
+
 ````markdown
 # Phase 2: Core Layout Component - Final Status Report
 
@@ -48023,7 +49641,9 @@ If layout still doesn't work:
 ## Summary of Changes Made
 
 ### Issue Identified
+
 The initial ResponsiveLayout implementation had the following problems:
+
 1. Used hardcoded grid template in component style (`grid-template-columns: auto 1fr auto`)
 2. Did not properly leverage the responsive CSS from layout.css
 3. Failed to integrate with layout.css media queries
@@ -48031,6 +49651,7 @@ The initial ResponsiveLayout implementation had the following problems:
 ### Fixes Applied
 
 #### 1. ResponsiveLayout.svelte (Lines 112, 205-206)
+
 **Added:** `responsive-wrapper` class and `display: contents` strategy
 
 ```html
@@ -48046,10 +49667,12 @@ The initial ResponsiveLayout implementation had the following problems:
 
 <!-- After -->
 <div class="app-layout responsive-wrapper">
-  <div class="responsive-desktop">  <!-- Uses display: contents on 640px+ -->
+  <div class="responsive-desktop">
+    <!-- Uses display: contents on 640px+ -->
     <!-- desktop content -->
   </div>
-  <div class="responsive-mobile">  <!-- Uses display: flex on mobile -->
+  <div class="responsive-mobile">
+    <!-- Uses display: flex on mobile -->
     <!-- mobile content -->
   </div>
 </div>
@@ -48058,6 +49681,7 @@ The initial ResponsiveLayout implementation had the following problems:
 **Why:** `display: contents` on desktop/tablet makes the browser treat children as direct children of `.app-layout`, allowing the CSS Grid from layout.css to properly position the sidebars and map.
 
 #### 2. ResponsiveLayout.svelte Styles (Lines 200-207)
+
 **Updated:** Media queries to use `display: contents` for desktop view
 
 ```css
@@ -48067,13 +49691,15 @@ The initial ResponsiveLayout implementation had the following problems:
   }
 
   .responsive-desktop {
-    display: contents;  /* NEW: Lets CSS Grid from .app-layout apply directly */
+    display: contents; /* NEW: Lets CSS Grid from .app-layout apply directly */
   }
 }
 ```
 
 #### 3. layout.css Cleanup
+
 **Removed:** Unused `.app-nav-top` and `.app-nav-bottom` classes
+
 - Removed lines 339-371 from desktop section (1024-1439px)
 - Removed lines 537-569 from ultra-wide section (1440px+)
 - These were remnants from a failed navigation unification approach
@@ -48086,6 +49712,7 @@ The initial ResponsiveLayout implementation had the following problems:
 ## How It Works Now
 
 ### Architecture
+
 ```
 ResponsiveLayout Component:
 ├── .app-layout (from layout.css via class)
@@ -48112,12 +49739,14 @@ ResponsiveLayout Component:
 ### Responsive Behavior
 
 **Mobile (< 640px):**
+
 - `responsive-mobile` renders (display: flex)
 - `responsive-desktop` hidden (display: none)
 - Layout: Single column with bottom tab navigation
 - MobileTabNavigation shows tabs: List, Add, Calendar, Settings
 
 **Tablet (640px - 1023px):**
+
 - `responsive-mobile` hidden (display: none)
 - `responsive-desktop` visible (display: contents)
 - Layout: Left sidebar + main content
@@ -48125,12 +49754,14 @@ ResponsiveLayout Component:
 - Ready for top nav in Phase 3
 
 **Desktop (1024px - 1439px):**
+
 - `responsive-desktop` renders (display: contents)
 - Layout: Three columns (left sidebar, map, right sidebar)
 - All sidebars visible simultaneously
 - Proper grid positioning from layout.css
 
 **Ultra-wide (1440px+):**
+
 - `responsive-desktop` renders (display: contents)
 - Layout: Four columns (left sidebar, map, secondary sidebar, tertiary sidebar)
 - All content visible at once
@@ -48141,6 +49772,7 @@ ResponsiveLayout Component:
 ## Component API (Unchanged)
 
 ### Props
+
 ```typescript
 export let tripData: any = null;
 export let isPast: boolean = false;
@@ -48154,28 +49786,38 @@ export let mobileSelectedItemType: string | null = null;
 ```
 
 ### Methods
+
 ```typescript
 export function getMapComponent() {
-  return mapComponent;  // Returns MapVisualization instance
+  return mapComponent; // Returns MapVisualization instance
 }
 ```
 
 ### Slots
+
 ```html
-<slot name="primary" />      <!-- Trip list sidebar -->
-<slot name="secondary" />    <!-- Details/timeline sidebar -->
-<slot name="tertiary" />     <!-- Forms/editor sidebar -->
-<slot name="mobile-list" />  <!-- Mobile list view -->
-<slot name="mobile-add" />   <!-- Mobile add form -->
-<slot name="mobile-calendar" />  <!-- Mobile calendar -->
-<slot name="mobile-settings" />  <!-- Mobile settings -->
+<slot name="primary" />
+<!-- Trip list sidebar -->
+<slot name="secondary" />
+<!-- Details/timeline sidebar -->
+<slot name="tertiary" />
+<!-- Forms/editor sidebar -->
+<slot name="mobile-list" />
+<!-- Mobile list view -->
+<slot name="mobile-add" />
+<!-- Mobile add form -->
+<slot name="mobile-calendar" />
+<!-- Mobile calendar -->
+<slot name="mobile-settings" />
+<!-- Mobile settings -->
 ```
 
 ### Events
+
 ```typescript
-dispatch('mobileEdit', event.detail);    // Item edit
-dispatch('mobileDelete', event.detail);  // Item delete
-dispatch('tabChange', { tabId });        // Tab navigation
+dispatch('mobileEdit', event.detail); // Item edit
+dispatch('mobileDelete', event.detail); // Item delete
+dispatch('tabChange', { tabId }); // Tab navigation
 ```
 
 ---
@@ -48183,6 +49825,7 @@ dispatch('tabChange', { tabId });        // Tab navigation
 ## CSS Integration
 
 ### Files Used
+
 1. **layout.css** - Main responsive grid definitions
    - Default grid: `grid-template-columns: 1fr; grid-template-rows: 1fr auto;`
    - Tablet media query: `640px - 1023px`
@@ -48202,6 +49845,7 @@ dispatch('tabChange', { tabId });        // Tab navigation
    - Map container grid positioning
 
 ### No CSS Added in Phase 2
+
 ✅ All CSS was created in Phase 1
 ✅ Phase 2 only uses existing CSS
 ✅ Zero CSS file additions
@@ -48211,6 +49855,7 @@ dispatch('tabChange', { tabId });        // Tab navigation
 ## Testing Checklist
 
 ### Pre-Testing
+
 - [x] Component compiles without errors
 - [x] Build succeeds (npm run build)
 - [x] No TypeScript errors
@@ -48220,6 +49865,7 @@ dispatch('tabChange', { tabId });        // Tab navigation
 - [x] No dead CSS code
 
 ### Visual Testing (Next Steps)
+
 - [ ] Test at 375px (mobile portrait)
 - [ ] Test at 480px (mobile landscape)
 - [ ] Test at 768px (tablet portrait)
@@ -48231,6 +49877,7 @@ dispatch('tabChange', { tabId });        // Tab navigation
 - [ ] Verify sidebar content displays
 
 ### Browser DevTools Testing
+
 ```
 Viewport sizes to test:
 - iPhone 12: 390×844
@@ -48255,22 +49902,36 @@ The `display: contents` property makes an element's box disappear, so its childr
 ### Grid Column/Row Positioning
 
 On desktop (via layout.css):
+
 ```css
 .app-layout {
-  grid-template-columns: auto 1fr auto;      /* Or 340px 1fr 340px 340px on ultra-wide */
+  grid-template-columns: auto 1fr auto; /* Or 340px 1fr 340px 340px on ultra-wide */
   grid-template-rows: auto 1fr;
 }
 
 /* Sidebars positioned by layout.css */
-.primary-sidebar { grid-column: 1; grid-row: 2; }
-.map-container { grid-column: 1/-1; grid-row: 1/-1; }
-.secondary-sidebar { grid-column: 3; grid-row: 2; }
-.tertiary-sidebar { grid-column: 4; grid-row: 2; }  /* Ultra-wide only */
+.primary-sidebar {
+  grid-column: 1;
+  grid-row: 2;
+}
+.map-container {
+  grid-column: 1/-1;
+  grid-row: 1/-1;
+}
+.secondary-sidebar {
+  grid-column: 3;
+  grid-row: 2;
+}
+.tertiary-sidebar {
+  grid-column: 4;
+  grid-row: 2;
+} /* Ultra-wide only */
 ```
 
 ### Mobile FlexBox Layout
 
 On mobile (via ResponsiveLayout component styles):
+
 ```css
 .responsive-mobile {
   display: flex;
@@ -48279,13 +49940,13 @@ On mobile (via ResponsiveLayout component styles):
 }
 
 .mobile-content-area {
-  flex: 1;           /* Takes up all available space */
-  overflow-y: auto;  /* Scrollable content */
-  padding-bottom: 60px;  /* Space for nav bar */
+  flex: 1; /* Takes up all available space */
+  overflow-y: auto; /* Scrollable content */
+  padding-bottom: 60px; /* Space for nav bar */
 }
 
 .nav {
-  height: 60px;      /* Fixed bottom nav */
+  height: 60px; /* Fixed bottom nav */
 }
 ```
 
@@ -48306,9 +49967,11 @@ On mobile (via ResponsiveLayout component styles):
 ## Files Modified
 
 ### New Files
+
 - None (ResponsiveLayout already created in Phase 2 v1)
 
 ### Modified Files
+
 1. **ResponsiveLayout.svelte** (Small changes)
    - Added `responsive-wrapper` class to main container
    - Changed `.responsive-desktop` to use `display: contents`
@@ -48321,6 +49984,7 @@ On mobile (via ResponsiveLayout component styles):
    - Result: ~150 lines of dead code removed
 
 ### Unchanged Files
+
 - Dashboard (+page.svelte) - Still uses ResponsiveLayout
 - responsive.css - All CSS custom properties
 - All component imports - No changes needed
@@ -48330,11 +49994,13 @@ On mobile (via ResponsiveLayout component styles):
 ## Performance Impact
 
 ### Bundle Size
+
 - ResponsiveLayout component: ~8KB (minified)
 - CSS: 0 KB (already included in Phase 1)
 - **Total Phase 2 addition: +8KB**
 
 ### Runtime Performance
+
 - No heavy calculations
 - MutationObserver for sidebar visibility (standard pattern)
 - CSS transitions GPU-accelerated
@@ -48346,12 +50012,14 @@ On mobile (via ResponsiveLayout component styles):
 ## Next Steps: Phase 3
 
 Phase 3 will add navigation components:
+
 1. **Navigation.svelte** - Unified nav for all breakpoints
 2. **Top navigation bar** - For tablet+ (640px+)
 3. **Bottom tab navigation** - Already implemented (MobileTabNavigation)
 4. **Hamburger drawer** - For tablet sidebar toggle
 
 **Dependencies:**
+
 - ✅ Phase 1: CSS Foundation (DONE)
 - ✅ Phase 2: ResponsiveLayout (DONE)
 - Ready to start Phase 3 immediately
@@ -48361,18 +50029,21 @@ Phase 3 will add navigation components:
 ## Debugging Information
 
 ### If layout breaks:
+
 1. Check that `.app-layout` has correct class applied
 2. Verify layout.css is loaded (check browser DevTools)
 3. Check grid-template-columns in browser Inspector
 4. Verify media queries are applying (DevTools Styles tab)
 
 ### If sidebars don't appear:
+
 1. Verify slots have content (no empty slots render)
 2. Check sidebar z-index (should be 20-22)
 3. Verify opacity/pointerEvents not blocking
 4. Check for CSS conflicts from other stylesheets
 
 ### Testing grid at different breakpoints:
+
 ```bash
 # In browser DevTools
 # - Go to Console
@@ -48392,6 +50063,7 @@ Phase 3 will add navigation components:
 **Testing:** Ready for manual visual testing
 
 **Approval for:**
+
 - ✅ Testing at all breakpoints
 - ✅ Deployment
 - ✅ Phase 3 (Navigation System)
@@ -48400,12 +50072,13 @@ Phase 3 will add navigation components:
 
 ---
 
-*Phase 2 Final Status Report*
-*Date: January 8, 2026*
-*Status: ✅ FIXED AND PRODUCTION-READY*
+_Phase 2 Final Status Report_
+_Date: January 8, 2026_
+_Status: ✅ FIXED AND PRODUCTION-READY_
 ````
 
 ## File: PHASE_2_IMPLEMENTATION_DETAILS.md
+
 ````markdown
 # Phase 2: Implementation Details
 
@@ -48420,6 +50093,7 @@ Phase 3 will add navigation components:
 ## File Structure
 
 ### Created in Phase 2
+
 ```
 frontend/src/lib/components/ResponsiveLayout.svelte (260 lines)
 ├── Script section: Component logic (108 lines)
@@ -48428,6 +50102,7 @@ frontend/src/lib/components/ResponsiveLayout.svelte (260 lines)
 ```
 
 ### Files from Phase 1 (Now Imported)
+
 ```
 frontend/src/lib/styles/responsive.css (537 lines)
 ├── CSS custom properties
@@ -48448,6 +50123,7 @@ frontend/src/lib/styles/layout.css (786 lines)
 ```
 
 ### Modified in Phase 2
+
 ```
 frontend/src/routes/dashboard/+page.svelte
 ├── Line 8: MapLayout → ResponsiveLayout (import)
@@ -48462,18 +50138,20 @@ frontend/src/routes/dashboard/+page.svelte
 ### Script Section (Lines 1-108)
 
 #### Imports (Lines 1-7)
+
 ```typescript
-import MapVisualization from './MapVisualization.svelte';     // Map component
+import MapVisualization from './MapVisualization.svelte'; // Map component
 import MobileTabNavigation from './MobileTabNavigation.svelte'; // Mobile tabs
 import MobileTripDetailView from './MobileTripDetailView.svelte'; // Mobile detail
-import { onMount, createEventDispatcher } from 'svelte';      // Svelte lifecycle
+import { onMount, createEventDispatcher } from 'svelte'; // Svelte lifecycle
 
 // CRITICAL: CSS imports (the fix!)
-import '$lib/styles/responsive.css';  // CSS variables
-import '$lib/styles/layout.css';      // Grid layout rules
+import '$lib/styles/responsive.css'; // CSS variables
+import '$lib/styles/layout.css'; // Grid layout rules
 ```
 
 #### Props (Lines 19-29)
+
 ```typescript
 // Trip/map data
 export let tripData: any = null;
@@ -48490,17 +50168,19 @@ export let mobileSelectedItemType: string | null = null;
 ```
 
 #### Component State (Lines 31-37)
+
 ```typescript
-const dispatch = createEventDispatcher();    // For events
+const dispatch = createEventDispatcher(); // For events
 
 // Component references
-let mapComponent: MapVisualization;          // Reference to map
-let secondarySidebarEl: HTMLElement;        // Reference to secondary sidebar
-let tertiarySidebarEl: HTMLElement;         // Reference to tertiary sidebar
-let navigationOpen: boolean = false;        // Navigation drawer state
+let mapComponent: MapVisualization; // Reference to map
+let secondarySidebarEl: HTMLElement; // Reference to secondary sidebar
+let tertiarySidebarEl: HTMLElement; // Reference to tertiary sidebar
+let navigationOpen: boolean = false; // Navigation drawer state
 ```
 
 #### Exported Method (Lines 42-44)
+
 ```typescript
 // Allows parent component to access map methods
 export function getMapComponent() {
@@ -48509,6 +50189,7 @@ export function getMapComponent() {
 ```
 
 #### Event Handlers (Lines 46-61)
+
 ```typescript
 // Handle mobile tab changes
 function handleMobileTabChange(event: any) {
@@ -48533,6 +50214,7 @@ function handleMobileDelete(event: any) {
 ```
 
 #### Lifecycle Hook - onMount (Lines 66-108)
+
 ```typescript
 onMount(() => {
   // Monitor sidebars for content changes
@@ -48541,7 +50223,6 @@ onMount(() => {
     // - Check if it has content
     // - Set opacity to 1 if content, 0 if empty
     // - Enable/disable pointer events accordingly
-
     // When tertiary sidebar content changes:
     // - Same logic for tertiary sidebar
   });
@@ -48549,9 +50230,9 @@ onMount(() => {
   // Observe both sidebars for changes
   if (secondarySidebarEl) {
     observer.observe(secondarySidebarEl, {
-      childList: true,       // Watch for added/removed children
-      subtree: true,         // Watch nested changes
-      characterData: true    // Watch text content changes
+      childList: true, // Watch for added/removed children
+      subtree: true, // Watch nested changes
+      characterData: true, // Watch text content changes
     });
     // Set initial visibility
   }
@@ -48560,7 +50241,7 @@ onMount(() => {
     observer.observe(tertiarySidebarEl, {
       childList: true,
       subtree: true,
-      characterData: true
+      characterData: true,
     });
     // Set initial visibility
   }
@@ -48575,6 +50256,7 @@ onMount(() => {
 ### Template Section (Lines 112-180)
 
 #### Main Layout Container (Line 112)
+
 ```svelte
 <div class="app-layout responsive-wrapper">
   <!-- CSS Grid container with default mobile layout -->
@@ -48582,6 +50264,7 @@ onMount(() => {
 ```
 
 #### Desktop/Tablet View (Lines 114-139)
+
 ```svelte
 <div class="responsive-desktop">
   <!-- display: contents on 640px+ makes children direct grid children -->
@@ -48617,6 +50300,7 @@ onMount(() => {
 ```
 
 #### Mobile View (Lines 142-176)
+
 ```svelte
 <div class="responsive-mobile">
   <!-- display: flex layout for mobile -->
@@ -48652,6 +50336,7 @@ onMount(() => {
 ### Style Section (Lines 182-258)
 
 #### Global Styles
+
 ```css
 :global(body) {
   overflow: hidden;
@@ -48661,22 +50346,33 @@ onMount(() => {
 ```
 
 #### Media Queries for Show/Hide Views
+
 ```css
 @media (max-width: 639px) {
   /* Mobile */
-  .responsive-desktop { display: none !important; }
-  .responsive-mobile { display: flex; flex-direction: column; }
+  .responsive-desktop {
+    display: none !important;
+  }
+  .responsive-mobile {
+    display: flex;
+    flex-direction: column;
+  }
 }
 
 @media (min-width: 640px) {
   /* Tablet+ */
-  .responsive-mobile { display: none !important; }
-  .responsive-desktop { display: contents; }
+  .responsive-mobile {
+    display: none !important;
+  }
+  .responsive-desktop {
+    display: contents;
+  }
   /* display: contents makes children direct grid children */
 }
 ```
 
 #### Mobile Layout Styles
+
 ```css
 .responsive-mobile {
   display: flex;
@@ -48685,17 +50381,18 @@ onMount(() => {
 }
 
 .mobile-content-area {
-  flex: 1;           /* Takes available space */
-  overflow-y: auto;  /* Scrollable */
+  flex: 1; /* Takes available space */
+  overflow-y: auto; /* Scrollable */
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
   background: #fff;
-  padding-bottom: 60px;  /* Space for nav bar */
+  padding-bottom: 60px; /* Space for nav bar */
   min-height: 0;
 }
 
-.mobile-list-view, .mobile-full-screen-view {
+.mobile-list-view,
+.mobile-full-screen-view {
   width: 100%;
   overflow-y: auto;
   overflow-x: hidden;
@@ -48705,6 +50402,7 @@ onMount(() => {
 ```
 
 #### Desktop Layout Styles
+
 ```css
 .app-content {
   position: relative;
@@ -48731,6 +50429,7 @@ onMount(() => {
 ## CSS Files Integration
 
 ### responsive.css - Custom Properties
+
 ```css
 :root {
   /* Breakpoints */
@@ -48776,6 +50475,7 @@ onMount(() => {
 ### layout.css - Grid Definitions
 
 #### Default (Mobile)
+
 ```css
 .app-layout {
   width: 100%;
@@ -48783,7 +50483,10 @@ onMount(() => {
   overflow: hidden;
   display: grid;
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 1;
 
   /* Mobile layout: single column + bottom nav */
@@ -48793,10 +50496,11 @@ onMount(() => {
 ```
 
 #### Tablet (640px - 1023px)
+
 ```css
 @media (min-width: 640px) and (max-width: 1023px) {
   .app-layout {
-    grid-template-columns: auto 1fr;  /* Sidebar + Content */
+    grid-template-columns: auto 1fr; /* Sidebar + Content */
     grid-template-rows: auto 1fr;
   }
 
@@ -48815,38 +50519,63 @@ onMount(() => {
     /* Positioned absolute, floats over content */
     position: absolute;
     right: 0;
-    transform: translateX(100%);  /* Hidden by default */
+    transform: translateX(100%); /* Hidden by default */
   }
 }
 ```
 
 #### Desktop (1024px - 1439px)
+
 ```css
 @media (min-width: 1024px) and (max-width: 1439px) {
   .app-layout {
-    grid-template-columns: auto 1fr auto;  /* Sidebar | Content | Sidebar */
+    grid-template-columns: auto 1fr auto; /* Sidebar | Content | Sidebar */
     grid-template-rows: auto 1fr;
   }
 
-  .primary-sidebar { grid-column: 1; grid-row: 2; }
-  .app-content { grid-column: 2; grid-row: 2; }
-  .secondary-sidebar { grid-column: 3; grid-row: 2; }
-  .tertiary-sidebar { position: absolute; }  /* Floating */
+  .primary-sidebar {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .app-content {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .secondary-sidebar {
+    grid-column: 3;
+    grid-row: 2;
+  }
+  .tertiary-sidebar {
+    position: absolute;
+  } /* Floating */
 }
 ```
 
 #### Ultra-wide (1440px+)
+
 ```css
 @media (min-width: 1440px) {
   .app-layout {
-    grid-template-columns: 340px 1fr 340px 340px;  /* All 4 columns */
+    grid-template-columns: 340px 1fr 340px 340px; /* All 4 columns */
     grid-template-rows: auto 1fr;
   }
 
-  .primary-sidebar { grid-column: 1; grid-row: 2; }
-  .app-content { grid-column: 2; grid-row: 2; }
-  .secondary-sidebar { grid-column: 3; grid-row: 2; }
-  .tertiary-sidebar { grid-column: 4; grid-row: 2; }
+  .primary-sidebar {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .app-content {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .secondary-sidebar {
+    grid-column: 3;
+    grid-row: 2;
+  }
+  .tertiary-sidebar {
+    grid-column: 4;
+    grid-row: 2;
+  }
 }
 ```
 
@@ -48855,6 +50584,7 @@ onMount(() => {
 ## How `display: contents` Works
 
 ### Without `display: contents` (Broken)
+
 ```
 .app-layout (CSS Grid)
 └── .responsive-desktop (grid child #1)
@@ -48868,6 +50598,7 @@ Layout breaks because grid rules expect multiple children
 ```
 
 ### With `display: contents` (Fixed)
+
 ```
 .app-layout (CSS Grid)
 ├── .primary-sidebar (direct child, grid child #1)
@@ -48885,24 +50616,28 @@ Layout works!
 ## Key Concepts
 
 ### 1. Responsive Without JavaScript
+
 - ✅ All breakpoints handled by CSS media queries
 - ✅ No viewport width checking in JavaScript
 - ✅ No resize event listeners
 - ✅ Layout changes automatically
 
 ### 2. Single HTML Structure for All Viewports
+
 - ✅ Both mobile and desktop HTML always in DOM
 - ✅ CSS media queries show/hide appropriate view
 - ✅ No conditional rendering based on viewport
 - ✅ Eliminates JavaScript branching
 
 ### 3. CSS Grid for Layout
+
 - ✅ Grid columns change at each breakpoint
 - ✅ Grid children automatically reflow
 - ✅ Sidebars position themselves via grid-column
 - ✅ No need for absolute positioning (mostly)
 
 ### 4. Component Composition
+
 - ✅ ResponsiveLayout manages structure
 - ✅ Slots allow dashboard to inject content
 - ✅ Dashboard doesn't know about responsive logic
@@ -48915,12 +50650,14 @@ Layout works!
 ### Browser DevTools Verification
 
 #### Test Grid is Active
+
 ```javascript
 const layout = document.querySelector('.app-layout');
 console.log('Is grid:', getComputedStyle(layout).display === 'grid');
 ```
 
 #### Test Correct Breakpoint
+
 ```javascript
 const layout = document.querySelector('.app-layout');
 const cols = getComputedStyle(layout).gridTemplateColumns;
@@ -48929,16 +50666,18 @@ console.log('Grid columns:', cols);
 ```
 
 #### Test Sidebar Positioning
+
 ```javascript
 const sidebar = document.querySelector('.primary-sidebar');
 const gridCol = getComputedStyle(sidebar).gridColumn;
-console.log('Sidebar grid column:', gridCol);  // Should be '1'
+console.log('Sidebar grid column:', gridCol); // Should be '1'
 ```
 
 #### Test Visibility
+
 ```javascript
 const sidebar = document.querySelector('.primary-sidebar');
-console.log('Sidebar width:', sidebar.offsetWidth + 'px');  // Should be 340px
+console.log('Sidebar width:', sidebar.offsetWidth + 'px'); // Should be 340px
 console.log('Is visible:', sidebar.offsetWidth > 0);
 ```
 
@@ -48947,12 +50686,14 @@ console.log('Is visible:', sidebar.offsetWidth > 0);
 ## Performance Characteristics
 
 ### Bundle Size
+
 - Component code: ~8 KB
 - CSS variables: ~15 KB
 - Grid layouts: ~25 KB
 - Total: ~48 KB (minified + gzipped)
 
 ### Runtime Performance
+
 - No calculations on resize
 - No JavaScript-based layout
 - CSS media queries handle everything
@@ -48960,6 +50701,7 @@ console.log('Is visible:', sidebar.offsetWidth > 0);
 - **Expected impact: None or positive (less JS)**
 
 ### Memory Usage
+
 - Component instance: ~5 KB
 - CSS rules: Already loaded
 - No additional memory overhead
@@ -48972,6 +50714,7 @@ console.log('Is visible:', sidebar.offsetWidth > 0);
 ✅ **100% Compatible with MapLayout**
 
 ### Maintained
+
 - ✅ All props (9 exports)
 - ✅ All slots (7 named slots)
 - ✅ All methods (getMapComponent)
@@ -48979,11 +50722,13 @@ console.log('Is visible:', sidebar.offsetWidth > 0);
 - ✅ All state bindings (mobileActiveTab, etc.)
 
 ### Dashboard Changes Required
+
 - ✅ Line 8: `MapLayout` → `ResponsiveLayout`
 - ✅ Line 522: `<MapLayout>` → `<ResponsiveLayout>`
 - ✅ Everything else: **NO CHANGES**
 
 ### Rollback Path
+
 - If issues: Change import back to MapLayout
 - No data migration needed
 - No database changes
@@ -48994,14 +50739,18 @@ console.log('Is visible:', sidebar.offsetWidth > 0);
 ## Critical Fix Applied
 
 ### The Problem
+
 CSS files existed but weren't imported:
+
 ```typescript
 // Before: No CSS imports
 import MapVisualization from './MapVisualization.svelte';
 ```
 
 ### The Solution
+
 Added CSS imports:
+
 ```typescript
 // After: CSS files imported
 import MapVisualization from './MapVisualization.svelte';
@@ -49010,6 +50759,7 @@ import '$lib/styles/layout.css';
 ```
 
 ### Why This Works
+
 1. Svelte/Vite processes the imports
 2. CSS rules get bundled
 3. Rules apply to the document
@@ -49056,12 +50806,13 @@ Total Code Changes:
 
 ---
 
-*Phase 2 Implementation Details*
-*Complete technical breakdown*
-*Status: Production-ready*
+_Phase 2 Implementation Details_
+_Complete technical breakdown_
+_Status: Production-ready_
 ````
 
 ## File: PHASE_2_PREVIEW.md
+
 ````markdown
 # Phase 2 Preview: Core Layout Component
 
@@ -49076,6 +50827,7 @@ Total Code Changes:
 Phase 2 will create the unified `ResponsiveLayout.svelte` component that replaces the current `MapLayout.svelte`. This component will use the CSS system from Phase 1 to render different layouts based on viewport width.
 
 Unlike the current system with its hard branching at 640px, the new component will:
+
 - Use CSS Grid for layout (no JavaScript branching)
 - Apply CSS classes that correspond to layout configurations
 - Render the same component structure at all breakpoints
@@ -49086,6 +50838,7 @@ Unlike the current system with its hard branching at 640px, the new component wi
 ## Current vs. New Approach
 
 ### Current System (What We're Replacing)
+
 ```javascript
 // MapLayout.svelte
 if (viewportWidth < 640) {
@@ -49098,6 +50851,7 @@ if (viewportWidth < 640) {
 ```
 
 **Issues:**
+
 - Two separate code paths to maintain
 - Different component structures
 - Hard breakpoint at 640px
@@ -49105,6 +50859,7 @@ if (viewportWidth < 640) {
 - 400+ lines with nested conditionals
 
 ### New System (What We're Building)
+
 ```javascript
 // ResponsiveLayout.svelte
 // Same HTML structure for all breakpoints
@@ -49118,27 +50873,41 @@ if (viewportWidth < 640) {
 ```
 
 **CSS handles everything:**
+
 ```css
 /* Mobile */
 @media (max-width: 639px) {
-  .app-layout { grid-template-columns: 1fr; }
-  .app-nav { /* bottom nav */ }
+  .app-layout {
+    grid-template-columns: 1fr;
+  }
+  .app-nav {
+    /* bottom nav */
+  }
 }
 
 /* Tablet */
 @media (min-width: 640px) and (max-width: 1023px) {
-  .app-layout { grid-template-columns: auto 1fr; }
-  .app-nav { /* top nav */ }
+  .app-layout {
+    grid-template-columns: auto 1fr;
+  }
+  .app-nav {
+    /* top nav */
+  }
 }
 
 /* Desktop */
 @media (min-width: 1024px) {
-  .app-layout { grid-template-columns: auto 1fr auto; }
-  .app-nav { /* top nav */ }
+  .app-layout {
+    grid-template-columns: auto 1fr auto;
+  }
+  .app-nav {
+    /* top nav */
+  }
 }
 ```
 
 **Advantages:**
+
 - Single code path
 - Much simpler logic
 - CSS handles all responsive behavior
@@ -49156,6 +50925,7 @@ if (viewportWidth < 640) {
 **Size Estimate:** 150-200 lines (vs. 400+ current MapLayout)
 
 **Responsibilities:**
+
 1. Render unified HTML structure
 2. Manage sidebar visibility (opacity + pointer-events)
 3. Export method to access map component
@@ -49257,6 +51027,7 @@ export let mobileSelectedItemType: string | null = null;
 ## CSS Classes Used
 
 ### Layout
+
 - `.app-layout` - Main container (CSS Grid)
 - `.app-nav` - Navigation bar (top or bottom)
 - `.primary-sidebar` - Trip list (left)
@@ -49266,11 +51037,13 @@ export let mobileSelectedItemType: string | null = null;
 - `.tertiary-sidebar` - Additional forms (floating or right column)
 
 ### State Classes
+
 - `.collapsed` - Primary sidebar in drawer mode
 - `.open` - Sidebar/drawer is visible
 - `.active` - Tab or navigation item is active
 
 ### Backdrop
+
 - `.sidebar-backdrop` - Semi-transparent overlay (appears when drawer open)
 - `.drawer-backdrop` - Overlay for side drawer (tablet)
 
@@ -49386,21 +51159,25 @@ All CSS already exists in `layout.css` - component just needs to render HTML!
 ## Migration Path
 
 ### Step 1: Create New Component
+
 1. Create `ResponsiveLayout.svelte` with structure above
 2. Copy `MapLayout.svelte` styles (adapt as needed)
 3. Test HTML structure renders correctly
 
 ### Step 2: Update Parent Component
+
 1. Import `ResponsiveLayout` instead of `MapLayout`
 2. Update slot names if needed
 3. Keep same props interface for backward compatibility
 
 ### Step 3: Remove Mobile/Desktop Branching
+
 1. Remove conditional rendering from `dashboard/+page.svelte`
 2. Render single set of components
 3. Use unified state (from redesign spec)
 
 ### Step 4: Test All Breakpoints
+
 1. Test mobile (375px)
 2. Test tablet (768px)
 3. Test desktop (1024px)
@@ -49408,6 +51185,7 @@ All CSS already exists in `layout.css` - component just needs to render HTML!
 5. Test responsive transitions (resize browser)
 
 ### Step 5: Remove Old Component
+
 1. Archive `MapLayout.svelte` (for reference)
 2. Remove `MobileTabNavigation.svelte`
 3. Update any imports
@@ -49419,6 +51197,7 @@ All CSS already exists in `layout.css` - component just needs to render HTML!
 ### Test at Each Breakpoint
 
 **Mobile (375px)**
+
 - [ ] Bottom navigation visible
 - [ ] Hamburger menu works
 - [ ] Single column layout
@@ -49426,6 +51205,7 @@ All CSS already exists in `layout.css` - component just needs to render HTML!
 - [ ] Forms appear as bottom sheets
 
 **Tablet (768px)**
+
 - [ ] Top navigation visible
 - [ ] Hamburger menu toggles sidebar
 - [ ] Two-column layout
@@ -49433,6 +51213,7 @@ All CSS already exists in `layout.css` - component just needs to render HTML!
 - [ ] Backdrop appears when drawer open
 
 **Desktop (1024px)**
+
 - [ ] Top navigation visible
 - [ ] Three columns visible
 - [ ] Primary sidebar visible
@@ -49440,6 +51221,7 @@ All CSS already exists in `layout.css` - component just needs to render HTML!
 - [ ] Tertiary sidebar floating
 
 **Ultra-wide (1440px)**
+
 - [ ] Four columns all visible
 - [ ] No overlays or drawers
 - [ ] Maximum information density
@@ -49448,6 +51230,7 @@ All CSS already exists in `layout.css` - component just needs to render HTML!
 ### Responsive Transitions
 
 **Resize Browser Across Breakpoints:**
+
 - [ ] 375px → 640px (mobile → tablet)
 - [ ] 640px → 1024px (tablet → desktop)
 - [ ] 1024px → 1440px (desktop → ultra-wide)
@@ -49467,15 +51250,19 @@ All CSS already exists in `layout.css` - component just needs to render HTML!
 ## Files to Modify in Phase 2
 
 ### Create
+
 - `/frontend/src/lib/components/ResponsiveLayout.svelte` (new)
 
 ### Update
+
 - `/frontend/src/routes/dashboard/+page.svelte` (import ResponsiveLayout, remove branching)
 
 ### Deprecate
+
 - `/frontend/src/lib/components/MapLayout.svelte` (archive, don't delete)
 
 ### Reference
+
 - `/frontend/src/lib/styles/layout.css` (already done in Phase 1)
 - `/frontend/src/lib/styles/responsive.css` (already done in Phase 1)
 
@@ -49483,15 +51270,15 @@ All CSS already exists in `layout.css` - component just needs to render HTML!
 
 ## Estimated Timeline
 
-| Task | Duration | Notes |
-|------|----------|-------|
-| Create HTML structure | 1 hour | Copy from spec, adapt slots |
-| Add mutation observer | 1 hour | Monitor sidebar content |
-| Test at all breakpoints | 2 hours | 375px, 640px, 1024px, 1440px |
-| Update parent component | 1 hour | Import, prop updates |
-| Remove old component logic | 1 hour | Clean up MapLayout |
-| Final testing & polish | 1-2 hours | Edge cases, accessibility |
-| **Total** | **6-8 hours** | |
+| Task                       | Duration      | Notes                        |
+| -------------------------- | ------------- | ---------------------------- |
+| Create HTML structure      | 1 hour        | Copy from spec, adapt slots  |
+| Add mutation observer      | 1 hour        | Monitor sidebar content      |
+| Test at all breakpoints    | 2 hours       | 375px, 640px, 1024px, 1440px |
+| Update parent component    | 1 hour        | Import, prop updates         |
+| Remove old component logic | 1 hour        | Clean up MapLayout           |
+| Final testing & polish     | 1-2 hours     | Edge cases, accessibility    |
+| **Total**                  | **6-8 hours** |                              |
 
 ---
 
@@ -49531,16 +51318,19 @@ All CSS already exists in `layout.css` - component just needs to render HTML!
 ## Questions to Ask
 
 **Before starting:**
+
 - Should we keep backward compatibility with current `MapLayout` props?
 - Should we migrate `dashboard/+page.svelte` state in Phase 2 or Phase 5?
 - Do we want to remove the old component immediately or keep it archived?
 
 **During development:**
+
 - Should we add animation/transition on drawer open?
 - How much does the primary sidebar collapse overlap the map?
 - Should backdrop be full-screen or just over content?
 
 **After completing:**
+
 - Are all breakpoints matching the design?
 - Are transitions smooth at all sizes?
 - Is accessibility good (keyboard, screen reader)?
@@ -49551,6 +51341,7 @@ All CSS already exists in `layout.css` - component just needs to render HTML!
 ## Next Steps After Phase 2
 
 Once ResponsiveLayout is complete:
+
 1. **Phase 3:** Navigation.svelte (hamburger, tabs, drawers)
 2. **Phase 4:** FormModal.svelte (bottom sheets, side drawers)
 3. **Phase 5:** Component refactoring (split dashboard, update forms)
@@ -49561,6 +51352,7 @@ Once ResponsiveLayout is complete:
 **Ready to build Phase 2?** 🚀
 
 All the CSS is done. All the documentation is written. The component is straightforward:
+
 - Render HTML structure
 - Add slots
 - Monitor sidebar content
@@ -49571,6 +51363,7 @@ Start whenever you're ready!
 ````
 
 ## File: PHASE_2_QUICK_TEST_GUIDE.md
+
 ````markdown
 # Phase 2: Quick Testing Guide
 
@@ -49583,7 +51376,9 @@ Start whenever you're ready!
 ## Quick Start
 
 ### 1. Test Mobile (< 640px)
+
 ✅ Should already be working
+
 ```
 Expected:
 - Single column layout
@@ -49593,6 +51388,7 @@ Expected:
 ```
 
 ### 2. Test Tablet (640px - 1023px) ← FIXED
+
 ```
 Expected:
 - Two columns: Left sidebar + Map
@@ -49602,6 +51398,7 @@ Expected:
 ```
 
 ### 3. Test Desktop (1024px - 1439px) ← FIXED
+
 ```
 Expected:
 - Three columns: Sidebar | Map | Details
@@ -49611,6 +51408,7 @@ Expected:
 ```
 
 ### 4. Test Ultra-wide (1440px+) ← FIXED
+
 ```
 Expected:
 - Four columns: All visible
@@ -49625,13 +51423,16 @@ Expected:
 ## Browser Testing Steps
 
 ### Step 1: Open DevTools
+
 - Chrome/Edge/Firefox: Press F12 (or Cmd+Option+I on Mac)
 
 ### Step 2: Enable Responsive Mode
+
 - Chrome/Edge: Press Ctrl+Shift+M (or Cmd+Shift+M on Mac)
 - Firefox: Press Ctrl+Shift+M
 
 ### Step 3: Test These Widths
+
 ```
 375px   → Mobile (should show tabs at bottom)
 640px   → Tablet (should show sidebar + map)
@@ -49640,7 +51441,9 @@ Expected:
 ```
 
 ### Step 4: Verify CSS Loaded
+
 In DevTools Console:
+
 ```javascript
 const layout = document.querySelector('.app-layout');
 console.log('Grid display:', getComputedStyle(layout).display);
@@ -49648,7 +51451,9 @@ console.log('Grid display:', getComputedStyle(layout).display);
 ```
 
 ### Step 5: Verify Grid Template
+
 In DevTools Console:
+
 ```javascript
 const layout = document.querySelector('.app-layout');
 const cols = getComputedStyle(layout).gridTemplateColumns;
@@ -49661,12 +51466,14 @@ console.log('Grid columns:', cols);
 ## What the CSS Import Fix Did
 
 **Before:**
+
 - CSS files existed but weren't imported
 - Grid layout rules never applied
 - Sidebars had no positioning
 - Result: Only map visible
 
 **After:**
+
 - CSS files imported in ResponsiveLayout
 - Grid layout rules apply at runtime
 - Sidebars positioned by CSS Grid
@@ -49677,6 +51484,7 @@ console.log('Grid columns:', cols);
 ## Testing Checklist
 
 ### Mobile (< 640px)
+
 - [ ] Single column layout
 - [ ] Trip list shows in list view
 - [ ] Bottom tab navigation visible
@@ -49684,6 +51492,7 @@ console.log('Grid columns:', cols);
 - [ ] Clicking trip shows detail view with back button
 
 ### Tablet (640-1023px) ← CRITICAL
+
 - [ ] TWO columns visible (sidebar left, map right)
 - [ ] Trip list shows in left sidebar
 - [ ] Left sidebar width ~340px
@@ -49691,6 +51500,7 @@ console.log('Grid columns:', cols);
 - [ ] Clicking trip shows details drawer sliding in from right
 
 ### Desktop (1024-1439px) ← CRITICAL
+
 - [ ] THREE columns visible (left sidebar, map, right sidebar)
 - [ ] Left sidebar: Trip list
 - [ ] Center: Map background
@@ -49698,6 +51508,7 @@ console.log('Grid columns:', cols);
 - [ ] All three columns proportional
 
 ### Ultra-wide (1440px+)
+
 - [ ] FOUR columns visible
 - [ ] Left: Trip list
 - [ ] Center-left: Map
@@ -49710,6 +51521,7 @@ console.log('Grid columns:', cols);
 ## If Layout is Still Broken
 
 ### Check 1: CSS Files Loaded?
+
 ```javascript
 // In browser console
 const links = document.head.querySelectorAll('link');
@@ -49718,21 +51530,24 @@ console.log('CSS files:', links);
 ```
 
 ### Check 2: Grid Active?
+
 ```javascript
 const layout = document.querySelector('.app-layout');
 const styles = getComputedStyle(layout);
-console.log('Display:', styles.display);           // Should be 'grid'
+console.log('Display:', styles.display); // Should be 'grid'
 console.log('Grid columns:', styles.gridTemplateColumns);
 ```
 
 ### Check 3: Sidebars Exist?
+
 ```javascript
 const sidebar = document.querySelector('.primary-sidebar');
-console.log('Sidebar visible:', sidebar?.offsetWidth > 0);  // Should be true
+console.log('Sidebar visible:', sidebar?.offsetWidth > 0); // Should be true
 console.log('Sidebar width:', sidebar?.offsetWidth);
 ```
 
 ### Check 4: Build Updated?
+
 ```bash
 # Make sure you rebuilt after CSS import fix
 npm run build
@@ -49744,28 +51559,36 @@ npm run build
 ## Common Problems & Quick Fixes
 
 ### Problem: Only Map Shows, No Sidebars
+
 **Solution:**
+
 1. Verify CSS import added to ResponsiveLayout
 2. Run `npm run build`
 3. Refresh browser (hard refresh: Ctrl+Shift+R)
 4. Check DevTools console for errors
 
 ### Problem: Sidebars Show But Layout Wrong
+
 **Solution:**
+
 1. Open DevTools > Styles
 2. Inspect `.app-layout`
 3. Check `grid-template-columns` value
 4. Should change at 640px, 1024px, 1440px breakpoints
 
 ### Problem: Layout Jittery on Resize
+
 **Solution:**
+
 1. This is normal at breakpoints
 2. CSS Grid recalculates
 3. Should be smooth transition
 4. Check for CSS conflicts from other stylesheets
 
 ### Problem: Mobile Tabs Don't Work
+
 **Solution:**
+
 1. Check MobileTabNavigation renders
 2. Verify mobileActiveTab binding
 3. Check DevTools Console for JavaScript errors
@@ -49775,6 +51598,7 @@ npm run build
 ## Visual Validation
 
 ### Mobile (375px)
+
 ```
 ┌─────────────────────┐
 │ My Trips    [+ ⚙]   │
@@ -49789,9 +51613,11 @@ npm run build
 │ 📋  ➕  📅  ⚙ │
 └─────────────────────┘
 ```
+
 Expected: Single column with tabs
 
 ### Tablet (768px)
+
 ```
 ┌──────────────┬──────────────┐
 │ My Trips     │              │
@@ -49804,9 +51630,11 @@ Expected: Single column with tabs
 │              │              │
 └──────────────┴──────────────┘
 ```
+
 Expected: Sidebar left + Map right
 
 ### Desktop (1280px)
+
 ```
 ┌──────────┬──────────────┬──────────┐
 │My Trips  │              │ Details  │
@@ -49819,6 +51647,7 @@ Expected: Sidebar left + Map right
 │          │              │          │
 └──────────┴──────────────┴──────────┘
 ```
+
 Expected: Three columns
 
 ---
@@ -49828,20 +51657,25 @@ Expected: Three columns
 Copy & paste into browser console to test:
 
 ### Test 1: Grid Active?
+
 ```javascript
-console.log('Grid active:',
+console.log(
+  'Grid active:',
   getComputedStyle(document.querySelector('.app-layout')).display === 'grid'
 );
 ```
 
 ### Test 2: Grid Columns Value
+
 ```javascript
-console.log('Grid template:',
+console.log(
+  'Grid template:',
   getComputedStyle(document.querySelector('.app-layout')).gridTemplateColumns
 );
 ```
 
 ### Test 3: Sidebar Visible?
+
 ```javascript
 const sidebar = document.querySelector('.primary-sidebar');
 console.log('Sidebar visible:', sidebar?.offsetWidth > 0);
@@ -49849,6 +51683,7 @@ console.log('Sidebar width:', sidebar?.offsetWidth + 'px');
 ```
 
 ### Test 4: Current Breakpoint
+
 ```javascript
 const w = window.innerWidth;
 console.log(w < 640 ? 'Mobile' : w < 1024 ? 'Tablet' : w < 1440 ? 'Desktop' : 'Ultra-wide');
@@ -49885,6 +51720,7 @@ console.log(w < 640 ? 'Mobile' : w < 1024 ? 'Tablet' : w < 1440 ? 'Desktop' : 'U
 ## Success Criteria
 
 ✅ **Phase 2 is working if:**
+
 1. Mobile layout shows single column + tabs
 2. Tablet layout shows sidebar left + map right
 3. Desktop shows 3 columns: sidebar, map, details
@@ -49894,6 +51730,7 @@ console.log(w < 640 ? 'Mobile' : w < 1024 ? 'Tablet' : w < 1440 ? 'Desktop' : 'U
 7. CSS Grid rules apply (verified in DevTools)
 
 ❌ **Phase 2 is broken if:**
+
 1. Only map visible on tablet+
 2. Sidebars invisible
 3. Layout doesn't change at breakpoints
@@ -49905,9 +51742,11 @@ console.log(w < 640 ? 'Mobile' : w < 1024 ? 'Tablet' : w < 1440 ? 'Desktop' : 'U
 ## Next Steps After Testing
 
 ### If Layout Works ✅
+
 → Proceed to Phase 3: Navigation System
 
 ### If Layout Broken ❌
+
 1. Check CSS import in ResponsiveLayout
 2. Verify build completed: `npm run build`
 3. Hard refresh browser: Ctrl+Shift+R
@@ -49916,12 +51755,13 @@ console.log(w < 640 ? 'Mobile' : w < 1024 ? 'Tablet' : w < 1440 ? 'Desktop' : 'U
 
 ---
 
-*Phase 2 Quick Test Guide*
-*Use this to verify responsive layout works*
-*Expected: Sidebars visible on 640px+*
+_Phase 2 Quick Test Guide_
+_Use this to verify responsive layout works_
+_Expected: Sidebars visible on 640px+_
 ````
 
 ## File: PHASE_2_SIDEBAR_FIX.md
+
 ````markdown
 # Phase 2: Critical Sidebar Layout Fix
 
@@ -49938,6 +51778,7 @@ When expanding from mobile to desktop, only the map was visible. The primary sid
 ### Why It Happened
 
 The original structure was:
+
 ```
 .app-layout (CSS Grid container)
 └── .responsive-desktop (display: contents)
@@ -49948,23 +51789,24 @@ The original structure was:
 ```
 
 The layout.css CSS expected `.app-content` to be a grid child:
+
 ```css
 .app-layout {
-  grid-template-columns: auto 1fr auto;  /* 3-column layout */
+  grid-template-columns: auto 1fr auto; /* 3-column layout */
 }
 
 .primary-sidebar {
-  grid-column: 1;  /* Left sidebar */
+  grid-column: 1; /* Left sidebar */
   grid-row: 2;
 }
 
 .app-content {
-  grid-column: 2;  /* Middle - for map */
+  grid-column: 2; /* Middle - for map */
   grid-row: 2;
 }
 
 .secondary-sidebar {
-  grid-column: 3;  /* Right sidebar */
+  grid-column: 3; /* Right sidebar */
   grid-row: 2;
 }
 ```
@@ -49978,6 +51820,7 @@ But the ResponsiveLayout had the map-container directly in responsive-desktop, s
 ### Updated Structure
 
 Now the structure is:
+
 ```
 .app-layout (CSS Grid container - display: grid)
 └── .responsive-desktop (display: contents - transparent wrapper)
@@ -49989,6 +51832,7 @@ Now the structure is:
 ```
 
 With `display: contents`, the browser treats:
+
 - `.primary-sidebar` as direct child of `.app-layout` ✓
 - `.app-content` as direct child of `.app-layout` ✓
 - `.secondary-sidebar` as direct child of `.app-layout` ✓
@@ -50001,6 +51845,7 @@ Now CSS Grid positioning works correctly!
 **ResponsiveLayout.svelte:**
 
 1. **Wrapped map in `.app-content`**
+
    ```svelte
    <div class="app-content">
      <div id="tripMap" class="map-container">
@@ -50010,6 +51855,7 @@ Now CSS Grid positioning works correctly!
    ```
 
 2. **Positioned sidebars as grid children** (inside responsive-desktop with display:contents)
+
    ```svelte
    <aside class="primary-sidebar">
      <slot name="primary" />
@@ -50017,6 +51863,7 @@ Now CSS Grid positioning works correctly!
    ```
 
 3. **Added component styles for `.app-content`**
+
    ```css
    .app-content {
      position: relative;
@@ -50042,46 +51889,77 @@ Now CSS Grid positioning works correctly!
 ## How CSS Grid Works Now
 
 ### Tablet (640px - 1023px)
+
 ```css
 .app-layout {
-  grid-template-columns: auto 1fr;     /* 2 columns */
-  grid-template-rows: auto 1fr;        /* nav + content */
+  grid-template-columns: auto 1fr; /* 2 columns */
+  grid-template-rows: auto 1fr; /* nav + content */
 }
 
 /* Sidebar spans left column */
-.primary-sidebar { grid-column: 1; grid-row: 2; }
+.primary-sidebar {
+  grid-column: 1;
+  grid-row: 2;
+}
 
 /* Content (map) spans right column */
-.app-content { grid-column: 2; grid-row: 2; }
+.app-content {
+  grid-column: 2;
+  grid-row: 2;
+}
 
 /* Secondary sidebar floats on top as drawer */
-.secondary-sidebar { position: absolute; transform: translateX(100%); }
+.secondary-sidebar {
+  position: absolute;
+  transform: translateX(100%);
+}
 ```
 
 ### Desktop (1024px - 1439px)
+
 ```css
 .app-layout {
-  grid-template-columns: auto 1fr auto;  /* 3 columns */
+  grid-template-columns: auto 1fr auto; /* 3 columns */
   grid-template-rows: auto 1fr;
 }
 
-.primary-sidebar { grid-column: 1; grid-row: 2; }
-.app-content { grid-column: 2; grid-row: 2; }
-.secondary-sidebar { grid-column: 3; grid-row: 2; }
-.tertiary-sidebar { position: absolute; }  /* Floats over content */
+.primary-sidebar {
+  grid-column: 1;
+  grid-row: 2;
+}
+.app-content {
+  grid-column: 2;
+  grid-row: 2;
+}
+.secondary-sidebar {
+  grid-column: 3;
+  grid-row: 2;
+}
+.tertiary-sidebar {
+  position: absolute;
+} /* Floats over content */
 ```
 
 ### Ultra-wide (1440px+)
+
 ```css
 .app-layout {
-  grid-template-columns: 340px 1fr 340px 340px;  /* 4 columns */
+  grid-template-columns: 340px 1fr 340px 340px; /* 4 columns */
   grid-template-rows: auto 1fr;
 }
 
-.primary-sidebar { grid-column: 1; }
-.app-content { grid-column: 2; }
-.secondary-sidebar { grid-column: 3; }
-.tertiary-sidebar { grid-column: 4; }  /* Now visible as column */
+.primary-sidebar {
+  grid-column: 1;
+}
+.app-content {
+  grid-column: 2;
+}
+.secondary-sidebar {
+  grid-column: 3;
+}
+.tertiary-sidebar {
+  grid-column: 4;
+} /* Now visible as column */
 ```
 
 ---
@@ -50091,6 +51969,7 @@ Now CSS Grid positioning works correctly!
 Test by resizing browser to these widths:
 
 ### Mobile (< 640px)
+
 - [ ] Single column layout
 - [ ] Trip list shows in mobile-list slot
 - [ ] Bottom tab navigation visible
@@ -50098,6 +51977,7 @@ Test by resizing browser to these widths:
 - [ ] Tapping trip shows MobileTripDetailView
 
 ### Tablet (640px - 1023px)
+
 - [ ] Two-column layout: sidebar + map
 - [ ] Primary sidebar (trip list) visible on left
 - [ ] Map visible in center
@@ -50105,6 +51985,7 @@ Test by resizing browser to these widths:
 - [ ] Clicking trip shows secondary sidebar (drawer from right)
 
 ### Desktop (1024px - 1439px)
+
 - [ ] Three-column layout: left sidebar + map + right sidebar
 - [ ] Primary sidebar visible with trip list
 - [ ] Map visible in center
@@ -50112,6 +51993,7 @@ Test by resizing browser to these widths:
 - [ ] All three columns properly sized
 
 ### Ultra-wide (1440px+)
+
 - [ ] Four columns visible: trip list, map, details, editor
 - [ ] Primary sidebar on left
 - [ ] Map in center-left
@@ -50161,6 +52043,7 @@ console.log(getComputedStyle(el).gridTemplateColumns)
 ## Expected Visual Results
 
 ### Before Fix ❌
+
 ```
 ┌─────────────────────────────┐
 │                             │
@@ -50176,6 +52059,7 @@ console.log(getComputedStyle(el).gridTemplateColumns)
 ### After Fix ✅
 
 **Tablet (640px):**
+
 ```
 ┌────────────┬──────────────┐
 │  Trips     │     MAP      │
@@ -50186,6 +52070,7 @@ console.log(getComputedStyle(el).gridTemplateColumns)
 ```
 
 **Desktop (1024px):**
+
 ```
 ┌────────────┬──────────────┬────────────┐
 │  Trips     │     MAP      │  Details   │
@@ -50196,6 +52081,7 @@ console.log(getComputedStyle(el).gridTemplateColumns)
 ```
 
 **Ultra-wide (1440px+):**
+
 ```
 ┌────────────┬──────────────┬────────────┬────────────┐
 │  Trips     │     MAP      │  Details   │   Editor   │
@@ -50214,6 +52100,7 @@ console.log(getComputedStyle(el).gridTemplateColumns)
 The `display: contents` property makes an element's box disappear, so its children participate directly in its parent's grid layout.
 
 **Before (broken):**
+
 ```
 Grid children of .app-layout:
 1. .responsive-desktop (1 element)
@@ -50226,6 +52113,7 @@ Actual grid structure:
 ```
 
 **After (fixed):**
+
 ```
 Grid children of .app-layout:
 1. .primary-sidebar
@@ -50245,6 +52133,7 @@ Actual grid structure (tablet):
 ## Backward Compatibility
 
 ✅ **No breaking changes**
+
 - All props remain the same
 - All slots remain the same
 - All methods remain the same
@@ -50256,11 +52145,13 @@ Actual grid structure (tablet):
 ## Files Modified
 
 ### ResponsiveLayout.svelte
+
 - Restructured HTML to wrap map in `.app-content`
 - Added `.app-content` and updated `.map-container` styles
 - Total: 9 line additions, 3 structural changes
 
 ### layout.css
+
 - No changes needed (already correct)
 - CSS Grid rules already set up properly
 
@@ -50275,6 +52166,7 @@ Actual grid structure (tablet):
 5. **Responsive Testing** - Resize window, verify smooth transitions
 
 If any issues found, check:
+
 1. Are sidebars getting content from slots?
 2. Is `.app-layout` getting the correct `grid-template-columns`?
 3. Are sidebar z-index values correct?
@@ -50292,12 +52184,13 @@ If any issues found, check:
 
 ---
 
-*Phase 2 Sidebar Fix*
-*Date: January 8, 2026*
-*Status: ✅ PRODUCTION-READY*
+_Phase 2 Sidebar Fix_
+_Date: January 8, 2026_
+_Status: ✅ PRODUCTION-READY_
 ````
 
 ## File: PHASE_2_STYLING_FIX.md
+
 ````markdown
 # Phase 2: Styling Override Fix
 
@@ -50311,6 +52204,7 @@ If any issues found, check:
 ## The Problem
 
 After fixing the layout structure (sidebars were invisible), the sidebars appeared but:
+
 - Styling didn't match the dashboard
 - Borders, spacing, and typography were wrong
 - Overall look was broken/ugly
@@ -50318,6 +52212,7 @@ After fixing the layout structure (sidebars were invisible), the sidebars appear
 ### Why It Happened
 
 The layout.css file contained extensive styling rules for sidebars:
+
 ```css
 .primary-sidebar {
   position: fixed;
@@ -50332,17 +52227,18 @@ The layout.css file contained extensive styling rules for sidebars:
 ```
 
 These rules conflicted with the dashboard's own styles:
+
 ```css
 .primary-content {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding-bottom: 0;  /* Different padding */
+  padding-bottom: 0; /* Different padding */
 }
 
 .header-section {
   padding: 0;
-  border-bottom: 1px solid #e0e0e0;  /* Different border */
+  border-bottom: 1px solid #e0e0e0; /* Different border */
   flex-shrink: 0;
 }
 ```
@@ -50354,6 +52250,7 @@ These rules conflicted with the dashboard's own styles:
 ## The Solution
 
 ### Old Approach (Broken)
+
 ```
 ResponsiveLayout
 ├── Import layout.css
@@ -50364,6 +52261,7 @@ ResponsiveLayout
 ```
 
 ### New Approach (Fixed)
+
 ```
 ResponsiveLayout
 ├── Import layout-grid-only.css
@@ -50374,28 +52272,30 @@ ResponsiveLayout
 ```
 
 ### Created: layout-grid-only.css
+
 A new minimal CSS file with ONLY grid definitions:
+
 ```css
 .app-layout {
   display: grid;
-  grid-template-columns: 1fr;  /* Mobile default */
+  grid-template-columns: 1fr; /* Mobile default */
 }
 
 @media (min-width: 640px) {
   .app-layout {
-    grid-template-columns: auto 1fr;  /* Tablet */
+    grid-template-columns: auto 1fr; /* Tablet */
   }
 }
 
 @media (min-width: 1024px) {
   .app-layout {
-    grid-template-columns: auto 1fr auto;  /* Desktop */
+    grid-template-columns: auto 1fr auto; /* Desktop */
   }
 }
 
 @media (min-width: 1440px) {
   .app-layout {
-    grid-template-columns: auto 1fr auto auto;  /* Ultra-wide */
+    grid-template-columns: auto 1fr auto auto; /* Ultra-wide */
   }
 }
 ```
@@ -50407,21 +52307,26 @@ A new minimal CSS file with ONLY grid definitions:
 ## Files Changed
 
 ### ResponsiveLayout.svelte
+
 **Before:**
+
 ```typescript
 import '$lib/styles/layout.css';
 ```
 
 **After:**
+
 ```typescript
 import '$lib/styles/layout-grid-only.css';
 ```
 
 **Also removed:**
+
 - `.sidebar` class from HTML elements
 - Sidebar styling in component styles
 
 ### Created New File
+
 ```
 frontend/src/lib/styles/layout-grid-only.css
 - 154 lines
@@ -50431,6 +52336,7 @@ frontend/src/lib/styles/layout-grid-only.css
 ```
 
 ### Old Files (Still Exist, No Longer Used)
+
 ```
 frontend/src/lib/styles/layout.css
 - Kept for reference
@@ -50443,6 +52349,7 @@ frontend/src/lib/styles/layout.css
 ## How This Fixes Styling
 
 ### Desktop View Before Fix
+
 ```
 Styled content from layout.css:
 ┌─────────────────────────────────┐
@@ -50454,6 +52361,7 @@ Styled content from layout.css:
 ```
 
 ### Desktop View After Fix
+
 ```
 Positioned by grid, styled by dashboard:
 ┌─────────────────────────────────┐
@@ -50469,6 +52377,7 @@ Positioned by grid, styled by dashboard:
 ## CSS Cascade Fix
 
 ### CSS Specificity Problem (Before)
+
 ```
 layout.css rules (specificity: 0-1-1):
   .primary-sidebar { background: rgba(...) !important; }
@@ -50485,6 +52394,7 @@ Result: !important and position: fixed override everything ❌
 ```
 
 ### CSS Cascade Solution (After)
+
 ```
 layout-grid-only.css (ONLY grid):
   .app-layout { display: grid; grid-template-columns: auto 1fr; }
@@ -50503,52 +52413,83 @@ Result: Dashboard styles apply without conflicts ✅
 ## Minimal Grid CSS Content
 
 ### Mobile (< 640px)
+
 ```css
 .app-layout {
   grid-template-columns: 1fr;
   grid-template-rows: 1fr auto;
 }
 
-.responsive-mobile { display: flex; }
-.responsive-desktop { display: none; }
+.responsive-mobile {
+  display: flex;
+}
+.responsive-desktop {
+  display: none;
+}
 ```
 
 ### Tablet (640-1023px)
+
 ```css
 .app-layout {
   grid-template-columns: auto 1fr;
   grid-template-rows: 1fr;
 }
 
-.primary-sidebar { grid-column: 1; }
-.app-content { grid-column: 2; }
-.secondary-sidebar, .tertiary-sidebar { display: none; }
+.primary-sidebar {
+  grid-column: 1;
+}
+.app-content {
+  grid-column: 2;
+}
+.secondary-sidebar,
+.tertiary-sidebar {
+  display: none;
+}
 ```
 
 ### Desktop (1024-1439px)
+
 ```css
 .app-layout {
   grid-template-columns: auto 1fr auto;
   grid-template-rows: 1fr;
 }
 
-.primary-sidebar { grid-column: 1; }
-.app-content { grid-column: 2; }
-.secondary-sidebar { grid-column: 3; }
-.tertiary-sidebar { display: none; }
+.primary-sidebar {
+  grid-column: 1;
+}
+.app-content {
+  grid-column: 2;
+}
+.secondary-sidebar {
+  grid-column: 3;
+}
+.tertiary-sidebar {
+  display: none;
+}
 ```
 
 ### Ultra-wide (1440px+)
+
 ```css
 .app-layout {
   grid-template-columns: auto 1fr auto auto;
   grid-template-rows: 1fr;
 }
 
-.primary-sidebar { grid-column: 1; }
-.app-content { grid-column: 2; }
-.secondary-sidebar { grid-column: 3; }
-.tertiary-sidebar { grid-column: 4; }
+.primary-sidebar {
+  grid-column: 1;
+}
+.app-content {
+  grid-column: 2;
+}
+.secondary-sidebar {
+  grid-column: 3;
+}
+.tertiary-sidebar {
+  grid-column: 4;
+}
 ```
 
 ---
@@ -50556,17 +52497,20 @@ Result: Dashboard styles apply without conflicts ✅
 ## Why This Approach Works
 
 ### Separation of Concerns
+
 - **grid-only CSS**: Layout structure (grid positioning)
 - **responsive.css**: Design tokens (colors, spacing, variables)
 - **Dashboard styles**: Component appearance (colors, borders, padding, typography)
 
 ### No Conflicts
+
 - Grid CSS only affects layout, not appearance
 - Dashboard styles apply cleanly
 - No CSS cascade issues
 - No !important overrides needed
 
 ### Easy to Maintain
+
 - Grid rules in one place
 - Dashboard keeps its styling separate
 - Future changes to dashboard don't affect grid
@@ -50577,16 +52521,19 @@ Result: Dashboard styles apply without conflicts ✅
 ## Component Styling Approach
 
 ### What ResponsiveLayout Provides
+
 1. CSS Grid layout structure (via layout-grid-only.css)
 2. Mobile/desktop view switching (via media queries)
 3. Component lifecycle management (MutationObserver for sidebars)
 
 ### What Dashboard Provides
+
 1. Component styling (colors, borders, padding, fonts)
 2. Content rendering (trip list, forms, etc.)
 3. Event handling (clicks, selections)
 
 ### What responsive.css Provides
+
 1. Design tokens (CSS variables)
 2. Color palette
 3. Spacing scale
@@ -50607,6 +52554,7 @@ Result: Dashboard styles apply without conflicts ✅
 ## Testing
 
 ### What Should Look Better Now
+
 - [ ] Sidebar background color correct
 - [ ] Sidebar borders match dashboard style
 - [ ] Sidebar padding/spacing correct
@@ -50615,6 +52563,7 @@ Result: Dashboard styles apply without conflicts ✅
 - [ ] Overall appearance matches pre-Phase 2 design
 
 ### Testing at Each Breakpoint
+
 - [ ] Mobile (< 640px): Single column with tabs
 - [ ] Tablet (640px): Sidebar + map with dashboard styling
 - [ ] Desktop (1024px): 3 columns with dashboard styling
@@ -50625,6 +52574,7 @@ Result: Dashboard styles apply without conflicts ✅
 ## Performance Impact
 
 ✅ **No negative impact**
+
 - layout-grid-only.css: ~3 KB (vs layout.css ~25 KB)
 - Reduced CSS processing overhead
 - Fewer style cascading issues
@@ -50635,6 +52585,7 @@ Result: Dashboard styles apply without conflicts ✅
 ## Rollback Path
 
 If styling is still not correct:
+
 1. Check dashboard component styles (still applied?)
 2. Verify no other CSS overrides
 3. Check responsive.css variables
@@ -50648,6 +52599,7 @@ If styling is still not correct:
 **After:** Sidebars visible with correct dashboard styling (minimal grid-only CSS)
 
 **Key Change:**
+
 - Removed layout.css (full of styling rules)
 - Added layout-grid-only.css (only grid definitions)
 - Removed .sidebar class (conflicting styles)
@@ -50656,13 +52608,14 @@ If styling is still not correct:
 
 ---
 
-*Phase 2 Styling Fix*
-*Date: January 8, 2026*
-*Status: ✅ FIXED*
+_Phase 2 Styling Fix_
+_Date: January 8, 2026_
+_Status: ✅ FIXED_
 ````
 
 ## File: PHASE_2_SUMMARY.txt
-````
+
+```
 ================================================================================
 BLUEBONNET RESPONSIVE REDESIGN - PHASE 2 SUMMARY
 ================================================================================
@@ -51121,9 +53074,10 @@ and media queries to handle all responsive behavior elegantly.
 The foundation is solid. Phase 3 (Navigation System) can begin immediately.
 
 ================================================================================
-````
+```
 
 ## File: PHASE_2_TESTING.md
+
 ````markdown
 # Phase 2 Testing & Validation
 
@@ -51141,6 +53095,7 @@ The foundation is solid. Phase 3 (Navigation System) can begin immediately.
 Unified responsive layout component that replaces MapLayout. Uses CSS Grid and media queries for all responsive behavior instead of JavaScript branching.
 
 **Key Features:**
+
 - Single HTML structure for all breakpoints
 - CSS handles all responsive layout changes
 - Sidebar visibility monitoring
@@ -51185,6 +53140,7 @@ Unified responsive layout component that replaces MapLayout. Uses CSS Grid and m
 ### Code Changes
 
 **Updated Files:**
+
 - `/frontend/src/routes/dashboard/+page.svelte`
   - Changed import from `MapLayout` to `ResponsiveLayout`
   - Updated component tag and props
@@ -51192,9 +53148,11 @@ Unified responsive layout component that replaces MapLayout. Uses CSS Grid and m
   - Keeps backward compatibility with mobile state
 
 **New Files:**
+
 - `/frontend/src/lib/components/ResponsiveLayout.svelte`
 
 **Deprecated Files (kept for reference):**
+
 - `/frontend/src/lib/components/MapLayout.svelte`
 
 ---
@@ -51216,6 +53174,7 @@ Unified responsive layout component that replaces MapLayout. Uses CSS Grid and m
 Test at viewport width: **375px** (iPhone SE)
 
 **Layout:**
+
 - [ ] Single column layout rendered
 - [ ] Bottom navigation bar visible (60px height)
 - [ ] Primary sidebar hidden (drawer accessible)
@@ -51225,6 +53184,7 @@ Test at viewport width: **375px** (iPhone SE)
 - [ ] Safe area padding respected (notches)
 
 **Navigation:**
+
 - [ ] Hamburger menu opens drawer
 - [ ] Drawer slides in from left (smooth animation)
 - [ ] Backdrop appears when drawer open
@@ -51233,12 +53193,14 @@ Test at viewport width: **375px** (iPhone SE)
 - [ ] Drawer width ~80vw, max 360px
 
 **Content:**
+
 - [ ] Primary sidebar content displays in drawer
 - [ ] Secondary sidebar hidden (invisible)
 - [ ] Map visible and interactive
 - [ ] Touch targets ≥ 44px
 
 **Forms (MobileFormModal):**
+
 - [ ] Forms appear as bottom sheets
 - [ ] Bottom sheet slides up smoothly
 - [ ] Backdrop semi-transparent
@@ -51249,6 +53211,7 @@ Test at viewport width: **375px** (iPhone SE)
 Test at viewport widths: **640px**, **768px**, **1023px**
 
 **Layout:**
+
 - [ ] Two-column layout rendered
 - [ ] Top navigation bar visible (60px)
 - [ ] Primary sidebar visible, 300px wide
@@ -51257,6 +53220,7 @@ Test at viewport widths: **640px**, **768px**, **1023px**
 - [ ] Layout adjusts smoothly at 640px boundary
 
 **Navigation:**
+
 - [ ] Hamburger menu available
 - [ ] Clicking hamburger collapses sidebar
 - [ ] Sidebar slides left, goes into drawer
@@ -51264,6 +53228,7 @@ Test at viewport widths: **640px**, **768px**, **1023px**
 - [ ] Sidebar fully accessible when collapsed
 
 **Sidebars:**
+
 - [ ] Primary sidebar scrolls independently
 - [ ] Secondary sidebar appears as right drawer (50% width, max 400px)
 - [ ] Secondary sidebar slides in from right
@@ -51271,6 +53236,7 @@ Test at viewport widths: **640px**, **768px**, **1023px**
 - [ ] Tertiary sidebar layered over secondary
 
 **Forms:**
+
 - [ ] Forms appear as side drawer
 - [ ] Side drawer slides in from right
 - [ ] Smooth animation and transitions
@@ -51282,6 +53248,7 @@ Test at viewport widths: **640px**, **768px**, **1023px**
 Test at viewport widths: **1024px**, **1280px**, **1439px**
 
 **Layout:**
+
 - [ ] Three columns visible simultaneously
 - [ ] Top navigation bar visible
 - [ ] Primary sidebar visible, 340px wide
@@ -51290,6 +53257,7 @@ Test at viewport widths: **1024px**, **1280px**, **1439px**
 - [ ] Map background visible
 
 **Navigation:**
+
 - [ ] Hamburger menu still available
 - [ ] Hamburger can collapse primary sidebar
 - [ ] Navigation bar full width
@@ -51297,6 +53265,7 @@ Test at viewport widths: **1024px**, **1280px**, **1439px**
 - [ ] Top nav buttons accessible
 
 **Sidebars:**
+
 - [ ] Primary sidebar fixed left (340px)
 - [ ] Secondary sidebar fades in/out (no position change)
 - [ ] Tertiary sidebar floating (top-right)
@@ -51304,12 +53273,14 @@ Test at viewport widths: **1024px**, **1280px**, **1439px**
 - [ ] Smooth opacity transitions
 
 **Map:**
+
 - [ ] Full background in center area
 - [ ] Interactive and responsive
 - [ ] Highlighting works correctly
 - [ ] Trip markers visible
 
 **Forms:**
+
 - [ ] Forms appear in secondary or tertiary sidebar
 - [ ] Smooth fade-in animation
 - [ ] No drawer or bottom sheet
@@ -51320,6 +53291,7 @@ Test at viewport widths: **1024px**, **1280px**, **1439px**
 Test at viewport widths: **1440px**, **1920px**, **2560px**
 
 **Layout:**
+
 - [ ] Four columns all visible
 - [ ] Top navigation bar full width
 - [ ] Primary sidebar 340px
@@ -51330,12 +53302,14 @@ Test at viewport widths: **1440px**, **1920px**, **2560px**
 - [ ] No overlays or drawers
 
 **Spacing:**
+
 - [ ] Generous spacing between elements
 - [ ] Content readable at arm's length
 - [ ] No horizontal scrolling
 - [ ] All elements visible without scrolling (if content fits)
 
 **Performance:**
+
 - [ ] No lag or jank
 - [ ] Smooth scrolling
 - [ ] No layout thrashing
@@ -51370,6 +53344,7 @@ Test at viewport widths: **1440px**, **1920px**, **2560px**
 ### ♿ Accessibility Testing
 
 **Keyboard Navigation:**
+
 - [ ] Tab order logical and visible
 - [ ] Focus states clearly visible
 - [ ] Hamburger menu keyboard accessible
@@ -51377,6 +53352,7 @@ Test at viewport widths: **1440px**, **1920px**, **2560px**
 - [ ] Can close drawers with Escape key (nice-to-have)
 
 **Screen Reader Testing:**
+
 - [ ] Navigation bar properly labeled
 - [ ] Hamburger button has `aria-label` and `aria-expanded`
 - [ ] Sidebars properly structured
@@ -51384,17 +53360,20 @@ Test at viewport widths: **1440px**, **1920px**, **2560px**
 - [ ] Error messages announced
 
 **Touch Testing:**
+
 - [ ] All interactive elements ≥ 44px touch target
 - [ ] Double-tap zoom disabled (intentional)
 - [ ] Swipe gestures work smoothly (if implemented)
 - [ ] No unintended selections on touch
 
 **Color & Contrast:**
+
 - [ ] Text meets 4.5:1 contrast ratio (WCAG AA)
 - [ ] UI distinguishable without color alone
 - [ ] Works in high contrast mode
 
 **Motion:**
+
 - [ ] Respects `prefers-reduced-motion` preference
 - [ ] Animations disabled if user prefers
 - [ ] Content still accessible without animations
@@ -51402,24 +53381,28 @@ Test at viewport widths: **1440px**, **1920px**, **2560px**
 ### 🎨 Visual Testing
 
 **Layout Correctness:**
+
 - [ ] Sidebars have correct widths (300px tablet, 340px desktop)
 - [ ] Navigation has correct heights (60px standard, 50px landscape)
 - [ ] Spacing matches design (using --spacing variables)
 - [ ] Border radius consistent (--radius-lg)
 
 **Colors & Styling:**
+
 - [ ] Background colors match palette
 - [ ] Text colors readable
 - [ ] Borders and shadows present
 - [ ] Hover states visible
 
 **Typography:**
+
 - [ ] Font sizes scale correctly (clamp)
 - [ ] Line heights readable
 - [ ] Headings properly sized
 - [ ] Text truncation works
 
 **Interactive States:**
+
 - [ ] Buttons have hover/active states
 - [ ] Links underlined (if applicable)
 - [ ] Focus rings visible
@@ -51428,6 +53411,7 @@ Test at viewport widths: **1440px**, **1920px**, **2560px**
 ### 🔧 Functionality Testing
 
 **Map Component:**
+
 - [ ] Map displays correctly
 - [ ] Trip highlighting works
 - [ ] Markers clickable
@@ -51435,6 +53419,7 @@ Test at viewport widths: **1440px**, **1920px**, **2560px**
 - [ ] getMapComponent() method works
 
 **Sidebar Content:**
+
 - [ ] Primary sidebar (trip list) displays
 - [ ] Secondary sidebar (details) displays when populated
 - [ ] Tertiary sidebar (forms) displays when populated
@@ -51442,12 +53427,14 @@ Test at viewport widths: **1440px**, **1920px**, **2560px**
 - [ ] Sidebars fade/appear as expected
 
 **Backward Compatibility:**
+
 - [ ] Mobile state props still work
 - [ ] mobileActiveTab binding works
 - [ ] mobileSelectedItem binding works
 - [ ] Old event handlers still work (if used)
 
 **Navigation Drawer:**
+
 - [ ] Hamburger toggles navigationOpen state
 - [ ] Drawer opens/closes smoothly
 - [ ] Backdrop click closes drawer
@@ -51456,12 +53443,14 @@ Test at viewport widths: **1440px**, **1920px**, **2560px**
 ### 📊 Performance Testing
 
 **Load Time:**
+
 - [ ] Component loads quickly
 - [ ] No layout shift/CLS issues
 - [ ] CSS loads without blocking
 - [ ] JavaScript minimal and fast
 
 **Runtime Performance:**
+
 - [ ] 60fps animations (no jank)
 - [ ] Smooth scrolling
 - [ ] Sidebar transitions smooth
@@ -51469,6 +53458,7 @@ Test at viewport widths: **1440px**, **1920px**, **2560px**
 - [ ] Mutation observer doesn't cause issues
 
 **Bundle Size:**
+
 - [ ] Component adds minimal size
 - [ ] CSS already in Phase 1 system
 - [ ] No duplicate code
@@ -51477,12 +53467,14 @@ Test at viewport widths: **1440px**, **1920px**, **2560px**
 ### 🐛 Edge Cases
 
 **Content Edge Cases:**
+
 - [ ] Empty sidebars (hidden correctly)
 - [ ] Very long content (scrolls, doesn't break layout)
 - [ ] Very short content (doesn't stretch)
 - [ ] Mixed short/long content in multiple sidebars
 
 **Browser Edge Cases:**
+
 - [ ] Works in Chrome, Firefox, Safari, Edge
 - [ ] Works in iOS Safari
 - [ ] Works in Chrome Mobile
@@ -51490,12 +53482,14 @@ Test at viewport widths: **1440px**, **1920px**, **2560px**
 - [ ] Landscape orientation (height-based detection)
 
 **Viewport Edge Cases:**
+
 - [ ] Exactly at breakpoint boundaries (640px, 1024px, 1440px)
 - [ ] Just below breakpoints (639px, 1023px, 1439px)
 - [ ] Very small screens (320px - if applicable)
 - [ ] Very large screens (3840px - if applicable)
 
 **State Edge Cases:**
+
 - [ ] Opening drawer with empty sidebar
 - [ ] Multiple sidebars with content
 - [ ] Sidebar content changes while open
@@ -51535,6 +53529,7 @@ Test at viewport widths: **1440px**, **1920px**, **2560px**
 ### Automation Testing (Future)
 
 Potential automated tests:
+
 ```
 - Viewport width changes trigger correct CSS rules
 - Hamburger toggle changes navigationOpen state
@@ -51548,16 +53543,19 @@ Potential automated tests:
 ## Issues Found & Fixed
 
 ### Issue 1: Navigation State
+
 **Status:** ✅ Fixed
 **Description:** Need navigationOpen state to manage drawer
 **Fix:** Added navigationOpen prop and toggle function
 
 ### Issue 2: Backward Compatibility
+
 **Status:** ✅ Fixed
 **Description:** Keep old mobile state props for transition period
 **Fix:** Kept mobileActiveTab, mobileSelectedItem, mobileSelectedItemType
 
 ### Issue 3: MobileFormModal Still Needed
+
 **Status:** ⏳ For Phase 3-4
 **Description:** Old MobileFormModal still referenced in dashboard
 **Note:** Will be replaced in Phase 4 (Form System)
@@ -51567,6 +53565,7 @@ Potential automated tests:
 ## Success Criteria
 
 ✅ **All criteria met:**
+
 - [x] ResponsiveLayout.svelte created
 - [x] Same HTML at all breakpoints
 - [x] CSS Grid handles responsive behavior
@@ -51581,18 +53580,21 @@ Potential automated tests:
 ## Next Steps
 
 ### Immediate
+
 1. Run quick test at mobile (375px), tablet (768px), desktop (1024px), ultra-wide (1440px)
 2. Verify layout appears correct at each breakpoint
 3. Test hamburger menu toggle
 4. Test sidebar visibility transitions
 
 ### If Issues Found
+
 1. Document issue in PHASE_2_TESTING.md
 2. Fix in ResponsiveLayout.svelte or layout.css
 3. Re-test affected breakpoint
 4. Update checklist
 
 ### Once Verified
+
 1. Mark Phase 2 as complete
 2. Proceed to Phase 3: Navigation System
 3. Create Navigation.svelte component
@@ -51604,6 +53606,7 @@ Potential automated tests:
 
 **Browser:** Chrome DevTools Device Emulation
 **Breakpoints to Test:**
+
 - 375px (iPhone SE)
 - 480px (Landscape phone)
 - 640px (iPad Mini)
@@ -51654,13 +53657,14 @@ Notes:
 
 ---
 
-*Last Updated:* January 8, 2026
-*Phase:* 2 of 6
-*Overall Progress:* 33% (2 phases complete)
+_Last Updated:_ January 8, 2026
+_Phase:_ 2 of 6
+_Overall Progress:_ 33% (2 phases complete)
 ````
 
 ## File: postgres.conf
-````ini
+
+```ini
 # PostgreSQL configuration optimized for small workloads
 # Memory settings for containers with limited shared memory
 
@@ -51683,9 +53687,10 @@ max_prepared_transactions = 30
 # Lock settings - increase to prevent "out of shared memory"
 max_locks_per_transaction = 256
 deadlock_timeout = 1s
-````
+```
 
 ## File: RESPONSIVE_REDESIGN_INDEX.md
+
 ````markdown
 # Bluebonnet Responsive Redesign - Complete Index
 
@@ -51698,6 +53703,7 @@ deadlock_timeout = 1s
 ## 📚 Documentation Files
 
 ### Master Documents
+
 1. **[RESPONSIVE_REDESIGN_SPEC.md](./RESPONSIVE_REDESIGN_SPEC.md)** (12 sections, 50KB)
    - Complete specification for entire redesign
    - Breakpoint definitions and layouts
@@ -51728,7 +53734,9 @@ deadlock_timeout = 1s
 ### New Files (Phase 1 Deliverables)
 
 #### `/frontend/src/lib/styles/responsive.css` (17KB)
+
 **Core responsive design system with:**
+
 - ✅ Breakpoint definitions (640px, 1024px, 1440px)
 - ✅ Spacing scale (xs, sm, md, lg, xl, 2xl) using `clamp()`
 - ✅ Navigation heights (mobile, tablet, landscape)
@@ -51741,6 +53749,7 @@ deadlock_timeout = 1s
 - ✅ Debug mode helper
 
 **Usage:**
+
 ```css
 /* Reference custom properties */
 padding: var(--spacing-lg);
@@ -51750,7 +53759,9 @@ transition: all var(--transition-smooth);
 ```
 
 #### `/frontend/src/lib/styles/layout.css` (20KB)
+
 **Layout configurations for each breakpoint:**
+
 - ✅ Mobile (< 640px): Single column + bottom nav
 - ✅ Tablet (640-1023px): Top nav + collapsible sidebar
 - ✅ Desktop (1024-1439px): Three-column grid
@@ -51759,6 +53770,7 @@ transition: all var(--transition-smooth);
 - ✅ Responsive typography
 
 **Grid Layouts:**
+
 ```
 Mobile:     [Content][NavBar]
 Tablet:     [Sidebar] [Content] [Drawer]
@@ -51769,11 +53781,13 @@ Ultra:      [Sidebar] [Content] [Sidebar] [Sidebar]
 ### Updated Files
 
 #### `/frontend/src/app.css`
+
 - ✅ Added imports for responsive.css and layout.css
 - ✅ Maintains all existing global styles
 - ✅ No breaking changes
 
 #### `/frontend/src/lib/styles/form-styles.css`
+
 - No changes required (compatible with new system)
 
 ### Deprecated/Reference Files
@@ -51785,7 +53799,9 @@ Ultra:      [Sidebar] [Content] [Sidebar] [Sidebar]
 ## 📖 Developer Guides
 
 ### `/frontend/src/lib/styles/README.md` (13KB)
+
 **Comprehensive documentation:**
+
 1. Overview and file descriptions
 2. CSS custom properties reference
 3. Responsive layout patterns
@@ -51800,7 +53816,9 @@ Ultra:      [Sidebar] [Content] [Sidebar] [Sidebar]
 **Best for:** Learning the system in detail
 
 ### `/frontend/src/lib/styles/QUICK_REFERENCE.md` (8KB)
+
 **Quick lookup guide for developers:**
+
 - Breakpoint copy-paste templates
 - All spacing tokens
 - Most common custom properties
@@ -51818,11 +53836,13 @@ Ultra:      [Sidebar] [Content] [Sidebar] [Sidebar]
 ## 🔄 Implementation Phases
 
 ### ✅ Phase 1: CSS Foundation (COMPLETE)
+
 **Completed:** January 8, 2026
 **Duration:** ~4 hours (expedited)
 **Status:** Ready for Phase 2
 
 **Deliverables:**
+
 - [x] responsive.css (17KB)
 - [x] layout.css (20KB)
 - [x] Updated app.css
@@ -51837,14 +53857,17 @@ Ultra:      [Sidebar] [Content] [Sidebar] [Sidebar]
 ---
 
 ### ⏳ Phase 2: Core Layout Component (Est. 6-8 hours)
+
 **Status:** Ready to start
 **Deliverables:**
+
 - [ ] `ResponsiveLayout.svelte` (unified replacement for MapLayout)
 - [ ] Grid implementation for all breakpoints
 - [ ] Sidebar drawer/collapse logic
 - [ ] Breakpoint testing
 
 **Related Files:**
+
 - Will replace: `MapLayout.svelte`
 - Uses: `responsive.css`, `layout.css`
 - Updates: `dashboard/+page.svelte`
@@ -51852,50 +53875,61 @@ Ultra:      [Sidebar] [Content] [Sidebar] [Sidebar]
 ---
 
 ### ⏳ Phase 3: Navigation System (Est. 4-6 hours)
+
 **Status:** Waiting for Phase 2
 **Deliverables:**
+
 - [ ] Unified `Navigation.svelte`
 - [ ] Hamburger drawer component
 - [ ] Top navigation bar
 - [ ] Bottom tab navigation (mobile)
 
 **Related Files:**
+
 - Will replace: `MobileTabNavigation.svelte`
 - New: `NavigationDrawer.svelte`
 
 ---
 
 ### ⏳ Phase 4: Form System (Est. 6-8 hours)
+
 **Status:** Waiting for Phase 2-3
 **Deliverables:**
+
 - [ ] Unified `FormModal.svelte`
 - [ ] Bottom sheet implementation (mobile)
 - [ ] Side drawer implementation (tablet)
 - [ ] Side panel implementation (desktop)
 
 **Related Files:**
+
 - Will replace: `MobileFormModal.svelte`
 - New: `BottomSheet.svelte`, `SideDrawer.svelte`
 
 ---
 
 ### ⏳ Phase 5: Component Refactoring (Est. 8-12 hours)
+
 **Status:** Waiting for Phase 2-4
 **Deliverables:**
+
 - [ ] Split `dashboard/+page.svelte`
 - [ ] Update `MobileTripDetailView.svelte`
 - [ ] Update `ItemsList.svelte`
 - [ ] Remove old mobile-specific logic
 
 **Related Files:**
+
 - Will create: `DashboardContainer.svelte`, `DashboardContent.svelte`, etc.
 - Updates: 6+ component files
 
 ---
 
 ### ⏳ Phase 6: Testing & Polish (Est. 6-8 hours)
+
 **Status:** Waiting for Phase 2-5
 **Deliverables:**
+
 - [ ] Test at all breakpoints (375px, 640px, 1024px, 1440px)
 - [ ] Fix edge cases
 - [ ] Accessibility audit
@@ -51903,6 +53937,7 @@ Ultra:      [Sidebar] [Content] [Sidebar] [Sidebar]
 - [ ] Final polish
 
 **Test Checklist:**
+
 - [ ] Mobile layout working
 - [ ] Tablet layout working
 - [ ] Desktop layout working
@@ -51918,27 +53953,28 @@ Ultra:      [Sidebar] [Content] [Sidebar] [Sidebar]
 
 ## 📊 Implementation Statistics
 
-| Metric | Value |
-|--------|-------|
-| **Total Estimated Hours** | 40-54 hours |
-| **Phase 1 Complete** | ✅ 4 hours |
-| **Remaining Phases** | ⏳ 36-50 hours |
-| **New CSS Files** | 2 |
-| **Documentation Files** | 5 |
-| **CSS Custom Properties** | 50+ |
-| **Breakpoint Definitions** | 4 |
-| **Layout Configurations** | 4 |
-| **Z-Index Levels** | 10 |
-| **Color Tokens** | 20+ |
-| **Responsive Utilities** | 15+ |
-| **Lines of CSS** | 1,000+ |
-| **Lines of Documentation** | 1,500+ |
+| Metric                     | Value          |
+| -------------------------- | -------------- |
+| **Total Estimated Hours**  | 40-54 hours    |
+| **Phase 1 Complete**       | ✅ 4 hours     |
+| **Remaining Phases**       | ⏳ 36-50 hours |
+| **New CSS Files**          | 2              |
+| **Documentation Files**    | 5              |
+| **CSS Custom Properties**  | 50+            |
+| **Breakpoint Definitions** | 4              |
+| **Layout Configurations**  | 4              |
+| **Z-Index Levels**         | 10             |
+| **Color Tokens**           | 20+            |
+| **Responsive Utilities**   | 15+            |
+| **Lines of CSS**           | 1,000+         |
+| **Lines of Documentation** | 1,500+         |
 
 ---
 
 ## 🎯 Key Features by Phase
 
 ### Phase 1 ✅
+
 - Centralized CSS custom properties
 - 4 breakpoint definitions
 - Responsive spacing system
@@ -51949,6 +53985,7 @@ Ultra:      [Sidebar] [Content] [Sidebar] [Sidebar]
 - Developer documentation
 
 ### Phases 2-6 (Upcoming)
+
 - Unified Layout component
 - Navigation system
 - Form modal system
@@ -52014,18 +54051,22 @@ bluebonnet-dev/
 ## 🔗 Quick Links
 
 ### Read First
+
 - **Specification:** [RESPONSIVE_REDESIGN_SPEC.md](./RESPONSIVE_REDESIGN_SPEC.md)
 - **Quick Start:** [BREAKPOINT_GUIDE.md](./BREAKPOINT_GUIDE.md)
 
 ### For Development
+
 - **CSS Reference:** [/frontend/src/lib/styles/README.md](./frontend/src/lib/styles/README.md)
 - **Quick Lookup:** [/frontend/src/lib/styles/QUICK_REFERENCE.md](./frontend/src/lib/styles/QUICK_REFERENCE.md)
 
 ### Track Progress
+
 - **Phase 1 Status:** [PHASE_1_COMPLETION.md](./PHASE_1_COMPLETION.md)
 - **Full Index:** [RESPONSIVE_REDESIGN_INDEX.md](./RESPONSIVE_REDESIGN_INDEX.md) (you are here)
 
 ### See Implementation Details
+
 - **CSS System:** `/frontend/src/lib/styles/responsive.css`
 - **Layout System:** `/frontend/src/lib/styles/layout.css`
 
@@ -52034,18 +54075,21 @@ bluebonnet-dev/
 ## ✅ Checklist for Next Developer
 
 ### Getting Started
+
 - [ ] Read RESPONSIVE_REDESIGN_SPEC.md
 - [ ] Review BREAKPOINT_GUIDE.md
 - [ ] Study responsive.css and layout.css
 - [ ] Read QUICK_REFERENCE.md
 
 ### Before Starting Phase 2
+
 - [ ] Understand all 4 breakpoint layouts
 - [ ] Know where all CSS custom properties are defined
 - [ ] Test CSS at different breakpoints manually
 - [ ] Review which components need updating
 
 ### Development Workflow
+
 - [ ] Always use CSS custom properties
 - [ ] Always test at 375px, 640px, 1024px, 1440px
 - [ ] Reference QUICK_REFERENCE.md for media queries
@@ -52076,18 +54120,22 @@ A: Not yet created (Phase 3), but CSS framework is ready in layout.css
 ### Troubleshooting
 
 **Layout breaks at 640px:**
+
 - Check media query boundaries: use 639px/640px not 640px/641px
 - Reference QUICK_REFERENCE.md for correct syntax
 
 **Z-index conflicts:**
+
 - Always use `var(--z-*)` variables instead of arbitrary numbers
 - Check z-index stack in responsive.css
 
 **Spacing doesn't scale:**
+
 - Use CSS custom properties: `var(--spacing-*)` not hardcoded `1rem`
 - Use `clamp()` for custom responsive values
 
 **Form not displaying correctly:**
+
 - Check breakpoint (bottom sheet, side drawer, or panel expected)
 - Verify modal backdrop and z-index stack
 
@@ -52096,12 +54144,14 @@ A: Not yet created (Phase 3), but CSS framework is ready in layout.css
 ## 🎓 Learning Resources
 
 ### Understanding the System
+
 1. **CSS Clamp Function:** https://developer.mozilla.org/en-US/docs/Web/CSS/clamp()
 2. **CSS Grid:** https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Grid_Layout
 3. **Responsive Design:** https://developer.mozilla.org/en-US/docs/Learn/CSS/CSS_layout/Responsive_Design
 4. **Safe Area Insets:** https://webkit.org/blog/7929/designing-websites-for-iphone-x/
 
 ### WCAG Accessibility
+
 - Touch Target Size: 44px minimum (WCAG AAA)
 - Color Contrast: 4.5:1 minimum (WCAG AA)
 - Keyboard Navigation: Full keyboard access required
@@ -52137,6 +54187,7 @@ Estimated Hours Remaining: 36-50 hours
 **Phase 1 is complete!** The CSS foundation for a unified, beautiful responsive design is now in place.
 
 ### What You Have
+
 ✅ Centralized custom properties system
 ✅ Four complete breakpoint configurations
 ✅ Layout patterns for all device sizes
@@ -52147,9 +54198,11 @@ Estimated Hours Remaining: 36-50 hours
 ✅ Ready for component development
 
 ### What's Next
+
 **Phase 2:** Create ResponsiveLayout.svelte component using this CSS system
 
 ### How to Proceed
+
 1. Review the specification
 2. Understand the breakpoint layouts
 3. Study the CSS custom properties
@@ -52161,12 +54214,13 @@ Estimated Hours Remaining: 36-50 hours
 
 ---
 
-*Document Generated:* January 8, 2026
-*System Version:* Phase 1 Complete
-*Status:* Ready for Phase 2 Implementation
+_Document Generated:_ January 8, 2026
+_System Version:_ Phase 1 Complete
+_Status:_ Ready for Phase 2 Implementation
 ````
 
 ## File: RESPONSIVE_REDESIGN_SPEC.md
+
 ````markdown
 # Bluebonnet: Sidebar-to-Drawer Responsive Redesign Specification
 
@@ -52182,6 +54236,7 @@ Estimated Hours Remaining: 36-50 hours
 This document specifies a unified responsive design system that transforms the current dual-view architecture (mobile tab-based + desktop three-sidebar) into a **single elegant responsive layout** that adapts gracefully across all breakpoints using a **Sidebar-to-Drawer pattern**.
 
 ### Key Improvements
+
 - ✅ One codebase instead of two separate layout systems
 - ✅ Smooth transitions between breakpoints (no hard layout switches)
 - ✅ Modern drawer-based navigation (hamburger menu on smaller screens)
@@ -52230,9 +54285,9 @@ This document specifies a unified responsive design system that transforms the c
   --sidebar-width-tertiary: clamp(260px, 30vw, 340px);
 
   /* Navigation Heights */
-  --nav-height-mobile: 60px;    /* Bottom bar on mobile */
-  --nav-height-tablet: 60px;    /* Top bar on tablet */
-  --nav-height-desktop: 60px;   /* Top bar on desktop */
+  --nav-height-mobile: 60px; /* Bottom bar on mobile */
+  --nav-height-tablet: 60px; /* Top bar on tablet */
+  --nav-height-desktop: 60px; /* Top bar on desktop */
 
   /* Z-index Stack */
   --z-map: 1;
@@ -52259,6 +54314,7 @@ This document specifies a unified responsive design system that transforms the c
 **Purpose:** Single-column layout optimized for phones
 
 **Structure:**
+
 ```
 ┌─────────────────────────────────┐
 │     Full-screen Content          │
@@ -52274,6 +54330,7 @@ This document specifies a unified responsive design system that transforms the c
 ```
 
 **Key Features:**
+
 - Full-screen content area (100vw × 100vh - nav height)
 - Fixed bottom navigation bar (60px)
 - Hamburger menu for navigation drawer (top-left)
@@ -52281,16 +54338,19 @@ This document specifies a unified responsive design system that transforms the c
 - No sidebars visible (all content in drawer or fullscreen)
 
 **Sidebar Visibility:**
+
 - **Primary Sidebar:** Hidden, accessible via hamburger menu (drawer)
 - **Secondary Sidebar:** Hidden, appears as bottom sheet modal
 - **Tertiary Sidebar:** Hidden, appears as bottom sheet modal
 
 **Navigation:**
+
 - Bottom tab bar with 4 main actions: List, Add, Calendar, Settings
 - Hamburger menu (top-left) for trip list access
 - Smooth slide-up animations for bottom sheets
 
 **CSS Implementation:**
+
 ```css
 @media (max-width: 639px) {
   .app-layout {
@@ -52375,6 +54435,7 @@ This document specifies a unified responsive design system that transforms the c
 **Purpose:** Two-column layout for landscape phones and small tablets
 
 **Structure:**
+
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  ☰  Bluebonnet                              [User] [×]   │ ← Top Nav Bar (60px)
@@ -52388,6 +54449,7 @@ This document specifies a unified responsive design system that transforms the c
 ```
 
 **Key Features:**
+
 - Collapsible primary sidebar (hamburger menu collapses/expands)
 - Secondary sidebar visible as overlay/drawer when content exists
 - Top navigation bar (matches desktop)
@@ -52395,15 +54457,18 @@ This document specifies a unified responsive design system that transforms the c
 - Forms appear as side drawers or bottom sheets
 
 **Sidebar Visibility:**
+
 - **Primary Sidebar:** Collapsible via hamburger toggle (or always visible if space allows)
 - **Secondary Sidebar:** Drawer overlay on right side
 - **Tertiary Sidebar:** Drawer overlay (layered over secondary)
 
 **Navigation:**
+
 - Top navigation bar with hamburger menu
 - Consistent with desktop navigation pattern
 
 **CSS Implementation:**
+
 ```css
 @media (min-width: 640px) and (max-width: 1023px) {
   .app-layout {
@@ -52480,6 +54545,7 @@ This document specifies a unified responsive design system that transforms the c
 **Purpose:** Three-column layout for traditional laptops
 
 **Structure:**
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  ☰ Bluebonnet                                      [User] [×]     │
@@ -52495,6 +54561,7 @@ This document specifies a unified responsive design system that transforms the c
 ```
 
 **Key Features:**
+
 - Three sidebars fully visible simultaneously
 - Primary sidebar always visible (trip list)
 - Secondary sidebar shows details/forms (340px default)
@@ -52503,15 +54570,18 @@ This document specifies a unified responsive design system that transforms the c
 - Hamburger menu collapses primary sidebar
 
 **Sidebar Visibility:**
+
 - **Primary Sidebar:** Always visible (collapsible, 340px default)
 - **Secondary Sidebar:** Appears on-demand with fade-in
 - **Tertiary Sidebar:** Appears on-demand with fade-in
 
 **Navigation:**
+
 - Top navigation bar with hamburger menu
 - Logo/branding visible in top-left
 
 **CSS Implementation:**
+
 ```css
 @media (min-width: 1024px) and (max-width: 1439px) {
   .app-layout {
@@ -52591,6 +54661,7 @@ This document specifies a unified responsive design system that transforms the c
 **Purpose:** Full three-column layout for ultra-wide screens with maximum content visibility
 
 **Structure:**
+
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
 │  ☰ Bluebonnet                                       [User] [Settings] │
@@ -52606,6 +54677,7 @@ This document specifies a unified responsive design system that transforms the c
 ```
 
 **Key Features:**
+
 - All three sidebars visible simultaneously
 - Maximum information density
 - Large map in center background
@@ -52613,11 +54685,13 @@ This document specifies a unified responsive design system that transforms the c
 - No drawer behavior (everything visible)
 
 **Sidebar Visibility:**
+
 - **Primary Sidebar:** Always visible (340px)
 - **Secondary Sidebar:** Always visible or on-demand (340px)
 - **Tertiary Sidebar:** Always visible or on-demand (340px)
 
 **CSS Implementation:**
+
 ```css
 @media (min-width: 1440px) {
   .app-layout {
@@ -52678,11 +54752,13 @@ This document specifies a unified responsive design system that transforms the c
 ### 3.1 Top Navigation Bar (All Breakpoints ≥ 640px)
 
 **Components:**
+
 - Left: Hamburger menu + Logo
 - Center: (Optional) App title
 - Right: User avatar, settings dropdown, close button
 
 **Behavior:**
+
 ```
 Mobile < 640px:   HIDDEN (uses bottom tab bar instead)
 Tablet 640-1023px: VISIBLE (dark background, sticky)
@@ -52690,6 +54766,7 @@ Desktop 1024px+:   VISIBLE (light background, sticky)
 ```
 
 **HTML Structure:**
+
 ```html
 <nav class="app-nav">
   <div class="nav-left">
@@ -52715,6 +54792,7 @@ Desktop 1024px+:   VISIBLE (light background, sticky)
 ```
 
 **Styling:**
+
 ```css
 .app-nav {
   display: flex;
@@ -52765,17 +54843,20 @@ Desktop 1024px+:   VISIBLE (light background, sticky)
 ### 3.2 Bottom Navigation Bar (Mobile < 640px)
 
 **Components:**
+
 - 4 tabs: List, Add, Calendar, Settings
 - Active state highlighting
 - Icon + label (stacked)
 
 **Behavior:**
+
 ```
 Mobile < 640px:   VISIBLE (fixed bottom, glass morphism)
 Tablet 640px+:    HIDDEN (replaced by top nav + drawer)
 ```
 
 **HTML Structure:**
+
 ```html
 <nav class="mobile-nav">
   <button class="mobile-nav-tab active" data-tab="list">
@@ -52798,6 +54879,7 @@ Tablet 640px+:    HIDDEN (replaced by top nav + drawer)
 ```
 
 **Styling:**
+
 ```css
 @media (max-width: 639px) {
   .mobile-nav {
@@ -52847,30 +54929,30 @@ Tablet 640px+:    HIDDEN (replaced by top nav + drawer)
 
 ### 4.1 Primary Sidebar (Trip List)
 
-| Breakpoint | Visibility | Behavior | Trigger |
-|------------|-----------|----------|---------|
-| **Mobile < 640px** | Hidden | Accessible via hamburger drawer | Hamburger icon |
-| **Tablet 640-1023px** | Collapsible | Drawer when collapsed, sidebar when expanded | Hamburger toggle |
-| **Desktop 1024-1439px** | Always visible | Fixed column (340px) | Always shown |
-| **Ultra 1440px+** | Always visible | Fixed column (340px) | Always shown |
+| Breakpoint              | Visibility     | Behavior                                     | Trigger          |
+| ----------------------- | -------------- | -------------------------------------------- | ---------------- |
+| **Mobile < 640px**      | Hidden         | Accessible via hamburger drawer              | Hamburger icon   |
+| **Tablet 640-1023px**   | Collapsible    | Drawer when collapsed, sidebar when expanded | Hamburger toggle |
+| **Desktop 1024-1439px** | Always visible | Fixed column (340px)                         | Always shown     |
+| **Ultra 1440px+**       | Always visible | Fixed column (340px)                         | Always shown     |
 
 ### 4.2 Secondary Sidebar (Details/Forms)
 
-| Breakpoint | Visibility | Behavior | Appearance |
-|------------|-----------|----------|-----------|
-| **Mobile < 640px** | Hidden | Bottom sheet modal | Slides up from bottom |
-| **Tablet 640-1023px** | Hidden | Right-side drawer (50% width) | Slides in from right |
-| **Desktop 1024-1439px** | On-demand | Right column (340px) | Fade in/out |
-| **Ultra 1440px+** | Always | Right column (340px) | Always visible |
+| Breakpoint              | Visibility | Behavior                      | Appearance            |
+| ----------------------- | ---------- | ----------------------------- | --------------------- |
+| **Mobile < 640px**      | Hidden     | Bottom sheet modal            | Slides up from bottom |
+| **Tablet 640-1023px**   | Hidden     | Right-side drawer (50% width) | Slides in from right  |
+| **Desktop 1024-1439px** | On-demand  | Right column (340px)          | Fade in/out           |
+| **Ultra 1440px+**       | Always     | Right column (340px)          | Always visible        |
 
 ### 4.3 Tertiary Sidebar (Additional Forms)
 
-| Breakpoint | Visibility | Behavior | Appearance |
-|------------|-----------|----------|-----------|
-| **Mobile < 640px** | Hidden | Bottom sheet (layered) | Slides up over secondary |
-| **Tablet 640-1023px** | Hidden | Right-side drawer (layered) | Slides over secondary |
-| **Desktop 1024-1439px** | On-demand | Floating panel (340px) | Fade in/out, positioned top-right |
-| **Ultra 1440px+** | Always | Right column (340px) | Always visible, rightmost |
+| Breakpoint              | Visibility | Behavior                    | Appearance                        |
+| ----------------------- | ---------- | --------------------------- | --------------------------------- |
+| **Mobile < 640px**      | Hidden     | Bottom sheet (layered)      | Slides up over secondary          |
+| **Tablet 640-1023px**   | Hidden     | Right-side drawer (layered) | Slides over secondary             |
+| **Desktop 1024-1439px** | On-demand  | Floating panel (340px)      | Fade in/out, positioned top-right |
+| **Ultra 1440px+**       | Always     | Right column (340px)        | Always visible, rightmost         |
 
 ---
 
@@ -52879,12 +54961,14 @@ Tablet 640px+:    HIDDEN (replaced by top nav + drawer)
 ### 5.1 Bottom Sheet (Mobile < 640px)
 
 **Appearance:**
+
 - Slides up from bottom
 - Dark backdrop (semi-transparent)
 - Border-radius on top corners only
 - Max height: 90vh (allows close button visible)
 
 **Animation:**
+
 ```css
 .bottom-sheet {
   position: fixed;
@@ -52927,12 +55011,14 @@ Tablet 640px+:    HIDDEN (replaced by top nav + drawer)
 ### 5.2 Side Drawer (Tablet 640-1023px)
 
 **Appearance:**
+
 - Slides in from right side
 - 50% viewport width (max 400px)
 - Dark backdrop
 - Full height
 
 **Animation:**
+
 ```css
 .side-drawer {
   position: fixed;
@@ -52975,12 +55061,14 @@ Tablet 640px+:    HIDDEN (replaced by top nav + drawer)
 ### 5.3 Side Panel (Desktop 1024px+)
 
 **Appearance:**
+
 - Always visible or fade in/out
 - Fixed width (340px)
 - No backdrop (integrated into layout)
 - Smooth opacity transitions
 
 **Animation:**
+
 ```css
 .side-panel {
   width: 340px;
@@ -53003,6 +55091,7 @@ Tablet 640px+:    HIDDEN (replaced by top nav + drawer)
 ### Current Components to Refactor
 
 **HIGH PRIORITY (Fundamental changes):**
+
 1. **MapLayout.svelte** → **ResponsiveLayout.svelte**
    - Remove mobile/desktop branching logic
    - Implement unified grid-based layout
@@ -53031,16 +55120,9 @@ Tablet 640px+:    HIDDEN (replaced by top nav + drawer)
    - Use responsive grid for map + details split
    - Remove mobile-specific styling
 
-**MEDIUM PRIORITY (Component updates):**
-6. **MapVisualization.svelte** - Update sizing logic
-7. **ItemsList.svelte** - Make card sizes responsive
-8. **Sidebar.svelte** - Adapt to new layout system
-9. All form components - Support responsive display modes
+**MEDIUM PRIORITY (Component updates):** 6. **MapVisualization.svelte** - Update sizing logic 7. **ItemsList.svelte** - Make card sizes responsive 8. **Sidebar.svelte** - Adapt to new layout system 9. All form components - Support responsive display modes
 
-**LOWER PRIORITY (Styling updates):**
-10. Global styles consolidation
-11. Breakpoint variable synchronization
-12. Responsive typography refinement
+**LOWER PRIORITY (Styling updates):** 10. Global styles consolidation 11. Breakpoint variable synchronization 12. Responsive typography refinement
 
 ---
 
@@ -53066,7 +55148,7 @@ let mobileFormState: FormState | null;
 // Single state system
 interface AppState {
   // Navigation
-  navigationOpen: boolean;              // Hamburger menu open/closed
+  navigationOpen: boolean; // Hamburger menu open/closed
   activePanel: 'list' | 'calendar' | 'settings'; // Active main view
 
   // Content selection
@@ -53076,7 +55158,7 @@ interface AppState {
 
   // Form/modal display
   formMode: 'create' | 'edit' | null;
-  formType: string | null;              // 'trip', 'flight', etc.
+  formType: string | null; // 'trip', 'flight', etc.
   showSecondaryPanel: boolean;
   showTertiaryPanel: boolean;
 
@@ -53095,7 +55177,7 @@ export const appState = writable<AppState>({
   formType: null,
   showSecondaryPanel: false,
   showTertiaryPanel: false,
-  currentBreakpoint: 'desktop'
+  currentBreakpoint: 'desktop',
 });
 ```
 
@@ -53112,10 +55194,12 @@ export const appState = writable<AppState>({
 5. Test CSS layout at different viewport widths
 
 **Files to Create:**
+
 - `/frontend/src/lib/styles/responsive.css` - Unified breakpoint system
 - `/frontend/src/lib/styles/layout.css` - Grid/flex layouts for each breakpoint
 
 **Files to Modify:**
+
 - `/frontend/src/app.css` - Add custom properties
 - `/frontend/src/lib/styles/form-styles.css` - Update breakpoint references
 
@@ -53128,10 +55212,12 @@ export const appState = writable<AppState>({
 5. Test layout switching at each breakpoint
 
 **Files to Create:**
+
 - `/frontend/src/lib/components/ResponsiveLayout.svelte`
 - `/frontend/src/lib/components/Navigation.svelte`
 
 **Files to Modify:**
+
 - Deprecate `MapLayout.svelte`
 - Update `dashboard/+page.svelte` imports
 
@@ -53143,9 +55229,11 @@ export const appState = writable<AppState>({
 4. Update styling for all breakpoints
 
 **Files to Create:**
+
 - `/frontend/src/lib/components/NavigationDrawer.svelte`
 
 **Files to Modify:**
+
 - Refactor `MobileTabNavigation.svelte`
 
 ### Phase 4: Form System (Est. 6-8 hours)
@@ -53157,11 +55245,13 @@ export const appState = writable<AppState>({
 5. Update all form components to support new system
 
 **Files to Create:**
+
 - `/frontend/src/lib/components/FormContainer.svelte` (wrapper)
 - `/frontend/src/lib/components/BottomSheet.svelte`
 - `/frontend/src/lib/components/SideDrawer.svelte`
 
 **Files to Modify:**
+
 - Deprecate `MobileFormModal.svelte`
 - Update all form components
 
@@ -53173,6 +55263,7 @@ export const appState = writable<AppState>({
 4. Update all detail components
 
 **Files to Modify:**
+
 - Split `dashboard/+page.svelte` (create 3-4 new files)
 - Update `MobileTripDetailView.svelte`
 - Update `ItemsList.svelte`
@@ -53186,6 +55277,7 @@ export const appState = writable<AppState>({
 5. Performance optimization
 
 **Testing Checklist:**
+
 - [ ] Mobile (< 640px): bottom nav, bottom sheets, hamburger drawer
 - [ ] Tablet (640-1023px): top nav, side drawer, hamburger toggle
 - [ ] Desktop (1024-1439px): three-sidebar layout visible
@@ -53205,37 +55297,48 @@ export const appState = writable<AppState>({
 /* Mobile first approach */
 
 /* Mobile only (< 640px) */
-@media (max-width: 639px) { }
+@media (max-width: 639px) {
+}
 
 /* Tablet and up (≥ 640px) */
-@media (min-width: 640px) { }
+@media (min-width: 640px) {
+}
 
 /* Tablet only (640-1023px) */
-@media (min-width: 640px) and (max-width: 1023px) { }
+@media (min-width: 640px) and (max-width: 1023px) {
+}
 
 /* Desktop and up (≥ 1024px) */
-@media (min-width: 1024px) { }
+@media (min-width: 1024px) {
+}
 
 /* Desktop only (1024-1439px) */
-@media (min-width: 1024px) and (max-width: 1439px) { }
+@media (min-width: 1024px) and (max-width: 1439px) {
+}
 
 /* Ultra-wide (≥ 1440px) */
-@media (min-width: 1440px) { }
+@media (min-width: 1440px) {
+}
 
 /* Landscape mode (height-based) */
-@media (max-height: 600px) { }
+@media (max-height: 600px) {
+}
 
 /* Touch devices */
-@media (hover: none) { }
+@media (hover: none) {
+}
 
 /* Reduced motion */
-@media (prefers-reduced-motion: reduce) { }
+@media (prefers-reduced-motion: reduce) {
+}
 
 /* High contrast */
-@media (prefers-contrast: more) { }
+@media (prefers-contrast: more) {
+}
 
 /* Dark mode (future) */
-@media (prefers-color-scheme: dark) { }
+@media (prefers-color-scheme: dark) {
+}
 ```
 
 ---
@@ -53280,24 +55383,28 @@ frontend/src/
 ## 11. Success Criteria
 
 ### Functionality
+
 - ✅ All features work identically across all breakpoints
 - ✅ No layout jumping or visual artifacts during resize
 - ✅ Forms appear correctly on all screen sizes
 - ✅ Navigation accessible and intuitive at all sizes
 
 ### Performance
+
 - ✅ No performance degradation from responsive changes
 - ✅ Smooth 60fps transitions between states
 - ✅ Fast breakpoint detection (CSS-based, not JavaScript)
 - ✅ Bundle size reduction (removed duplicate code)
 
 ### User Experience
+
 - ✅ Seamless experience across all devices
 - ✅ Familiar patterns: hamburger menu, bottom sheets, sidebars
 - ✅ Touch-friendly (44px minimum tap targets)
 - ✅ Accessible (keyboard navigation, ARIA labels, high contrast)
 
 ### Code Quality
+
 - ✅ 50% reduction in layout component code
 - ✅ Single responsive system (no duplication)
 - ✅ Clear CSS custom properties for maintenance
@@ -53310,6 +55417,7 @@ frontend/src/
 This specification defines a comprehensive transformation of the Bluebonnet frontend from a dual-view (mobile + desktop) architecture to a unified, modern responsive design using the Sidebar-to-Drawer pattern.
 
 **Key Benefits:**
+
 1. **Single Codebase:** One set of components handles all breakpoints
 2. **Better UX:** Smooth transitions, modern patterns (hamburger, drawers)
 3. **Easier Maintenance:** No duplicate logic or conditional rendering
@@ -53321,6 +55429,7 @@ This specification defines a comprehensive transformation of the Bluebonnet fron
 ---
 
 **Next Steps:**
+
 1. Review and approve this specification
 2. Begin Phase 1: CSS Foundation
 3. Create `responsive.css` and `layout.css` files
@@ -53328,6 +55437,7 @@ This specification defines a comprehensive transformation of the Bluebonnet fron
 ````
 
 ## File: .claude/MODERNIZATION/PHASE_1_QUICK_START.md
+
 ````markdown
 # ⚡ Phase 1 Quick Start Card
 
@@ -53611,6 +55721,7 @@ Good luck! 🚀
 ````
 
 ## File: .claude/MODERNIZATION/PHASE_1_STARTUP.md
+
 ````markdown
 # 🚀 Phase 1 Startup Guide - Getting Started
 
@@ -54105,6 +56216,7 @@ Good luck! 🎉
 ````
 
 ## File: .claude/ARCHITECTURE_CURRENT.md
+
 ````markdown
 # Current Architecture - December 2025
 
@@ -54741,6 +56853,7 @@ Coverage: 60%+ target
 ````
 
 ## File: .claude/INTEGRATION_GUIDE.md
+
 ````markdown
 # Frontend-Backend Integration Guide
 
@@ -55542,7 +57655,8 @@ psql -U postgres -d bluebonnet -c "SELECT * FROM trips;"
 ````
 
 ## File: controllers/accountController.js
-````javascript
+
+```javascript
 exports.updateProfile = async (req, res) =>
 ⋮----
 // Check if email is already taken by another user
@@ -55666,10 +57780,11 @@ parentVoucherId: null, // Clear parent reference on import
 userId: null, // Clear user link on import
 ⋮----
 // Commit transaction
-````
+```
 
 ## File: controllers/authController.js
-````javascript
+
+```javascript
 exports.postRegister = async (req, res) =>
 ⋮----
 // Support both firstName/lastName and name fields
@@ -55694,10 +57809,11 @@ userId: null, // Only link companions that aren't already linked
 // Downgrade manage_travel to view_travel since user now has an account
 ⋮----
 exports.logout = (req, res, next) =>
-````
+```
 
 ## File: controllers/calendarController.js
-````javascript
+
+```javascript
 /**
  * Get calendar sidebar content
  * Returns all trips and items for calendar display
@@ -55738,10 +57854,11 @@ const enrichItemsWithTimezone = (items) =>
 // Debug: log trip details
 ⋮----
 // Return calendar data as JSON
-````
+```
 
 ## File: controllers/flightController.js
-````javascript
+
+```javascript
 exports.searchAirports = async (req, res) =>
 ⋮----
 exports.searchFlight = async (req, res) =>
@@ -55896,10 +58013,11 @@ exports.getEditForm = async (req, res) =>
 // Use ItemTrip associations if available, otherwise fall back to flight.tripId
 ⋮----
 // Return form data as JSON
-````
+```
 
 ## File: controllers/tripInvitationController.js
-````javascript
+
+```javascript
 exports.inviteCompanion = async (req, res) =>
 ⋮----
 // Check trip exists
@@ -55963,10 +58081,11 @@ exports.leaveTrip = async (req, res) =>
 // Remove companion from all items
 ⋮----
 // Update or delete invitation if exists
-````
+```
 
 ## File: frontend/src/lib/components/FlightForm.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { flightsApi } from '$lib/services/api';
   import { tripStoreActions } from '$lib/stores/tripStore';
@@ -56297,10 +58416,11 @@ exports.leaveTrip = async (req, res) =>
     }
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/HotelForm.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { hotelsApi } from '$lib/services/api';
   import { tripStoreActions } from '$lib/stores/tripStore';
@@ -56570,10 +58690,11 @@ exports.leaveTrip = async (req, res) =>
     }
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/ItemCompanionsForm.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { onMount } from 'svelte';
   import { companionsApi } from '$lib/services/api';
@@ -57175,10 +59296,11 @@ exports.leaveTrip = async (req, res) =>
     border-radius: 0.425rem;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/MapVisualization.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { onMount } from 'svelte';
   import 'leaflet/dist/leaflet.css';
@@ -57898,10 +60020,11 @@ exports.leaveTrip = async (req, res) =>
     font-family: inherit;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/ResponsiveLayout.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { goto } from '$app/navigation';
   import MapVisualization from './MapVisualization.svelte';
@@ -58223,10 +60346,11 @@ exports.leaveTrip = async (req, res) =>
     display: none !important;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/SettingsUsers.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { onMount } from 'svelte';
   import Alert from './Alert.svelte';
@@ -58599,10 +60723,11 @@ exports.leaveTrip = async (req, res) =>
     color: #999;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/UserForm.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { dashboardStoreActions } from '$lib/stores/dashboardStore';
   import { settingsApi } from '$lib/services/settings';
@@ -58827,10 +60952,11 @@ exports.leaveTrip = async (req, res) =>
     color: #9ca3af;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/server/auth.ts
-````typescript
+
+```typescript
 import { redirect } from '@sveltejs/kit';
 ⋮----
 /**
@@ -58855,10 +60981,11 @@ export async function validateSession(
 // If it's a SvelteKit redirect, re-throw it
 ⋮----
 // If fetch itself fails (network error), redirect to login as a fallback
-````
+```
 
 ## File: frontend/src/lib/services/dataService.ts
-````typescript
+
+```typescript
 /**
  * Data Service - Live data loading (no caching)
  *
@@ -59072,10 +61199,11 @@ export interface CacheStats {
   }>;
   totalSize: number;
 }
-````
+```
 
 ## File: frontend/src/lib/stores/authStore.ts
-````typescript
+
+```typescript
 import { writable, type Writable } from 'svelte/store';
 ⋮----
 export interface User {
@@ -59123,10 +61251,11 @@ restoreFromStorage()
 // Invalid stored data, clear it
 ⋮----
 reset()
-````
+```
 
 ## File: frontend/src/lib/stores/dashboardStore.ts
-````typescript
+
+```typescript
 /**
  * Dashboard Store - Centralized state management for the dashboard
  *
@@ -59414,10 +61543,11 @@ reset()
    * Soft reset (keep data, reset UI state)
    */
 softReset()
-````
+```
 
 ## File: frontend/src/lib/styles/form-styles.css
-````css
+
+```css
 /* Shared Form Styling - Used across ALL forms in the application */
 /* This file uses standard CSS (no :global) since it's imported as a stylesheet */
 ⋮----
@@ -59575,10 +61705,11 @@ softReset()
 /* Reduced motion support */
 ⋮----
 /* High contrast mode support */
-````
+```
 
 ## File: frontend/src/lib/types/index.ts
-````typescript
+
+```typescript
 // Item types
 export interface Trip {
   id: string;
@@ -59745,10 +61876,11 @@ export interface ItemCompanion {
   createdAt?: string;
   updatedAt?: string;
 }
-````
+```
 
 ## File: frontend/src/lib/utils/dashboardFormatters.ts
-````typescript
+
+```typescript
 /**
  * Dashboard Formatting Utilities
  *
@@ -59806,10 +61938,11 @@ export function capitalize(str: string): string
  * Calculate the number of nights between departure and return dates
  */
 export function calculateNights(departureDate: string, returnDate?: string): number
-````
+```
 
 ## File: frontend/src/routes/register/+page.svelte
-````svelte
+
+```svelte
 <script>
   let firstName = '';
   let lastName = '';
@@ -60130,10 +62263,11 @@ export function calculateNights(departureDate: string, returnDate?: string): num
     </div>
   </div>
 </main>
-````
+```
 
 ## File: frontend/src/routes/trip/[tripId]/+layout.server.ts
-````typescript
+
+```typescript
 import type { LayoutServerLoad } from './$types';
 import { validateSession } from '$lib/server/auth';
 ⋮----
@@ -60144,10 +62278,11 @@ export const load: LayoutServerLoad = async (
 // Handle wrapped response format (success/data structure)
 ⋮----
 // Trip not found, return empty
-````
+```
 
 ## File: frontend/src/routes/trip/[tripId]/+layout.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import Dashboard from '../../dashboard/+page.svelte';
   import { dashboardStore } from '$lib/stores/dashboardStore';
@@ -60161,10 +62296,11 @@ export const load: LayoutServerLoad = async (
 
 <svelte:component this={Dashboard} tripIdToExpand={initialTripIdToExpand} />
 <slot />
-````
+```
 
 ## File: frontend/src/app.css
-````css
+
+```css
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -60243,9 +62379,10 @@ html,
 ⋮----
 /* Explicitly prevent double-tap zoom on interactive elements */
 button,
-````
+```
 
 ## File: frontend/GETTING_STARTED.md
+
 ````markdown
 # Bluebonnet Svelte Frontend - Getting Started Guide
 
@@ -60700,6 +62837,7 @@ For detailed testing instructions, see [TESTING_GUIDE.md](./TESTING_GUIDE.md)
 ````
 
 ## File: frontend/README.md
+
 ````markdown
 # Bluebonnet - Travel Trip Planner
 
@@ -60859,7 +62997,8 @@ MIT - See LICENSE file
 ````
 
 ## File: frontend/START_TESTING.sh
-````bash
+
+```bash
 #!/bin/bash
 
 # Bluebonnet Svelte Frontend - Testing Quick Start
@@ -60963,9 +63102,10 @@ sleep 2
 
 # Start the dev server
 npm run dev
-````
+```
 
 ## File: frontend/TESTING_GUIDE.md
+
 ````markdown
 # Bluebonnet Svelte Frontend - Testing Guide
 
@@ -61700,7 +63840,8 @@ What actually happens
 ````
 
 ## File: frontend/vite.config.js
-````javascript
+
+```javascript
 // Disable HMR for now - HTTPS with self-signed certs makes wss:// unreliable
 // Can be re-enabled with proper SSL certificates
 ⋮----
@@ -61715,19 +63856,21 @@ configure: (proxy, options) =>
 // Ensure cookies are passed through
 ⋮----
 // Include common dependencies that need pre-bundling
-````
+```
 
 ## File: middleware/auth.js
-````javascript
+
+```javascript
 ensureAuthenticated(req, res, next)
 ⋮----
 // Return 401 for API requests (frontend will handle redirect to login)
 ⋮----
 requireAdmin(req, res, next)
-````
+```
 
 ## File: migrations/20260111-alter-companion-permissions-schema.js
-````javascript
+
+```javascript
 up: async (queryInterface, Sequelize) =>
 ⋮----
 // Check if table exists
@@ -61766,17 +63909,19 @@ down: async (queryInterface, Sequelize) =>
 // Drop new table and rename old
 ⋮----
 // Add old indexes
-````
+```
 
 ## File: models/CompanionPermission.js
-````javascript
+
+```javascript
 module.exports = (sequelize, DataTypes) =>
 ⋮----
 CompanionPermission.associate = (models) =>
-````
+```
 
 ## File: models/TravelCompanion.js
-````javascript
+
+```javascript
 module.exports = (sequelize, DataTypes) =>
 ⋮----
 allowNull: true, // null until companion creates account
@@ -61792,10 +63937,11 @@ TravelCompanion.associate = (models) =>
 // One-to-many relationship with companion permissions
 ⋮----
 // Many-to-many relationship with trips through junction table
-````
+```
 
 ## File: routes/api/v1/attendees.js
-````javascript
+
+```javascript
 /**
  * API v1 Attendees Routes
  * RESTful JSON API for trip attendee management
@@ -61828,10 +63974,11 @@ TravelCompanion.associate = (models) =>
  * Remove attendee from trip
  * Authorization: Trip owner or admin only
  */
-````
+```
 
 ## File: routes/api/v1/companion-permissions.js
-````javascript
+
+```javascript
 /**
  * API v1 Companion Permissions Routes
  * RESTful JSON API for managing full-access trip permissions
@@ -61865,10 +64012,11 @@ TravelCompanion.associate = (models) =>
  * DELETE /api/v1/user/companion-permissions/:trustedUserId
  * Revoke full-access permission
  */
-````
+```
 
 ## File: routes/api/v1/item-trips.js
-````javascript
+
+```javascript
 /**
  * API v1 Item Trips Routes
  * RESTful JSON API for managing item-to-trip relationships (many-to-many)
@@ -61899,10 +64047,11 @@ TravelCompanion.associate = (models) =>
  * DELETE /api/v1/items/:itemType/:itemId/trips/:tripId
  * Remove item from a specific trip
  */
-````
+```
 
 ## File: routes/api/v1/users.js
-````javascript
+
+```javascript
 /**
  * GET /api/v1/users/search
  * Search users by email (requires authentication)
@@ -61937,10 +64086,11 @@ TravelCompanion.associate = (models) =>
  * DELETE /api/v1/users/:id
  * Deactivate a user (soft delete) - admin only
  */
-````
+```
 
 ## File: routes/auth.js
-````javascript
+
+```javascript
 // Check if account is active (soft delete check)
 ⋮----
 // Update lastLogin timestamp
@@ -61953,10 +64103,11 @@ TravelCompanion.associate = (models) =>
 // Used by frontend to verify if a session cookie is still valid
 ⋮----
 // Session is not valid (cookie exists but session data is gone, or no cookie)
-````
+```
 
 ## File: routes/companions.js
-````javascript
+
+```javascript
 // All companion routes require authentication
 ⋮----
 // Validation middleware for companion creation/update
@@ -61995,10 +64146,11 @@ TravelCompanion.associate = (models) =>
 // API endpoint for autocomplete search
 ⋮----
 // API endpoint to check if email has a linked user account
-````
+```
 
 ## File: scripts/dev-server-integrated.js
-````javascript
+
+```javascript
 /**
  * Development Server with SvelteKit Hot-Reload
  *
@@ -62022,10 +64174,11 @@ const EXPRESS_PORT = 3000; // Internal port for Express backend
 // Graceful shutdown
 ⋮----
 // Start the development server
-````
+```
 
 ## File: services/authorizationService.js
-````javascript
+
+```javascript
 /**
  * Authorization Service
  * Central permission checking for all resources
@@ -62194,10 +64347,11 @@ async getAccessibleTrips(userId)
 // Find all companions created by other users that match this userId
 ⋮----
 // Get all trips from the creators of these companions
-````
+```
 
 ## File: services/geocodingService.js
-````javascript
+
+```javascript
 // Configuration
 ⋮----
 const GEOCODING_TIMEOUT = parseInt(process.env.GEOCODING_TIMEOUT, 10) || 5000; // Reduced from 10s
@@ -62363,10 +64517,11 @@ function getUSTimezone(lat, lng)
  * Get diagnostic information about the geocoding service
  */
 function getDiagnostics()
-````
+```
 
 ## File: services/itemCompanionService.js
-````javascript
+
+```javascript
 /**
  * Service for managing item companion assignments
  * Handles CRUD operations for companions attached to specific trip items
@@ -62423,10 +64578,11 @@ async updateItemCompanions(itemId, itemType, companionIds, userId)
    * @returns {Model|null} Sequelize model or null if invalid
    */
 static _getItemModel(itemType)
-````
+```
 
 ## File: tests/integration/api-v1.test.js
-````javascript
+
+```javascript
 /**
  * API v1 Integration Tests
  * Tests for API v1 index routes and key endpoints
@@ -62442,10 +64598,11 @@ static _getItemModel(itemType)
 // Should not be 404 - route should exist even if protected
 ⋮----
 // This should work since airports are public
-````
+```
 
 ## File: .eslintrc.json
-````json
+
+```json
 {
   "env": {
     "node": true,
@@ -62463,20 +64620,12 @@ static _getItemModel(itemType)
     "consistent-return": "off",
     "no-underscore-dangle": "off",
     "func-names": "off",
-    "max-len": [
-      "warn",
-      { "code": 120, "ignoreComments": true, "ignoreStrings": true }
-    ],
+    "max-len": ["warn", { "code": 120, "ignoreComments": true, "ignoreStrings": true }],
     "no-param-reassign": ["error", { "props": false }],
     "import/no-dynamic-require": "off",
     "global-require": "off",
     "no-await-in-loop": "off",
-    "no-restricted-syntax": [
-      "error",
-      "ForInStatement",
-      "LabeledStatement",
-      "WithStatement"
-    ],
+    "no-restricted-syntax": ["error", "ForInStatement", "LabeledStatement", "WithStatement"],
     "comma-dangle": [
       "error",
       {
@@ -62533,11 +64682,7 @@ static _getItemModel(itemType)
       }
     },
     {
-      "files": [
-        "tests/**/*.test.js",
-        "tests/**/*.spec.js",
-        "**/__tests__/**/*.js"
-      ],
+      "files": ["tests/**/*.test.js", "tests/**/*.spec.js", "**/__tests__/**/*.js"],
       "env": {
         "jest": true,
         "node": true
@@ -62567,9 +64712,10 @@ static _getItemModel(itemType)
   ],
   "ignorePatterns": ["node_modules/", "public/dist/", "coverage/", "*.min.js"]
 }
-````
+```
 
 ## File: COMPANION_TESTING_PLAN.md
+
 ````markdown
 # Travel Companions System - End-to-End Testing Plan
 
@@ -63050,6 +65196,7 @@ After making any changes to companion system, verify:
 ````
 
 ## File: README.md
+
 ````markdown
 # 🧳 Bluebonnet - Complete Travel Planning Application
 
@@ -63574,6 +65721,7 @@ Then visit: **http://localhost:3001**
 ````
 
 ## File: START_HERE.md
+
 ````markdown
 # 🚀 START HERE - Bluebonnet Complete Solution
 
@@ -63899,12 +66047,14 @@ Then visit: http://localhost:3001
 ````
 
 ## File: tailwind.config.js
-````javascript
+
+```javascript
 /** @type {import('tailwindcss').Config} */
-````
+```
 
 ## File: controllers/carRentalController.js
-````javascript
+
+```javascript
 exports.createCarRental = async (req, res) =>
 ⋮----
 // Verify trip ownership if tripId provided (for trip-associated items)
@@ -64009,10 +66159,11 @@ exports.getEditForm = async (req, res) =>
 // Use ItemTrip associations if available, otherwise fall back to carRental.tripId
 ⋮----
 // Fetch trip selector data
-````
+```
 
 ## File: controllers/hotelController.js
-````javascript
+
+```javascript
 exports.createHotel = async (req, res) =>
 ⋮----
 // Verify trip ownership if tripId provided (for trip-associated items)
@@ -64151,10 +66302,11 @@ const formatTimeForInput = (date) =>
 // Get available trips for trip selector
 ⋮----
 // Return form data as JSON
-````
+```
 
 ## File: controllers/transportationController.js
-````javascript
+
+```javascript
 exports.createTransportation = async (req, res) =>
 ⋮----
 // Verify trip ownership if tripId provided
@@ -64257,10 +66409,11 @@ exports.getEditForm = async (req, res) =>
 // Get available trips for trip selector
 ⋮----
 // Return form data as JSON
-````
+```
 
 ## File: controllers/userController.js
-````javascript
+
+```javascript
 /**
  * Get all users (admin only)
  * Returns active users only, excludes soft-deleted accounts
@@ -64316,10 +66469,11 @@ exports.getUserById = async (req, res) =>
 exports.searchUsersByEmail = async (req, res) =>
 ⋮----
 // Search for users matching the email
-````
+```
 
 ## File: frontend/src/lib/components/DashboardCalendar.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { onMount } from 'svelte';
 
@@ -65077,10 +67231,11 @@ exports.searchUsersByEmail = async (req, res) =>
     }
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/EventForm.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { eventsApi } from '$lib/services/api';
   import { tripStoreActions } from '$lib/stores/tripStore';
@@ -65356,10 +67511,11 @@ exports.searchUsersByEmail = async (req, res) =>
     }
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/MapLayout.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import MapVisualization from './MapVisualization.svelte';
   import MobileTabNavigation from './MobileTabNavigation.svelte';
@@ -65763,10 +67919,11 @@ exports.searchUsersByEmail = async (req, res) =>
     }
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/MobileTabNavigation.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
 
@@ -65920,10 +68077,11 @@ exports.searchUsersByEmail = async (req, res) =>
     }
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/MobileTripDetailView.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import MapVisualization from './MapVisualization.svelte';
@@ -66616,10 +68774,11 @@ exports.searchUsersByEmail = async (req, res) =>
     }
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/styles/timeline.css
-````css
+
+```css
 /* Timeline and Trip Card Shared Styles */
 /* Consolidated from ItemsList.svelte and dashboard/+page.svelte */
 ⋮----
@@ -66690,10 +68849,11 @@ exports.searchUsersByEmail = async (req, res) =>
 .trip-date-badge {
 ⋮----
 .trip-item-date-items {
-````
+```
 
 ## File: frontend/src/routes/login/+page.svelte
-````svelte
+
+```svelte
 <script>
   import { authStoreActions } from '$lib/stores/authStore';
 
@@ -66909,10 +69069,11 @@ exports.searchUsersByEmail = async (req, res) =>
     </div>
   </div>
 </main>
-````
+```
 
 ## File: routes/api/v1/companions.js
-````javascript
+
+```javascript
 /**
  * API v1 Companions Routes
  * RESTful JSON API for companion management
@@ -67131,10 +69292,11 @@ exports.searchUsersByEmail = async (req, res) =>
 // Remove companion from trip
 ⋮----
 // Auto-remove companion from all items in trip (those inherited from trip level)
-````
+```
 
 ## File: routes/api/v1/index.js
-````javascript
+
+```javascript
 /**
  * API v1 Routes
  * Base router for all v1 API endpoints
@@ -67170,10 +69332,11 @@ exports.searchUsersByEmail = async (req, res) =>
  *
  * @throws {500} Internal server error if database or critical services are down
  */
-````
+```
 
 ## File: routes/api/v1/trips.js
-````javascript
+
+```javascript
 /**
  * API v1 Trips Routes
  * RESTful JSON API for trip management
@@ -67401,10 +69564,11 @@ exports.searchUsersByEmail = async (req, res) =>
  *
  * @requires authentication - User must be logged in and be trip owner
  */
-````
+```
 
 ## File: scripts/sync-database.js
-````javascript
+
+```javascript
 /**
  * Database Sync Script
  * Auto-creates all tables from Sequelize models
@@ -67434,10 +69598,11 @@ async function syncDatabase()
 ⋮----
 // Sync all models with alter:true to update existing tables
 // This creates new tables and alters existing ones to match models
-````
+```
 
 ## File: controllers/eventController.js
-````javascript
+
+```javascript
 exports.createEvent = async (req, res) =>
 ⋮----
 // Support for separate date/time fields from dashboard form
@@ -67580,10 +69745,11 @@ exports.restoreEvent = async (req, res) =>
 // Verify user owns the event
 ⋮----
 // Recreate the event
-````
+```
 
 ## File: frontend/src/lib/components/CompanionIndicators.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { currentUserId } from '$lib/stores/authStore';
 
@@ -67732,16 +69898,765 @@ exports.restoreEvent = async (req, res) =>
     margin-left: 0;
   }
 </style>
-````
+```
 
 ## File: public/css/style.css
-````css
+
+```css
 /*! tailwindcss v4.1.15 | MIT License | https://tailwindcss.com */
-@layer properties{@supports (((-webkit-hyphens:none)) and (not (margin-trim:inline))) or ((-moz-orient:inline) and (not (color:rgb(from red r g b)))){*,:before,:after,::backdrop{--tw-translate-x:0;--tw-translate-y:0;--tw-translate-z:0;--tw-rotate-x:initial;--tw-rotate-y:initial;--tw-rotate-z:initial;--tw-skew-x:initial;--tw-skew-y:initial;--tw-border-style:solid;--tw-shadow:0 0 #0000;--tw-shadow-color:initial;--tw-shadow-alpha:100%;--tw-inset-shadow:0 0 #0000;--tw-inset-shadow-color:initial;--tw-inset-shadow-alpha:100%;--tw-ring-color:initial;--tw-ring-shadow:0 0 #0000;--tw-inset-ring-color:initial;--tw-inset-ring-shadow:0 0 #0000;--tw-ring-inset:initial;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-offset-shadow:0 0 #0000;--tw-outline-style:solid;--tw-blur:initial;--tw-brightness:initial;--tw-contrast:initial;--tw-grayscale:initial;--tw-hue-rotate:initial;--tw-invert:initial;--tw-opacity:initial;--tw-saturate:initial;--tw-sepia:initial;--tw-drop-shadow:initial;--tw-drop-shadow-color:initial;--tw-drop-shadow-alpha:100%;--tw-drop-shadow-size:initial;--tw-backdrop-blur:initial;--tw-backdrop-brightness:initial;--tw-backdrop-contrast:initial;--tw-backdrop-grayscale:initial;--tw-backdrop-hue-rotate:initial;--tw-backdrop-invert:initial;--tw-backdrop-opacity:initial;--tw-backdrop-saturate:initial;--tw-backdrop-sepia:initial;--tw-duration:initial;--tw-content:""}}}.\@container{container-type:inline-size}.\!visible{visibility:visible!important}.collapse{visibility:collapse}.invisible{visibility:hidden}.visible{visibility:visible}.sr-only{clip-path:inset(50%);white-space:nowrap;border-width:0;width:1px;height:1px;margin:-1px;padding:0;position:absolute;overflow:hidden}.absolute{position:absolute}.fixed{position:fixed}.relative{position:relative}.static{position:static}.sticky{position:sticky}.top-1\/2{top:50%}.top-\[calc\(100\%-13rem\)\]{top:calc(100% - 13rem)}.top-full{top:100%}.bottom-full{bottom:100%}.left-1\/2{left:50%}.left-\[calc\(50\%\+3rem\)\]{left:calc(50% + 3rem)}.left-\[calc\(50\%-11rem\)\]{left:calc(50% - 11rem)}.isolate{isolation:isolate}.-z-10{z-index:calc(10*-1)}.z-50{z-index:50}.col-span-1{grid-column:span 1/span 1}.col-span-2{grid-column:span 2/span 2}.col-span-3{grid-column:span 3/span 3}.container{width:100%}.mx-auto{margin-inline:auto}.ml-auto{margin-left:auto}.block{display:block}.contents{display:contents}.flex{display:flex}.grid{display:grid}.hidden{display:none}.inline{display:inline}.inline-block{display:inline-block}.inline-flex{display:inline-flex}.table{display:table}.aspect-\[1155\/678\]{aspect-ratio:1155/678}.max-h-screen{max-height:100vh}.min-h-\[calc\(100vh-4rem\)\]{min-height:calc(100vh - 4rem)}.w-\[36\.125rem\]{width:36.125rem}.w-\[calc\(100\%-32px\)\]{width:calc(100% - 32px)}.w-full{width:100%}.max-w-full{max-width:100%}.flex-1{flex:1}.flex-auto{flex:auto}.flex-shrink{flex-shrink:1}.flex-shrink-0,.shrink-0{flex-shrink:0}.border-collapse{border-collapse:collapse}.-translate-x-1\/2{--tw-translate-x:calc(calc(1/2*100%)*-1);translate:var(--tw-translate-x)var(--tw-translate-y)}.-translate-y-1\/2{--tw-translate-y:calc(calc(1/2*100%)*-1);translate:var(--tw-translate-x)var(--tw-translate-y)}.rotate-\[30deg\]{rotate:30deg}.transform{transform:var(--tw-rotate-x,)var(--tw-rotate-y,)var(--tw-rotate-z,)var(--tw-skew-x,)var(--tw-skew-y,)}.transform-gpu{transform:translateZ(0)var(--tw-rotate-x,)var(--tw-rotate-y,)var(--tw-rotate-z,)var(--tw-skew-x,)var(--tw-skew-y,)}.cursor-pointer{cursor:pointer}.resize{resize:both}.list-inside{list-style-position:inside}.list-disc{list-style-type:disc}.appearance-none{appearance:none}.grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr))}.grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-cols-5{grid-template-columns:repeat(5,minmax(0,1fr))}.flex-col{flex-direction:column}.flex-nowrap{flex-wrap:nowrap}.flex-wrap{flex-wrap:wrap}.items-center{align-items:center}.items-start{align-items:flex-start}.justify-between{justify-content:space-between}.justify-center{justify-content:center}.justify-end{justify-content:flex-end}.truncate{text-overflow:ellipsis;white-space:nowrap;overflow:hidden}.overflow-hidden{overflow:hidden}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.rounded-full{border-radius:3.40282e38px}.border{border-style:var(--tw-border-style);border-width:1px}.border-0{border-style:var(--tw-border-style);border-width:0}.border-3{border-style:var(--tw-border-style);border-width:3px}.border-t{border-top-style:var(--tw-border-style);border-top-width:1px}.border-b{border-bottom-style:var(--tw-border-style);border-bottom-width:1px}.border-b-2{border-bottom-style:var(--tw-border-style);border-bottom-width:2px}.border-l-2{border-left-style:var(--tw-border-style);border-left-width:2px}.border-l-4{border-left-style:var(--tw-border-style);border-left-width:4px}.border-solid{--tw-border-style:solid;border-style:solid}.border-current{border-color:currentColor}.border-transparent{border-color:#0000}.border-t-transparent{border-top-color:#0000}.bg-transparent{background-color:#0000}.bg-gradient-to-r{--tw-gradient-position:to right in oklab;background-image:linear-gradient(var(--tw-gradient-stops))}.bg-gradient-to-tr{--tw-gradient-position:to top right in oklab;background-image:linear-gradient(var(--tw-gradient-stops))}.pb-\[60px\]{padding-bottom:60px}.pb-\[calc\(60px\+env\(safe-area-inset-bottom\)\)\]{padding-bottom:calc(60px + env(safe-area-inset-bottom))}.text-center{text-align:center}.text-end{text-align:end}.text-left{text-align:left}.text-start{text-align:start}.align-bottom{vertical-align:bottom}.text-nowrap{text-wrap:nowrap}.whitespace-nowrap{white-space:nowrap}.capitalize{text-transform:capitalize}.lowercase{text-transform:lowercase}.uppercase{text-transform:uppercase}.opacity-0{opacity:0}.opacity-30{opacity:.3}.opacity-80{opacity:.8}.ring,.ring-1{--tw-ring-shadow:var(--tw-ring-inset,)0 0 0 calc(1px + var(--tw-ring-offset-width))var(--tw-ring-color,currentcolor);box-shadow:var(--tw-inset-shadow),var(--tw-inset-ring-shadow),var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow)}.outline{outline-style:var(--tw-outline-style);outline-width:1px}.filter{filter:var(--tw-blur,)var(--tw-brightness,)var(--tw-contrast,)var(--tw-grayscale,)var(--tw-hue-rotate,)var(--tw-invert,)var(--tw-saturate,)var(--tw-sepia,)var(--tw-drop-shadow,)}.backdrop-filter{-webkit-backdrop-filter:var(--tw-backdrop-blur,)var(--tw-backdrop-brightness,)var(--tw-backdrop-contrast,)var(--tw-backdrop-grayscale,)var(--tw-backdrop-hue-rotate,)var(--tw-backdrop-invert,)var(--tw-backdrop-opacity,)var(--tw-backdrop-saturate,)var(--tw-backdrop-sepia,);backdrop-filter:var(--tw-backdrop-blur,)var(--tw-backdrop-brightness,)var(--tw-backdrop-contrast,)var(--tw-backdrop-grayscale,)var(--tw-backdrop-hue-rotate,)var(--tw-backdrop-invert,)var(--tw-backdrop-opacity,)var(--tw-backdrop-saturate,)var(--tw-backdrop-sepia,)}.transition{transition-property:color,background-color,border-color,outline-color,text-decoration-color,fill,stroke,--tw-gradient-from,--tw-gradient-via,--tw-gradient-to,opacity,box-shadow,transform,translate,scale,rotate,filter,-webkit-backdrop-filter,backdrop-filter,display,content-visibility,overlay,pointer-events;transition-timing-function:var(--tw-ease,ease);transition-duration:var(--tw-duration,0s)}.transition-all{transition-property:all;transition-timing-function:var(--tw-ease,ease);transition-duration:var(--tw-duration,0s)}.transition-colors{transition-property:color,background-color,border-color,outline-color,text-decoration-color,fill,stroke,--tw-gradient-from,--tw-gradient-via,--tw-gradient-to;transition-timing-function:var(--tw-ease,ease);transition-duration:var(--tw-duration,0s)}.duration-200{--tw-duration:.2s;transition-duration:.2s}.duration-500{--tw-duration:.5s;transition-duration:.5s}.select-all{-webkit-user-select:all;user-select:all}.ring-inset{--tw-ring-inset:inset}.before\:absolute:before{content:var(--tw-content);position:absolute}.before\:z-1:before{content:var(--tw-content);z-index:1}.last\:border-b-0:last-child{border-bottom-style:var(--tw-border-style);border-bottom-width:0}.focus\:border-transparent:focus{border-color:#0000}.focus\:ring-2:focus{--tw-ring-shadow:var(--tw-ring-inset,)0 0 0 calc(2px + var(--tw-ring-offset-width))var(--tw-ring-color,currentcolor);box-shadow:var(--tw-inset-shadow),var(--tw-inset-ring-shadow),var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow)}.focus\:outline-hidden:focus{--tw-outline-style:none;outline-style:none}@media (forced-colors:active){.focus\:outline-hidden:focus{outline-offset:2px;outline:2px solid #0000}}.focus\:outline-none:focus{--tw-outline-style:none;outline-style:none}.focus\:ring-inset:focus{--tw-ring-inset:inset}.focus-visible\:outline:focus-visible{outline-style:var(--tw-outline-style);outline-width:1px}.focus-visible\:outline-2:focus-visible{outline-style:var(--tw-outline-style);outline-width:2px}.focus-visible\:outline-offset-2:focus-visible{outline-offset:2px}.disabled\:pointer-events-none:disabled{pointer-events:none}.disabled\:cursor-not-allowed:disabled{cursor:not-allowed}.disabled\:opacity-50:disabled{opacity:.5}.\[\&\:\:-webkit-scrollbar-thumb\]\:rounded-full::-webkit-scrollbar-thumb{border-radius:3.40282e38px}@property --tw-translate-x{syntax:"*";inherits:false;initial-value:0}@property --tw-translate-y{syntax:"*";inherits:false;initial-value:0}@property --tw-translate-z{syntax:"*";inherits:false;initial-value:0}@property --tw-rotate-x{syntax:"*";inherits:false}@property --tw-rotate-y{syntax:"*";inherits:false}@property --tw-rotate-z{syntax:"*";inherits:false}@property --tw-skew-x{syntax:"*";inherits:false}@property --tw-skew-y{syntax:"*";inherits:false}@property --tw-border-style{syntax:"*";inherits:false;initial-value:solid}@property --tw-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-shadow-color{syntax:"*";inherits:false}@property --tw-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-inset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-shadow-color{syntax:"*";inherits:false}@property --tw-inset-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-ring-color{syntax:"*";inherits:false}@property --tw-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-ring-color{syntax:"*";inherits:false}@property --tw-inset-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-ring-inset{syntax:"*";inherits:false}@property --tw-ring-offset-width{syntax:"<length>";inherits:false;initial-value:0}@property --tw-ring-offset-color{syntax:"*";inherits:false;initial-value:#fff}@property --tw-ring-offset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-outline-style{syntax:"*";inherits:false;initial-value:solid}@property --tw-blur{syntax:"*";inherits:false}@property --tw-brightness{syntax:"*";inherits:false}@property --tw-contrast{syntax:"*";inherits:false}@property --tw-grayscale{syntax:"*";inherits:false}@property --tw-hue-rotate{syntax:"*";inherits:false}@property --tw-invert{syntax:"*";inherits:false}@property --tw-opacity{syntax:"*";inherits:false}@property --tw-saturate{syntax:"*";inherits:false}@property --tw-sepia{syntax:"*";inherits:false}@property --tw-drop-shadow{syntax:"*";inherits:false}@property --tw-drop-shadow-color{syntax:"*";inherits:false}@property --tw-drop-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-drop-shadow-size{syntax:"*";inherits:false}@property --tw-backdrop-blur{syntax:"*";inherits:false}@property --tw-backdrop-brightness{syntax:"*";inherits:false}@property --tw-backdrop-contrast{syntax:"*";inherits:false}@property --tw-backdrop-grayscale{syntax:"*";inherits:false}@property --tw-backdrop-hue-rotate{syntax:"*";inherits:false}@property --tw-backdrop-invert{syntax:"*";inherits:false}@property --tw-backdrop-opacity{syntax:"*";inherits:false}@property --tw-backdrop-saturate{syntax:"*";inherits:false}@property --tw-backdrop-sepia{syntax:"*";inherits:false}@property --tw-duration{syntax:"*";inherits:false}@property --tw-content{syntax:"*";inherits:false;initial-value:""}
-````
+@layer properties {
+  @supports (((-webkit-hyphens: none)) and (not (margin-trim: inline))) or
+    ((-moz-orient: inline) and (not (color: rgb(from red r g b)))) {
+    *,
+    :before,
+    :after,
+    ::backdrop {
+      --tw-translate-x: 0;
+      --tw-translate-y: 0;
+      --tw-translate-z: 0;
+      --tw-rotate-x: initial;
+      --tw-rotate-y: initial;
+      --tw-rotate-z: initial;
+      --tw-skew-x: initial;
+      --tw-skew-y: initial;
+      --tw-border-style: solid;
+      --tw-shadow: 0 0 #0000;
+      --tw-shadow-color: initial;
+      --tw-shadow-alpha: 100%;
+      --tw-inset-shadow: 0 0 #0000;
+      --tw-inset-shadow-color: initial;
+      --tw-inset-shadow-alpha: 100%;
+      --tw-ring-color: initial;
+      --tw-ring-shadow: 0 0 #0000;
+      --tw-inset-ring-color: initial;
+      --tw-inset-ring-shadow: 0 0 #0000;
+      --tw-ring-inset: initial;
+      --tw-ring-offset-width: 0px;
+      --tw-ring-offset-color: #fff;
+      --tw-ring-offset-shadow: 0 0 #0000;
+      --tw-outline-style: solid;
+      --tw-blur: initial;
+      --tw-brightness: initial;
+      --tw-contrast: initial;
+      --tw-grayscale: initial;
+      --tw-hue-rotate: initial;
+      --tw-invert: initial;
+      --tw-opacity: initial;
+      --tw-saturate: initial;
+      --tw-sepia: initial;
+      --tw-drop-shadow: initial;
+      --tw-drop-shadow-color: initial;
+      --tw-drop-shadow-alpha: 100%;
+      --tw-drop-shadow-size: initial;
+      --tw-backdrop-blur: initial;
+      --tw-backdrop-brightness: initial;
+      --tw-backdrop-contrast: initial;
+      --tw-backdrop-grayscale: initial;
+      --tw-backdrop-hue-rotate: initial;
+      --tw-backdrop-invert: initial;
+      --tw-backdrop-opacity: initial;
+      --tw-backdrop-saturate: initial;
+      --tw-backdrop-sepia: initial;
+      --tw-duration: initial;
+      --tw-content: '';
+    }
+  }
+}
+.\@container {
+  container-type: inline-size;
+}
+.\!visible {
+  visibility: visible !important;
+}
+.collapse {
+  visibility: collapse;
+}
+.invisible {
+  visibility: hidden;
+}
+.visible {
+  visibility: visible;
+}
+.sr-only {
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  position: absolute;
+  overflow: hidden;
+}
+.absolute {
+  position: absolute;
+}
+.fixed {
+  position: fixed;
+}
+.relative {
+  position: relative;
+}
+.static {
+  position: static;
+}
+.sticky {
+  position: sticky;
+}
+.top-1\/2 {
+  top: 50%;
+}
+.top-\[calc\(100\%-13rem\)\] {
+  top: calc(100% - 13rem);
+}
+.top-full {
+  top: 100%;
+}
+.bottom-full {
+  bottom: 100%;
+}
+.left-1\/2 {
+  left: 50%;
+}
+.left-\[calc\(50\%\+3rem\)\] {
+  left: calc(50% + 3rem);
+}
+.left-\[calc\(50\%-11rem\)\] {
+  left: calc(50% - 11rem);
+}
+.isolate {
+  isolation: isolate;
+}
+.-z-10 {
+  z-index: calc(10 * -1);
+}
+.z-50 {
+  z-index: 50;
+}
+.col-span-1 {
+  grid-column: span 1 / span 1;
+}
+.col-span-2 {
+  grid-column: span 2 / span 2;
+}
+.col-span-3 {
+  grid-column: span 3 / span 3;
+}
+.container {
+  width: 100%;
+}
+.mx-auto {
+  margin-inline: auto;
+}
+.ml-auto {
+  margin-left: auto;
+}
+.block {
+  display: block;
+}
+.contents {
+  display: contents;
+}
+.flex {
+  display: flex;
+}
+.grid {
+  display: grid;
+}
+.hidden {
+  display: none;
+}
+.inline {
+  display: inline;
+}
+.inline-block {
+  display: inline-block;
+}
+.inline-flex {
+  display: inline-flex;
+}
+.table {
+  display: table;
+}
+.aspect-\[1155\/678\] {
+  aspect-ratio: 1155/678;
+}
+.max-h-screen {
+  max-height: 100vh;
+}
+.min-h-\[calc\(100vh-4rem\)\] {
+  min-height: calc(100vh - 4rem);
+}
+.w-\[36\.125rem\] {
+  width: 36.125rem;
+}
+.w-\[calc\(100\%-32px\)\] {
+  width: calc(100% - 32px);
+}
+.w-full {
+  width: 100%;
+}
+.max-w-full {
+  max-width: 100%;
+}
+.flex-1 {
+  flex: 1;
+}
+.flex-auto {
+  flex: auto;
+}
+.flex-shrink {
+  flex-shrink: 1;
+}
+.flex-shrink-0,
+.shrink-0 {
+  flex-shrink: 0;
+}
+.border-collapse {
+  border-collapse: collapse;
+}
+.-translate-x-1\/2 {
+  --tw-translate-x: calc(calc(1 / 2 * 100%) * -1);
+  translate: var(--tw-translate-x) var(--tw-translate-y);
+}
+.-translate-y-1\/2 {
+  --tw-translate-y: calc(calc(1 / 2 * 100%) * -1);
+  translate: var(--tw-translate-x) var(--tw-translate-y);
+}
+.rotate-\[30deg\] {
+  rotate: 30deg;
+}
+.transform {
+  transform: var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,)
+    var(--tw-skew-y,);
+}
+.transform-gpu {
+  transform: translateZ(0) var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,)
+    var(--tw-skew-x,) var(--tw-skew-y,);
+}
+.cursor-pointer {
+  cursor: pointer;
+}
+.resize {
+  resize: both;
+}
+.list-inside {
+  list-style-position: inside;
+}
+.list-disc {
+  list-style-type: disc;
+}
+.appearance-none {
+  appearance: none;
+}
+.grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+.grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.grid-cols-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.flex-col {
+  flex-direction: column;
+}
+.flex-nowrap {
+  flex-wrap: nowrap;
+}
+.flex-wrap {
+  flex-wrap: wrap;
+}
+.items-center {
+  align-items: center;
+}
+.items-start {
+  align-items: flex-start;
+}
+.justify-between {
+  justify-content: space-between;
+}
+.justify-center {
+  justify-content: center;
+}
+.justify-end {
+  justify-content: flex-end;
+}
+.truncate {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.overflow-hidden {
+  overflow: hidden;
+}
+.overflow-x-auto {
+  overflow-x: auto;
+}
+.overflow-y-auto {
+  overflow-y: auto;
+}
+.rounded-full {
+  border-radius: 3.40282e38px;
+}
+.border {
+  border-style: var(--tw-border-style);
+  border-width: 1px;
+}
+.border-0 {
+  border-style: var(--tw-border-style);
+  border-width: 0;
+}
+.border-3 {
+  border-style: var(--tw-border-style);
+  border-width: 3px;
+}
+.border-t {
+  border-top-style: var(--tw-border-style);
+  border-top-width: 1px;
+}
+.border-b {
+  border-bottom-style: var(--tw-border-style);
+  border-bottom-width: 1px;
+}
+.border-b-2 {
+  border-bottom-style: var(--tw-border-style);
+  border-bottom-width: 2px;
+}
+.border-l-2 {
+  border-left-style: var(--tw-border-style);
+  border-left-width: 2px;
+}
+.border-l-4 {
+  border-left-style: var(--tw-border-style);
+  border-left-width: 4px;
+}
+.border-solid {
+  --tw-border-style: solid;
+  border-style: solid;
+}
+.border-current {
+  border-color: currentColor;
+}
+.border-transparent {
+  border-color: #0000;
+}
+.border-t-transparent {
+  border-top-color: #0000;
+}
+.bg-transparent {
+  background-color: #0000;
+}
+.bg-gradient-to-r {
+  --tw-gradient-position: to right in oklab;
+  background-image: linear-gradient(var(--tw-gradient-stops));
+}
+.bg-gradient-to-tr {
+  --tw-gradient-position: to top right in oklab;
+  background-image: linear-gradient(var(--tw-gradient-stops));
+}
+.pb-\[60px\] {
+  padding-bottom: 60px;
+}
+.pb-\[calc\(60px\+env\(safe-area-inset-bottom\)\)\] {
+  padding-bottom: calc(60px + env(safe-area-inset-bottom));
+}
+.text-center {
+  text-align: center;
+}
+.text-end {
+  text-align: end;
+}
+.text-left {
+  text-align: left;
+}
+.text-start {
+  text-align: start;
+}
+.align-bottom {
+  vertical-align: bottom;
+}
+.text-nowrap {
+  text-wrap: nowrap;
+}
+.whitespace-nowrap {
+  white-space: nowrap;
+}
+.capitalize {
+  text-transform: capitalize;
+}
+.lowercase {
+  text-transform: lowercase;
+}
+.uppercase {
+  text-transform: uppercase;
+}
+.opacity-0 {
+  opacity: 0;
+}
+.opacity-30 {
+  opacity: 0.3;
+}
+.opacity-80 {
+  opacity: 0.8;
+}
+.ring,
+.ring-1 {
+  --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(1px + var(--tw-ring-offset-width))
+    var(--tw-ring-color, currentcolor);
+  box-shadow:
+    var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow),
+    var(--tw-ring-shadow), var(--tw-shadow);
+}
+.outline {
+  outline-style: var(--tw-outline-style);
+  outline-width: 1px;
+}
+.filter {
+  filter: var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,)
+    var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,)
+    var(--tw-drop-shadow,);
+}
+.backdrop-filter {
+  -webkit-backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,)
+    var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,) var(--tw-backdrop-hue-rotate,)
+    var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,)
+    var(--tw-backdrop-sepia,);
+  backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,)
+    var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,) var(--tw-backdrop-hue-rotate,)
+    var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,)
+    var(--tw-backdrop-sepia,);
+}
+.transition {
+  transition-property:
+    color,
+    background-color,
+    border-color,
+    outline-color,
+    text-decoration-color,
+    fill,
+    stroke,
+    --tw-gradient-from,
+    --tw-gradient-via,
+    --tw-gradient-to,
+    opacity,
+    box-shadow,
+    transform,
+    translate,
+    scale,
+    rotate,
+    filter,
+    -webkit-backdrop-filter,
+    backdrop-filter,
+    display,
+    content-visibility,
+    overlay,
+    pointer-events;
+  transition-timing-function: var(--tw-ease, ease);
+  transition-duration: var(--tw-duration, 0s);
+}
+.transition-all {
+  transition-property: all;
+  transition-timing-function: var(--tw-ease, ease);
+  transition-duration: var(--tw-duration, 0s);
+}
+.transition-colors {
+  transition-property:
+    color, background-color, border-color, outline-color, text-decoration-color, fill, stroke,
+    --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
+  transition-timing-function: var(--tw-ease, ease);
+  transition-duration: var(--tw-duration, 0s);
+}
+.duration-200 {
+  --tw-duration: 0.2s;
+  transition-duration: 0.2s;
+}
+.duration-500 {
+  --tw-duration: 0.5s;
+  transition-duration: 0.5s;
+}
+.select-all {
+  -webkit-user-select: all;
+  user-select: all;
+}
+.ring-inset {
+  --tw-ring-inset: inset;
+}
+.before\:absolute:before {
+  content: var(--tw-content);
+  position: absolute;
+}
+.before\:z-1:before {
+  content: var(--tw-content);
+  z-index: 1;
+}
+.last\:border-b-0:last-child {
+  border-bottom-style: var(--tw-border-style);
+  border-bottom-width: 0;
+}
+.focus\:border-transparent:focus {
+  border-color: #0000;
+}
+.focus\:ring-2:focus {
+  --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(2px + var(--tw-ring-offset-width))
+    var(--tw-ring-color, currentcolor);
+  box-shadow:
+    var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow),
+    var(--tw-ring-shadow), var(--tw-shadow);
+}
+.focus\:outline-hidden:focus {
+  --tw-outline-style: none;
+  outline-style: none;
+}
+@media (forced-colors: active) {
+  .focus\:outline-hidden:focus {
+    outline-offset: 2px;
+    outline: 2px solid #0000;
+  }
+}
+.focus\:outline-none:focus {
+  --tw-outline-style: none;
+  outline-style: none;
+}
+.focus\:ring-inset:focus {
+  --tw-ring-inset: inset;
+}
+.focus-visible\:outline:focus-visible {
+  outline-style: var(--tw-outline-style);
+  outline-width: 1px;
+}
+.focus-visible\:outline-2:focus-visible {
+  outline-style: var(--tw-outline-style);
+  outline-width: 2px;
+}
+.focus-visible\:outline-offset-2:focus-visible {
+  outline-offset: 2px;
+}
+.disabled\:pointer-events-none:disabled {
+  pointer-events: none;
+}
+.disabled\:cursor-not-allowed:disabled {
+  cursor: not-allowed;
+}
+.disabled\:opacity-50:disabled {
+  opacity: 0.5;
+}
+.\[\&\:\:-webkit-scrollbar-thumb\]\:rounded-full::-webkit-scrollbar-thumb {
+  border-radius: 3.40282e38px;
+}
+@property --tw-translate-x {
+  syntax: '*';
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-translate-y {
+  syntax: '*';
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-translate-z {
+  syntax: '*';
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-rotate-x {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-rotate-y {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-rotate-z {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-skew-x {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-skew-y {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-border-style {
+  syntax: '*';
+  inherits: false;
+  initial-value: solid;
+}
+@property --tw-shadow {
+  syntax: '*';
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+@property --tw-shadow-color {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-shadow-alpha {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 100%;
+}
+@property --tw-inset-shadow {
+  syntax: '*';
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+@property --tw-inset-shadow-color {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-inset-shadow-alpha {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 100%;
+}
+@property --tw-ring-color {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-ring-shadow {
+  syntax: '*';
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+@property --tw-inset-ring-color {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-inset-ring-shadow {
+  syntax: '*';
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+@property --tw-ring-inset {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-ring-offset-width {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0;
+}
+@property --tw-ring-offset-color {
+  syntax: '*';
+  inherits: false;
+  initial-value: #fff;
+}
+@property --tw-ring-offset-shadow {
+  syntax: '*';
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+@property --tw-outline-style {
+  syntax: '*';
+  inherits: false;
+  initial-value: solid;
+}
+@property --tw-blur {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-brightness {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-contrast {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-grayscale {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-hue-rotate {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-invert {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-opacity {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-saturate {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-sepia {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-drop-shadow {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-drop-shadow-color {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-drop-shadow-alpha {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 100%;
+}
+@property --tw-drop-shadow-size {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-backdrop-blur {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-backdrop-brightness {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-backdrop-contrast {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-backdrop-grayscale {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-backdrop-hue-rotate {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-backdrop-invert {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-backdrop-opacity {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-backdrop-saturate {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-backdrop-sepia {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-duration {
+  syntax: '*';
+  inherits: false;
+}
+@property --tw-content {
+  syntax: '*';
+  inherits: false;
+  initial-value: '';
+}
+```
 
 ## File: package.json
-````json
+
+```json
 {
   "name": "travel-planner",
   "version": "1.0.0",
@@ -67783,11 +70698,7 @@ exports.restoreEvent = async (req, res) =>
     "test:verbose": "jest --verbose",
     "prepare": "husky"
   },
-  "keywords": [
-    "travel",
-    "planner",
-    "trips"
-  ],
+  "keywords": ["travel", "planner", "trips"],
   "author": "",
   "license": "MIT",
   "dependencies": {
@@ -67847,19 +70758,15 @@ exports.restoreEvent = async (req, res) =>
     "typescript": "^5.9.3"
   },
   "lint-staged": {
-    "*.js": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md,css}": [
-      "prettier --write"
-    ]
+    "*.js": ["eslint --fix", "prettier --write"],
+    "*.{json,md,css}": ["prettier --write"]
   }
 }
-````
+```
 
 ## File: controllers/tripController.js
-````javascript
+
+```javascript
 /**
  * Get primary sidebar content for dashboard (AJAX endpoint for refresh)
  * Returns only the primary sidebar content HTML for AJAX updates
@@ -68141,10 +71048,11 @@ exports.getDashboardApiData = async (req, res) =>
 // Similar for other item types
 ⋮----
 // Return data in format expected by the map
-````
+```
 
 ## File: frontend/src/lib/components/CompanionForm.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { settingsApi } from '$lib/services/settings';
   import '$lib/styles/form-styles.css';
@@ -68516,10 +71424,11 @@ exports.getDashboardApiData = async (req, res) =>
     padding: 0;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/ItemCard.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import CompanionIndicators from './CompanionIndicators.svelte';
@@ -68883,10 +71792,11 @@ exports.getDashboardApiData = async (req, res) =>
     z-index: 1;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/services/api.ts
-````typescript
+
+```typescript
 /**
  * API Client Service
  * Wrapper for Express backend API calls
@@ -69006,10 +71916,11 @@ export async function apiCall(
 /**
  * Vouchers API
  */
-````
+```
 
 ## File: services/tripService.js
-````javascript
+
+```javascript
 /**
  * Trip Service
  * Business logic for trip management
@@ -69295,16 +72206,17 @@ async getTripCompanions(tripId, userId, userEmail)
 // Transform to simpler format and filter null companions
 ⋮----
 // Sort companions: self first, then alphabetically by first name
-````
+```
 
 ## File: docker-compose.yml
-````yaml
+
+```yaml
 services:
   postgres:
     image: postgres:15
     container_name: ${NODE_ENV}_travel_planner_db
     ports:
-      - "${DB_PORT}:5432"
+      - '${DB_PORT}:5432'
     environment:
       POSTGRES_DB: ${NODE_ENV}_${DB_NAME}
       POSTGRES_USER: ${DB_USER:-postgres}
@@ -69315,7 +72227,7 @@ services:
     command: postgres -c config_file=/etc/postgresql/postgresql.conf -c listen_addresses='*'
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -69326,13 +72238,13 @@ services:
     image: redis:7-alpine
     container_name: ${NODE_ENV}_travel_planner_redis
     ports:
-      - "${REDIS_PORT}:6379"
+      - '${REDIS_PORT}:6379'
     volumes:
       - redis_data:/data
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 3s
       retries: 5
@@ -69348,8 +72260,8 @@ services:
         NODE_ENV: ${NODE_ENV:-development}
     container_name: ${NODE_ENV}_travel_planner_app
     ports:
-      - "${APP_PORT}:${PORT}"
-    user: "node"
+      - '${APP_PORT}:${PORT}'
+    user: 'node'
     environment:
       NODE_ENV: ${NODE_ENV}
       DB_HOST: postgres
@@ -69384,10 +72296,11 @@ volumes:
 networks:
   bluebonnet_network:
     driver: bridge
-````
+```
 
 ## File: frontend/src/lib/services/settings.ts
-````typescript
+
+```typescript
 /**
  * Settings API Service
  * Handles all account settings related API calls
@@ -69606,10 +72519,11 @@ async searchCompanions(query: string): Promise<any>
    * Check if an email has an existing user account
    */
 async checkEmailForUser(email: string): Promise<any>
-````
+```
 
 ## File: frontend/src/routes/dashboard/components/DashboardSettingsPanel.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { dashboardStore, dashboardStoreActions } from '$lib/stores/dashboardStore';
@@ -69779,10 +72693,11 @@ async checkEmailForUser(email: string): Promise<any>
     font-weight: 500;
   }
 </style>
-````
+```
 
 ## File: frontend/src/lib/components/SettingsCompanions.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { onMount } from 'svelte';
   import Alert from './Alert.svelte';
@@ -70239,10 +73154,11 @@ async checkEmailForUser(email: string): Promise<any>
     }
   }
 </style>
-````
+```
 
 ## File: frontend/src/routes/dashboard/components/DashboardItemEditor.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { dashboardStore, dashboardStoreActions } from '$lib/stores/dashboardStore';
@@ -70797,10 +73713,11 @@ async checkEmailForUser(email: string): Promise<any>
     padding: 1rem;
   }
 </style>
-````
+```
 
 ## File: server.js
-````javascript
+
+```javascript
 // Validate required environment variables
 ⋮----
 // Trust proxy - required for rate limiting behind reverse proxy/load balancer
@@ -70909,10 +73826,11 @@ async function initializeApp()
 // Graceful shutdown handler
 ⋮----
 // Start the application
-````
+```
 
 ## File: frontend/src/lib/components/ItemEditForm.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { tripsApi, flightsApi, hotelsApi, eventsApi, transportationApi, carRentalsApi, itemCompanionsApi } from '$lib/services/api';
   import { tripStore } from '$lib/stores/tripStore';
@@ -72183,10 +75101,11 @@ async function initializeApp()
     font-weight: 500;
   }
 </style>
-````
+```
 
 ## File: scripts/docker-entrypoint.sh
-````bash
+
+```bash
 #!/bin/sh
 set -e
 
@@ -72313,10 +75232,11 @@ else
   echo "📦 Running production Express server..."
   exec node --unhandled-rejections=strict /app/server.js
 fi
-````
+```
 
 ## File: Dockerfile
-````dockerfile
+
+```dockerfile
 # Multi-stage Dockerfile supporting multiple environments
 #
 # USAGE:
@@ -72584,10 +75504,11 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Entrypoint will handle dropping to nodejs user for app startup
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "server.js"]
-````
+```
 
 ## File: frontend/src/lib/components/ItemsList.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import ItemCard from './ItemCard.svelte';
   import CompanionIndicators from './CompanionIndicators.svelte';
@@ -72780,10 +75701,11 @@ CMD ["node", "server.js"]
     flex: 1;
   }
 </style>
-````
+```
 
 ## File: controllers/companionController.js
-````javascript
+
+```javascript
 // Get all companions for current user
 exports.listCompanions = async (req, res) =>
 ⋮----
@@ -72931,10 +75853,11 @@ exports.deleteCompanion = async (req, res) =>
 ⋮----
 // Remove linked account (unlink companion from user account)
 exports.unlinkCompanion = async (req, res) =>
-````
+```
 
 ## File: frontend/src/routes/dashboard/+page.svelte
-````svelte
+
+```svelte
 <script lang="ts">
   import { goto, pushState } from '$app/navigation';
   import { page } from '$app/stores';
@@ -74950,4 +77873,4 @@ exports.unlinkCompanion = async (req, res) =>
     color: #2563eb;
   }
 </style>
-````
+```

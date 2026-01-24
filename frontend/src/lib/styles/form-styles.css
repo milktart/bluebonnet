@@ -522,7 +522,7 @@
   }
 
   /* Reset grid-column spans for mobile */
-  .form-row.cols-3 .form-group[style*="grid-column"] {
+  .form-row.cols-3 .form-group[style*='grid-column'] {
     grid-column: auto !important;
   }
 
@@ -562,7 +562,7 @@
   }
 
   /* Reset grid-column spans for mobile */
-  .form-row.cols-3 .form-group[style*="grid-column"] {
+  .form-row.cols-3 .form-group[style*='grid-column'] {
     grid-column: auto !important;
   }
 

@@ -87,12 +87,7 @@ exports.searchFlight = async (req, res) => {
 exports.createFlight = async (req, res) => {
   try {
     const { tripId } = req.params;
-    const {
-      flightNumber,
-      pnr,
-      seat,
-      companions,
-    } = req.body;
+    const { flightNumber, pnr, seat, companions } = req.body;
     let {
       airline,
       departureDateTime,
@@ -124,7 +119,13 @@ exports.createFlight = async (req, res) => {
     }
 
     // Centralized datetime and timezone handling
-    let data = { departureDateTime, arrivalDateTime, originTimezone, destinationTimezone, ...req.body };
+    let data = {
+      departureDateTime,
+      arrivalDateTime,
+      originTimezone,
+      destinationTimezone,
+      ...req.body,
+    };
     data = combineDateTimeFields(data, ['departure', 'arrival']);
     data = sanitizeTimezones(data, ['originTimezone', 'destinationTimezone']);
     departureDateTime = data.departureDateTime;
@@ -175,7 +176,13 @@ exports.createFlight = async (req, res) => {
     }
 
     // Handle companions - unified method
-    await itemCompanionService.handleItemCompanions('flight', flight.id, companions, tripId, req.user.id);
+    await itemCompanionService.handleItemCompanions(
+      'flight',
+      flight.id,
+      companions,
+      tripId,
+      req.user.id
+    );
 
     // Centralized async/redirect response handling
     return sendAsyncOrRedirect(req, res, {
@@ -229,7 +236,9 @@ exports.updateFlight = async (req, res) => {
     // Verify ownership - check if user is item creator OR trip owner OR trip admin with canEdit permission
     const isItemOwner = verifyResourceOwnership(flight, req.user.id);
     const { TripCompanion } = require('../models');
-    const canEditTrip = flight.tripId ? await verifyTripItemEditAccess(flight.tripId, req.user.id, Trip, TripCompanion) : false;
+    const canEditTrip = flight.tripId
+      ? await verifyTripItemEditAccess(flight.tripId, req.user.id, Trip, TripCompanion)
+      : false;
 
     if (!isItemOwner && !canEditTrip) {
       return sendAsyncOrRedirect(req, res, {
@@ -260,7 +269,17 @@ exports.updateFlight = async (req, res) => {
     }
 
     // Centralized datetime and timezone handling
-    let data = { departureDateTime, arrivalDateTime, departureDate, departureTime, arrivalDate, arrivalTime, originTimezone, destinationTimezone, ...req.body };
+    let data = {
+      departureDateTime,
+      arrivalDateTime,
+      departureDate,
+      departureTime,
+      arrivalDate,
+      arrivalTime,
+      originTimezone,
+      destinationTimezone,
+      ...req.body,
+    };
     data = combineDateTimeFields(data, ['departure', 'arrival']);
     data = sanitizeTimezones(data, ['originTimezone', 'destinationTimezone']);
     departureDateTime = data.departureDateTime;
@@ -365,7 +384,13 @@ exports.updateFlight = async (req, res) => {
       try {
         const currentTripId = newTripId || flight.tripId;
         if (currentTripId) {
-          await itemCompanionService.handleItemCompanions('flight', flight.id, companions, currentTripId, req.user.id);
+          await itemCompanionService.handleItemCompanions(
+            'flight',
+            flight.id,
+            companions,
+            currentTripId,
+            req.user.id
+          );
         }
       } catch (e) {
         logger.error('Error updating flight companions:', e);
@@ -380,7 +405,8 @@ exports.updateFlight = async (req, res) => {
       success: true,
       data: flight,
       message: 'Flight updated successfully',
-      redirectUrl: newTripId || flight.tripId ? `/trips/${newTripId || flight.tripId}` : '/dashboard',
+      redirectUrl:
+        newTripId || flight.tripId ? `/trips/${newTripId || flight.tripId}` : '/dashboard',
     });
   } catch (error) {
     logger.error('ERROR in updateFlight:', {
@@ -412,7 +438,9 @@ exports.deleteFlight = async (req, res) => {
     // Verify ownership - check if user is item creator OR trip owner OR trip admin with canEdit permission
     const isItemOwner = verifyResourceOwnership(flight, req.user.id);
     const { TripCompanion } = require('../models');
-    const canEditTrip = flight.tripId ? await verifyTripItemEditAccess(flight.tripId, req.user.id, Trip, TripCompanion) : false;
+    const canEditTrip = flight.tripId
+      ? await verifyTripItemEditAccess(flight.tripId, req.user.id, Trip, TripCompanion)
+      : false;
 
     if (!isItemOwner && !canEditTrip) {
       return sendAsyncOrRedirect(req, res, {

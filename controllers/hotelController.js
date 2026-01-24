@@ -9,6 +9,7 @@ const {
   redirectAfterSuccess,
   redirectAfterError,
   verifyResourceOwnership,
+  verifyResourceOwnershipViaTrip,
   verifyTripItemEditAccess,
 } = require('./helpers/resourceController');
 const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
@@ -91,7 +92,13 @@ exports.createHotel = async (req, res) => {
 
     // Handle companions - unified method
     try {
-      await itemCompanionService.handleItemCompanions('hotel', hotel.id, companions, tripId, req.user.id);
+      await itemCompanionService.handleItemCompanions(
+        'hotel',
+        hotel.id,
+        companions,
+        tripId,
+        req.user.id
+      );
     } catch (e) {
       logger.error('Error managing companions for hotel:', e);
     }
@@ -139,7 +146,9 @@ exports.updateHotel = async (req, res) => {
     // Verify ownership - check if user is item owner OR trip owner OR trip admin with canEdit permission
     const isItemOwner = verifyResourceOwnership(hotel, req.user.id);
     const { TripCompanion } = require('../models');
-    const canEditTrip = hotel.tripId ? await verifyTripItemEditAccess(hotel.tripId, req.user.id, Trip, TripCompanion) : false;
+    const canEditTrip = hotel.tripId
+      ? await verifyTripItemEditAccess(hotel.tripId, req.user.id, Trip, TripCompanion)
+      : false;
 
     if (!isItemOwner && !canEditTrip) {
       return sendAsyncOrRedirect(req, res, {
@@ -235,7 +244,9 @@ exports.deleteHotel = async (req, res) => {
     // Verify ownership - check if user is item owner OR trip owner OR trip admin with canEdit permission
     const isItemOwner = verifyResourceOwnership(hotel, req.user.id);
     const { TripCompanion } = require('../models');
-    const canEditTrip = hotel.tripId ? await verifyTripItemEditAccess(hotel.tripId, req.user.id, Trip, TripCompanion) : false;
+    const canEditTrip = hotel.tripId
+      ? await verifyTripItemEditAccess(hotel.tripId, req.user.id, Trip, TripCompanion)
+      : false;
 
     if (!isItemOwner && !canEditTrip) {
       return sendAsyncOrRedirect(req, res, {

@@ -51,5 +51,5 @@ module.exports = {
 
     // Remove userId column from car_rentals table
     await queryInterface.removeColumn('car_rentals', 'userId');
-  }
+  },
 };

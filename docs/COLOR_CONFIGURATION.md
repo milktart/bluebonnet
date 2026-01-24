@@ -17,22 +17,22 @@ This file contains hex color codes for each item type:
 ```javascript
 const ITEM_COLORS = {
   trip: {
-    hex: '#28536b',        // Change this hex code
+    hex: '#28536b', // Change this hex code
   },
   flight: {
-    hex: '#f6d965',        // Change this hex code
+    hex: '#f6d965', // Change this hex code
   },
   hotel: {
-    hex: '#c2a5df',        // Change this hex code
+    hex: '#c2a5df', // Change this hex code
   },
   carRental: {
-    hex: '#fea572',        // Change this hex code
+    hex: '#fea572', // Change this hex code
   },
   transportation: {
-    hex: '#67b3e0',        // Change this hex code
+    hex: '#67b3e0', // Change this hex code
   },
   event: {
-    hex: '#ff99c9',        // Change this hex code
+    hex: '#ff99c9', // Change this hex code
   },
 };
 ```
@@ -45,6 +45,7 @@ const ITEM_COLORS = {
 4. Save the file
 
 **Example: Changing Flight Color**
+
 ```javascript
 // Before
 flight: {
@@ -71,13 +72,13 @@ Once you update a hex code in `config/itemColors.js`, it automatically affects:
 ## Current Color Scheme
 
 | Item Type      | Color      | Hex Code |
-|----------------|-----------|----------|
-| Trip           | Dark Blue | #28536b  |
-| Flight         | Yellow    | #f6d965  |
-| Hotel          | Purple    | #c2a5df  |
-| Car Rental     | Orange    | #fea572  |
-| Transportation | Light Blue| #67b3e0  |
-| Event          | Pink      | #ff99c9  |
+| -------------- | ---------- | -------- |
+| Trip           | Dark Blue  | #28536b  |
+| Flight         | Yellow     | #f6d965  |
+| Hotel          | Purple     | #c2a5df  |
+| Car Rental     | Orange     | #fea572  |
+| Transportation | Light Blue | #67b3e0  |
+| Event          | Pink       | #ff99c9  |
 
 ## How It Works
 
@@ -149,15 +150,18 @@ const hotelColor = '#c2a5df';
 ## Common Use Cases
 
 ### Changing All Flight Colors
+
 ```javascript
 // In config/itemColors.js
 flight: {
   hex: '#1E40AF',  // Change from yellow to dark blue
 },
 ```
+
 Result: Flight form headers, icons, and buttons all turn dark blue
 
 ### Creating a Monochrome Scheme
+
 ```javascript
 // In config/itemColors.js
 trip: { hex: '#333333' },
@@ -169,6 +173,7 @@ event: { hex: '#EEEEEE' },
 ```
 
 ### Using Brand Colors
+
 ```javascript
 // In config/itemColors.js - Using company brand colors
 trip: { hex: '#0D47A1' },      // Brand primary blue

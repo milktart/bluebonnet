@@ -11,6 +11,7 @@
 Phase 2 will create the unified `ResponsiveLayout.svelte` component that replaces the current `MapLayout.svelte`. This component will use the CSS system from Phase 1 to render different layouts based on viewport width.
 
 Unlike the current system with its hard branching at 640px, the new component will:
+
 - Use CSS Grid for layout (no JavaScript branching)
 - Apply CSS classes that correspond to layout configurations
 - Render the same component structure at all breakpoints
@@ -21,6 +22,7 @@ Unlike the current system with its hard branching at 640px, the new component wi
 ## Current vs. New Approach
 
 ### Current System (What We're Replacing)
+
 ```javascript
 // MapLayout.svelte
 if (viewportWidth < 640) {
@@ -33,6 +35,7 @@ if (viewportWidth < 640) {
 ```
 
 **Issues:**
+
 - Two separate code paths to maintain
 - Different component structures
 - Hard breakpoint at 640px
@@ -40,6 +43,7 @@ if (viewportWidth < 640) {
 - 400+ lines with nested conditionals
 
 ### New System (What We're Building)
+
 ```javascript
 // ResponsiveLayout.svelte
 // Same HTML structure for all breakpoints
@@ -53,27 +57,41 @@ if (viewportWidth < 640) {
 ```
 
 **CSS handles everything:**
+
 ```css
 /* Mobile */
 @media (max-width: 639px) {
-  .app-layout { grid-template-columns: 1fr; }
-  .app-nav { /* bottom nav */ }
+  .app-layout {
+    grid-template-columns: 1fr;
+  }
+  .app-nav {
+    /* bottom nav */
+  }
 }
 
 /* Tablet */
 @media (min-width: 640px) and (max-width: 1023px) {
-  .app-layout { grid-template-columns: auto 1fr; }
-  .app-nav { /* top nav */ }
+  .app-layout {
+    grid-template-columns: auto 1fr;
+  }
+  .app-nav {
+    /* top nav */
+  }
 }
 
 /* Desktop */
 @media (min-width: 1024px) {
-  .app-layout { grid-template-columns: auto 1fr auto; }
-  .app-nav { /* top nav */ }
+  .app-layout {
+    grid-template-columns: auto 1fr auto;
+  }
+  .app-nav {
+    /* top nav */
+  }
 }
 ```
 
 **Advantages:**
+
 - Single code path
 - Much simpler logic
 - CSS handles all responsive behavior
@@ -91,6 +109,7 @@ if (viewportWidth < 640) {
 **Size Estimate:** 150-200 lines (vs. 400+ current MapLayout)
 
 **Responsibilities:**
+
 1. Render unified HTML structure
 2. Manage sidebar visibility (opacity + pointer-events)
 3. Export method to access map component
@@ -192,6 +211,7 @@ export let mobileSelectedItemType: string | null = null;
 ## CSS Classes Used
 
 ### Layout
+
 - `.app-layout` - Main container (CSS Grid)
 - `.app-nav` - Navigation bar (top or bottom)
 - `.primary-sidebar` - Trip list (left)
@@ -201,11 +221,13 @@ export let mobileSelectedItemType: string | null = null;
 - `.tertiary-sidebar` - Additional forms (floating or right column)
 
 ### State Classes
+
 - `.collapsed` - Primary sidebar in drawer mode
 - `.open` - Sidebar/drawer is visible
 - `.active` - Tab or navigation item is active
 
 ### Backdrop
+
 - `.sidebar-backdrop` - Semi-transparent overlay (appears when drawer open)
 - `.drawer-backdrop` - Overlay for side drawer (tablet)
 
@@ -321,21 +343,25 @@ All CSS already exists in `layout.css` - component just needs to render HTML!
 ## Migration Path
 
 ### Step 1: Create New Component
+
 1. Create `ResponsiveLayout.svelte` with structure above
 2. Copy `MapLayout.svelte` styles (adapt as needed)
 3. Test HTML structure renders correctly
 
 ### Step 2: Update Parent Component
+
 1. Import `ResponsiveLayout` instead of `MapLayout`
 2. Update slot names if needed
 3. Keep same props interface for backward compatibility
 
 ### Step 3: Remove Mobile/Desktop Branching
+
 1. Remove conditional rendering from `dashboard/+page.svelte`
 2. Render single set of components
 3. Use unified state (from redesign spec)
 
 ### Step 4: Test All Breakpoints
+
 1. Test mobile (375px)
 2. Test tablet (768px)
 3. Test desktop (1024px)
@@ -343,6 +369,7 @@ All CSS already exists in `layout.css` - component just needs to render HTML!
 5. Test responsive transitions (resize browser)
 
 ### Step 5: Remove Old Component
+
 1. Archive `MapLayout.svelte` (for reference)
 2. Remove `MobileTabNavigation.svelte`
 3. Update any imports
@@ -354,6 +381,7 @@ All CSS already exists in `layout.css` - component just needs to render HTML!
 ### Test at Each Breakpoint
 
 **Mobile (375px)**
+
 - [ ] Bottom navigation visible
 - [ ] Hamburger menu works
 - [ ] Single column layout
@@ -361,6 +389,7 @@ All CSS already exists in `layout.css` - component just needs to render HTML!
 - [ ] Forms appear as bottom sheets
 
 **Tablet (768px)**
+
 - [ ] Top navigation visible
 - [ ] Hamburger menu toggles sidebar
 - [ ] Two-column layout
@@ -368,6 +397,7 @@ All CSS already exists in `layout.css` - component just needs to render HTML!
 - [ ] Backdrop appears when drawer open
 
 **Desktop (1024px)**
+
 - [ ] Top navigation visible
 - [ ] Three columns visible
 - [ ] Primary sidebar visible
@@ -375,6 +405,7 @@ All CSS already exists in `layout.css` - component just needs to render HTML!
 - [ ] Tertiary sidebar floating
 
 **Ultra-wide (1440px)**
+
 - [ ] Four columns all visible
 - [ ] No overlays or drawers
 - [ ] Maximum information density
@@ -383,6 +414,7 @@ All CSS already exists in `layout.css` - component just needs to render HTML!
 ### Responsive Transitions
 
 **Resize Browser Across Breakpoints:**
+
 - [ ] 375px → 640px (mobile → tablet)
 - [ ] 640px → 1024px (tablet → desktop)
 - [ ] 1024px → 1440px (desktop → ultra-wide)
@@ -402,15 +434,19 @@ All CSS already exists in `layout.css` - component just needs to render HTML!
 ## Files to Modify in Phase 2
 
 ### Create
+
 - `/frontend/src/lib/components/ResponsiveLayout.svelte` (new)
 
 ### Update
+
 - `/frontend/src/routes/dashboard/+page.svelte` (import ResponsiveLayout, remove branching)
 
 ### Deprecate
+
 - `/frontend/src/lib/components/MapLayout.svelte` (archive, don't delete)
 
 ### Reference
+
 - `/frontend/src/lib/styles/layout.css` (already done in Phase 1)
 - `/frontend/src/lib/styles/responsive.css` (already done in Phase 1)
 
@@ -418,15 +454,15 @@ All CSS already exists in `layout.css` - component just needs to render HTML!
 
 ## Estimated Timeline
 
-| Task | Duration | Notes |
-|------|----------|-------|
-| Create HTML structure | 1 hour | Copy from spec, adapt slots |
-| Add mutation observer | 1 hour | Monitor sidebar content |
-| Test at all breakpoints | 2 hours | 375px, 640px, 1024px, 1440px |
-| Update parent component | 1 hour | Import, prop updates |
-| Remove old component logic | 1 hour | Clean up MapLayout |
-| Final testing & polish | 1-2 hours | Edge cases, accessibility |
-| **Total** | **6-8 hours** | |
+| Task                       | Duration      | Notes                        |
+| -------------------------- | ------------- | ---------------------------- |
+| Create HTML structure      | 1 hour        | Copy from spec, adapt slots  |
+| Add mutation observer      | 1 hour        | Monitor sidebar content      |
+| Test at all breakpoints    | 2 hours       | 375px, 640px, 1024px, 1440px |
+| Update parent component    | 1 hour        | Import, prop updates         |
+| Remove old component logic | 1 hour        | Clean up MapLayout           |
+| Final testing & polish     | 1-2 hours     | Edge cases, accessibility    |
+| **Total**                  | **6-8 hours** |                              |
 
 ---
 
@@ -466,16 +502,19 @@ All CSS already exists in `layout.css` - component just needs to render HTML!
 ## Questions to Ask
 
 **Before starting:**
+
 - Should we keep backward compatibility with current `MapLayout` props?
 - Should we migrate `dashboard/+page.svelte` state in Phase 2 or Phase 5?
 - Do we want to remove the old component immediately or keep it archived?
 
 **During development:**
+
 - Should we add animation/transition on drawer open?
 - How much does the primary sidebar collapse overlap the map?
 - Should backdrop be full-screen or just over content?
 
 **After completing:**
+
 - Are all breakpoints matching the design?
 - Are transitions smooth at all sizes?
 - Is accessibility good (keyboard, screen reader)?
@@ -486,6 +525,7 @@ All CSS already exists in `layout.css` - component just needs to render HTML!
 ## Next Steps After Phase 2
 
 Once ResponsiveLayout is complete:
+
 1. **Phase 3:** Navigation.svelte (hamburger, tabs, drawers)
 2. **Phase 4:** FormModal.svelte (bottom sheets, side drawers)
 3. **Phase 5:** Component refactoring (split dashboard, update forms)
@@ -496,6 +536,7 @@ Once ResponsiveLayout is complete:
 **Ready to build Phase 2?** 🚀
 
 All the CSS is done. All the documentation is written. The component is straightforward:
+
 - Render HTML structure
 - Add slots
 - Monitor sidebar content
@@ -503,4 +544,3 @@ All the CSS is done. All the documentation is written. The component is straight
 - Let CSS handle everything else
 
 Start whenever you're ready!
-

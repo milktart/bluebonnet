@@ -710,9 +710,9 @@ class TripService extends BaseService {
         companion: {
           id: tc.companion?.id,
           userId: tc.companion?.userId,
-          name: tc.companion?.name
-        }
-      }))
+          name: tc.companion?.name,
+        },
+      })),
     });
 
     // Ensure trip owner is included in tripCompanions
@@ -842,20 +842,18 @@ class TripService extends BaseService {
           (ic) => ic.userId === userId
         );
         // Check if user is a trip companion with canEdit permission
-        const tripCompanionWithEdit = tripData.tripCompanions?.some(
-          (tc) => {
-            const companionUserId = tc.companion?.userId;
-            const canEditValue = tc.canEdit;
-            const matches = companionUserId === userId && canEditValue === true;
-            logger.debug('Checking trip companion', {
-              companionUserId,
-              canEditValue,
-              userId,
-              matches
-            });
-            return matches;
-          }
-        );
+        const tripCompanionWithEdit = tripData.tripCompanions?.some((tc) => {
+          const companionUserId = tc.companion?.userId;
+          const canEditValue = tc.canEdit;
+          const matches = companionUserId === userId && canEditValue === true;
+          logger.debug('Checking trip companion', {
+            companionUserId,
+            canEditValue,
+            userId,
+            matches,
+          });
+          return matches;
+        });
         item.canEdit = isItemOwner || tripCompanionWithEdit;
         item.canDelete = isItemOwner || tripCompanionWithEdit;
         item.isShared = !isItemOwner && isCompanionAttendeeThroughItem;
@@ -872,8 +870,8 @@ class TripService extends BaseService {
             tripCompanions: tripData.tripCompanions?.map((tc) => ({
               userId: tc.companion?.userId,
               canEdit: tc.canEdit,
-              permissionSource: tc.permissionSource
-            }))
+              permissionSource: tc.permissionSource,
+            })),
           });
         }
       });

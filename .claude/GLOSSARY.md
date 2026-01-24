@@ -104,7 +104,7 @@ Quick reference for terms used in Bluebonnet documentation and codebase.
 
 **Promise** - JavaScript async pattern for handling delayed operations.
 
-**Query** - Database request (e.g., SELECT * FROM flights).
+**Query** - Database request (e.g., SELECT \* FROM flights).
 
 **Redis** - In-memory cache and data store.
 
@@ -220,24 +220,24 @@ Quick reference for terms used in Bluebonnet documentation and codebase.
 
 ## Abbreviations
 
-| Abbreviation | Meaning |
-|---|---|
-| API | Application Programming Interface |
-| AJAX | Asynchronous JavaScript and XML |
-| DB | Database |
-| CRUD | Create, Read, Update, Delete |
-| CSS | Cascading Style Sheets |
-| DOM | Document Object Model |
-| DRY | Don't Repeat Yourself |
-| EJS | Embedded JavaScript |
-| HTTP | HyperText Transfer Protocol |
-| JSON | JavaScript Object Notation |
-| MVC | Model-View-Controller |
-| NPM | Node Package Manager |
-| ORM | Object-Relational Mapping |
-| PNR | Passenger Name Record |
-| SQL | Structured Query Language |
-| UUID | Universally Unique Identifier |
+| Abbreviation | Meaning                           |
+| ------------ | --------------------------------- |
+| API          | Application Programming Interface |
+| AJAX         | Asynchronous JavaScript and XML   |
+| DB           | Database                          |
+| CRUD         | Create, Read, Update, Delete      |
+| CSS          | Cascading Style Sheets            |
+| DOM          | Document Object Model             |
+| DRY          | Don't Repeat Yourself             |
+| EJS          | Embedded JavaScript               |
+| HTTP         | HyperText Transfer Protocol       |
+| JSON         | JavaScript Object Notation        |
+| MVC          | Model-View-Controller             |
+| NPM          | Node Package Manager              |
+| ORM          | Object-Relational Mapping         |
+| PNR          | Passenger Name Record             |
+| SQL          | Structured Query Language         |
+| UUID         | Universally Unique Identifier     |
 
 ---
 

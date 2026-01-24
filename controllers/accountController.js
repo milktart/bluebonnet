@@ -368,6 +368,7 @@ exports.exportAccountData = async (req, res) => {
         { model: Transportation, as: 'transportation' },
         { model: CarRental, as: 'carRentals' },
         { model: Event, as: 'events' },
+        { model: require('../models').TripCompanion, as: 'tripCompanions' },
       ],
     });
 
@@ -787,25 +788,46 @@ exports.importSelectedData = async (req, res) => {
       companions: 0,
     };
 
+    // Get user's existing trips for matching
+    const existingTrips = await Trip.findAll(
+      {
+        where: { userId },
+      },
+      { transaction }
+    );
+
+    const duplicateDetectionService = require('../services/duplicateDetectionService');
+
     // Import trips first and track which ones were imported
     // NOTE: Frontend already filtered to ONLY include selected items, so we can import all of them
     if (importData.trips && Array.isArray(importData.trips)) {
       logger.info(`Processing ${importData.trips.length} trips for import`);
       for (const tripData of importData.trips) {
-        // Since frontend already filtered, just import all trips provided
-        logger.info(`Importing trip: ${tripData.id} (${tripData.name})`);
+        // Check if a matching trip already exists
+        const matchedTrip = duplicateDetectionService.checkTripDuplicates(tripData, existingTrips);
 
-        // Create trip with new ID and user ID
-        const newTrip = await Trip.create(
-          {
-            ...tripData,
-            userId,
-            id: undefined, // Generate new UUID
-          },
-          { transaction }
-        );
-
-        stats.trips += 1;
+        let targetTrip;
+        if (matchedTrip.isDuplicate) {
+          // Use existing trip instead of creating a new one
+          logger.info(
+            `Found matching trip: ${matchedTrip.duplicateOf.id} (${matchedTrip.duplicateOf.name})`
+          );
+          targetTrip = matchedTrip.duplicateOf;
+        } else {
+          // Create trip with new ID and user ID
+          logger.info(`Importing trip: ${tripData.id} (${tripData.name})`);
+          targetTrip = await Trip.create(
+            {
+              ...tripData,
+              userId,
+              id: undefined, // Generate new UUID
+            },
+            { transaction }
+          );
+          stats.trips += 1;
+          // Add to existing trips for future matching in this import session
+          existingTrips.push(targetTrip);
+        }
 
         // Import all children of this trip (frontend already filtered to selected items)
         if (tripData.flights && Array.isArray(tripData.flights)) {
@@ -813,7 +835,7 @@ exports.importSelectedData = async (req, res) => {
             await Flight.create(
               {
                 ...flight,
-                tripId: newTrip.id,
+                tripId: targetTrip.id,
                 userId,
                 id: undefined,
               },
@@ -828,7 +850,7 @@ exports.importSelectedData = async (req, res) => {
             await Hotel.create(
               {
                 ...hotel,
-                tripId: newTrip.id,
+                tripId: targetTrip.id,
                 userId,
                 id: undefined,
               },
@@ -843,7 +865,7 @@ exports.importSelectedData = async (req, res) => {
             await Transportation.create(
               {
                 ...trans,
-                tripId: newTrip.id,
+                tripId: targetTrip.id,
                 userId,
                 id: undefined,
               },
@@ -858,7 +880,7 @@ exports.importSelectedData = async (req, res) => {
             await CarRental.create(
               {
                 ...carRental,
-                tripId: newTrip.id,
+                tripId: targetTrip.id,
                 userId,
                 id: undefined,
               },
@@ -873,13 +895,155 @@ exports.importSelectedData = async (req, res) => {
             await Event.create(
               {
                 ...event,
-                tripId: newTrip.id,
+                tripId: targetTrip.id,
                 userId,
                 id: undefined,
               },
               { transaction }
             );
             stats.events += 1;
+          }
+        }
+
+        // If this is an existing trip being merged with, add its companions to the imported items
+        if (matchedTrip.isDuplicate) {
+          // Get the companions from the existing trip
+          const tripCompanions = await require('../models').TripCompanion.findAll(
+            {
+              where: { tripId: targetTrip.id },
+            },
+            { transaction }
+          );
+
+          // Map imported items and add companions to each
+          const itemsToCompanion = [];
+
+          // Flights
+          if (tripData.flights && Array.isArray(tripData.flights)) {
+            const importedFlights = await Flight.findAll(
+              {
+                where: { tripId: targetTrip.id, userId },
+              },
+              { transaction }
+            );
+            for (const flight of importedFlights) {
+              for (const tripCompanion of tripCompanions) {
+                itemsToCompanion.push({
+                  itemType: 'flight',
+                  itemId: flight.id,
+                  companionId: tripCompanion.companionId,
+                  addedBy: userId,
+                  inheritedFromTrip: true,
+                  canView: tripCompanion.canView,
+                  canEdit: tripCompanion.canEdit,
+                  canManageCompanions: tripCompanion.canManageCompanions,
+                });
+              }
+            }
+          }
+
+          // Hotels
+          if (tripData.hotels && Array.isArray(tripData.hotels)) {
+            const importedHotels = await Hotel.findAll(
+              {
+                where: { tripId: targetTrip.id, userId },
+              },
+              { transaction }
+            );
+            for (const hotel of importedHotels) {
+              for (const tripCompanion of tripCompanions) {
+                itemsToCompanion.push({
+                  itemType: 'hotel',
+                  itemId: hotel.id,
+                  companionId: tripCompanion.companionId,
+                  addedBy: userId,
+                  inheritedFromTrip: true,
+                  canView: tripCompanion.canView,
+                  canEdit: tripCompanion.canEdit,
+                  canManageCompanions: tripCompanion.canManageCompanions,
+                });
+              }
+            }
+          }
+
+          // Transportation
+          if (tripData.transportation && Array.isArray(tripData.transportation)) {
+            const importedTransportation = await Transportation.findAll(
+              {
+                where: { tripId: targetTrip.id, userId },
+              },
+              { transaction }
+            );
+            for (const trans of importedTransportation) {
+              for (const tripCompanion of tripCompanions) {
+                itemsToCompanion.push({
+                  itemType: 'transportation',
+                  itemId: trans.id,
+                  companionId: tripCompanion.companionId,
+                  addedBy: userId,
+                  inheritedFromTrip: true,
+                  canView: tripCompanion.canView,
+                  canEdit: tripCompanion.canEdit,
+                  canManageCompanions: tripCompanion.canManageCompanions,
+                });
+              }
+            }
+          }
+
+          // Car Rentals
+          if (tripData.carRentals && Array.isArray(tripData.carRentals)) {
+            const importedCarRentals = await CarRental.findAll(
+              {
+                where: { tripId: targetTrip.id, userId },
+              },
+              { transaction }
+            );
+            for (const carRental of importedCarRentals) {
+              for (const tripCompanion of tripCompanions) {
+                itemsToCompanion.push({
+                  itemType: 'car_rental',
+                  itemId: carRental.id,
+                  companionId: tripCompanion.companionId,
+                  addedBy: userId,
+                  inheritedFromTrip: true,
+                  canView: tripCompanion.canView,
+                  canEdit: tripCompanion.canEdit,
+                  canManageCompanions: tripCompanion.canManageCompanions,
+                });
+              }
+            }
+          }
+
+          // Events
+          if (tripData.events && Array.isArray(tripData.events)) {
+            const importedEvents = await Event.findAll(
+              {
+                where: { tripId: targetTrip.id, userId },
+              },
+              { transaction }
+            );
+            for (const event of importedEvents) {
+              for (const tripCompanion of tripCompanions) {
+                itemsToCompanion.push({
+                  itemType: 'event',
+                  itemId: event.id,
+                  companionId: tripCompanion.companionId,
+                  addedBy: userId,
+                  inheritedFromTrip: true,
+                  canView: tripCompanion.canView,
+                  canEdit: tripCompanion.canEdit,
+                  canManageCompanions: tripCompanion.canManageCompanions,
+                });
+              }
+            }
+          }
+
+          // Bulk create item companions (ignoring duplicates)
+          if (itemsToCompanion.length > 0) {
+            await require('../models').ItemCompanion.bulkCreate(itemsToCompanion, {
+              transaction,
+              ignoreDuplicates: true,
+            });
           }
         }
       }
@@ -981,12 +1145,16 @@ exports.importSelectedData = async (req, res) => {
     }
 
     // Import companions (frontend already filtered to selected items)
+    // Also track companion ID mappings for trip-companion relationships
+    const companionIdMappings = {};
+
     if (importData.companions && Array.isArray(importData.companions)) {
       for (const companion of importData.companions) {
         // Don't include userId from imported companion (it references old database)
         const { userId: _importedUserId, ...companionData } = companion;
+        const originalCompanionId = companion.id;
 
-        await TravelCompanion.create(
+        const newCompanion = await TravelCompanion.create(
           {
             ...companionData,
             createdBy: userId,
@@ -995,7 +1163,51 @@ exports.importSelectedData = async (req, res) => {
           },
           { transaction }
         );
+
+        // Track ID mapping for trip-companion relationships
+        companionIdMappings[originalCompanionId] = newCompanion.id;
         stats.companions += 1;
+      }
+    }
+
+    // Import trip-companion relationships
+    if (importData.trips && Array.isArray(importData.trips)) {
+      for (const tripData of importData.trips) {
+        if (tripData.tripCompanions && Array.isArray(tripData.tripCompanions)) {
+          // Get the target trip (already created above)
+          const targetTrips = await Trip.findAll(
+            {
+              where: { userId, name: tripData.name },
+              order: [['createdAt', 'DESC']],
+              limit: 1,
+            },
+            { transaction }
+          );
+
+          if (targetTrips.length > 0) {
+            const targetTrip = targetTrips[0];
+
+            for (const tripCompanionData of tripData.tripCompanions) {
+              const mappedCompanionId = companionIdMappings[tripCompanionData.companionId];
+
+              // Only import if companion was imported
+              if (mappedCompanionId) {
+                await require('../models').TripCompanion.create(
+                  {
+                    tripId: targetTrip.id,
+                    companionId: mappedCompanionId,
+                    addedBy: userId,
+                    canView: tripCompanionData.canView,
+                    canEdit: tripCompanionData.canEdit,
+                    canManageCompanions: tripCompanionData.canManageCompanions,
+                    permissionSource: tripCompanionData.permissionSource || 'explicit',
+                  },
+                  { transaction }
+                );
+              }
+            }
+          }
+        }
       }
     }
 

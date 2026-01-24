@@ -13,6 +13,7 @@ All travel item forms follow same structure: input fields → validation → sub
 ## Base Form Component
 
 ### FormContainer.svelte
+
 Wrapper for all item forms with consistent styling/layout.
 
 ```svelte
@@ -81,6 +82,7 @@ Wrapper for all item forms with consistent styling/layout.
 ## Input Components
 
 ### TextInput.svelte
+
 ```svelte
 <script lang="ts">
   export let label: string;
@@ -151,6 +153,7 @@ Wrapper for all item forms with consistent styling/layout.
 ```
 
 ### DateTimePicker.svelte
+
 ```svelte
 <script lang="ts">
   export let label: string;
@@ -239,6 +242,7 @@ Wrapper for all item forms with consistent styling/layout.
 ```
 
 ### Select.svelte
+
 ```svelte
 <script lang="ts">
   export let label: string;
@@ -282,6 +286,7 @@ Wrapper for all item forms with consistent styling/layout.
 ## Flight Form Components
 
 ### FlightForm.svelte
+
 Complete flight add/edit form using components above.
 
 ```svelte
@@ -404,6 +409,7 @@ Complete flight add/edit form using components above.
 ## Display Components
 
 ### FlightCard.svelte
+
 ```svelte
 <script lang="ts">
   export let flight: any;
@@ -503,6 +509,7 @@ Complete flight add/edit form using components above.
 ## Component Checklist
 
 When creating new form component:
+
 - [ ] Props exported with TypeScript types
 - [ ] Error handling and display
 - [ ] Validation integration

@@ -22,6 +22,7 @@ function generatePreviewData(importData, currentUserData) {
       totalItems: 0,
       totalDuplicates: 0,
       totalStandalone: 0,
+      totalMerged: 0,
     },
   };
 
@@ -60,19 +61,24 @@ function generatePreviewData(importData, currentUserData) {
         isDuplicate: tripDuplicate.isDuplicate,
         duplicateOf: tripDuplicate.duplicateOf
           ? {
+              id: tripDuplicate.duplicateOf.id,
               name: tripDuplicate.duplicateOf.name,
             }
           : null,
+        willMerge: tripDuplicate.isDuplicate,
         duplicateSimilarity: tripDuplicate.similarity || 0,
-        selected: !tripDuplicate.isDuplicate,
+        selected: true, // Always selected - if it's a duplicate, we add items to existing trip
         data: trip,
       };
 
       preview.items.push(tripItem);
-      preview.sections.trips.count++;
-      if (tripDuplicate.isDuplicate) preview.sections.trips.duplicates++;
-      preview.stats.totalItems++;
-      if (tripDuplicate.isDuplicate) preview.stats.totalDuplicates++;
+      preview.sections.trips.count += 1;
+      if (tripDuplicate.isDuplicate) preview.sections.trips.duplicates += 1;
+      preview.stats.totalItems += 1;
+      if (tripDuplicate.isDuplicate) {
+        preview.stats.totalDuplicates += 1;
+        preview.stats.totalMerged += 1;
+      }
 
       // Process trip's children
       const tripChildren = {
@@ -96,6 +102,8 @@ function generatePreviewData(importData, currentUserData) {
             id: flightPreviewId,
             originalId: flight.id,
             parentTripId: tripPreviewId,
+            parentTripWillMerge: tripDuplicate.isDuplicate,
+            mergeIntoExistingTrip: tripDuplicate.isDuplicate ? tripDuplicate.duplicateOf.id : null,
             category: 'flights',
             type: 'flight',
             name: `${flight.airline} ${flight.flightNumber}`,
@@ -115,8 +123,8 @@ function generatePreviewData(importData, currentUserData) {
 
           preview.items.push(flightItem);
           tripChildren.flights.push(flightPreviewId);
-          preview.stats.totalItems++;
-          if (flightDuplicate.isDuplicate) preview.stats.totalDuplicates++;
+          preview.stats.totalItems += 1;
+          if (flightDuplicate.isDuplicate) preview.stats.totalDuplicates += 1;
         });
       }
 
@@ -133,6 +141,8 @@ function generatePreviewData(importData, currentUserData) {
             id: hotelPreviewId,
             originalId: hotel.id,
             parentTripId: tripPreviewId,
+            parentTripWillMerge: tripDuplicate.isDuplicate,
+            mergeIntoExistingTrip: tripDuplicate.isDuplicate ? tripDuplicate.duplicateOf.id : null,
             category: 'hotels',
             type: 'hotel',
             name: hotel.hotelName || 'Hotel',
@@ -150,8 +160,8 @@ function generatePreviewData(importData, currentUserData) {
 
           preview.items.push(hotelItem);
           tripChildren.hotels.push(hotelPreviewId);
-          preview.stats.totalItems++;
-          if (hotelDuplicate.isDuplicate) preview.stats.totalDuplicates++;
+          preview.stats.totalItems += 1;
+          if (hotelDuplicate.isDuplicate) preview.stats.totalDuplicates += 1;
         });
       }
 
@@ -168,6 +178,8 @@ function generatePreviewData(importData, currentUserData) {
             id: transPreviewId,
             originalId: trans.id,
             parentTripId: tripPreviewId,
+            parentTripWillMerge: tripDuplicate.isDuplicate,
+            mergeIntoExistingTrip: tripDuplicate.isDuplicate ? tripDuplicate.duplicateOf.id : null,
             category: 'transportation',
             type: 'transportation',
             name: trans.type || 'Transportation',
@@ -187,8 +199,8 @@ function generatePreviewData(importData, currentUserData) {
 
           preview.items.push(transItem);
           tripChildren.transportation.push(transPreviewId);
-          preview.stats.totalItems++;
-          if (transDuplicate.isDuplicate) preview.stats.totalDuplicates++;
+          preview.stats.totalItems += 1;
+          if (transDuplicate.isDuplicate) preview.stats.totalDuplicates += 1;
         });
       }
 
@@ -205,6 +217,8 @@ function generatePreviewData(importData, currentUserData) {
             id: carRentalPreviewId,
             originalId: carRental.id,
             parentTripId: tripPreviewId,
+            parentTripWillMerge: tripDuplicate.isDuplicate,
+            mergeIntoExistingTrip: tripDuplicate.isDuplicate ? tripDuplicate.duplicateOf.id : null,
             category: 'carRentals',
             type: 'carRental',
             name: `${carRental.pickupLocation} to ${carRental.dropoffLocation}`,
@@ -222,8 +236,8 @@ function generatePreviewData(importData, currentUserData) {
 
           preview.items.push(carRentalItem);
           tripChildren.carRentals.push(carRentalPreviewId);
-          preview.stats.totalItems++;
-          if (carRentalDuplicate.isDuplicate) preview.stats.totalDuplicates++;
+          preview.stats.totalItems += 1;
+          if (carRentalDuplicate.isDuplicate) preview.stats.totalDuplicates += 1;
         });
       }
 
@@ -240,6 +254,8 @@ function generatePreviewData(importData, currentUserData) {
             id: eventPreviewId,
             originalId: event.id,
             parentTripId: tripPreviewId,
+            parentTripWillMerge: tripDuplicate.isDuplicate,
+            mergeIntoExistingTrip: tripDuplicate.isDuplicate ? tripDuplicate.duplicateOf.id : null,
             category: 'events',
             type: 'event',
             name: event.name || 'Event',
@@ -258,8 +274,8 @@ function generatePreviewData(importData, currentUserData) {
 
           preview.items.push(eventItem);
           tripChildren.events.push(eventPreviewId);
-          preview.stats.totalItems++;
-          if (eventDuplicate.isDuplicate) preview.stats.totalDuplicates++;
+          preview.stats.totalItems += 1;
+          if (eventDuplicate.isDuplicate) preview.stats.totalDuplicates += 1;
         });
       }
 
@@ -297,11 +313,11 @@ function generatePreviewData(importData, currentUserData) {
       };
 
       preview.items.push(flightItem);
-      preview.sections.standaloneFlights.count++;
-      if (flightDuplicate.isDuplicate) preview.sections.standaloneFlights.duplicates++;
-      preview.stats.totalItems++;
-      if (flightDuplicate.isDuplicate) preview.stats.totalDuplicates++;
-      preview.stats.totalStandalone++;
+      preview.sections.standaloneFlights.count += 1;
+      if (flightDuplicate.isDuplicate) preview.sections.standaloneFlights.duplicates += 1;
+      preview.stats.totalItems += 1;
+      if (flightDuplicate.isDuplicate) preview.stats.totalDuplicates += 1;
+      preview.stats.totalStandalone += 1;
     });
   }
 
@@ -332,11 +348,11 @@ function generatePreviewData(importData, currentUserData) {
       };
 
       preview.items.push(hotelItem);
-      preview.sections.standaloneHotels.count++;
-      if (hotelDuplicate.isDuplicate) preview.sections.standaloneHotels.duplicates++;
-      preview.stats.totalItems++;
-      if (hotelDuplicate.isDuplicate) preview.stats.totalDuplicates++;
-      preview.stats.totalStandalone++;
+      preview.sections.standaloneHotels.count += 1;
+      if (hotelDuplicate.isDuplicate) preview.sections.standaloneHotels.duplicates += 1;
+      preview.stats.totalItems += 1;
+      if (hotelDuplicate.isDuplicate) preview.stats.totalDuplicates += 1;
+      preview.stats.totalStandalone += 1;
     });
   }
 
@@ -369,11 +385,11 @@ function generatePreviewData(importData, currentUserData) {
       };
 
       preview.items.push(transItem);
-      preview.sections.standaloneTransportation.count++;
-      if (transDuplicate.isDuplicate) preview.sections.standaloneTransportation.duplicates++;
-      preview.stats.totalItems++;
-      if (transDuplicate.isDuplicate) preview.stats.totalDuplicates++;
-      preview.stats.totalStandalone++;
+      preview.sections.standaloneTransportation.count += 1;
+      if (transDuplicate.isDuplicate) preview.sections.standaloneTransportation.duplicates += 1;
+      preview.stats.totalItems += 1;
+      if (transDuplicate.isDuplicate) preview.stats.totalDuplicates += 1;
+      preview.stats.totalStandalone += 1;
     });
   }
 
@@ -404,11 +420,11 @@ function generatePreviewData(importData, currentUserData) {
       };
 
       preview.items.push(carRentalItem);
-      preview.sections.standaloneCarRentals.count++;
-      if (carRentalDuplicate.isDuplicate) preview.sections.standaloneCarRentals.duplicates++;
-      preview.stats.totalItems++;
-      if (carRentalDuplicate.isDuplicate) preview.stats.totalDuplicates++;
-      preview.stats.totalStandalone++;
+      preview.sections.standaloneCarRentals.count += 1;
+      if (carRentalDuplicate.isDuplicate) preview.sections.standaloneCarRentals.duplicates += 1;
+      preview.stats.totalItems += 1;
+      if (carRentalDuplicate.isDuplicate) preview.stats.totalDuplicates += 1;
+      preview.stats.totalStandalone += 1;
     });
   }
 
@@ -440,11 +456,11 @@ function generatePreviewData(importData, currentUserData) {
       };
 
       preview.items.push(eventItem);
-      preview.sections.standaloneEvents.count++;
-      if (eventDuplicate.isDuplicate) preview.sections.standaloneEvents.duplicates++;
-      preview.stats.totalItems++;
-      if (eventDuplicate.isDuplicate) preview.stats.totalDuplicates++;
-      preview.stats.totalStandalone++;
+      preview.sections.standaloneEvents.count += 1;
+      if (eventDuplicate.isDuplicate) preview.sections.standaloneEvents.duplicates += 1;
+      preview.stats.totalItems += 1;
+      if (eventDuplicate.isDuplicate) preview.stats.totalDuplicates += 1;
+      preview.stats.totalStandalone += 1;
     });
   }
 
@@ -476,10 +492,10 @@ function generatePreviewData(importData, currentUserData) {
       };
 
       preview.items.push(voucherItem);
-      preview.sections.vouchers.count++;
-      if (voucherDuplicate.isDuplicate) preview.sections.vouchers.duplicates++;
-      preview.stats.totalItems++;
-      if (voucherDuplicate.isDuplicate) preview.stats.totalDuplicates++;
+      preview.sections.vouchers.count += 1;
+      if (voucherDuplicate.isDuplicate) preview.sections.vouchers.duplicates += 1;
+      preview.stats.totalItems += 1;
+      if (voucherDuplicate.isDuplicate) preview.stats.totalDuplicates += 1;
     });
   }
 
@@ -511,10 +527,10 @@ function generatePreviewData(importData, currentUserData) {
       };
 
       preview.items.push(companionItem);
-      preview.sections.companions.count++;
-      if (companionDuplicate.isDuplicate) preview.sections.companions.duplicates++;
-      preview.stats.totalItems++;
-      if (companionDuplicate.isDuplicate) preview.stats.totalDuplicates++;
+      preview.sections.companions.count += 1;
+      if (companionDuplicate.isDuplicate) preview.sections.companions.duplicates += 1;
+      preview.stats.totalItems += 1;
+      if (companionDuplicate.isDuplicate) preview.stats.totalDuplicates += 1;
     });
   }
 
@@ -530,7 +546,7 @@ function formatTripSummary(trip) {
   if (trip.departureDate) {
     try {
       const date = new Date(trip.departureDate);
-      if (!isNaN(date.getTime())) {
+      if (!Number.isNaN(date.getTime())) {
         departureDate = date.toLocaleDateString('en-US', {
           month: 'short',
           day: 'numeric',
@@ -546,7 +562,7 @@ function formatTripSummary(trip) {
   if (trip.returnDate) {
     try {
       const date = new Date(trip.returnDate);
-      if (!isNaN(date.getTime())) {
+      if (!Number.isNaN(date.getTime())) {
         returnDate = date.toLocaleDateString('en-US', {
           month: 'short',
           day: 'numeric',
@@ -609,7 +625,7 @@ function formatDate(dateString) {
   if (!dateString) return 'No date';
   try {
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) {
+    if (Number.isNaN(date.getTime())) {
       return 'Invalid date';
     }
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });

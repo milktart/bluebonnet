@@ -15,6 +15,7 @@ Vouchers track travel credits, upgrade vouchers, gift cards, and other redeemabl
 ## Data Model
 
 ### Voucher
+
 **File:** `models/Voucher.js`
 
 ```javascript
@@ -35,6 +36,7 @@ Vouchers track travel credits, upgrade vouchers, gift cards, and other redeemabl
 ```
 
 ### VoucherAttachment
+
 Assigns voucher to specific item and passenger:
 
 ```javascript
@@ -55,6 +57,7 @@ Assigns voucher to specific item and passenger:
 ## API Endpoints
 
 ### Create Voucher
+
 ```
 POST /api/trips/:tripId/vouchers
 Body: {
@@ -65,6 +68,7 @@ Returns: { success: true, voucher: {...} }
 ```
 
 ### Attach Voucher to Item
+
 ```
 POST /api/vouchers/:voucherId/attach
 Body: {
@@ -74,6 +78,7 @@ Returns: { success: true, attachment: {...} }
 ```
 
 ### Update Voucher Status
+
 ```
 PUT /api/vouchers/:id
 Body: { status }
@@ -81,12 +86,14 @@ Returns: { success: true, voucher: {...} }
 ```
 
 ### Get Trip Vouchers
+
 ```
 GET /api/trips/:tripId/vouchers
 Returns: { success: true, vouchers: [...] }
 ```
 
 ### Delete Voucher
+
 ```
 DELETE /api/vouchers/:id
 Returns: { success: true }
@@ -118,9 +125,11 @@ Returns: { success: true }
 ## Frontend Implementation
 
 ### Voucher Management Interface
+
 **File:** `views/partials/vouchers-sidebar.ejs`
 
 Features:
+
 - List all trip vouchers
 - Status color-coding
 - Value and expiry date display
@@ -128,9 +137,11 @@ Features:
 - Attachment status showing which items use voucher
 
 ### Voucher Editor
+
 **File:** `views/partials/voucher-details-*.ejs`
 
 Edit voucher details:
+
 - Type selector
 - Amount and currency
 - Expiry date picker
@@ -138,7 +149,9 @@ Edit voucher details:
 - Status updates
 
 ### Item Integration
+
 When editing flights/hotels:
+
 - Voucher assignment interface appears
 - Select voucher from trip's available vouchers
 - Assign to specific passenger
@@ -167,12 +180,14 @@ When editing flights/hotels:
 ### Redemption Tracking
 
 Each attachment tracks:
+
 - Which voucher used
 - Which item (flight, hotel, etc.)
 - Which passenger
 - Status on that item (may differ from voucher status)
 
 Example:
+
 - Upgrade voucher created (status: pending)
 - Attached to Flight A (statusOnItem: used)
 - Attached to Flight B (statusOnItem: used)
@@ -181,6 +196,7 @@ Example:
 ### Expiry Handling
 
 Automatic checks:
+
 - Display "expired" badge if `expiryDate < today`
 - Cannot create attachment for expired voucher
 - Dashboard warning if voucher expiring soon
@@ -190,20 +206,26 @@ Automatic checks:
 ## Display Integration
 
 ### Trip View
+
 Shows in trip sidebar:
+
 - Pending vouchers available to use
 - Used vouchers on each trip item
 - Total value of active vouchers
 - Expiry dates and warnings
 
 ### Calendar View
+
 Vouchers displayed on calendar:
+
 - Attached to specific item
 - Passenger assignment shown
 - Status indicated (used/pending/expired)
 
 ### Item Details
+
 When viewing flight/hotel/event:
+
 - All attached vouchers listed
 - Redemption status shown
 - Used value tracked per passenger
@@ -213,6 +235,7 @@ When viewing flight/hotel/event:
 ## Analytics & Reporting
 
 ### Tracking
+
 - Total voucher value per trip
 - Redemption percentage
 - Expiry rate
@@ -220,7 +243,9 @@ When viewing flight/hotel/event:
 - Cost savings from voucher redemption
 
 ### Reports
+
 Trip summary shows:
+
 - "You used $X in vouchers"
 - "You have $Y in unused vouchers"
 - "Z vouchers expiring soon"
@@ -230,6 +255,7 @@ Trip summary shows:
 ## Phase 1 Migration (Svelte)
 
 ### New Components
+
 ```
 src/lib/components/
 ├── VoucherForm.svelte         # Create/edit voucher
@@ -240,6 +266,7 @@ src/lib/components/
 ```
 
 ### Svelte Implementation
+
 ```svelte
 <script lang="ts">
   import { tripStore } from '$lib/stores/tripStore';
@@ -266,6 +293,7 @@ src/lib/components/
 ## Integration Examples
 
 ### Flight with Upgrade Voucher
+
 1. User creates flight
 2. User creates "Free upgrade to business" voucher
 3. User edits flight, attaches upgrade voucher
@@ -273,6 +301,7 @@ src/lib/components/
 5. Flight display shows upgrade applied
 
 ### Hotel with Meal Credits
+
 1. User creates hotel stay
 2. User creates "$50 meal credit" voucher
 3. During trip, user attaches voucher to hotel

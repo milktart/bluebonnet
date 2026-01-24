@@ -26,7 +26,9 @@ class CompanionCascadeManager {
    */
   async cascadeAddToAllItems(companionId, tripId, addedBy, permissions = {}) {
     try {
-      logger.debug(`[CompanionCascadeManager] Adding companion ${companionId} to all items in trip ${tripId}`);
+      logger.debug(
+        `[CompanionCascadeManager] Adding companion ${companionId} to all items in trip ${tripId}`
+      );
 
       // Default permissions for cascaded companions
       const defaultPermissions = {
@@ -126,7 +128,10 @@ class CompanionCascadeManager {
 
       return itemCompanionRecords.length;
     } catch (error) {
-      logger.error(`[CompanionCascadeManager] Error cascading companion ${companionId} to items:`, error);
+      logger.error(
+        `[CompanionCascadeManager] Error cascading companion ${companionId} to items:`,
+        error
+      );
       throw error;
     }
   }
@@ -147,7 +152,9 @@ class CompanionCascadeManager {
    */
   async cascadeRemoveFromAllItems(companionId, tripId) {
     try {
-      logger.debug(`[CompanionCascadeManager] Removing companion ${companionId} from all inherited items in trip ${tripId}`);
+      logger.debug(
+        `[CompanionCascadeManager] Removing companion ${companionId} from all inherited items in trip ${tripId}`
+      );
 
       // Find all items in the trip
       const [flights, hotels, transportation, carRentals, events] = await Promise.all([
@@ -199,7 +206,9 @@ class CompanionCascadeManager {
           `[CompanionCascadeManager] Successfully removed companion ${companionId} from ${totalRemoved} inherited items`
         );
       } else {
-        logger.debug(`[CompanionCascadeManager] No items found in trip ${tripId} to cascade removal from`);
+        logger.debug(
+          `[CompanionCascadeManager] No items found in trip ${tripId} to cascade removal from`
+        );
       }
 
       return totalRemoved;

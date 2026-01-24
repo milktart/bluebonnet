@@ -8,12 +8,12 @@ Quick reference for all features and their implementation.
 
 All items follow same CRUD pattern. See `patterns.md` for details.
 
-| Feature | Model | Controller | Routes | Status |
-|---------|-------|-----------|--------|--------|
-| **Flight** | `models/Flight.js` | `flightController.js` | `/api/flights`, `/api/trips/:tripId/flights` | ✅ Active |
-| **Hotel** | `models/Hotel.js` | `hotelController.js` | `/api/hotels`, `/api/trips/:tripId/hotels` | ✅ Active |
-| **Event** | `models/Event.js` | `eventController.js` | `/api/events`, `/api/trips/:tripId/events` | ✅ Active |
-| **Car Rental** | `models/CarRental.js` | `carRentalController.js` | `/api/car-rentals`, `/api/trips/:tripId/car-rentals` | ✅ Active |
+| Feature            | Model                      | Controller                    | Routes                                                     | Status    |
+| ------------------ | -------------------------- | ----------------------------- | ---------------------------------------------------------- | --------- |
+| **Flight**         | `models/Flight.js`         | `flightController.js`         | `/api/flights`, `/api/trips/:tripId/flights`               | ✅ Active |
+| **Hotel**          | `models/Hotel.js`          | `hotelController.js`          | `/api/hotels`, `/api/trips/:tripId/hotels`                 | ✅ Active |
+| **Event**          | `models/Event.js`          | `eventController.js`          | `/api/events`, `/api/trips/:tripId/events`                 | ✅ Active |
+| **Car Rental**     | `models/CarRental.js`      | `carRentalController.js`      | `/api/car-rentals`, `/api/trips/:tripId/car-rentals`       | ✅ Active |
 | **Transportation** | `models/Transportation.js` | `transportationController.js` | `/api/transportation`, `/api/trips/:tripId/transportation` | ✅ Active |
 
 **Special:** Items can be created standalone (no trip) OR attached to a trip. All cascade delete when parent trip deleted.
@@ -22,14 +22,14 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 
 ## Core Features
 
-| Feature | Purpose | Key Files | Status |
-|---------|---------|-----------|--------|
-| **Trip Management** | Create/view/edit/delete trips | `tripController.js`, `Trip.js` | ✅ Active |
-| **Authentication** | Login/registration/logout | `authController.js`, `passport.js` | ✅ Active |
-| **Trip Sharing** | Invite companions, manage permissions | `companionController.js`, `TripCompanion.js` | ✅ Active |
-| **Vouchers** | Track travel credits/upgrades | `voucherController.js`, `Voucher.js` | ✅ Active |
-| **Calendar** | Timeline view of trip items | `calendar.js`, `trip-view.ejs` | ✅ Active |
-| **Maps** | Location visualization | `maps.js`, `geocodingService.js` | ✅ Active |
+| Feature             | Purpose                               | Key Files                                    | Status    |
+| ------------------- | ------------------------------------- | -------------------------------------------- | --------- |
+| **Trip Management** | Create/view/edit/delete trips         | `tripController.js`, `Trip.js`               | ✅ Active |
+| **Authentication**  | Login/registration/logout             | `authController.js`, `passport.js`           | ✅ Active |
+| **Trip Sharing**    | Invite companions, manage permissions | `companionController.js`, `TripCompanion.js` | ✅ Active |
+| **Vouchers**        | Track travel credits/upgrades         | `voucherController.js`, `Voucher.js`         | ✅ Active |
+| **Calendar**        | Timeline view of trip items           | `calendar.js`, `trip-view.ejs`               | ✅ Active |
+| **Maps**            | Location visualization                | `maps.js`, `geocodingService.js`             | ✅ Active |
 
 ---
 
@@ -38,6 +38,7 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 **Use case:** Track commercial flights with departure/arrival
 
 **Key Fields:**
+
 - Airline (e.g., "United Airlines")
 - Flight number (e.g., "UA123")
 - Origin airport (e.g., "JFK")
@@ -50,6 +51,7 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 **Special:** Handles airport codes, timezone inference
 
 **Files:**
+
 - Model: `models/Flight.js`
 - Controller: `controllers/flightController.js`
 - Routes: `routes/flights.js` or `routes/api/v1/flights.js`
@@ -62,6 +64,7 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 **Use case:** Track accommodations with check-in/checkout
 
 **Key Fields:**
+
 - Hotel name
 - Check-in date
 - Check-out date
@@ -69,6 +72,7 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 - Confirmation number (optional)
 
 **Files:**
+
 - Model: `models/Hotel.js`
 - Controller: `controllers/hotelController.js`
 - Routes: `routes/hotels.js`
@@ -81,12 +85,14 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 **Use case:** Track activities, attractions, meetings
 
 **Key Fields:**
+
 - Event name
 - Date/time
 - Location
 - Description (optional)
 
 **Files:**
+
 - Model: `models/Event.js`
 - Controller: `controllers/eventController.js`
 - Routes: `routes/events.js`
@@ -99,6 +105,7 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 **Use case:** Track vehicle rentals
 
 **Key Fields:**
+
 - Rental company
 - Vehicle type
 - Pickup location
@@ -108,6 +115,7 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 - Confirmation number (optional)
 
 **Files:**
+
 - Model: `models/CarRental.js`
 - Controller: `controllers/carRentalController.js`
 - Routes: `routes/car-rentals.js`
@@ -120,6 +128,7 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 **Use case:** Track ground transportation (taxi, shuttle, train, bus)
 
 **Key Fields:**
+
 - Transportation type (taxi, shuttle, train, etc.)
 - Origin
 - Destination
@@ -128,6 +137,7 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 - Confirmation number (optional)
 
 **Files:**
+
 - Model: `models/Transportation.js`
 - Controller: `controllers/transportationController.js`
 - Routes: `routes/transportation.js`
@@ -140,22 +150,26 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 **Use case:** Invite people to trips, manage permissions
 
 **Features:**
+
 - Create companion profiles (name, email, phone)
 - Add companions to trips
 - Set edit permissions per companion per trip
 - Optional link to user account
 
 **Key Models:**
+
 - `TravelCompanion` - Companion profile
 - `TripCompanion` - Junction table (trip membership + permissions)
 
 **Key Fields (TripCompanion):**
+
 - `tripId` - Which trip
 - `companionId` - Which companion
 - `canEdit` - Permission to edit trip items
 - `addedBy` - Who added them (userId)
 
 **Files:**
+
 - Models: `models/TravelCompanion.js`, `models/TripCompanion.js`
 - Controller: `controllers/companionController.js`
 - Routes: `routes/companions.js`
@@ -168,28 +182,33 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 **Use case:** Track travel credits, upgrade vouchers, gift cards
 
 **Features:**
+
 - Create vouchers with type (credit, upgrade, gift card)
 - Attach to specific flights/items
 - Assign to companions
 - Track usage status (pending, used, expired)
 
 **Key Models:**
+
 - `Voucher` - Voucher record
 - `VoucherAttachment` - Links voucher to item + companion
 
 **Key Fields (Voucher):**
+
 - Type (travel_credit, upgrade, gift_card, etc.)
 - Description
 - Status (pending, used, expired)
 - tripId
 
 **Key Fields (VoucherAttachment):**
+
 - voucherId
 - itemType (flight, hotel, etc.)
 - itemId
 - passengerId (companion)
 
 **Files:**
+
 - Models: `models/Voucher.js`, `models/VoucherAttachment.js`
 - Controller: `controllers/voucherController.js`
 - Routes: `routes/vouchers.js`
@@ -200,6 +219,7 @@ All items follow same CRUD pattern. See `patterns.md` for details.
 ## Database Entities
 
 ### User
+
 ```
 Owns many Trips
 Creates many TravelCompanions
@@ -207,6 +227,7 @@ Has optional TravelCompanion profile
 ```
 
 ### Trip
+
 ```
 Belongs to User
 Has many Flights, Hotels, Events, CarRentals, Transportation
@@ -215,24 +236,28 @@ Has many Vouchers
 ```
 
 ### TravelCompanion
+
 ```
 Optional link to User
 Invited to many Trips (via TripCompanion)
 ```
 
 ### TripCompanion (Junction)
+
 ```
 Links Trip ↔ TravelCompanion
 Tracks: canEdit, addedBy, createdAt
 ```
 
 ### Voucher
+
 ```
 Belongs to Trip
 Has many VoucherAttachments
 ```
 
 ### VoucherAttachment
+
 ```
 Belongs to Voucher
 Links to item (flight/hotel/etc.) via itemType + itemId
@@ -243,33 +268,33 @@ References companion via passengerId
 
 ## Frontend Views
 
-| View | File | Purpose |
-|------|------|---------|
-| Dashboard | `views/dashboard.ejs` | Trip list, filters |
-| Trip Detail | `views/trips/trip-view.ejs` | Trip items, map, sidebar |
-| Flight Form | `views/partials/flight-form.ejs` | Add/edit flight |
-| Hotel Form | `views/partials/hotel-form.ejs` | Add/edit hotel |
-| Event Form | `views/partials/event-form.ejs` | Add/edit event |
-| Car Rental Form | `views/partials/car-rental-form.ejs` | Add/edit car rental |
-| Transportation Form | `views/partials/transportation-form.ejs` | Add/edit transportation |
-| Companions | `views/partials/companions-sidebar.ejs` | Manage companions |
-| Vouchers | `views/partials/vouchers-sidebar.ejs` | Manage vouchers |
+| View                | File                                     | Purpose                  |
+| ------------------- | ---------------------------------------- | ------------------------ |
+| Dashboard           | `views/dashboard.ejs`                    | Trip list, filters       |
+| Trip Detail         | `views/trips/trip-view.ejs`              | Trip items, map, sidebar |
+| Flight Form         | `views/partials/flight-form.ejs`         | Add/edit flight          |
+| Hotel Form          | `views/partials/hotel-form.ejs`          | Add/edit hotel           |
+| Event Form          | `views/partials/event-form.ejs`          | Add/edit event           |
+| Car Rental Form     | `views/partials/car-rental-form.ejs`     | Add/edit car rental      |
+| Transportation Form | `views/partials/transportation-form.ejs` | Add/edit transportation  |
+| Companions          | `views/partials/companions-sidebar.ejs`  | Manage companions        |
+| Vouchers            | `views/partials/vouchers-sidebar.ejs`    | Manage vouchers          |
 
 ---
 
 ## Frontend JavaScript
 
-| Module | File | Purpose |
-|--------|------|---------|
-| Form Handler | `public/js/async-form-handler.js` | Form submission, AJAX |
-| Sidebar Loader | `public/js/sidebar-loader.js` | Load content dynamically |
-| Trip Sidebar | `public/js/trip-view-sidebar.js` | Trip-specific controls |
-| Maps | `public/js/maps.js` | Map display/interaction |
-| Calendar | `public/js/calendar.js` | Calendar widget |
-| Datetime | `public/js/datetime-formatter.js` | Date/time formatting |
-| Autocomplete | `public/js/airport-autocomplete.js` | Airport search |
-| Main | `public/js/main.js` | General utilities |
-| Event Bus | `public/js/eventBus.js` | Event communication |
+| Module         | File                                | Purpose                  |
+| -------------- | ----------------------------------- | ------------------------ |
+| Form Handler   | `public/js/async-form-handler.js`   | Form submission, AJAX    |
+| Sidebar Loader | `public/js/sidebar-loader.js`       | Load content dynamically |
+| Trip Sidebar   | `public/js/trip-view-sidebar.js`    | Trip-specific controls   |
+| Maps           | `public/js/maps.js`                 | Map display/interaction  |
+| Calendar       | `public/js/calendar.js`             | Calendar widget          |
+| Datetime       | `public/js/datetime-formatter.js`   | Date/time formatting     |
+| Autocomplete   | `public/js/airport-autocomplete.js` | Airport search           |
+| Main           | `public/js/main.js`                 | General utilities        |
+| Event Bus      | `public/js/eventBus.js`             | Event communication      |
 
 ---
 

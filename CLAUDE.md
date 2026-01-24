@@ -11,6 +11,7 @@
 **Frontend & Backend Running Together:**
 
 ### Option 1: Docker (Recommended, 5 minutes)
+
 ```bash
 # Backend + Database + Frontend (all together)
 docker-compose up --build
@@ -19,6 +20,7 @@ docker-compose up --build
 ```
 
 ### Option 2: Local Development (15 minutes)
+
 ```bash
 # Backend setup
 npm install
@@ -35,6 +37,7 @@ npm run dev
 ```
 
 ### Frontend-Only Development
+
 ```bash
 cd ./frontend
 npm install
@@ -50,18 +53,21 @@ npm run dev
 All documentation is in `.claude/` directory for token efficiency.
 
 ### For New Developers (Start Here)
+
 1. **[Context](/.claude/context.md)** (5 min) - Stack, database, key decisions
 2. **[Quick Ref](/.claude/development-quick-ref.md)** (5 min) - Commands, environment vars
 3. **[Patterns](/.claude/patterns.md)** (10 min) - AJAX, CRUD, sidebar patterns
 4. **[Features](/.claude/features.md)** (10 min) - What's implemented, where
 
 ### For Code Changes
+
 - **[Patterns](/.claude/patterns.md)** - AJAX forms, CRUD operations, sidebar loading
 - **[Features](/.claude/features.md)** - Which features exist, file locations
 - **[Backend Details](/.claude/ARCHITECTURE/BACKEND/README.md)** - Controllers, models, routes
 - **[Frontend Details](/.claude/ARCHITECTURE/FRONTEND/README.md)** - JavaScript, forms, sidebars
 
 ### For Debugging
+
 - **[Quick Ref - Debugging](/.claude/development-quick-ref.md#debugging-tips)** - Browser console, network tab
 - **[Data Model](/.claude/ARCHITECTURE/DATA_MODEL/README.md)** - Database relationships
 - **[Troubleshooting](/.claude/TROUBLESHOOTING/README.md)** - Common issues
@@ -71,12 +77,14 @@ All documentation is in `.claude/` directory for token efficiency.
 ## 🎯 Common Tasks
 
 ### Add a form field to a feature
+
 1. Update model: `models/{Feature}.js`
 2. Update controller: `controllers/{feature}Controller.js`
 3. Update form: `views/partials/{feature}-form.ejs`
 4. Update JavaScript validation if needed
 
 ### Debug a feature not working
+
 1. Open DevTools (F12) → Console tab
    - Check: `window.tripId`, `window.tripData`, `typeof editItem`
 2. Check Network tab
@@ -86,6 +94,7 @@ All documentation is in `.claude/` directory for token efficiency.
    - `LOG_LEVEL=debug npm run dev`
 
 ### Create a new travel item type
+
 See [Features](/.claude/features.md#adding-a-new-feature-template)
 
 ---
@@ -119,23 +128,27 @@ npm run format         # Auto-format
 ## 📋 Key Concepts
 
 **All travel items** (Flight, Hotel, Event, Car Rental, Transportation):
+
 - Follow identical CRUD pattern
 - Can be created standalone or attached to trip
 - Cascade delete when trip deleted
 - Use AJAX forms with `X-Async-Request` header
 
 **Three-sidebar layout:**
+
 - Primary (fixed) - Navigation
 - Secondary (on-demand) - Forms/details
 - Tertiary (on-demand) - Maps/additional info
 
 **No confirmation pattern:**
+
 - No `confirm()` dialogs
 - No `alert()` messages
 - Operations execute silently
 - UI updates via AJAX
 
 **Authentication:**
+
 - Passport.js local strategy (email/password)
 - Session-based (express-session)
 - Redis caching
@@ -168,6 +181,7 @@ npm run format         # Auto-format
 ## 🔑 Environment Variables
 
 **Required (.env):**
+
 ```env
 DB_HOST=localhost
 DB_PORT=5432
@@ -179,6 +193,7 @@ NODE_ENV=development
 ```
 
 **Optional (with defaults):**
+
 - `PORT=3000` - Server port
 - `REDIS_ENABLED=true` - Redis caching
 - `LOG_LEVEL=info` - Winston log level
@@ -190,11 +205,10 @@ See [Quick Ref](/.claude/development-quick-ref.md#environment-variables) for all
 ## 📖 Pattern Examples
 
 ### AJAX Form Submission
+
 ```javascript
 // In form template
-<script>
-  setupAsyncFormSubmission('addFlightForm');
-</script>
+<script>setupAsyncFormSubmission('addFlightForm');</script>;
 
 // Backend detects X-Async-Request header
 const isAsyncRequest = req.get('X-Async-Request') === 'true';
@@ -206,6 +220,7 @@ if (isAsyncRequest) {
 ```
 
 ### Load Sidebar Content
+
 ```javascript
 // Click button → loads form
 function editItem(type, id) {
@@ -214,6 +229,7 @@ function editItem(type, id) {
 ```
 
 ### Refresh After CRUD
+
 ```javascript
 // After form submit success
 if (result.success) {
@@ -247,6 +263,7 @@ npm test -- tests/unit/models/Flight.test.js
 ## 🚀 What's Next?
 
 **Phase 1: Svelte Migration** ✅ COMPLETE (December 18, 2025)
+
 - ✅ All CRUD operations working
 - ✅ Full feature parity with EJS version
 - ✅ 33+ Svelte components created
@@ -254,6 +271,7 @@ npm test -- tests/unit/models/Flight.test.js
 - ✅ 90%+ complete (pending: integration tests, a11y audit, performance optimization)
 
 **Phase 2: Planned Enhancements**
+
 - Backend refactoring + TypeScript migration
 - Full-stack optimization
 - Integration tests & accessibility audit
@@ -316,21 +334,21 @@ Cache (Redis)
 
 ## 📊 Current Project Status
 
-| Component | Status | Details |
-|-----------|--------|---------|
-| **Frontend** | ✅ Integrated | SvelteKit + TypeScript, in `/frontend/` |
-| **Backend** | ✅ Complete | Express.js, REST API, authentication |
-| **Database** | ✅ Complete | PostgreSQL with full schema |
-| **Testing** | ✅ Complete | Vitest setup, 100+ test cases |
-| **Documentation** | ✅ Complete | Comprehensive guides in `.claude/` |
-| **Deployment** | ✅ Ready | Docker setup, can be deployed |
+| Component         | Status        | Details                                 |
+| ----------------- | ------------- | --------------------------------------- |
+| **Frontend**      | ✅ Integrated | SvelteKit + TypeScript, in `/frontend/` |
+| **Backend**       | ✅ Complete   | Express.js, REST API, authentication    |
+| **Database**      | ✅ Complete   | PostgreSQL with full schema             |
+| **Testing**       | ✅ Complete   | Vitest setup, 100+ test cases           |
+| **Documentation** | ✅ Complete   | Comprehensive guides in `.claude/`      |
+| **Deployment**    | ✅ Ready      | Docker setup, can be deployed           |
 
-**Architecture Note:** EVERYTHING IN THIS APPLICATION GOES IN THE DASHBOARD. The dashboard view is the ONLY view in this application. Everything is built on top of that one page, overlaid on top of the map.
----
+## **Architecture Note:** EVERYTHING IN THIS APPLICATION GOES IN THE DASHBOARD. The dashboard view is the ONLY view in this application. Everything is built on top of that one page, overlaid on top of the map.
 
 ## 🔄 Recent Migration (December 28, 2025)
 
 **What Changed:**
+
 - ✅ Svelte frontend copied to `/frontend/` subdirectory
 - ✅ Landing, login, register pages migrated with exact EJS styling
 - ✅ EJS views archived in `DEPRECATED_EJS_VIEWS_ARCHIVE/`
@@ -338,6 +356,7 @@ Cache (Redis)
 - ✅ Development environment fully functional
 
 **What Stayed the Same:**
+
 - Express backend (unchanged)
 - PostgreSQL database (unchanged)
 - API routes (unchanged)

@@ -11,6 +11,7 @@
 ## File Structure
 
 ### Created in Phase 2
+
 ```
 frontend/src/lib/components/ResponsiveLayout.svelte (260 lines)
 ├── Script section: Component logic (108 lines)
@@ -19,6 +20,7 @@ frontend/src/lib/components/ResponsiveLayout.svelte (260 lines)
 ```
 
 ### Files from Phase 1 (Now Imported)
+
 ```
 frontend/src/lib/styles/responsive.css (537 lines)
 ├── CSS custom properties
@@ -39,6 +41,7 @@ frontend/src/lib/styles/layout.css (786 lines)
 ```
 
 ### Modified in Phase 2
+
 ```
 frontend/src/routes/dashboard/+page.svelte
 ├── Line 8: MapLayout → ResponsiveLayout (import)
@@ -53,18 +56,20 @@ frontend/src/routes/dashboard/+page.svelte
 ### Script Section (Lines 1-108)
 
 #### Imports (Lines 1-7)
+
 ```typescript
-import MapVisualization from './MapVisualization.svelte';     // Map component
+import MapVisualization from './MapVisualization.svelte'; // Map component
 import MobileTabNavigation from './MobileTabNavigation.svelte'; // Mobile tabs
 import MobileTripDetailView from './MobileTripDetailView.svelte'; // Mobile detail
-import { onMount, createEventDispatcher } from 'svelte';      // Svelte lifecycle
+import { onMount, createEventDispatcher } from 'svelte'; // Svelte lifecycle
 
 // CRITICAL: CSS imports (the fix!)
-import '$lib/styles/responsive.css';  // CSS variables
-import '$lib/styles/layout.css';      // Grid layout rules
+import '$lib/styles/responsive.css'; // CSS variables
+import '$lib/styles/layout.css'; // Grid layout rules
 ```
 
 #### Props (Lines 19-29)
+
 ```typescript
 // Trip/map data
 export let tripData: any = null;
@@ -81,17 +86,19 @@ export let mobileSelectedItemType: string | null = null;
 ```
 
 #### Component State (Lines 31-37)
+
 ```typescript
-const dispatch = createEventDispatcher();    // For events
+const dispatch = createEventDispatcher(); // For events
 
 // Component references
-let mapComponent: MapVisualization;          // Reference to map
-let secondarySidebarEl: HTMLElement;        // Reference to secondary sidebar
-let tertiarySidebarEl: HTMLElement;         // Reference to tertiary sidebar
-let navigationOpen: boolean = false;        // Navigation drawer state
+let mapComponent: MapVisualization; // Reference to map
+let secondarySidebarEl: HTMLElement; // Reference to secondary sidebar
+let tertiarySidebarEl: HTMLElement; // Reference to tertiary sidebar
+let navigationOpen: boolean = false; // Navigation drawer state
 ```
 
 #### Exported Method (Lines 42-44)
+
 ```typescript
 // Allows parent component to access map methods
 export function getMapComponent() {
@@ -100,6 +107,7 @@ export function getMapComponent() {
 ```
 
 #### Event Handlers (Lines 46-61)
+
 ```typescript
 // Handle mobile tab changes
 function handleMobileTabChange(event: any) {
@@ -124,6 +132,7 @@ function handleMobileDelete(event: any) {
 ```
 
 #### Lifecycle Hook - onMount (Lines 66-108)
+
 ```typescript
 onMount(() => {
   // Monitor sidebars for content changes
@@ -132,7 +141,6 @@ onMount(() => {
     // - Check if it has content
     // - Set opacity to 1 if content, 0 if empty
     // - Enable/disable pointer events accordingly
-
     // When tertiary sidebar content changes:
     // - Same logic for tertiary sidebar
   });
@@ -140,9 +148,9 @@ onMount(() => {
   // Observe both sidebars for changes
   if (secondarySidebarEl) {
     observer.observe(secondarySidebarEl, {
-      childList: true,       // Watch for added/removed children
-      subtree: true,         // Watch nested changes
-      characterData: true    // Watch text content changes
+      childList: true, // Watch for added/removed children
+      subtree: true, // Watch nested changes
+      characterData: true, // Watch text content changes
     });
     // Set initial visibility
   }
@@ -151,7 +159,7 @@ onMount(() => {
     observer.observe(tertiarySidebarEl, {
       childList: true,
       subtree: true,
-      characterData: true
+      characterData: true,
     });
     // Set initial visibility
   }
@@ -166,6 +174,7 @@ onMount(() => {
 ### Template Section (Lines 112-180)
 
 #### Main Layout Container (Line 112)
+
 ```svelte
 <div class="app-layout responsive-wrapper">
   <!-- CSS Grid container with default mobile layout -->
@@ -173,6 +182,7 @@ onMount(() => {
 ```
 
 #### Desktop/Tablet View (Lines 114-139)
+
 ```svelte
 <div class="responsive-desktop">
   <!-- display: contents on 640px+ makes children direct grid children -->
@@ -208,6 +218,7 @@ onMount(() => {
 ```
 
 #### Mobile View (Lines 142-176)
+
 ```svelte
 <div class="responsive-mobile">
   <!-- display: flex layout for mobile -->
@@ -243,6 +254,7 @@ onMount(() => {
 ### Style Section (Lines 182-258)
 
 #### Global Styles
+
 ```css
 :global(body) {
   overflow: hidden;
@@ -252,22 +264,33 @@ onMount(() => {
 ```
 
 #### Media Queries for Show/Hide Views
+
 ```css
 @media (max-width: 639px) {
   /* Mobile */
-  .responsive-desktop { display: none !important; }
-  .responsive-mobile { display: flex; flex-direction: column; }
+  .responsive-desktop {
+    display: none !important;
+  }
+  .responsive-mobile {
+    display: flex;
+    flex-direction: column;
+  }
 }
 
 @media (min-width: 640px) {
   /* Tablet+ */
-  .responsive-mobile { display: none !important; }
-  .responsive-desktop { display: contents; }
+  .responsive-mobile {
+    display: none !important;
+  }
+  .responsive-desktop {
+    display: contents;
+  }
   /* display: contents makes children direct grid children */
 }
 ```
 
 #### Mobile Layout Styles
+
 ```css
 .responsive-mobile {
   display: flex;
@@ -276,17 +299,18 @@ onMount(() => {
 }
 
 .mobile-content-area {
-  flex: 1;           /* Takes available space */
-  overflow-y: auto;  /* Scrollable */
+  flex: 1; /* Takes available space */
+  overflow-y: auto; /* Scrollable */
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
   background: #fff;
-  padding-bottom: 60px;  /* Space for nav bar */
+  padding-bottom: 60px; /* Space for nav bar */
   min-height: 0;
 }
 
-.mobile-list-view, .mobile-full-screen-view {
+.mobile-list-view,
+.mobile-full-screen-view {
   width: 100%;
   overflow-y: auto;
   overflow-x: hidden;
@@ -296,6 +320,7 @@ onMount(() => {
 ```
 
 #### Desktop Layout Styles
+
 ```css
 .app-content {
   position: relative;
@@ -322,6 +347,7 @@ onMount(() => {
 ## CSS Files Integration
 
 ### responsive.css - Custom Properties
+
 ```css
 :root {
   /* Breakpoints */
@@ -367,6 +393,7 @@ onMount(() => {
 ### layout.css - Grid Definitions
 
 #### Default (Mobile)
+
 ```css
 .app-layout {
   width: 100%;
@@ -374,7 +401,10 @@ onMount(() => {
   overflow: hidden;
   display: grid;
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 1;
 
   /* Mobile layout: single column + bottom nav */
@@ -384,10 +414,11 @@ onMount(() => {
 ```
 
 #### Tablet (640px - 1023px)
+
 ```css
 @media (min-width: 640px) and (max-width: 1023px) {
   .app-layout {
-    grid-template-columns: auto 1fr;  /* Sidebar + Content */
+    grid-template-columns: auto 1fr; /* Sidebar + Content */
     grid-template-rows: auto 1fr;
   }
 
@@ -406,38 +437,63 @@ onMount(() => {
     /* Positioned absolute, floats over content */
     position: absolute;
     right: 0;
-    transform: translateX(100%);  /* Hidden by default */
+    transform: translateX(100%); /* Hidden by default */
   }
 }
 ```
 
 #### Desktop (1024px - 1439px)
+
 ```css
 @media (min-width: 1024px) and (max-width: 1439px) {
   .app-layout {
-    grid-template-columns: auto 1fr auto;  /* Sidebar | Content | Sidebar */
+    grid-template-columns: auto 1fr auto; /* Sidebar | Content | Sidebar */
     grid-template-rows: auto 1fr;
   }
 
-  .primary-sidebar { grid-column: 1; grid-row: 2; }
-  .app-content { grid-column: 2; grid-row: 2; }
-  .secondary-sidebar { grid-column: 3; grid-row: 2; }
-  .tertiary-sidebar { position: absolute; }  /* Floating */
+  .primary-sidebar {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .app-content {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .secondary-sidebar {
+    grid-column: 3;
+    grid-row: 2;
+  }
+  .tertiary-sidebar {
+    position: absolute;
+  } /* Floating */
 }
 ```
 
 #### Ultra-wide (1440px+)
+
 ```css
 @media (min-width: 1440px) {
   .app-layout {
-    grid-template-columns: 340px 1fr 340px 340px;  /* All 4 columns */
+    grid-template-columns: 340px 1fr 340px 340px; /* All 4 columns */
     grid-template-rows: auto 1fr;
   }
 
-  .primary-sidebar { grid-column: 1; grid-row: 2; }
-  .app-content { grid-column: 2; grid-row: 2; }
-  .secondary-sidebar { grid-column: 3; grid-row: 2; }
-  .tertiary-sidebar { grid-column: 4; grid-row: 2; }
+  .primary-sidebar {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .app-content {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .secondary-sidebar {
+    grid-column: 3;
+    grid-row: 2;
+  }
+  .tertiary-sidebar {
+    grid-column: 4;
+    grid-row: 2;
+  }
 }
 ```
 
@@ -446,6 +502,7 @@ onMount(() => {
 ## How `display: contents` Works
 
 ### Without `display: contents` (Broken)
+
 ```
 .app-layout (CSS Grid)
 └── .responsive-desktop (grid child #1)
@@ -459,6 +516,7 @@ Layout breaks because grid rules expect multiple children
 ```
 
 ### With `display: contents` (Fixed)
+
 ```
 .app-layout (CSS Grid)
 ├── .primary-sidebar (direct child, grid child #1)
@@ -476,24 +534,28 @@ Layout works!
 ## Key Concepts
 
 ### 1. Responsive Without JavaScript
+
 - ✅ All breakpoints handled by CSS media queries
 - ✅ No viewport width checking in JavaScript
 - ✅ No resize event listeners
 - ✅ Layout changes automatically
 
 ### 2. Single HTML Structure for All Viewports
+
 - ✅ Both mobile and desktop HTML always in DOM
 - ✅ CSS media queries show/hide appropriate view
 - ✅ No conditional rendering based on viewport
 - ✅ Eliminates JavaScript branching
 
 ### 3. CSS Grid for Layout
+
 - ✅ Grid columns change at each breakpoint
 - ✅ Grid children automatically reflow
 - ✅ Sidebars position themselves via grid-column
 - ✅ No need for absolute positioning (mostly)
 
 ### 4. Component Composition
+
 - ✅ ResponsiveLayout manages structure
 - ✅ Slots allow dashboard to inject content
 - ✅ Dashboard doesn't know about responsive logic
@@ -506,12 +568,14 @@ Layout works!
 ### Browser DevTools Verification
 
 #### Test Grid is Active
+
 ```javascript
 const layout = document.querySelector('.app-layout');
 console.log('Is grid:', getComputedStyle(layout).display === 'grid');
 ```
 
 #### Test Correct Breakpoint
+
 ```javascript
 const layout = document.querySelector('.app-layout');
 const cols = getComputedStyle(layout).gridTemplateColumns;
@@ -520,16 +584,18 @@ console.log('Grid columns:', cols);
 ```
 
 #### Test Sidebar Positioning
+
 ```javascript
 const sidebar = document.querySelector('.primary-sidebar');
 const gridCol = getComputedStyle(sidebar).gridColumn;
-console.log('Sidebar grid column:', gridCol);  // Should be '1'
+console.log('Sidebar grid column:', gridCol); // Should be '1'
 ```
 
 #### Test Visibility
+
 ```javascript
 const sidebar = document.querySelector('.primary-sidebar');
-console.log('Sidebar width:', sidebar.offsetWidth + 'px');  // Should be 340px
+console.log('Sidebar width:', sidebar.offsetWidth + 'px'); // Should be 340px
 console.log('Is visible:', sidebar.offsetWidth > 0);
 ```
 
@@ -538,12 +604,14 @@ console.log('Is visible:', sidebar.offsetWidth > 0);
 ## Performance Characteristics
 
 ### Bundle Size
+
 - Component code: ~8 KB
 - CSS variables: ~15 KB
 - Grid layouts: ~25 KB
 - Total: ~48 KB (minified + gzipped)
 
 ### Runtime Performance
+
 - No calculations on resize
 - No JavaScript-based layout
 - CSS media queries handle everything
@@ -551,6 +619,7 @@ console.log('Is visible:', sidebar.offsetWidth > 0);
 - **Expected impact: None or positive (less JS)**
 
 ### Memory Usage
+
 - Component instance: ~5 KB
 - CSS rules: Already loaded
 - No additional memory overhead
@@ -563,6 +632,7 @@ console.log('Is visible:', sidebar.offsetWidth > 0);
 ✅ **100% Compatible with MapLayout**
 
 ### Maintained
+
 - ✅ All props (9 exports)
 - ✅ All slots (7 named slots)
 - ✅ All methods (getMapComponent)
@@ -570,11 +640,13 @@ console.log('Is visible:', sidebar.offsetWidth > 0);
 - ✅ All state bindings (mobileActiveTab, etc.)
 
 ### Dashboard Changes Required
+
 - ✅ Line 8: `MapLayout` → `ResponsiveLayout`
 - ✅ Line 522: `<MapLayout>` → `<ResponsiveLayout>`
 - ✅ Everything else: **NO CHANGES**
 
 ### Rollback Path
+
 - If issues: Change import back to MapLayout
 - No data migration needed
 - No database changes
@@ -585,14 +657,18 @@ console.log('Is visible:', sidebar.offsetWidth > 0);
 ## Critical Fix Applied
 
 ### The Problem
+
 CSS files existed but weren't imported:
+
 ```typescript
 // Before: No CSS imports
 import MapVisualization from './MapVisualization.svelte';
 ```
 
 ### The Solution
+
 Added CSS imports:
+
 ```typescript
 // After: CSS files imported
 import MapVisualization from './MapVisualization.svelte';
@@ -601,6 +677,7 @@ import '$lib/styles/layout.css';
 ```
 
 ### Why This Works
+
 1. Svelte/Vite processes the imports
 2. CSS rules get bundled
 3. Rules apply to the document
@@ -647,6 +724,6 @@ Total Code Changes:
 
 ---
 
-*Phase 2 Implementation Details*
-*Complete technical breakdown*
-*Status: Production-ready*
+_Phase 2 Implementation Details_
+_Complete technical breakdown_
+_Status: Production-ready_

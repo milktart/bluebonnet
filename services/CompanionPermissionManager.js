@@ -21,7 +21,9 @@ class CompanionPermissionManager {
   async canViewTripsOf(userId, targetUserId) {
     const permission = await db.CompanionPermission.findOne({
       where: {
-        companionId: { [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(targetUserId, userId) },
+        companionId: {
+          [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(targetUserId, userId),
+        },
         grantedBy: userId,
       },
     });
@@ -37,7 +39,9 @@ class CompanionPermissionManager {
   async canEditTripsOf(userId, targetUserId) {
     const permission = await db.CompanionPermission.findOne({
       where: {
-        companionId: { [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(targetUserId, userId) },
+        companionId: {
+          [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(targetUserId, userId),
+        },
         grantedBy: userId,
       },
     });
@@ -53,7 +57,9 @@ class CompanionPermissionManager {
   async canManageCompanionsOf(userId, targetUserId) {
     const permission = await db.CompanionPermission.findOne({
       where: {
-        companionId: { [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(targetUserId, userId) },
+        companionId: {
+          [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(targetUserId, userId),
+        },
         grantedBy: userId,
       },
     });
@@ -75,7 +81,12 @@ class CompanionPermissionManager {
 
     // Check trip companion permissions
     const tripCompanion = await db.TripCompanion.findOne({
-      where: { tripId, companionId: { [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(trip.userId, userId) } },
+      where: {
+        tripId,
+        companionId: {
+          [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(trip.userId, userId),
+        },
+      },
     });
 
     return tripCompanion?.canView ?? false;
@@ -96,7 +107,12 @@ class CompanionPermissionManager {
 
     // Check trip companion permissions
     const tripCompanion = await db.TripCompanion.findOne({
-      where: { tripId, companionId: { [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(trip.userId, userId) } },
+      where: {
+        tripId,
+        companionId: {
+          [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(trip.userId, userId),
+        },
+      },
     });
 
     return tripCompanion?.canEdit ?? false;
@@ -117,7 +133,12 @@ class CompanionPermissionManager {
 
     // Check trip companion permissions
     const tripCompanion = await db.TripCompanion.findOne({
-      where: { tripId, companionId: { [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(trip.userId, userId) } },
+      where: {
+        tripId,
+        companionId: {
+          [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(trip.userId, userId),
+        },
+      },
     });
 
     return tripCompanion?.canManageCompanions ?? false;
@@ -144,7 +165,9 @@ class CompanionPermissionManager {
       where: {
         itemType,
         itemId,
-        companionId: { [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(item.userId, userId) },
+        companionId: {
+          [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(item.userId, userId),
+        },
       },
     });
 
@@ -155,7 +178,9 @@ class CompanionPermissionManager {
       const tripCompanion = await db.TripCompanion.findOne({
         where: {
           tripId: item.tripId,
-          companionId: { [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(item.userId, userId) },
+          companionId: {
+            [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(item.userId, userId),
+          },
         },
       });
 
@@ -186,7 +211,9 @@ class CompanionPermissionManager {
       where: {
         itemType,
         itemId,
-        companionId: { [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(item.userId, userId) },
+        companionId: {
+          [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(item.userId, userId),
+        },
       },
     });
 
@@ -197,7 +224,9 @@ class CompanionPermissionManager {
       const tripCompanion = await db.TripCompanion.findOne({
         where: {
           tripId: item.tripId,
-          companionId: { [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(item.userId, userId) },
+          companionId: {
+            [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(item.userId, userId),
+          },
         },
       });
 
@@ -228,7 +257,9 @@ class CompanionPermissionManager {
       where: {
         itemType,
         itemId,
-        companionId: { [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(item.userId, userId) },
+        companionId: {
+          [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(item.userId, userId),
+        },
       },
     });
 
@@ -239,7 +270,9 @@ class CompanionPermissionManager {
       const tripCompanion = await db.TripCompanion.findOne({
         where: {
           tripId: item.tripId,
-          companionId: { [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(item.userId, userId) },
+          companionId: {
+            [db.Sequelize.Op.in]: await this._getCompanionIdsByUserId(item.userId, userId),
+          },
         },
       });
 

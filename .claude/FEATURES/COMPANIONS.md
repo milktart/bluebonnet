@@ -15,6 +15,7 @@ Travel companions allow users to collaborate on trips, share planning responsibi
 ## Data Model
 
 ### TravelCompanion
+
 **File:** `models/TravelCompanion.js`
 
 ```javascript
@@ -30,6 +31,7 @@ Travel companions allow users to collaborate on trips, share planning responsibi
 ```
 
 ### TripCompanion (Junction)
+
 **File:** `models/TripCompanion.js`
 
 Links companions to trips with permissions:
@@ -50,6 +52,7 @@ Links companions to trips with permissions:
 ## API Endpoints
 
 ### Create Companion
+
 ```
 POST /api/companions
 Body: { name, email, phone }
@@ -57,6 +60,7 @@ Returns: { success: true, companion: {...} }
 ```
 
 ### Add Companion to Trip
+
 ```
 POST /api/trips/:tripId/companions
 Body: { companionId, canEdit }
@@ -64,12 +68,14 @@ Returns: { success: true, tripCompanion: {...} }
 ```
 
 ### Remove Companion from Trip
+
 ```
 DELETE /api/trips/:tripId/companions/:companionId
 Returns: { success: true }
 ```
 
 ### Update Companion Permissions
+
 ```
 PUT /api/trips/:tripId/companions/:companionId
 Body: { canEdit }
@@ -77,6 +83,7 @@ Returns: { success: true, tripCompanion: {...} }
 ```
 
 ### Get Trip Companions
+
 ```
 GET /api/trips/:tripId/companions
 Returns: { success: true, companions: [...] }
@@ -87,18 +94,22 @@ Returns: { success: true, companions: [...] }
 ## Frontend Implementation
 
 ### Companion Selector
+
 **File:** `public/js/companions.js`
 
 Used in forms for:
+
 - Assigning flights to companions
 - Assigning hotels/rooms to companions
 - Voucher redemption assignments
 - Event attendance
 
 ### Companion Management
+
 **File:** `views/partials/companions-manage.ejs`
 
 Features:
+
 - View trip companions list
 - Add new companion (or existing profile)
 - Edit companion permissions
@@ -106,7 +117,9 @@ Features:
 - View companion assignments across items
 
 ### Form Integration
+
 When creating flights, hotels, events:
+
 - Dropdown/checkboxes for selecting companion participants
 - Displayed during trip item add/edit
 - Stored with voucher attachments
@@ -118,23 +131,28 @@ When creating flights, hotels, events:
 ### Permission Levels
 
 **Owner (Trip Creator)**
+
 - Create, edit, delete any trip item
 - Add/remove companions
 - Change companion permissions
 - Delete trip
 
 **Editor Companion (canEdit: true)**
+
 - Create, edit, delete trip items
 - Add/remove companions from trip items
 - Cannot delete trip or remove other companions
 
 **Viewer Companion (canEdit: false)**
+
 - View trip and all items
 - Cannot make any changes
 - Can be assigned as passenger/guest on items
 
 ### Default Permissions
+
 Trips have `defaultCompanionEditPermission`:
+
 - When new companion added, inherits this permission
 - Owner can override per-companion
 - Can be changed trip-wide
@@ -171,11 +189,14 @@ Example: Upgrade voucher assigned to companion on specific flight
 ## Collaboration Features
 
 ### Simultaneous Editing
+
 Currently: Last-write-wins (no conflict resolution)
 Future: Real-time sync via WebSocket (Phase 3)
 
 ### Activity Tracking
+
 Optional: Track who created/edited which items
+
 - Stored in item `createdBy` and `updatedBy` fields
 - Future: Activity log/feed
 
@@ -184,6 +205,7 @@ Optional: Track who created/edited which items
 ## Notifications (Future)
 
 Optional feature to notify companions:
+
 - When they're added to trip
 - When new items added to trip
 - When trip starts/ends
@@ -196,11 +218,13 @@ Optional feature to notify companions:
 ### Email vs Account Link
 
 Companion profiles can exist without account:
+
 - `userId: null` - Standalone companion profile
 - Email used for notifications/invitations
 - No login capability unless user creates account
 
 When companion creates account:
+
 - Email matched to existing profile
 - `userId` populated
 - Can login and view own trips
@@ -216,6 +240,7 @@ When companion creates account:
 ## Phase 1 Migration (Svelte)
 
 ### New Components
+
 ```
 src/lib/components/
 ├── CompanionSelector.svelte    # Add/select companions
@@ -225,6 +250,7 @@ src/lib/components/
 ```
 
 ### Svelte Implementation
+
 ```svelte
 <script lang="ts">
   import { tripStore } from '$lib/stores/tripStore';

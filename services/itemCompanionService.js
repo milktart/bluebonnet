@@ -176,9 +176,7 @@ class ItemCompanionService {
           }
 
           // Ensure it's an array and filter out empty values
-          companionIds = Array.isArray(companionIds)
-            ? companionIds.filter((c) => c)
-            : [];
+          companionIds = Array.isArray(companionIds) ? companionIds.filter((c) => c) : [];
         } catch (e) {
           logger.warn('Error parsing companions, using empty array:', e);
           companionIds = [];

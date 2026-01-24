@@ -15,6 +15,7 @@ Before starting, make sure you have:
 - **A code editor** - VS Code recommended
 
 **Check your versions:**
+
 ```bash
 node --version    # Should be v18+
 npm --version     # Should be v9+
@@ -29,17 +30,20 @@ docker --version  # For Docker setup (optional)
 **Why Docker?** Everything works the same for everyone. No configuration needed.
 
 ### Step 1: Clone Repository
+
 ```bash
 git clone https://github.com/yourusername/bluebonnet.git
 cd bluebonnet-dev
 ```
 
 ### Step 2: Start Services
+
 ```bash
 docker-compose up --build
 ```
 
 This will:
+
 - Build the application
 - Start PostgreSQL database
 - Start Redis cache
@@ -47,6 +51,7 @@ This will:
 - Initialize database with tables and airport data
 
 ### Step 3: Open Application
+
 ```
 http://localhost:3500
 ```
@@ -54,6 +59,7 @@ http://localhost:3500
 **Done!** Your app is running. Skip to [First Steps](#first-steps).
 
 **Troubleshooting Docker?**
+
 - Check [Setup Issues](./TROUBLESHOOTING/SETUP_ISSUES.md)
 - Make sure Docker Desktop is running
 - Try `docker ps` to verify containers running
@@ -65,12 +71,14 @@ http://localhost:3500
 For local development without Docker.
 
 ### Step 1: Clone Repository
+
 ```bash
 git clone https://github.com/yourusername/bluebonnet.git
 cd bluebonnet-dev
 ```
 
 ### Step 2: Install Dependencies
+
 ```bash
 npm install
 ```
@@ -78,11 +86,13 @@ npm install
 This installs all Node.js packages.
 
 ### Step 3: Create Environment File
+
 ```bash
 cp .env.example .env
 ```
 
 Edit `.env` with your PostgreSQL credentials:
+
 ```env
 DB_HOST=localhost
 DB_PORT=5432
@@ -95,14 +105,17 @@ PORT=3000
 ```
 
 ### Step 4: Start PostgreSQL
+
 Make sure PostgreSQL is running (on port 5432).
 
 **On macOS:**
+
 ```bash
 brew services start postgresql
 ```
 
 **On Linux:**
+
 ```bash
 sudo service postgresql start
 ```
@@ -110,12 +123,14 @@ sudo service postgresql start
 **On Windows:** Start PostgreSQL from Services or PostgreSQL installer
 
 ### Step 5: Initialize Database
+
 ```bash
 npm run db:sync              # Create tables
 npm run db:seed-airports     # Seed airport data
 ```
 
 ### Step 6: Start Development Server
+
 ```bash
 npm run dev
 ```
@@ -127,26 +142,31 @@ Server runs on `http://localhost:3000`
 ## First Steps
 
 ### 1. Create an Account
+
 - Go to http://localhost:3500 (Docker) or http://localhost:3000 (Local)
 - Click "Register"
 - Fill in email, password, name
 - Click "Register"
 
 ### 2. Log In
+
 - Enter your credentials
 - Click "Log In"
 
 ### 3. Create Your First Trip
+
 - Click "New Trip"
 - Enter trip name, start date, end date
 - Click "Create"
 
 ### 4. Add a Travel Item
+
 - Click "Add Flight"
 - Fill in flight details
 - Click "Save"
 
 ### 5. Explore
+
 - Check out the calendar view
 - Add more items (hotels, events, etc.)
 - Try the map view
@@ -157,6 +177,7 @@ Server runs on `http://localhost:3000`
 ## Common Commands
 
 ### Development
+
 ```bash
 # Start development server (watches for changes)
 npm run dev
@@ -178,6 +199,7 @@ npm run build
 ```
 
 ### Database
+
 ```bash
 # Create/update database tables
 npm run db:sync
@@ -196,6 +218,7 @@ npm run db:migrate:status
 ```
 
 ### Code Quality
+
 ```bash
 # Run all tests
 npm test
@@ -223,6 +246,7 @@ npm run format:check
 ```
 
 ### Docker
+
 ```bash
 # Start services
 docker-compose up
@@ -244,6 +268,7 @@ docker-compose exec app bash
 ```
 
 ### Cache
+
 ```bash
 # Clear application cache
 npm run cache:clear
@@ -281,11 +306,13 @@ bluebonnet/
 ## Next Steps
 
 ### Understand the System
+
 1. Read [Development Workflow](./DEVELOPMENT.md) - 10 min
 2. Read [Architecture Overview](./ARCHITECTURE/README.md) - 20 min
 3. Check out [FEATURES/](./FEATURES/) for specific features
 
 ### Start Contributing
+
 1. Pick a simple issue
 2. Follow [CRUD Pattern](./PATTERNS/CRUD_PATTERN.md)
 3. Make your changes
@@ -293,6 +320,7 @@ bluebonnet/
 5. Create a pull request
 
 ### Learn New Technologies
+
 - **Svelte?** → [Svelte Basics](./LEARNING_RESOURCES/SVELTE_BASICS.md)
 - **Express?** → [Backend Architecture](./ARCHITECTURE/BACKEND/README.md)
 - **Database?** → [Database Basics](./LEARNING_RESOURCES/DATABASE_BASICS.md)
@@ -302,11 +330,13 @@ bluebonnet/
 ## Stuck?
 
 ### Check These First
+
 1. [Troubleshooting](./TROUBLESHOOTING/) - Common problems
 2. [Debug Guide](./TROUBLESHOOTING/DEBUG_GUIDE.md) - Debugging methodology
 3. [Setup Issues](./TROUBLESHOOTING/SETUP_ISSUES.md) - Setup problems
 
 ### Ask for Help
+
 - Check relevant documentation in [.claude/](./README.md)
 - Ask a team member
 - Post an issue on GitHub
@@ -316,6 +346,7 @@ bluebonnet/
 ## What's Different Between Options?
 
 ### Docker Setup
+
 - ✅ Everything works out of the box
 - ✅ Same environment as production
 - ✅ Easy to reset (just `docker-compose down`)
@@ -323,6 +354,7 @@ bluebonnet/
 - ❌ Docker must be running
 
 ### Local Setup
+
 - ✅ Faster to iterate (no container overhead)
 - ✅ Easier to debug locally
 - ✅ Less resource usage
@@ -335,13 +367,13 @@ bluebonnet/
 
 ## Troubleshooting Quick Fixes
 
-| Problem | Solution |
-|---------|----------|
-| App won't start | Check Node.js version (`node -v`), run `npm install` |
-| Database error | Check PostgreSQL running, verify `.env` credentials |
-| Port 3000/3500 in use | Change PORT in `.env`, or kill existing process |
-| Module not found | Run `npm install` |
-| Docker errors | Make sure Docker Desktop running, try `docker ps` |
+| Problem               | Solution                                             |
+| --------------------- | ---------------------------------------------------- |
+| App won't start       | Check Node.js version (`node -v`), run `npm install` |
+| Database error        | Check PostgreSQL running, verify `.env` credentials  |
+| Port 3000/3500 in use | Change PORT in `.env`, or kill existing process      |
+| Module not found      | Run `npm install`                                    |
+| Docker errors         | Make sure Docker Desktop running, try `docker ps`    |
 
 More help? See [Setup Issues](./TROUBLESHOOTING/SETUP_ISSUES.md)
 
@@ -350,6 +382,7 @@ More help? See [Setup Issues](./TROUBLESHOOTING/SETUP_ISSUES.md)
 ## You're Ready!
 
 You now have Bluebonnet running locally. Next:
+
 1. Read [Development Workflow](./DEVELOPMENT.md)
 2. Explore the application
 3. Make your first contribution
@@ -359,6 +392,7 @@ You now have Bluebonnet running locally. Next:
 ---
 
 **Related:**
+
 - [Development Workflow](./DEVELOPMENT.md) - Daily commands
 - [Architecture](./ARCHITECTURE/README.md) - How it works
 - [Troubleshooting](./TROUBLESHOOTING/) - When things break

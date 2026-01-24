@@ -45,6 +45,7 @@ Car rentals represent vehicle rentals during trips. Track pickup/dropoff locatio
 ## API Endpoints
 
 ### Create Car Rental
+
 ```
 POST /api/trips/:tripId/car-rentals
 Body: {
@@ -56,12 +57,14 @@ Returns: { success: true, carRental: {...} }
 ```
 
 ### Get Car Rentals
+
 ```
 GET /api/trips/:tripId/car-rentals
 Returns: { success: true, carRentals: [...] }
 ```
 
 ### Update Car Rental
+
 ```
 PUT /api/car-rentals/:id
 Body: {...}
@@ -69,6 +72,7 @@ Returns: { success: true, carRental: {...} }
 ```
 
 ### Delete Car Rental
+
 ```
 DELETE /api/car-rentals/:id
 Returns: { success: true }
@@ -79,9 +83,11 @@ Returns: { success: true }
 ## Frontend Implementation
 
 ### Add/Edit Form
+
 **File:** `views/partials/car-rental-form.ejs`
 
 Features:
+
 - Pickup/dropoff location inputs
 - Datetime pickers
 - Vehicle type selector
@@ -92,7 +98,9 @@ Features:
 - Cost calculator
 
 ### Duration Calculation
+
 Automatically calculates:
+
 - Number of rental days
 - Daily rate calculation
 - Total cost estimate
@@ -102,18 +110,22 @@ Automatically calculates:
 ## Business Logic
 
 ### Rental Period
+
 ```javascript
 const rentalDays = (dropoffDateTime - pickupDateTime) / MS_PER_DAY;
 const totalCost = dailyRate * rentalDays;
 ```
 
 ### Location Tracking
+
 - Pickup coordinates geocoded and stored
 - Dropoff coordinates geocoded and stored
 - Used for map visualization and route planning
 
 ### Companion Assignment
+
 Can assign to multiple companions:
+
 - Primary driver
 - Additional drivers
 - Passenger count
@@ -123,6 +135,7 @@ Can assign to multiple companions:
 ## Calendar Integration
 
 Displayed as:
+
 - Time block from pickup to dropoff
 - Color-coded for car rental
 - Duration shown as number of days
@@ -134,6 +147,7 @@ Displayed as:
 ## Maps & Visualization
 
 Shows:
+
 - Pickup location marker
 - Dropoff location marker
 - Route line between (if different)
@@ -145,6 +159,7 @@ Shows:
 ## Phase 1 Migration (Svelte)
 
 ### New Components
+
 ```
 src/lib/components/
 ├── CarRentalForm.svelte
@@ -169,6 +184,7 @@ src/lib/components/
 ## Vouchers
 
 Car rentals can have:
+
 - Upgrade vouchers
 - Rental credit vouchers
 - Loyalty program points

@@ -1,6 +1,7 @@
 # Responsive Design System - Quick Reference
 
 ## Import the System
+
 ```css
 /* Already imported in app.css */
 @import './lib/styles/responsive.css';
@@ -8,21 +9,27 @@
 ```
 
 ## Breakpoints (Copy & Paste)
+
 ```css
 /* Mobile only (< 640px) */
-@media (max-width: 639px) { }
+@media (max-width: 639px) {
+}
 
 /* Tablet and up (≥ 640px) */
-@media (min-width: 640px) { }
+@media (min-width: 640px) {
+}
 
 /* Desktop and up (≥ 1024px) */
-@media (min-width: 1024px) { }
+@media (min-width: 1024px) {
+}
 
 /* Ultra-wide (≥ 1440px) */
-@media (min-width: 1440px) { }
+@media (min-width: 1440px) {
+}
 ```
 
 ## Spacing Tokens
+
 ```
 --spacing-xs  → 4px to 8px
 --spacing-sm  → 8px to 12px
@@ -33,6 +40,7 @@
 ```
 
 ## Most Common Custom Properties
+
 ```css
 /* Spacing */
 padding: var(--spacing-md);
@@ -55,6 +63,7 @@ z-index: var(--z-sidebar-primary);
 ```
 
 ## Layout Classes
+
 ```html
 <!-- Use these classes in your components -->
 <div class="app-layout">        <!-- Main container -->
@@ -67,6 +76,7 @@ z-index: var(--z-sidebar-primary);
 ```
 
 ## Show/Hide by Breakpoint
+
 ```html
 <!-- Hide on mobile -->
 <div class="hide-mobile">Content for tablet+</div>
@@ -88,26 +98,31 @@ z-index: var(--z-sidebar-primary);
 ```
 
 ## Responsive Typography
+
 ```css
 h1 {
-  font-size: clamp(1.75rem, 8vw, 2.5rem);  /* Scales 28px → 40px */
+  font-size: clamp(1.75rem, 8vw, 2.5rem); /* Scales 28px → 40px */
 }
 
 p {
-  font-size: clamp(0.875rem, 2vw, 1rem);   /* Scales 14px → 16px */
+  font-size: clamp(0.875rem, 2vw, 1rem); /* Scales 14px → 16px */
 }
 ```
 
 ## Touch-Friendly Elements
+
 ```css
 /* Minimum touch target (WCAG AA) */
-button, a, input {
-  min-height: var(--touch-target-min);  /* 44px */
+button,
+a,
+input {
+  min-height: var(--touch-target-min); /* 44px */
   min-width: var(--touch-target-min);
 }
 ```
 
 ## Notched Device Safe Areas
+
 ```css
 .notch-safe {
   padding-left: max(var(--spacing-md), env(safe-area-inset-left));
@@ -117,19 +132,27 @@ button, a, input {
 ```
 
 ## Sidebar States (CSS Classes)
+
 ```html
 <!-- Open/closed states -->
-<aside class="secondary-sidebar open">  <!-- Visible -->
-<aside class="secondary-sidebar">       <!-- Hidden -->
+<aside class="secondary-sidebar open">
+  <!-- Visible -->
+  <aside class="secondary-sidebar">
+    <!-- Hidden -->
 
-<!-- Collapsed navigation drawer -->
-<aside class="primary-sidebar collapsed"> <!-- Drawer mode -->
-<aside class="primary-sidebar">          <!-- Sidebar mode -->
+    <!-- Collapsed navigation drawer -->
+    <aside class="primary-sidebar collapsed">
+      <!-- Drawer mode -->
+      <aside class="primary-sidebar"><!-- Sidebar mode --></aside>
+    </aside>
+  </aside>
+</aside>
 ```
 
 ## Common Patterns
 
 ### Responsive Flexbox
+
 ```css
 .flex-responsive {
   display: flex;
@@ -145,6 +168,7 @@ button, a, input {
 ```
 
 ### Responsive Grid
+
 ```css
 .grid-responsive {
   display: grid;
@@ -166,6 +190,7 @@ button, a, input {
 ```
 
 ### Bottom Sheet (Mobile)
+
 ```css
 .bottom-sheet {
   position: fixed;
@@ -186,6 +211,7 @@ button, a, input {
 ```
 
 ### Side Drawer (Tablet)
+
 ```css
 .side-drawer {
   position: fixed;
@@ -204,6 +230,7 @@ button, a, input {
 ```
 
 ## Color Palette (Quick Reference)
+
 ```
 Primary Blue:     #007bff    (--color-primary)
 Dark Blue:        #0056b3    (--color-primary-dark)
@@ -227,6 +254,7 @@ Info:             #3b82f6    (--color-info)
 ```
 
 ## Z-Index Stack (Don't memorize, reference)
+
 ```
 Map Background:           1
 Main Content:             5
@@ -241,6 +269,7 @@ Top/Bottom Navigation:   50
 ```
 
 ## Animation Durations
+
 ```
 --transition-fast:   0.15s  (Quick feedback)
 --transition-smooth: 0.35s  (Standard animations)
@@ -248,6 +277,7 @@ Top/Bottom Navigation:   50
 ```
 
 ## Testing Widths
+
 ```
 Mobile:      375px   (iPhone SE minimum)
 Tablet:      640px   (iPad minimum)
@@ -258,6 +288,7 @@ Full HD:    1920px   (Full HD monitor)
 ```
 
 ## Most Important Rules
+
 1. ✅ Use `var(--spacing-*)` instead of hardcoded sizes
 2. ✅ Use `var(--color-*)` for all colors
 3. ✅ Use media query boundaries: 640px, 1024px, 1440px
@@ -267,6 +298,7 @@ Full HD:    1920px   (Full HD monitor)
 7. ✅ Always test desktop (≥ 1024px) view
 
 ## Don't Do This ❌
+
 ```css
 /* ❌ Hardcoded values */
 margin: 16px;
@@ -280,15 +312,18 @@ color: #111827;
 
 /* ❌ Missing mobile styles */
 .component {
-  width: 33%;  /* Breaks on mobile! */
+  width: 33%; /* Breaks on mobile! */
 }
 
 /* ❌ Hard to maintain breakpoints */
-@media (max-width: 480px) { }
-@media (min-width: 481px) and (max-width: 768px) { }
+@media (max-width: 480px) {
+}
+@media (min-width: 481px) and (max-width: 768px) {
+}
 ```
 
 ## Do This Instead ✅
+
 ```css
 /* ✅ Use custom properties */
 margin: var(--spacing-lg);
@@ -302,28 +337,32 @@ color: var(--color-text-primary);
 
 /* ✅ Mobile-first approach */
 .component {
-  width: 100%;  /* Mobile default */
+  width: 100%; /* Mobile default */
 }
 
 @media (min-width: 640px) {
   .component {
-    width: 50%;  /* Tablet */
+    width: 50%; /* Tablet */
   }
 }
 
 @media (min-width: 1024px) {
   .component {
-    width: 33%;  /* Desktop */
+    width: 33%; /* Desktop */
   }
 }
 
 /* ✅ Use standard breakpoints */
-@media (max-width: 639px) { }     /* Mobile */
-@media (min-width: 640px) { }     /* Tablet+ */
-@media (min-width: 1024px) { }    /* Desktop+ */
+@media (max-width: 639px) {
+} /* Mobile */
+@media (min-width: 640px) {
+} /* Tablet+ */
+@media (min-width: 1024px) {
+} /* Desktop+ */
 ```
 
 ## Debug Mode
+
 ```javascript
 // Enable breakpoint display (bottom-right corner)
 document.documentElement.classList.add('debug-mode');
@@ -333,6 +372,7 @@ document.documentElement.classList.remove('debug-mode');
 ```
 
 ## Accessibility Checklist
+
 - [ ] Touch targets are 44px minimum
 - [ ] Text has sufficient contrast
 - [ ] Respects `prefers-reduced-motion`
@@ -342,6 +382,7 @@ document.documentElement.classList.remove('debug-mode');
 - [ ] Tested on actual mobile device
 
 ## Need More Help?
+
 - **Full Docs:** `frontend/src/lib/styles/README.md`
 - **System Spec:** `RESPONSIVE_REDESIGN_SPEC.md`
 - **Architecture:** `/.claude/ARCHITECTURE/FRONTEND/README.md`

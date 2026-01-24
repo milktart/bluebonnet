@@ -9,6 +9,7 @@ const {
   redirectAfterSuccess,
   redirectAfterError,
   verifyResourceOwnership,
+  verifyResourceOwnershipViaTrip,
   verifyTripItemEditAccess,
   convertToUTC,
 } = require('./helpers/resourceController');
@@ -77,7 +78,13 @@ exports.createCarRental = async (req, res) => {
 
     // Handle companions - unified method
     try {
-      await itemCompanionService.handleItemCompanions('car_rental', carRental.id, companions, tripId, req.user.id);
+      await itemCompanionService.handleItemCompanions(
+        'car_rental',
+        carRental.id,
+        companions,
+        tripId,
+        req.user.id
+      );
     } catch (e) {
       logger.error('Error managing companions for car rental:', e);
     }
@@ -122,7 +129,9 @@ exports.updateCarRental = async (req, res) => {
     // Verify ownership - check if user is item owner OR trip owner OR trip admin with canEdit permission
     const isItemOwner = verifyResourceOwnership(carRental, req.user.id);
     const { TripCompanion } = require('../models');
-    const canEditTrip = carRental.tripId ? await verifyTripItemEditAccess(carRental.tripId, req.user.id, Trip, TripCompanion) : false;
+    const canEditTrip = carRental.tripId
+      ? await verifyTripItemEditAccess(carRental.tripId, req.user.id, Trip, TripCompanion)
+      : false;
 
     if (!isItemOwner && !canEditTrip) {
       return sendAsyncOrRedirect(req, res, {
@@ -191,7 +200,8 @@ exports.updateCarRental = async (req, res) => {
       success: true,
       data: carRental,
       message: 'Car rental updated successfully',
-      redirectUrl: newTripId || carRental.tripId ? `/trips/${newTripId || carRental.tripId}` : '/dashboard',
+      redirectUrl:
+        newTripId || carRental.tripId ? `/trips/${newTripId || carRental.tripId}` : '/dashboard',
     });
   } catch (error) {
     logger.error('ERROR in updateCarRental:', error);
@@ -214,7 +224,9 @@ exports.deleteCarRental = async (req, res) => {
     // Verify ownership - check if user is item owner OR trip owner OR trip admin with canEdit permission
     const isItemOwner = verifyResourceOwnership(carRental, req.user.id);
     const { TripCompanion } = require('../models');
-    const canEditTrip = carRental.tripId ? await verifyTripItemEditAccess(carRental.tripId, req.user.id, Trip, TripCompanion) : false;
+    const canEditTrip = carRental.tripId
+      ? await verifyTripItemEditAccess(carRental.tripId, req.user.id, Trip, TripCompanion)
+      : false;
 
     if (!isItemOwner && !canEditTrip) {
       return sendAsyncOrRedirect(req, res, {

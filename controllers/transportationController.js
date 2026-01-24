@@ -80,7 +80,13 @@ exports.createTransportation = async (req, res) => {
 
     // Handle companions - unified method
     try {
-      await itemCompanionService.handleItemCompanions('transportation', transportation.id, companions, tripId, req.user.id);
+      await itemCompanionService.handleItemCompanions(
+        'transportation',
+        transportation.id,
+        companions,
+        tripId,
+        req.user.id
+      );
     } catch (e) {
       logger.error('Error managing companions for transportation:', e);
     }
@@ -131,7 +137,9 @@ exports.updateTransportation = async (req, res) => {
     // Verify ownership - check if user is item creator OR trip owner OR trip admin with canEdit permission
     const isItemOwner = verifyResourceOwnership(transportation, req.user.id);
     const { TripCompanion } = require('../models');
-    const canEditTrip = transportation.tripId ? await verifyTripItemEditAccess(transportation.tripId, req.user.id, Trip, TripCompanion) : false;
+    const canEditTrip = transportation.tripId
+      ? await verifyTripItemEditAccess(transportation.tripId, req.user.id, Trip, TripCompanion)
+      : false;
 
     if (!isItemOwner && !canEditTrip) {
       return sendAsyncOrRedirect(req, res, {
@@ -223,7 +231,10 @@ exports.updateTransportation = async (req, res) => {
       success: true,
       data: transportation,
       message: 'Transportation updated successfully',
-      redirectUrl: newTripId || transportation.tripId ? `/trips/${newTripId || transportation.tripId}` : '/dashboard',
+      redirectUrl:
+        newTripId || transportation.tripId
+          ? `/trips/${newTripId || transportation.tripId}`
+          : '/dashboard',
     });
   } catch (error) {
     logger.error('ERROR in updateTransportation:', error);
@@ -246,7 +257,9 @@ exports.deleteTransportation = async (req, res) => {
     // Verify ownership - check if user is item creator OR trip owner OR trip admin with canEdit permission
     const isItemOwner = verifyResourceOwnership(transportation, req.user.id);
     const { TripCompanion } = require('../models');
-    const canEditTrip = transportation.tripId ? await verifyTripItemEditAccess(transportation.tripId, req.user.id, Trip, TripCompanion) : false;
+    const canEditTrip = transportation.tripId
+      ? await verifyTripItemEditAccess(transportation.tripId, req.user.id, Trip, TripCompanion)
+      : false;
 
     if (!isItemOwner && !canEditTrip) {
       return sendAsyncOrRedirect(req, res, {

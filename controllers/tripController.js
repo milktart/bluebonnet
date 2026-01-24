@@ -1040,7 +1040,9 @@ exports.viewTrip = async (req, res) => {
     const isAdmin = isOwner || (companionRecord && companionRecord.canEdit);
 
     // Debug logging
-    logger.info(`Trip ${trip.id}: isOwner=${isOwner}, companionRecord=${companionRecord ? 'found' : 'not found'}, canEdit=${companionRecord?.canEdit}, isAdmin=${isAdmin}`);
+    logger.info(
+      `Trip ${trip.id}: isOwner=${isOwner}, companionRecord=${companionRecord ? 'found' : 'not found'}, canEdit=${companionRecord?.canEdit}, isAdmin=${isAdmin}`
+    );
 
     // Get current user's travel companion profile (if they're a companion)
     let userCompanionId = null;
@@ -1083,12 +1085,24 @@ exports.viewTrip = async (req, res) => {
     // Mark all items as editable if user is the owner or a trip admin
     if (isAdmin) {
       // Add canEdit: true to all items
-      tripData.flights?.forEach((f) => { f.canEdit = true; });
-      tripData.hotels?.forEach((h) => { h.canEdit = true; });
-      tripData.transportation?.forEach((t) => { t.canEdit = true; });
-      tripData.carRentals?.forEach((c) => { c.canEdit = true; });
-      tripData.events?.forEach((e) => { e.canEdit = true; });
-      logger.info(`Trip ${trip.id}: Marked ${tripData.flights?.length || 0} flights, ${tripData.hotels?.length || 0} hotels as editable`);
+      tripData.flights?.forEach((f) => {
+        f.canEdit = true;
+      });
+      tripData.hotels?.forEach((h) => {
+        h.canEdit = true;
+      });
+      tripData.transportation?.forEach((t) => {
+        t.canEdit = true;
+      });
+      tripData.carRentals?.forEach((c) => {
+        c.canEdit = true;
+      });
+      tripData.events?.forEach((e) => {
+        e.canEdit = true;
+      });
+      logger.info(
+        `Trip ${trip.id}: Marked ${tripData.flights?.length || 0} flights, ${tripData.hotels?.length || 0} hotels as editable`
+      );
     }
 
     // Get airline data for form lookup

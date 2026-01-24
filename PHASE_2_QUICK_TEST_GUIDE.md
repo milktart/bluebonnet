@@ -9,7 +9,9 @@
 ## Quick Start
 
 ### 1. Test Mobile (< 640px)
+
 ✅ Should already be working
+
 ```
 Expected:
 - Single column layout
@@ -19,6 +21,7 @@ Expected:
 ```
 
 ### 2. Test Tablet (640px - 1023px) ← FIXED
+
 ```
 Expected:
 - Two columns: Left sidebar + Map
@@ -28,6 +31,7 @@ Expected:
 ```
 
 ### 3. Test Desktop (1024px - 1439px) ← FIXED
+
 ```
 Expected:
 - Three columns: Sidebar | Map | Details
@@ -37,6 +41,7 @@ Expected:
 ```
 
 ### 4. Test Ultra-wide (1440px+) ← FIXED
+
 ```
 Expected:
 - Four columns: All visible
@@ -51,13 +56,16 @@ Expected:
 ## Browser Testing Steps
 
 ### Step 1: Open DevTools
+
 - Chrome/Edge/Firefox: Press F12 (or Cmd+Option+I on Mac)
 
 ### Step 2: Enable Responsive Mode
+
 - Chrome/Edge: Press Ctrl+Shift+M (or Cmd+Shift+M on Mac)
 - Firefox: Press Ctrl+Shift+M
 
 ### Step 3: Test These Widths
+
 ```
 375px   → Mobile (should show tabs at bottom)
 640px   → Tablet (should show sidebar + map)
@@ -66,7 +74,9 @@ Expected:
 ```
 
 ### Step 4: Verify CSS Loaded
+
 In DevTools Console:
+
 ```javascript
 const layout = document.querySelector('.app-layout');
 console.log('Grid display:', getComputedStyle(layout).display);
@@ -74,7 +84,9 @@ console.log('Grid display:', getComputedStyle(layout).display);
 ```
 
 ### Step 5: Verify Grid Template
+
 In DevTools Console:
+
 ```javascript
 const layout = document.querySelector('.app-layout');
 const cols = getComputedStyle(layout).gridTemplateColumns;
@@ -87,12 +99,14 @@ console.log('Grid columns:', cols);
 ## What the CSS Import Fix Did
 
 **Before:**
+
 - CSS files existed but weren't imported
 - Grid layout rules never applied
 - Sidebars had no positioning
 - Result: Only map visible
 
 **After:**
+
 - CSS files imported in ResponsiveLayout
 - Grid layout rules apply at runtime
 - Sidebars positioned by CSS Grid
@@ -103,6 +117,7 @@ console.log('Grid columns:', cols);
 ## Testing Checklist
 
 ### Mobile (< 640px)
+
 - [ ] Single column layout
 - [ ] Trip list shows in list view
 - [ ] Bottom tab navigation visible
@@ -110,6 +125,7 @@ console.log('Grid columns:', cols);
 - [ ] Clicking trip shows detail view with back button
 
 ### Tablet (640-1023px) ← CRITICAL
+
 - [ ] TWO columns visible (sidebar left, map right)
 - [ ] Trip list shows in left sidebar
 - [ ] Left sidebar width ~340px
@@ -117,6 +133,7 @@ console.log('Grid columns:', cols);
 - [ ] Clicking trip shows details drawer sliding in from right
 
 ### Desktop (1024-1439px) ← CRITICAL
+
 - [ ] THREE columns visible (left sidebar, map, right sidebar)
 - [ ] Left sidebar: Trip list
 - [ ] Center: Map background
@@ -124,6 +141,7 @@ console.log('Grid columns:', cols);
 - [ ] All three columns proportional
 
 ### Ultra-wide (1440px+)
+
 - [ ] FOUR columns visible
 - [ ] Left: Trip list
 - [ ] Center-left: Map
@@ -136,6 +154,7 @@ console.log('Grid columns:', cols);
 ## If Layout is Still Broken
 
 ### Check 1: CSS Files Loaded?
+
 ```javascript
 // In browser console
 const links = document.head.querySelectorAll('link');
@@ -144,21 +163,24 @@ console.log('CSS files:', links);
 ```
 
 ### Check 2: Grid Active?
+
 ```javascript
 const layout = document.querySelector('.app-layout');
 const styles = getComputedStyle(layout);
-console.log('Display:', styles.display);           // Should be 'grid'
+console.log('Display:', styles.display); // Should be 'grid'
 console.log('Grid columns:', styles.gridTemplateColumns);
 ```
 
 ### Check 3: Sidebars Exist?
+
 ```javascript
 const sidebar = document.querySelector('.primary-sidebar');
-console.log('Sidebar visible:', sidebar?.offsetWidth > 0);  // Should be true
+console.log('Sidebar visible:', sidebar?.offsetWidth > 0); // Should be true
 console.log('Sidebar width:', sidebar?.offsetWidth);
 ```
 
 ### Check 4: Build Updated?
+
 ```bash
 # Make sure you rebuilt after CSS import fix
 npm run build
@@ -170,28 +192,36 @@ npm run build
 ## Common Problems & Quick Fixes
 
 ### Problem: Only Map Shows, No Sidebars
+
 **Solution:**
+
 1. Verify CSS import added to ResponsiveLayout
 2. Run `npm run build`
 3. Refresh browser (hard refresh: Ctrl+Shift+R)
 4. Check DevTools console for errors
 
 ### Problem: Sidebars Show But Layout Wrong
+
 **Solution:**
+
 1. Open DevTools > Styles
 2. Inspect `.app-layout`
 3. Check `grid-template-columns` value
 4. Should change at 640px, 1024px, 1440px breakpoints
 
 ### Problem: Layout Jittery on Resize
+
 **Solution:**
+
 1. This is normal at breakpoints
 2. CSS Grid recalculates
 3. Should be smooth transition
 4. Check for CSS conflicts from other stylesheets
 
 ### Problem: Mobile Tabs Don't Work
+
 **Solution:**
+
 1. Check MobileTabNavigation renders
 2. Verify mobileActiveTab binding
 3. Check DevTools Console for JavaScript errors
@@ -201,6 +231,7 @@ npm run build
 ## Visual Validation
 
 ### Mobile (375px)
+
 ```
 ┌─────────────────────┐
 │ My Trips    [+ ⚙]   │
@@ -215,9 +246,11 @@ npm run build
 │ 📋  ➕  📅  ⚙ │
 └─────────────────────┘
 ```
+
 Expected: Single column with tabs
 
 ### Tablet (768px)
+
 ```
 ┌──────────────┬──────────────┐
 │ My Trips     │              │
@@ -230,9 +263,11 @@ Expected: Single column with tabs
 │              │              │
 └──────────────┴──────────────┘
 ```
+
 Expected: Sidebar left + Map right
 
 ### Desktop (1280px)
+
 ```
 ┌──────────┬──────────────┬──────────┐
 │My Trips  │              │ Details  │
@@ -245,6 +280,7 @@ Expected: Sidebar left + Map right
 │          │              │          │
 └──────────┴──────────────┴──────────┘
 ```
+
 Expected: Three columns
 
 ---
@@ -254,20 +290,25 @@ Expected: Three columns
 Copy & paste into browser console to test:
 
 ### Test 1: Grid Active?
+
 ```javascript
-console.log('Grid active:',
+console.log(
+  'Grid active:',
   getComputedStyle(document.querySelector('.app-layout')).display === 'grid'
 );
 ```
 
 ### Test 2: Grid Columns Value
+
 ```javascript
-console.log('Grid template:',
+console.log(
+  'Grid template:',
   getComputedStyle(document.querySelector('.app-layout')).gridTemplateColumns
 );
 ```
 
 ### Test 3: Sidebar Visible?
+
 ```javascript
 const sidebar = document.querySelector('.primary-sidebar');
 console.log('Sidebar visible:', sidebar?.offsetWidth > 0);
@@ -275,6 +316,7 @@ console.log('Sidebar width:', sidebar?.offsetWidth + 'px');
 ```
 
 ### Test 4: Current Breakpoint
+
 ```javascript
 const w = window.innerWidth;
 console.log(w < 640 ? 'Mobile' : w < 1024 ? 'Tablet' : w < 1440 ? 'Desktop' : 'Ultra-wide');
@@ -311,6 +353,7 @@ console.log(w < 640 ? 'Mobile' : w < 1024 ? 'Tablet' : w < 1440 ? 'Desktop' : 'U
 ## Success Criteria
 
 ✅ **Phase 2 is working if:**
+
 1. Mobile layout shows single column + tabs
 2. Tablet layout shows sidebar left + map right
 3. Desktop shows 3 columns: sidebar, map, details
@@ -320,6 +363,7 @@ console.log(w < 640 ? 'Mobile' : w < 1024 ? 'Tablet' : w < 1440 ? 'Desktop' : 'U
 7. CSS Grid rules apply (verified in DevTools)
 
 ❌ **Phase 2 is broken if:**
+
 1. Only map visible on tablet+
 2. Sidebars invisible
 3. Layout doesn't change at breakpoints
@@ -331,9 +375,11 @@ console.log(w < 640 ? 'Mobile' : w < 1024 ? 'Tablet' : w < 1440 ? 'Desktop' : 'U
 ## Next Steps After Testing
 
 ### If Layout Works ✅
+
 → Proceed to Phase 3: Navigation System
 
 ### If Layout Broken ❌
+
 1. Check CSS import in ResponsiveLayout
 2. Verify build completed: `npm run build`
 3. Hard refresh browser: Ctrl+Shift+R
@@ -342,6 +388,6 @@ console.log(w < 640 ? 'Mobile' : w < 1024 ? 'Tablet' : w < 1440 ? 'Desktop' : 'U
 
 ---
 
-*Phase 2 Quick Test Guide*
-*Use this to verify responsive layout works*
-*Expected: Sidebars visible on 640px+*
+_Phase 2 Quick Test Guide_
+_Use this to verify responsive layout works_
+_Expected: Sidebars visible on 640px+_

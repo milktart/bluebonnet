@@ -7,6 +7,7 @@ Essential Svelte concepts for developers starting Phase 1.
 ## Quick Start
 
 ### Installation
+
 ```bash
 npm create vite@latest my-app -- --template svelte
 cd my-app
@@ -15,6 +16,7 @@ npm run dev
 ```
 
 ### Your First Component
+
 ```svelte
 <script>
   let count = 0;
@@ -44,6 +46,7 @@ npm run dev
 ## Reactive Variables
 
 ### Declare with `let`
+
 ```svelte
 <script>
   let name = 'World';
@@ -56,6 +59,7 @@ npm run dev
 ```
 
 ### Reactive Statements
+
 ```svelte
 <script>
   let count = 0;
@@ -70,6 +74,7 @@ npm run dev
 ```
 
 ### Derived State
+
 ```svelte
 <script>
   let items = [1, 2, 3];
@@ -86,6 +91,7 @@ npm run dev
 ## Event Handling
 
 ### Click Events
+
 ```svelte
 <script>
   function handleClick(event) {
@@ -98,6 +104,7 @@ npm run dev
 ```
 
 ### Form Events
+
 ```svelte
 <script>
   let value = '';
@@ -115,6 +122,7 @@ npm run dev
 ```
 
 ### Event Modifiers
+
 ```svelte
 <!-- Stop propagation -->
 <button on:click|stopPropagation={() => alert('clicked')}>
@@ -134,6 +142,7 @@ npm run dev
 ## Two-Way Binding
 
 ### Binding to Input
+
 ```svelte
 <script>
   let name = '';
@@ -144,6 +153,7 @@ npm run dev
 ```
 
 ### Binding to Checkbox
+
 ```svelte
 <script>
   let agreed = false;
@@ -160,6 +170,7 @@ npm run dev
 ```
 
 ### Binding to Select
+
 ```svelte
 <script>
   let selected = '';
@@ -179,6 +190,7 @@ npm run dev
 ## Conditional Rendering
 
 ### if/else
+
 ```svelte
 <script>
   let count = 0;
@@ -194,6 +206,7 @@ npm run dev
 ```
 
 ### each Loop
+
 ```svelte
 <script>
   let items = ['Apple', 'Banana', 'Cherry'];
@@ -207,6 +220,7 @@ npm run dev
 ```
 
 ### each with Index
+
 ```svelte
 {#each items as item, index (item)}
   <p>{index}: {item}</p>
@@ -214,6 +228,7 @@ npm run dev
 ```
 
 ### await Blocks
+
 ```svelte
 <script>
   let promise = fetch('/api/data').then(r => r.json());
@@ -233,6 +248,7 @@ npm run dev
 ## Components
 
 ### Creating a Component
+
 ```svelte
 <!-- Button.svelte -->
 <script>
@@ -252,6 +268,7 @@ npm run dev
 ```
 
 ### Using a Component
+
 ```svelte
 <!-- App.svelte -->
 <script>
@@ -266,6 +283,7 @@ npm run dev
 ```
 
 ### Props
+
 ```svelte
 <!-- Props are exported variables -->
 <script>
@@ -284,6 +302,7 @@ npm run dev
 ```
 
 ### Slots
+
 ```svelte
 <!-- Container.svelte -->
 <div class="card">
@@ -297,6 +316,7 @@ npm run dev
 ```
 
 ### Named Slots
+
 ```svelte
 <!-- Card.svelte -->
 <div class="card">
@@ -324,6 +344,7 @@ npm run dev
 ## Stores
 
 ### Writable Store
+
 ```typescript
 // stores/count.ts
 import { writable } from 'svelte/store';
@@ -339,6 +360,7 @@ import { count } from './stores/count';
 ```
 
 ### Store Subscriptions
+
 ```svelte
 <script>
   import { count } from './stores/count';
@@ -360,6 +382,7 @@ import { count } from './stores/count';
 ## Lifecycle
 
 ### onMount
+
 ```svelte
 <script>
   import { onMount } from 'svelte';
@@ -375,6 +398,7 @@ import { count } from './stores/count';
 ```
 
 ### onDestroy
+
 ```svelte
 <script>
   import { onDestroy } from 'svelte';
@@ -391,6 +415,7 @@ import { count } from './stores/count';
 ## Classes & Styles
 
 ### Dynamic Classes
+
 ```svelte
 <script>
   let isActive = false;
@@ -409,6 +434,7 @@ import { count } from './stores/count';
 ```
 
 ### Dynamic Styles
+
 ```svelte
 <script>
   let color = 'red';
@@ -425,6 +451,7 @@ import { count } from './stores/count';
 ## Animations & Transitions
 
 ### Transitions
+
 ```svelte
 <script>
   import { fade } from 'svelte/transition';
@@ -439,6 +466,7 @@ import { count } from './stores/count';
 ```
 
 ### Common Transitions
+
 - `fade` - Fade in/out
 - `fly` - Slide in/out
 - `scale` - Grow/shrink
@@ -450,6 +478,7 @@ import { count } from './stores/count';
 ## TypeScript
 
 ### Add Types to Component
+
 ```svelte
 <script lang="ts">
   export let items: Array<{ id: string; name: string }> = [];
@@ -462,6 +491,7 @@ import { count } from './stores/count';
 ```
 
 ### Typed Store
+
 ```typescript
 // stores/app.ts
 import { writable, type Writable } from 'svelte/store';
@@ -480,6 +510,7 @@ export const user: Writable<User | null> = writable(null);
 ## Common Patterns
 
 ### Form Handling
+
 ```svelte
 <script>
   let form = {
@@ -500,6 +531,7 @@ export const user: Writable<User | null> = writable(null);
 ```
 
 ### Async Data Loading
+
 ```svelte
 <script>
   let promise;

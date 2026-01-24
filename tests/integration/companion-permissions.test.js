@@ -173,7 +173,10 @@ describe('Companion Permission Manager', () => {
         db.CompanionPermission.findOne.mockResolvedValue(mockPermission);
 
         const canEdit = await companionPermissionManager.canEditTripsOf(userId, targetUserId);
-        const canManage = await companionPermissionManager.canManageCompanionsOf(userId, targetUserId);
+        const canManage = await companionPermissionManager.canManageCompanionsOf(
+          userId,
+          targetUserId
+        );
 
         expect(canEdit).toBe(true);
         expect(canManage).toBe(false);
@@ -541,11 +544,20 @@ describe('Companion Permission Manager', () => {
     describe('updateCompanionPermissions', () => {
       it('should create permission record if not exists', async () => {
         const permissions = { canView: true, canEdit: true, canManageCompanions: false };
-        const mockPermission = { ...permissions, companionId, grantedBy: userId, update: jest.fn() };
+        const mockPermission = {
+          ...permissions,
+          companionId,
+          grantedBy: userId,
+          update: jest.fn(),
+        };
 
         db.CompanionPermission.findOrCreate.mockResolvedValue([mockPermission, true]);
 
-        await companionPermissionManager.updateCompanionPermissions(userId, companionId, permissions);
+        await companionPermissionManager.updateCompanionPermissions(
+          userId,
+          companionId,
+          permissions
+        );
 
         expect(db.CompanionPermission.findOrCreate).toHaveBeenCalledWith({
           where: { companionId, grantedBy: userId },
@@ -555,11 +567,20 @@ describe('Companion Permission Manager', () => {
 
       it('should update permission record if exists', async () => {
         const permissions = { canView: true, canEdit: false, canManageCompanions: true };
-        const mockPermission = { ...permissions, companionId, grantedBy: userId, update: jest.fn() };
+        const mockPermission = {
+          ...permissions,
+          companionId,
+          grantedBy: userId,
+          update: jest.fn(),
+        };
 
         db.CompanionPermission.findOrCreate.mockResolvedValue([mockPermission, false]);
 
-        await companionPermissionManager.updateCompanionPermissions(userId, companionId, permissions);
+        await companionPermissionManager.updateCompanionPermissions(
+          userId,
+          companionId,
+          permissions
+        );
 
         expect(mockPermission.update).toHaveBeenCalledWith(permissions);
       });

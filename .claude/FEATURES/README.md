@@ -1,6 +1,7 @@
 # 🎯 Features Documentation
 
 Complete guides for each feature in Bluebonnet. Each feature includes:
+
 - How it works
 - User flow
 - Database tables involved
@@ -13,6 +14,7 @@ Complete guides for each feature in Bluebonnet. Each feature includes:
 ## Quick Links
 
 ### Travel Items (Core Features)
+
 - **[Flights](./FLIGHT_MANAGEMENT.md)** - Commercial flights management
 - **[Hotels](./HOTEL_MANAGEMENT.md)** - Accommodation booking
 - **[Events](./EVENTS_MANAGEMENT.md)** - Activities and attractions
@@ -20,11 +22,13 @@ Complete guides for each feature in Bluebonnet. Each feature includes:
 - **[Transportation](./TRANSPORTATION.md)** - Ground transportation
 
 ### Trip Management
+
 - **[Trip Management](./TRIP_MANAGEMENT.md)** - Creating, editing, sharing trips
 - **[Calendar View](./CALENDAR_VIEW.md)** - Timeline visualization
 - **[Maps](./MAPS.md)** - Location-based features
 
 ### Companion & Voucher Systems
+
 - **[Travel Companions](./TRAVEL_COMPANIONS.md)** - Invite people to trips
 - **[Vouchers](./VOUCHERS.md)** - Track travel credits
 
@@ -33,33 +37,34 @@ Complete guides for each feature in Bluebonnet. Each feature includes:
 ## Feature Overview
 
 ### Travel Items
+
 All five types of travel items follow the same CRUD pattern:
 
-| Feature | Model | Controller | Routes | Status |
-|---------|-------|-----------|--------|--------|
-| **Flight** | Flight.js | flightController.js | `/flights` | ✅ Active |
-| **Hotel** | Hotel.js | hotelController.js | `/hotels` | ✅ Active |
-| **Event** | Event.js | eventController.js | `/events` | ✅ Active |
-| **Car Rental** | CarRental.js | carRentalController.js | `/car-rentals` | ✅ Active |
+| Feature            | Model             | Controller                  | Routes            | Status    |
+| ------------------ | ----------------- | --------------------------- | ----------------- | --------- |
+| **Flight**         | Flight.js         | flightController.js         | `/flights`        | ✅ Active |
+| **Hotel**          | Hotel.js          | hotelController.js          | `/hotels`         | ✅ Active |
+| **Event**          | Event.js          | eventController.js          | `/events`         | ✅ Active |
+| **Car Rental**     | CarRental.js      | carRentalController.js      | `/car-rentals`    | ✅ Active |
 | **Transportation** | Transportation.js | transportationController.js | `/transportation` | ✅ Active |
 
 **All are optional** - can be added to a trip or created standalone
 
 ### Trip Features
 
-| Feature | Purpose | Phase 1 Status |
-|---------|---------|---|
-| **Trip CRUD** | Create, read, update, delete trips | ✅ Migrating |
-| **Trip Sharing** | Invite companions, manage permissions | ✅ Migrating |
-| **Calendar View** | Timeline visualization of items | ✅ Migrating |
-| **Maps** | View locations on map | ✅ Migrating |
+| Feature           | Purpose                               | Phase 1 Status |
+| ----------------- | ------------------------------------- | -------------- |
+| **Trip CRUD**     | Create, read, update, delete trips    | ✅ Migrating   |
+| **Trip Sharing**  | Invite companions, manage permissions | ✅ Migrating   |
+| **Calendar View** | Timeline visualization of items       | ✅ Migrating   |
+| **Maps**          | View locations on map                 | ✅ Migrating   |
 
 ### Systems
 
-| System | Purpose | Phase 1 Status |
-|--------|---------|---|
-| **Travel Companions** | Invite people, manage permissions | ✅ Migrating |
-| **Vouchers** | Track travel credits and upgrades | ✅ Migrating |
+| System                | Purpose                           | Phase 1 Status |
+| --------------------- | --------------------------------- | -------------- |
+| **Travel Companions** | Invite people, manage permissions | ✅ Migrating   |
+| **Vouchers**          | Track travel credits and upgrades | ✅ Migrating   |
 
 ---
 
@@ -68,6 +73,7 @@ All five types of travel items follow the same CRUD pattern:
 All travel items follow the same basic flow:
 
 ### 1. User Interface (Svelte)
+
 ```
 User clicks "Add Flight/Hotel/Event/etc."
     ↓
@@ -79,6 +85,7 @@ User clicks "Save"
 ```
 
 ### 2. Backend Processing
+
 ```
 Form submitted to /api/flights (or /hotels, /events, etc.)
     ↓
@@ -94,6 +101,7 @@ JSON response sent back
 ```
 
 ### 3. UI Update
+
 ```
 Response received
     ↓
@@ -111,9 +119,11 @@ See: [CRUD Pattern](../PATTERNS/CRUD_PATTERN.md)
 ## Travel Item Specifics
 
 ### Flights
+
 **What:** Commercial flights with airline, flight number, departure/arrival
 
 **Key Fields:**
+
 - Airline (e.g., "United Airlines")
 - Flight number (e.g., "UA123")
 - Origin (with airport code handling, e.g., "JFK")
@@ -128,9 +138,11 @@ See: [CRUD Pattern](../PATTERNS/CRUD_PATTERN.md)
 See: [Flight Management](./FLIGHT_MANAGEMENT.md)
 
 ### Hotels
+
 **What:** Accommodations with check-in/check-out dates
 
 **Key Fields:**
+
 - Hotel name
 - Check-in date
 - Check-out date
@@ -140,9 +152,11 @@ See: [Flight Management](./FLIGHT_MANAGEMENT.md)
 See: [Hotel Management](./HOTEL_MANAGEMENT.md)
 
 ### Events
+
 **What:** Activities, attractions, meetings
 
 **Key Fields:**
+
 - Event name
 - Date/time
 - Location
@@ -152,9 +166,11 @@ See: [Hotel Management](./HOTEL_MANAGEMENT.md)
 See: [Events Management](./EVENTS_MANAGEMENT.md)
 
 ### Car Rentals
+
 **What:** Vehicle rentals
 
 **Key Fields:**
+
 - Rental company
 - Vehicle type
 - Pickup location
@@ -166,9 +182,11 @@ See: [Events Management](./EVENTS_MANAGEMENT.md)
 See: [Car Rentals](./CAR_RENTALS.md)
 
 ### Transportation
+
 **What:** Ground transportation (taxi, shuttle, train, bus)
 
 **Key Fields:**
+
 - Transportation type
 - Origin
 - Destination
@@ -200,7 +218,9 @@ Trip
 ## Associated Systems
 
 ### Travel Companions
+
 Allows you to:
+
 - Invite people to trips
 - Set permissions (can they edit?)
 - See who's going
@@ -209,7 +229,9 @@ Allows you to:
 See: [Travel Companions](./TRAVEL_COMPANIONS.md)
 
 ### Vouchers
+
 Allows you to:
+
 - Create and track travel credits
 - Attach to specific flights
 - Assign to companions
@@ -222,6 +244,7 @@ See: [Vouchers](./VOUCHERS.md)
 ## Phase 1 Migration Status
 
 ### Currently Being Migrated to Svelte
+
 - ✅ Trip management pages
 - ✅ Flight form and list
 - ✅ Hotel form and list
@@ -250,12 +273,14 @@ See: [Vouchers](./VOUCHERS.md)
 ## Getting Started
 
 **New to a feature?**
+
 1. Read the feature-specific doc (e.g., FLIGHT_MANAGEMENT.md)
 2. Check the [CRUD Pattern](../PATTERNS/CRUD_PATTERN.md)
 3. Look at code examples in the feature doc
 4. Check component specs in [Components](../COMPONENTS/README.md)
 
 **Adding a new field to a feature?**
+
 1. Update database model
 2. Update API endpoint
 3. Update Svelte form component

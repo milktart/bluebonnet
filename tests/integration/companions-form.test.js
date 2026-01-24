@@ -58,7 +58,7 @@ describe('CompanionsFormSection', () => {
 
   describe('Email Extraction', () => {
     const getCompanionEmail = (comp) => {
-      return (comp.companion?.email) || comp.email;
+      return comp.companion?.email || comp.email;
     };
 
     it('should extract email from direct object', () => {
@@ -173,7 +173,9 @@ describe('CompanionsFormSection', () => {
         const email = comp.email;
         if (addedEmails.has(email)) return false;
         const displayName = `${comp.firstName || ''} ${comp.lastName || ''}`.trim();
-        return email.toLowerCase().includes(lowerQuery) || displayName.toLowerCase().includes(lowerQuery);
+        return (
+          email.toLowerCase().includes(lowerQuery) || displayName.toLowerCase().includes(lowerQuery)
+        );
       });
     };
 
@@ -211,18 +213,14 @@ describe('CompanionsFormSection', () => {
     });
 
     it('should return empty array for empty query', () => {
-      const available = [
-        { id: '1', email: 'john@example.com', firstName: 'John' },
-      ];
+      const available = [{ id: '1', email: 'john@example.com', firstName: 'John' }];
 
       const results = searchCompanions(available, [], '');
       expect(results).toHaveLength(0);
     });
 
     it('should be case-insensitive', () => {
-      const available = [
-        { id: '1', email: 'john@example.com', firstName: 'John' },
-      ];
+      const available = [{ id: '1', email: 'john@example.com', firstName: 'John' }];
 
       const results = searchCompanions(available, [], 'JOHN');
       expect(results).toHaveLength(1);
@@ -281,7 +279,7 @@ describe('CompanionsFormSection', () => {
 
       // Trip owner: can remove any companion if there's at least one other attendee
       if (isTripOwner) {
-        const otherCompanions = companions.filter(c => {
+        const otherCompanions = companions.filter((c) => {
           const cId = c.userId || c.id;
           return cId !== companionId;
         });
@@ -290,7 +288,7 @@ describe('CompanionsFormSection', () => {
 
       // Trip companion: can only remove themselves if there's at least one other attendee
       if (isCurrentUserCompanion) {
-        const otherCompanions = companions.filter(c => {
+        const otherCompanions = companions.filter((c) => {
           const cId = c.userId || c.id;
           return cId !== companionId;
         });
@@ -301,10 +299,7 @@ describe('CompanionsFormSection', () => {
     };
 
     it('should allow trip owner to remove companions when others remain', () => {
-      const companions = [
-        { id: 'comp-1' },
-        { id: 'comp-2' },
-      ];
+      const companions = [{ id: 'comp-1' }, { id: 'comp-2' }];
       const canRemove = canRemoveFromTripItem(companions[0], companions, 'owner-id', 'owner-id');
       expect(canRemove).toBe(true);
     });
@@ -316,10 +311,7 @@ describe('CompanionsFormSection', () => {
     });
 
     it('should allow companion to remove themselves when others remain', () => {
-      const companions = [
-        { id: 'comp-1' },
-        { id: 'comp-2' },
-      ];
+      const companions = [{ id: 'comp-1' }, { id: 'comp-2' }];
       const canRemove = canRemoveFromTripItem(companions[0], companions, 'comp-1', 'owner-id');
       expect(canRemove).toBe(true);
     });

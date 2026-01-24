@@ -13,6 +13,7 @@ All trip items (Flights, Hotels, Events, CarRentals, Transportation) follow iden
 ## CREATE Operation
 
 ### Backend (Controller)
+
 **File:** `controllers/{itemType}Controller.js`
 
 ```javascript
@@ -37,7 +38,7 @@ async function create(req, res) {
     const item = await Flight.create({
       ...req.body,
       tripId,
-      userId
+      userId,
     });
 
     // Return based on request type
@@ -55,6 +56,7 @@ async function create(req, res) {
 ```
 
 ### Frontend (Form)
+
 **File:** `views/partials/{itemType}-form.ejs`
 
 ```html
@@ -69,6 +71,7 @@ async function create(req, res) {
 ```
 
 ### JavaScript Handler
+
 **File:** `public/js/async-form-handler.js`
 
 ```javascript
@@ -91,9 +94,9 @@ function setupAsyncFormSubmission(formId) {
       method: 'POST',
       headers: {
         'X-Async-Request': 'true',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     });
 
     if (response.ok) {
@@ -112,6 +115,7 @@ function setupAsyncFormSubmission(formId) {
 ## READ Operation
 
 ### Backend (Controller)
+
 ```javascript
 async function getAll(req, res) {
   const { tripId } = req.params;
@@ -123,7 +127,7 @@ async function getAll(req, res) {
   }
 
   const items = await Flight.findAll({
-    where: { tripId }
+    where: { tripId },
   });
 
   return res.json({ success: true, items });
@@ -142,17 +146,18 @@ async function getOne(req, res) {
 ```
 
 ### Frontend (Display)
+
 ```html
 <!-- In trip sidebar -->
 <div class="items-list">
   <% trips.flights.forEach(flight => { %>
-    <div class="item-card">
-      <h3><%= flight.airline %> <%= flight.flightNumber %></h3>
-      <p><%= flight.origin %> → <%= flight.destination %></p>
-      <p><%= formatDate(flight.departureDateTime) %></p>
-      <button onclick="editItem('flight', '<%= flight.id %>')">Edit</button>
-      <button onclick="deleteItem('flight', '<%= flight.id %>')">Delete</button>
-    </div>
+  <div class="item-card">
+    <h3><%= flight.airline %> <%= flight.flightNumber %></h3>
+    <p><%= flight.origin %> → <%= flight.destination %></p>
+    <p><%= formatDate(flight.departureDateTime) %></p>
+    <button onclick="editItem('flight', '<%= flight.id %>')">Edit</button>
+    <button onclick="deleteItem('flight', '<%= flight.id %>')">Delete</button>
+  </div>
   <% }); %>
 </div>
 ```
@@ -162,6 +167,7 @@ async function getOne(req, res) {
 ## UPDATE Operation
 
 ### Backend (Controller)
+
 ```javascript
 async function update(req, res) {
   const { id } = req.params;
@@ -191,6 +197,7 @@ async function update(req, res) {
 ```
 
 ### Frontend (Edit Form)
+
 ```html
 <form id="edit{ItemType}Form" action="/api/{items}/<%= item.id %>" method="PUT">
   <!-- Form fields pre-populated with item data -->
@@ -203,6 +210,7 @@ async function update(req, res) {
 ## DELETE Operation
 
 ### Backend (Controller)
+
 ```javascript
 async function delete(req, res) {
   const { id } = req.params;
@@ -225,13 +233,14 @@ async function delete(req, res) {
 ```
 
 ### Frontend (Delete Trigger)
+
 ```javascript
 // In public/js/async-form-handler.js
 async function deleteItem(type, id, itemName) {
   try {
     const response = await fetch(`/api/${type}s/${id}`, {
       method: 'DELETE',
-      headers: { 'X-Async-Request': 'true' }
+      headers: { 'X-Async-Request': 'true' },
     });
 
     if (response.ok) {
@@ -249,6 +258,7 @@ async function deleteItem(type, id, itemName) {
 ## Request/Response Flow
 
 ### Successful CRUD
+
 ```
 1. User action (click Add/Edit/Delete)
 2. Form loads via AJAX (for edit) or displayed inline (for add)
@@ -264,6 +274,7 @@ async function deleteItem(type, id, itemName) {
 ```
 
 ### Error Handling
+
 ```
 If validation fails:
 - Backend returns 400 with errors
@@ -286,6 +297,7 @@ If permission denied:
 ## Pattern Consistency
 
 ### All Item Types Follow Same Pattern
+
 - `Flight`, `Hotel`, `Event`, `CarRental`, `Transportation`
 - Same controller structure
 - Same route signatures
@@ -293,6 +305,7 @@ If permission denied:
 - Same async handler
 
 ### Variations by Type
+
 - Form fields vary by item type
 - Validation rules differ
 - Display format differs

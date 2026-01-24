@@ -41,9 +41,7 @@ async function loadTripCompanions(tripId, trip) {
     });
 
     // Add trip owner as first companion if not already in list
-    const tripOwnerInList = tripCompanionRecords.some(
-      (tc) => tc.companion?.userId === trip.userId
-    );
+    const tripOwnerInList = tripCompanionRecords.some((tc) => tc.companion?.userId === trip.userId);
 
     if (!tripOwnerInList && trip.userId) {
       const owner = await User.findByPk(trip.userId, {
@@ -113,9 +111,7 @@ async function loadTripCompanionsWithPermissions(tripId, trip) {
     });
 
     // Add trip owner as first companion if not already in list
-    const tripOwnerInList = tripCompanionRecords.some(
-      (tc) => tc.companion?.userId === trip.userId
-    );
+    const tripOwnerInList = tripCompanionRecords.some((tc) => tc.companion?.userId === trip.userId);
 
     if (!tripOwnerInList && trip.userId) {
       const owner = await User.findByPk(trip.userId, {

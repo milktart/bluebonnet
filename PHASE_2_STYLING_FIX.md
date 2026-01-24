@@ -10,6 +10,7 @@
 ## The Problem
 
 After fixing the layout structure (sidebars were invisible), the sidebars appeared but:
+
 - Styling didn't match the dashboard
 - Borders, spacing, and typography were wrong
 - Overall look was broken/ugly
@@ -17,6 +18,7 @@ After fixing the layout structure (sidebars were invisible), the sidebars appear
 ### Why It Happened
 
 The layout.css file contained extensive styling rules for sidebars:
+
 ```css
 .primary-sidebar {
   position: fixed;
@@ -31,17 +33,18 @@ The layout.css file contained extensive styling rules for sidebars:
 ```
 
 These rules conflicted with the dashboard's own styles:
+
 ```css
 .primary-content {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding-bottom: 0;  /* Different padding */
+  padding-bottom: 0; /* Different padding */
 }
 
 .header-section {
   padding: 0;
-  border-bottom: 1px solid #e0e0e0;  /* Different border */
+  border-bottom: 1px solid #e0e0e0; /* Different border */
   flex-shrink: 0;
 }
 ```
@@ -53,6 +56,7 @@ These rules conflicted with the dashboard's own styles:
 ## The Solution
 
 ### Old Approach (Broken)
+
 ```
 ResponsiveLayout
 ├── Import layout.css
@@ -63,6 +67,7 @@ ResponsiveLayout
 ```
 
 ### New Approach (Fixed)
+
 ```
 ResponsiveLayout
 ├── Import layout-grid-only.css
@@ -73,28 +78,30 @@ ResponsiveLayout
 ```
 
 ### Created: layout-grid-only.css
+
 A new minimal CSS file with ONLY grid definitions:
+
 ```css
 .app-layout {
   display: grid;
-  grid-template-columns: 1fr;  /* Mobile default */
+  grid-template-columns: 1fr; /* Mobile default */
 }
 
 @media (min-width: 640px) {
   .app-layout {
-    grid-template-columns: auto 1fr;  /* Tablet */
+    grid-template-columns: auto 1fr; /* Tablet */
   }
 }
 
 @media (min-width: 1024px) {
   .app-layout {
-    grid-template-columns: auto 1fr auto;  /* Desktop */
+    grid-template-columns: auto 1fr auto; /* Desktop */
   }
 }
 
 @media (min-width: 1440px) {
   .app-layout {
-    grid-template-columns: auto 1fr auto auto;  /* Ultra-wide */
+    grid-template-columns: auto 1fr auto auto; /* Ultra-wide */
   }
 }
 ```
@@ -106,21 +113,26 @@ A new minimal CSS file with ONLY grid definitions:
 ## Files Changed
 
 ### ResponsiveLayout.svelte
+
 **Before:**
+
 ```typescript
 import '$lib/styles/layout.css';
 ```
 
 **After:**
+
 ```typescript
 import '$lib/styles/layout-grid-only.css';
 ```
 
 **Also removed:**
+
 - `.sidebar` class from HTML elements
 - Sidebar styling in component styles
 
 ### Created New File
+
 ```
 frontend/src/lib/styles/layout-grid-only.css
 - 154 lines
@@ -130,6 +142,7 @@ frontend/src/lib/styles/layout-grid-only.css
 ```
 
 ### Old Files (Still Exist, No Longer Used)
+
 ```
 frontend/src/lib/styles/layout.css
 - Kept for reference
@@ -142,6 +155,7 @@ frontend/src/lib/styles/layout.css
 ## How This Fixes Styling
 
 ### Desktop View Before Fix
+
 ```
 Styled content from layout.css:
 ┌─────────────────────────────────┐
@@ -153,6 +167,7 @@ Styled content from layout.css:
 ```
 
 ### Desktop View After Fix
+
 ```
 Positioned by grid, styled by dashboard:
 ┌─────────────────────────────────┐
@@ -168,6 +183,7 @@ Positioned by grid, styled by dashboard:
 ## CSS Cascade Fix
 
 ### CSS Specificity Problem (Before)
+
 ```
 layout.css rules (specificity: 0-1-1):
   .primary-sidebar { background: rgba(...) !important; }
@@ -184,6 +200,7 @@ Result: !important and position: fixed override everything ❌
 ```
 
 ### CSS Cascade Solution (After)
+
 ```
 layout-grid-only.css (ONLY grid):
   .app-layout { display: grid; grid-template-columns: auto 1fr; }
@@ -202,52 +219,83 @@ Result: Dashboard styles apply without conflicts ✅
 ## Minimal Grid CSS Content
 
 ### Mobile (< 640px)
+
 ```css
 .app-layout {
   grid-template-columns: 1fr;
   grid-template-rows: 1fr auto;
 }
 
-.responsive-mobile { display: flex; }
-.responsive-desktop { display: none; }
+.responsive-mobile {
+  display: flex;
+}
+.responsive-desktop {
+  display: none;
+}
 ```
 
 ### Tablet (640-1023px)
+
 ```css
 .app-layout {
   grid-template-columns: auto 1fr;
   grid-template-rows: 1fr;
 }
 
-.primary-sidebar { grid-column: 1; }
-.app-content { grid-column: 2; }
-.secondary-sidebar, .tertiary-sidebar { display: none; }
+.primary-sidebar {
+  grid-column: 1;
+}
+.app-content {
+  grid-column: 2;
+}
+.secondary-sidebar,
+.tertiary-sidebar {
+  display: none;
+}
 ```
 
 ### Desktop (1024-1439px)
+
 ```css
 .app-layout {
   grid-template-columns: auto 1fr auto;
   grid-template-rows: 1fr;
 }
 
-.primary-sidebar { grid-column: 1; }
-.app-content { grid-column: 2; }
-.secondary-sidebar { grid-column: 3; }
-.tertiary-sidebar { display: none; }
+.primary-sidebar {
+  grid-column: 1;
+}
+.app-content {
+  grid-column: 2;
+}
+.secondary-sidebar {
+  grid-column: 3;
+}
+.tertiary-sidebar {
+  display: none;
+}
 ```
 
 ### Ultra-wide (1440px+)
+
 ```css
 .app-layout {
   grid-template-columns: auto 1fr auto auto;
   grid-template-rows: 1fr;
 }
 
-.primary-sidebar { grid-column: 1; }
-.app-content { grid-column: 2; }
-.secondary-sidebar { grid-column: 3; }
-.tertiary-sidebar { grid-column: 4; }
+.primary-sidebar {
+  grid-column: 1;
+}
+.app-content {
+  grid-column: 2;
+}
+.secondary-sidebar {
+  grid-column: 3;
+}
+.tertiary-sidebar {
+  grid-column: 4;
+}
 ```
 
 ---
@@ -255,17 +303,20 @@ Result: Dashboard styles apply without conflicts ✅
 ## Why This Approach Works
 
 ### Separation of Concerns
+
 - **grid-only CSS**: Layout structure (grid positioning)
 - **responsive.css**: Design tokens (colors, spacing, variables)
 - **Dashboard styles**: Component appearance (colors, borders, padding, typography)
 
 ### No Conflicts
+
 - Grid CSS only affects layout, not appearance
 - Dashboard styles apply cleanly
 - No CSS cascade issues
 - No !important overrides needed
 
 ### Easy to Maintain
+
 - Grid rules in one place
 - Dashboard keeps its styling separate
 - Future changes to dashboard don't affect grid
@@ -276,16 +327,19 @@ Result: Dashboard styles apply without conflicts ✅
 ## Component Styling Approach
 
 ### What ResponsiveLayout Provides
+
 1. CSS Grid layout structure (via layout-grid-only.css)
 2. Mobile/desktop view switching (via media queries)
 3. Component lifecycle management (MutationObserver for sidebars)
 
 ### What Dashboard Provides
+
 1. Component styling (colors, borders, padding, fonts)
 2. Content rendering (trip list, forms, etc.)
 3. Event handling (clicks, selections)
 
 ### What responsive.css Provides
+
 1. Design tokens (CSS variables)
 2. Color palette
 3. Spacing scale
@@ -306,6 +360,7 @@ Result: Dashboard styles apply without conflicts ✅
 ## Testing
 
 ### What Should Look Better Now
+
 - [ ] Sidebar background color correct
 - [ ] Sidebar borders match dashboard style
 - [ ] Sidebar padding/spacing correct
@@ -314,6 +369,7 @@ Result: Dashboard styles apply without conflicts ✅
 - [ ] Overall appearance matches pre-Phase 2 design
 
 ### Testing at Each Breakpoint
+
 - [ ] Mobile (< 640px): Single column with tabs
 - [ ] Tablet (640px): Sidebar + map with dashboard styling
 - [ ] Desktop (1024px): 3 columns with dashboard styling
@@ -324,6 +380,7 @@ Result: Dashboard styles apply without conflicts ✅
 ## Performance Impact
 
 ✅ **No negative impact**
+
 - layout-grid-only.css: ~3 KB (vs layout.css ~25 KB)
 - Reduced CSS processing overhead
 - Fewer style cascading issues
@@ -334,6 +391,7 @@ Result: Dashboard styles apply without conflicts ✅
 ## Rollback Path
 
 If styling is still not correct:
+
 1. Check dashboard component styles (still applied?)
 2. Verify no other CSS overrides
 3. Check responsive.css variables
@@ -347,6 +405,7 @@ If styling is still not correct:
 **After:** Sidebars visible with correct dashboard styling (minimal grid-only CSS)
 
 **Key Change:**
+
 - Removed layout.css (full of styling rules)
 - Added layout-grid-only.css (only grid definitions)
 - Removed .sidebar class (conflicting styles)
@@ -355,6 +414,6 @@ If styling is still not correct:
 
 ---
 
-*Phase 2 Styling Fix*
-*Date: January 8, 2026*
-*Status: ✅ FIXED*
+_Phase 2 Styling Fix_
+_Date: January 8, 2026_
+_Status: ✅ FIXED_

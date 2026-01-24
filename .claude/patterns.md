@@ -9,6 +9,7 @@ Common architectural patterns used throughout the application.
 Used for all Create/Update/Delete operations without page reload.
 
 ### Backend Detection
+
 ```javascript
 const isAsyncRequest = req.get('X-Async-Request') === 'true';
 
@@ -20,6 +21,7 @@ if (isAsyncRequest) {
 ```
 
 ### Frontend Handler (public/js/async-form-handler.js)
+
 ```javascript
 function setupAsyncFormSubmission(formId) {
   const form = document.getElementById(formId);
@@ -43,9 +45,9 @@ function setupAsyncFormSubmission(formId) {
       method: form.method,
       headers: {
         'X-Async-Request': 'true',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     });
 
     // 4. On success, refresh UI
@@ -61,12 +63,13 @@ function setupAsyncFormSubmission(formId) {
 ```
 
 ### Use in EJS Form
+
 ```html
 <form id="addFlightForm" action="/api/trips/<%= tripId %>/flights" method="POST">
-  <input type="text" name="airline" placeholder="Airline">
-  <input type="text" name="flightNumber" placeholder="Flight #">
-  <input type="date" name="departureDate">
-  <input type="time" name="departureTime">
+  <input type="text" name="airline" placeholder="Airline" />
+  <input type="text" name="flightNumber" placeholder="Flight #" />
+  <input type="date" name="departureDate" />
+  <input type="time" name="departureTime" />
   <!-- More fields -->
   <button type="submit">Add Flight</button>
 </form>
@@ -83,7 +86,9 @@ function setupAsyncFormSubmission(formId) {
 All travel items (Flight, Hotel, Event, CarRental, Transportation) follow identical pattern:
 
 ### 1. CREATE
+
 **Backend:** `controllers/{itemType}Controller.js`
+
 ```javascript
 exports.create = async (req, res) => {
   // 1. Validate trip ownership
@@ -102,7 +107,7 @@ exports.create = async (req, res) => {
   const item = await Flight.create({
     ...req.body,
     tripId: req.params.tripId,
-    userId: req.user.id
+    userId: req.user.id,
   });
 
   // 4. Return based on request type
@@ -118,11 +123,13 @@ exports.create = async (req, res) => {
 **Frontend:** Form template + async handler (see AJAX pattern above)
 
 ### 2. READ
+
 **Backend:**
+
 ```javascript
 exports.getAll = async (req, res) => {
   const items = await Flight.findAll({
-    where: { tripId: req.params.tripId }
+    where: { tripId: req.params.tripId },
   });
   res.json({ success: true, items });
 };
@@ -139,7 +146,9 @@ exports.getOne = async (req, res) => {
 **Frontend:** Display in trip sidebar, item cards with edit/delete buttons
 
 ### 3. UPDATE
+
 **Backend:**
+
 ```javascript
 exports.update = async (req, res) => {
   const item = await Flight.findByPk(req.params.id);
@@ -168,7 +177,9 @@ exports.update = async (req, res) => {
 **Frontend:** Edit form (pre-populated) + async handler
 
 ### 4. DELETE
+
 **Backend:**
+
 ```javascript
 exports.delete = async (req, res) => {
   const item = await Flight.findByPk(req.params.id);
@@ -189,12 +200,13 @@ exports.delete = async (req, res) => {
 ```
 
 **Frontend:**
+
 ```javascript
 async function deleteItem(type, id, itemName) {
   try {
     const response = await fetch(`/api/${type}s/${id}`, {
       method: 'DELETE',
-      headers: { 'X-Async-Request': 'true' }
+      headers: { 'X-Async-Request': 'true' },
     });
 
     if (response.ok) {
@@ -208,6 +220,7 @@ async function deleteItem(type, id, itemName) {
 ```
 
 ### CRUD Pattern Summary
+
 - **Always validate ownership** - `trip.userId !== req.user.id` OR `item.userId !== req.user.id`
 - **Always check async header** - Different response types
 - **Silent failures** - No confirm/alert dialogs
@@ -220,6 +233,7 @@ async function deleteItem(type, id, itemName) {
 **Three sidebars:** Primary (fixed), Secondary (on-demand), Tertiary (on-demand)
 
 ### Loading Content
+
 ```javascript
 function loadSidebarContent(url, options = {}) {
   // 1. Fetch HTML from server
@@ -239,6 +253,7 @@ function loadSidebarContent(url, options = {}) {
 ```
 
 ### Sidebar HTML Structure
+
 ```html
 <div class="layout">
   <!-- Primary Sidebar (always visible) -->
@@ -266,6 +281,7 @@ function loadSidebarContent(url, options = {}) {
 ```
 
 ### Usage Pattern
+
 ```javascript
 // Click "Edit Flight"
 function editItem(type, id) {
@@ -299,6 +315,7 @@ document.addEventListener('click', (e) => {
 After form submission, refresh sidebars with new data.
 
 ### Trip View Refresh
+
 ```javascript
 async function refreshTripView() {
   // 1. Fetch updated data
@@ -321,6 +338,7 @@ async function refreshTripView() {
 ```
 
 ### Dashboard Refresh
+
 ```javascript
 async function refreshDashboardSidebar() {
   // 1. Determine active tab
@@ -347,21 +365,24 @@ async function refreshDashboardSidebar() {
 ## No Confirmation Pattern
 
 **Important UX Decision:**
+
 - No `confirm()` dialogs
 - No `alert()` messages
 - Operations execute immediately
 - UI updates silently
 
 ### Wrong Way ❌
+
 ```javascript
 async function deleteItem(id) {
-  if (!confirm('Delete this item?')) return;  // NO!
+  if (!confirm('Delete this item?')) return; // NO!
   await fetch(`/item/${id}`, { method: 'DELETE' });
-  alert('Item deleted!');  // NO!
+  alert('Item deleted!'); // NO!
 }
 ```
 
 ### Right Way ✅
+
 ```javascript
 async function deleteItem(id) {
   try {
@@ -380,17 +401,20 @@ async function deleteItem(id) {
 ## Date/Time Handling Pattern
 
 ### Backend (Database)
+
 - All dates stored as ISO strings in **UTC (GMT-0)**
 - Timezone info stored separately in `originTimezone`, `destinationTimezone`
 - Example: `2025-06-01T08:00:00Z` (UTC) + `originTimezone: "America/New_York"`
 
 ### Frontend (Display)
+
 - Use `datetime-formatter.js` for timezone-aware display
 - Display format: **"DD MMM YYYY"** (e.g., "15 Oct 2025")
 - Time format: **"HH:MM"** 24-hour (e.g., "14:30")
 - Never use AM/PM or seconds
 
 ### Form Submission
+
 ```javascript
 // Form has separate date/time inputs
 <input type="date" name="departureDate">
@@ -410,6 +434,7 @@ body.departureDateTime = "2025-06-01T08:00:00Z"  // ISO string
 Always verify ownership before operations.
 
 ### Trip Ownership
+
 ```javascript
 const trip = await Trip.findByPk(tripId);
 if (!trip || trip.userId !== req.user.id) {
@@ -418,6 +443,7 @@ if (!trip || trip.userId !== req.user.id) {
 ```
 
 ### Item Ownership
+
 ```javascript
 const item = await Flight.findByPk(id);
 if (!item || item.userId !== req.user.id) {
@@ -426,9 +452,10 @@ if (!item || item.userId !== req.user.id) {
 ```
 
 ### Companion Permissions
+
 ```javascript
 const companion = await TripCompanion.findOne({
-  where: { tripId, companionId }
+  where: { tripId, companionId },
 });
 
 if (companion.canEdit) {
@@ -445,17 +472,20 @@ if (companion.canEdit) {
 Exposed for use in inline onclick handlers and event listeners:
 
 **Sidebar Control:**
+
 - `loadSidebarContent(url, options)` - Load content into sidebar
 - `closeSecondarySidebar()` / `openSecondarySidebar()`
 - `closeTertiarySidebar()` / `openTertiarySidebar()`
 - `goBackInSidebar()`
 
 **Item CRUD:**
+
 - `editItem(type, id)` - Load edit form
 - `showAddForm(type, isStandalone)` - Load add form
 - `deleteItem(type, id, itemName)` - Delete item
 
 **Refresh:**
+
 - `refreshTripView()` - Refresh trip sidebar + map
 - `refreshDashboardSidebar()` - Refresh dashboard + map
 
@@ -464,6 +494,7 @@ Exposed for use in inline onclick handlers and event listeners:
 ## Response Format Pattern
 
 ### Success Response (AJAX)
+
 ```javascript
 res.json({
   success: true,
@@ -473,28 +504,31 @@ res.json({
 ```
 
 ### Error Response (AJAX)
+
 ```javascript
 res.status(400).json({
   success: false,
-  error: "Validation failed",
-  errors: [{ field: "airline", message: "Required" }]  // optional
-})
+  error: 'Validation failed',
+  errors: [{ field: 'airline', message: 'Required' }], // optional
+});
 ```
 
 ### Unauthorized Response
+
 ```javascript
 res.status(403).json({
   success: false,
-  error: "Unauthorized"
-})
+  error: 'Unauthorized',
+});
 ```
 
 ### Server Error Response
+
 ```javascript
 res.status(500).json({
   success: false,
-  error: "Server error"
-})
+  error: 'Server error',
+});
 ```
 
 ---

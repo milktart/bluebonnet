@@ -13,6 +13,7 @@ When expanding from mobile to desktop, only the map was visible. The primary sid
 ### Why It Happened
 
 The original structure was:
+
 ```
 .app-layout (CSS Grid container)
 └── .responsive-desktop (display: contents)
@@ -23,23 +24,24 @@ The original structure was:
 ```
 
 The layout.css CSS expected `.app-content` to be a grid child:
+
 ```css
 .app-layout {
-  grid-template-columns: auto 1fr auto;  /* 3-column layout */
+  grid-template-columns: auto 1fr auto; /* 3-column layout */
 }
 
 .primary-sidebar {
-  grid-column: 1;  /* Left sidebar */
+  grid-column: 1; /* Left sidebar */
   grid-row: 2;
 }
 
 .app-content {
-  grid-column: 2;  /* Middle - for map */
+  grid-column: 2; /* Middle - for map */
   grid-row: 2;
 }
 
 .secondary-sidebar {
-  grid-column: 3;  /* Right sidebar */
+  grid-column: 3; /* Right sidebar */
   grid-row: 2;
 }
 ```
@@ -53,6 +55,7 @@ But the ResponsiveLayout had the map-container directly in responsive-desktop, s
 ### Updated Structure
 
 Now the structure is:
+
 ```
 .app-layout (CSS Grid container - display: grid)
 └── .responsive-desktop (display: contents - transparent wrapper)
@@ -64,6 +67,7 @@ Now the structure is:
 ```
 
 With `display: contents`, the browser treats:
+
 - `.primary-sidebar` as direct child of `.app-layout` ✓
 - `.app-content` as direct child of `.app-layout` ✓
 - `.secondary-sidebar` as direct child of `.app-layout` ✓
@@ -76,6 +80,7 @@ Now CSS Grid positioning works correctly!
 **ResponsiveLayout.svelte:**
 
 1. **Wrapped map in `.app-content`**
+
    ```svelte
    <div class="app-content">
      <div id="tripMap" class="map-container">
@@ -85,6 +90,7 @@ Now CSS Grid positioning works correctly!
    ```
 
 2. **Positioned sidebars as grid children** (inside responsive-desktop with display:contents)
+
    ```svelte
    <aside class="primary-sidebar">
      <slot name="primary" />
@@ -92,6 +98,7 @@ Now CSS Grid positioning works correctly!
    ```
 
 3. **Added component styles for `.app-content`**
+
    ```css
    .app-content {
      position: relative;
@@ -117,46 +124,77 @@ Now CSS Grid positioning works correctly!
 ## How CSS Grid Works Now
 
 ### Tablet (640px - 1023px)
+
 ```css
 .app-layout {
-  grid-template-columns: auto 1fr;     /* 2 columns */
-  grid-template-rows: auto 1fr;        /* nav + content */
+  grid-template-columns: auto 1fr; /* 2 columns */
+  grid-template-rows: auto 1fr; /* nav + content */
 }
 
 /* Sidebar spans left column */
-.primary-sidebar { grid-column: 1; grid-row: 2; }
+.primary-sidebar {
+  grid-column: 1;
+  grid-row: 2;
+}
 
 /* Content (map) spans right column */
-.app-content { grid-column: 2; grid-row: 2; }
+.app-content {
+  grid-column: 2;
+  grid-row: 2;
+}
 
 /* Secondary sidebar floats on top as drawer */
-.secondary-sidebar { position: absolute; transform: translateX(100%); }
+.secondary-sidebar {
+  position: absolute;
+  transform: translateX(100%);
+}
 ```
 
 ### Desktop (1024px - 1439px)
+
 ```css
 .app-layout {
-  grid-template-columns: auto 1fr auto;  /* 3 columns */
+  grid-template-columns: auto 1fr auto; /* 3 columns */
   grid-template-rows: auto 1fr;
 }
 
-.primary-sidebar { grid-column: 1; grid-row: 2; }
-.app-content { grid-column: 2; grid-row: 2; }
-.secondary-sidebar { grid-column: 3; grid-row: 2; }
-.tertiary-sidebar { position: absolute; }  /* Floats over content */
+.primary-sidebar {
+  grid-column: 1;
+  grid-row: 2;
+}
+.app-content {
+  grid-column: 2;
+  grid-row: 2;
+}
+.secondary-sidebar {
+  grid-column: 3;
+  grid-row: 2;
+}
+.tertiary-sidebar {
+  position: absolute;
+} /* Floats over content */
 ```
 
 ### Ultra-wide (1440px+)
+
 ```css
 .app-layout {
-  grid-template-columns: 340px 1fr 340px 340px;  /* 4 columns */
+  grid-template-columns: 340px 1fr 340px 340px; /* 4 columns */
   grid-template-rows: auto 1fr;
 }
 
-.primary-sidebar { grid-column: 1; }
-.app-content { grid-column: 2; }
-.secondary-sidebar { grid-column: 3; }
-.tertiary-sidebar { grid-column: 4; }  /* Now visible as column */
+.primary-sidebar {
+  grid-column: 1;
+}
+.app-content {
+  grid-column: 2;
+}
+.secondary-sidebar {
+  grid-column: 3;
+}
+.tertiary-sidebar {
+  grid-column: 4;
+} /* Now visible as column */
 ```
 
 ---
@@ -166,6 +204,7 @@ Now CSS Grid positioning works correctly!
 Test by resizing browser to these widths:
 
 ### Mobile (< 640px)
+
 - [ ] Single column layout
 - [ ] Trip list shows in mobile-list slot
 - [ ] Bottom tab navigation visible
@@ -173,6 +212,7 @@ Test by resizing browser to these widths:
 - [ ] Tapping trip shows MobileTripDetailView
 
 ### Tablet (640px - 1023px)
+
 - [ ] Two-column layout: sidebar + map
 - [ ] Primary sidebar (trip list) visible on left
 - [ ] Map visible in center
@@ -180,6 +220,7 @@ Test by resizing browser to these widths:
 - [ ] Clicking trip shows secondary sidebar (drawer from right)
 
 ### Desktop (1024px - 1439px)
+
 - [ ] Three-column layout: left sidebar + map + right sidebar
 - [ ] Primary sidebar visible with trip list
 - [ ] Map visible in center
@@ -187,6 +228,7 @@ Test by resizing browser to these widths:
 - [ ] All three columns properly sized
 
 ### Ultra-wide (1440px+)
+
 - [ ] Four columns visible: trip list, map, details, editor
 - [ ] Primary sidebar on left
 - [ ] Map in center-left
@@ -236,6 +278,7 @@ console.log(getComputedStyle(el).gridTemplateColumns)
 ## Expected Visual Results
 
 ### Before Fix ❌
+
 ```
 ┌─────────────────────────────┐
 │                             │
@@ -251,6 +294,7 @@ console.log(getComputedStyle(el).gridTemplateColumns)
 ### After Fix ✅
 
 **Tablet (640px):**
+
 ```
 ┌────────────┬──────────────┐
 │  Trips     │     MAP      │
@@ -261,6 +305,7 @@ console.log(getComputedStyle(el).gridTemplateColumns)
 ```
 
 **Desktop (1024px):**
+
 ```
 ┌────────────┬──────────────┬────────────┐
 │  Trips     │     MAP      │  Details   │
@@ -271,6 +316,7 @@ console.log(getComputedStyle(el).gridTemplateColumns)
 ```
 
 **Ultra-wide (1440px+):**
+
 ```
 ┌────────────┬──────────────┬────────────┬────────────┐
 │  Trips     │     MAP      │  Details   │   Editor   │
@@ -289,6 +335,7 @@ console.log(getComputedStyle(el).gridTemplateColumns)
 The `display: contents` property makes an element's box disappear, so its children participate directly in its parent's grid layout.
 
 **Before (broken):**
+
 ```
 Grid children of .app-layout:
 1. .responsive-desktop (1 element)
@@ -301,6 +348,7 @@ Actual grid structure:
 ```
 
 **After (fixed):**
+
 ```
 Grid children of .app-layout:
 1. .primary-sidebar
@@ -320,6 +368,7 @@ Actual grid structure (tablet):
 ## Backward Compatibility
 
 ✅ **No breaking changes**
+
 - All props remain the same
 - All slots remain the same
 - All methods remain the same
@@ -331,11 +380,13 @@ Actual grid structure (tablet):
 ## Files Modified
 
 ### ResponsiveLayout.svelte
+
 - Restructured HTML to wrap map in `.app-content`
 - Added `.app-content` and updated `.map-container` styles
 - Total: 9 line additions, 3 structural changes
 
 ### layout.css
+
 - No changes needed (already correct)
 - CSS Grid rules already set up properly
 
@@ -350,6 +401,7 @@ Actual grid structure (tablet):
 5. **Responsive Testing** - Resize window, verify smooth transitions
 
 If any issues found, check:
+
 1. Are sidebars getting content from slots?
 2. Is `.app-layout` getting the correct `grid-template-columns`?
 3. Are sidebar z-index values correct?
@@ -367,6 +419,6 @@ If any issues found, check:
 
 ---
 
-*Phase 2 Sidebar Fix*
-*Date: January 8, 2026*
-*Status: ✅ PRODUCTION-READY*
+_Phase 2 Sidebar Fix_
+_Date: January 8, 2026_
+_Status: ✅ PRODUCTION-READY_

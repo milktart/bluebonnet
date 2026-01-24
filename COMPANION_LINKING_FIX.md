@@ -3,6 +3,7 @@
 ## Problem Summary
 
 When a user is added as a travel companion and then invited as an attendee to a trip or item, and **that companion later registers an account**, they do not see:
+
 1. The trips they were added to
 2. The items they were added to
 3. Themselves in the travel companions table in settings
@@ -26,6 +27,7 @@ TripCompanion {
 ```
 
 When Bob registers:
+
 ```
 User {
   id: "bob-user-id",
@@ -43,11 +45,12 @@ TravelCompanion {
 The issue: **TripCompanion still points to the OLD companion ID ("abc-123"), not the new one ("def-456")**
 
 When the system queries for Bob's trips, it looks for:
+
 ```javascript
-TravelCompanion.findOne({ where: { userId: "bob-user-id" } })
+TravelCompanion.findOne({ where: { userId: 'bob-user-id' } });
 // Finds: "def-456" (Bob's own companion record)
 
-TripCompanion.findAll({ where: { companionId: "def-456" } })
+TripCompanion.findAll({ where: { companionId: 'def-456' } });
 // Returns: NOTHING! (because it points to "abc-123")
 ```
 
@@ -65,7 +68,7 @@ await TravelCompanion.create({
   name: `${newUser.firstName || ''} ${newUser.lastName || ''}`.trim() || newUser.email,
   email: newUser.email,
   userId: newUser.id,
-  createdBy: newUser.id,  // User creates their own companion record
+  createdBy: newUser.id, // User creates their own companion record
 });
 ```
 
@@ -76,30 +79,30 @@ await TravelCompanion.create({
 Update all queries to search for companions by **BOTH userId AND email**:
 
 #### In `getUserTrips()`:
+
 ```javascript
 const userCompanionRecords = await TravelCompanion.findAll({
   where: {
     [Op.or]: [
-      { userId },                    // User's own companion record(s)
-      { email: currentUser.email },  // Companions with this email (pre-registration)
+      { userId }, // User's own companion record(s)
+      { email: currentUser.email }, // Companions with this email (pre-registration)
     ],
   },
 });
 ```
 
 #### In `getStandaloneItems()`:
+
 ```javascript
 const userCompanionRecords = await TravelCompanion.findAll({
   where: {
-    [Op.or]: [
-      { userId },
-      { email: currentUser.email },
-    ],
+    [Op.or]: [{ userId }, { email: currentUser.email }],
   },
 });
 ```
 
 #### In `getTripWithDetails()`:
+
 ```javascript
 // Check if user is a companion - both by userId AND email
 let isCompanion = trip.tripCompanions?.some((tc) => tc.companion?.userId === userId);
@@ -116,12 +119,14 @@ if (!isCompanion && currentUser) {
 ### Scenario: Alice shares a trip with Bob before Bob registers
 
 **Step 1: Alice creates Bob as a companion**
+
 ```
 TravelCompanion("bob@example.com", userId=null, createdBy=Alice)
 TripCompanion(tripId=trip-1, companionId=this-record)
 ```
 
 **Step 2: Bob registers**
+
 ```
 // During registration:
 // 1. Link the old companion record to Bob's new user account
@@ -132,17 +137,18 @@ TravelCompanion("bob@example.com", userId=bob-user-id, createdBy=Bob)
 ```
 
 **Step 3: Bob logs in and loads dashboard**
+
 ```javascript
 // Search finds BOTH companion records:
 // 1. Alice's companion record (now linked to Bob)
 // 2. Bob's own companion record
 
 // Search for trips:
-TripCompanion.findAll({ companionId: { [Op.in]: [alice-companion-id, bob-companion-id] }})
+TripCompanion.findAll({ companionId: { [Op.in]: [alice - companion - id, bob - companion - id] } });
 // Returns: trip-1 ✓
 
 // Search by email also works:
-TravelCompanion.findAll({ email: "bob@example.com" })
+TravelCompanion.findAll({ email: 'bob@example.com' });
 // Returns both records ✓
 ```
 
@@ -189,6 +195,7 @@ TravelCompanion.findAll({ email: "bob@example.com" })
 ## Backward Compatibility
 
 All changes are backward compatible:
+
 - Existing companion relationships continue to work
 - Email-based lookup is additive (doesn't break userId-based lookup)
 - Works with both pre-registered and post-registered companions

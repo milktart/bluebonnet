@@ -31,19 +31,15 @@ module.exports = {
       );
 
       // Step 2: Generate UUIDs for all existing records
-      const [airports] = await queryInterface.sequelize.query(
-        'SELECT iata FROM airports',
-        { transaction }
-      );
+      const [airports] = await queryInterface.sequelize.query('SELECT iata FROM airports', {
+        transaction,
+      });
 
       for (const airport of airports) {
-        await queryInterface.sequelize.query(
-          'UPDATE airports SET id = :uuid WHERE iata = :iata',
-          {
-            replacements: { uuid: uuidv4(), iata: airport.iata },
-            transaction,
-          }
-        );
+        await queryInterface.sequelize.query('UPDATE airports SET id = :uuid WHERE iata = :iata', {
+          replacements: { uuid: uuidv4(), iata: airport.iata },
+          transaction,
+        });
       }
 
       // Step 3: Make id column non-nullable
@@ -58,11 +54,7 @@ module.exports = {
       );
 
       // Step 4: Remove primary key constraint from iata
-      await queryInterface.removeConstraint(
-        'airports',
-        'airports_pkey',
-        { transaction }
-      );
+      await queryInterface.removeConstraint('airports', 'airports_pkey', { transaction });
 
       // Step 5: Add primary key constraint to id
       await queryInterface.addConstraint(
@@ -87,15 +79,11 @@ module.exports = {
       );
 
       // Step 7: Add index on iata for fast lookups
-      await queryInterface.addIndex(
-        'airports',
-        ['iata'],
-        {
-          name: 'idx_airports_iata',
-          unique: true,
-          transaction,
-        }
-      );
+      await queryInterface.addIndex('airports', ['iata'], {
+        name: 'idx_airports_iata',
+        unique: true,
+        transaction,
+      });
 
       await transaction.commit();
       console.log('✓ Successfully migrated airports table to use UUID primary key');

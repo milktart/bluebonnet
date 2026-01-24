@@ -7,7 +7,9 @@ Current and future state management approaches in Bluebonnet.
 ## Current State (Express + EJS + Vanilla JS)
 
 ### Server-Side State
+
 **Express Session:**
+
 - User authentication state
 - Session stored in Redis
 - Available via `req.session`
@@ -21,7 +23,9 @@ if (req.session.userId) {
 ```
 
 ### Client-Side State
+
 **Global Variables:**
+
 ```javascript
 // In window scope
 window.tripId = '<%= trip.id %>';
@@ -34,6 +38,7 @@ window.sidebarState = {
 ```
 
 **Limitations:**
+
 - Global scope pollution
 - No reactivity (manual updates)
 - Difficult to debug
@@ -47,6 +52,7 @@ window.sidebarState = {
 ### Svelte Stores
 
 **authStore.ts** - Authentication state
+
 ```typescript
 import { writable } from 'svelte/store';
 
@@ -64,6 +70,7 @@ import { authStore } from '$lib/stores/authStore';
 ```
 
 **tripStore.ts** - Trip and travel items
+
 ```typescript
 export const tripStore = writable({
   currentTrip: null,
@@ -76,11 +83,12 @@ export const tripStore = writable({
   companions: [],
   vouchers: [],
   loading: false,
-  error: null
+  error: null,
 });
 ```
 
 **uiStore.ts** - UI state
+
 ```typescript
 export const uiStore = writable({
   sidebarOpen: false,
@@ -90,11 +98,12 @@ export const uiStore = writable({
   loading: false,
   selectedItem: null,
   editMode: false,
-  error: null
+  error: null,
 });
 ```
 
 ### Advantages of Svelte Stores
+
 - **Reactive** - Automatic UI updates when store changes
 - **Simple API** - `writable()`, `readable()`, `derived()`
 - **Derived stores** - Computed state (`$derived()`)
@@ -105,6 +114,7 @@ export const uiStore = writable({
 ### Store Patterns
 
 **Subscribing in Components:**
+
 ```svelte
 <script lang="ts">
   import { tripStore } from '$lib/stores/tripStore';
@@ -120,13 +130,14 @@ export const uiStore = writable({
 ```
 
 **Updating Stores:**
+
 ```typescript
 // In store actions
 export function loadTrips() {
-  tripStore.update(state => {
+  tripStore.update((state) => {
     return {
       ...state,
-      loading: true
+      loading: true,
     };
   });
 }
@@ -140,31 +151,33 @@ tripStore.set({ trips: [] });
 ## Phase 2 State (TypeScript Services)
 
 ### Service Layer with State
+
 ```typescript
 // services/tripService.ts
 import { tripStore } from '$lib/stores/tripStore';
 
 export async function fetchTrips() {
-  tripStore.update(state => ({ ...state, loading: true }));
+  tripStore.update((state) => ({ ...state, loading: true }));
 
   try {
     const trips = await apiClient.get('/api/trips');
-    tripStore.update(state => ({
+    tripStore.update((state) => ({
       ...state,
       trips,
-      loading: false
+      loading: false,
     }));
   } catch (error) {
-    tripStore.update(state => ({
+    tripStore.update((state) => ({
       ...state,
       error,
-      loading: false
+      loading: false,
     }));
   }
 }
 ```
 
 ### Benefits
+
 - Centralized async logic
 - Consistent error handling
 - Loading state management
@@ -175,45 +188,47 @@ export async function fetchTrips() {
 ## State Synchronization Strategies
 
 ### Option A: Optimistic Updates (Phase 1)
+
 ```typescript
 // Assume success immediately
-tripStore.update(state => ({
+tripStore.update((state) => ({
   ...state,
-  flights: [...state.flights, newFlight]
+  flights: [...state.flights, newFlight],
 }));
 
 // Send to server
-apiClient.post('/api/flights', newFlight)
-  .catch(error => {
-    // Revert on error
-    tripStore.update(state => ({
-      ...state,
-      flights: state.flights.filter(f => f.id !== newFlight.id)
-    }));
-  });
+apiClient.post('/api/flights', newFlight).catch((error) => {
+  // Revert on error
+  tripStore.update((state) => ({
+    ...state,
+    flights: state.flights.filter((f) => f.id !== newFlight.id),
+  }));
+});
 ```
 
 ### Option B: Pessimistic Updates (Current)
+
 ```typescript
 // Wait for server response
 const response = await apiClient.post('/api/flights', newFlight);
 
 // Update only after success
 if (response.ok) {
-  tripStore.update(state => ({
+  tripStore.update((state) => ({
     ...state,
-    flights: [...state.flights, response.flight]
+    flights: [...state.flights, response.flight],
   }));
 }
 ```
 
 ### Option C: Real-Time Sync (Phase 3)
+
 ```typescript
 // WebSocket-based synchronization
 socket.on('item:created', (item) => {
-  tripStore.update(state => ({
+  tripStore.update((state) => ({
     ...state,
-    [itemType + 's']: [...state[itemType + 's'], item]
+    [itemType + 's']: [...state[itemType + 's'], item],
   }));
 });
 ```
@@ -223,6 +238,7 @@ socket.on('item:created', (item) => {
 ## Derived State (Computed Properties)
 
 ### Svelte `derived()` Stores
+
 ```typescript
 import { derived } from 'svelte/store';
 import { tripStore } from './tripStore';
@@ -240,6 +256,7 @@ export const totalFlightCost = derived(
 ```
 
 ### Benefits
+
 - Memoized computations
 - Automatic updates when source changes
 - Performance optimization
@@ -250,6 +267,7 @@ export const totalFlightCost = derived(
 ## State Persistence
 
 ### localStorage Integration
+
 ```typescript
 // Persist specific stores to localStorage
 function persistedStore<T>(key: string, initialValue: T) {
@@ -258,7 +276,7 @@ function persistedStore<T>(key: string, initialValue: T) {
 
   const store = writable(state);
 
-  store.subscribe(value => {
+  store.subscribe((value) => {
     localStorage.setItem(key, JSON.stringify(value));
   });
 
@@ -267,11 +285,12 @@ function persistedStore<T>(key: string, initialValue: T) {
 
 export const preferencesStore = persistedStore('preferences', {
   theme: 'light',
-  notifications: true
+  notifications: true,
 });
 ```
 
 ### Use Cases
+
 - User preferences
 - Recently viewed trips
 - Form drafts
@@ -282,6 +301,7 @@ export const preferencesStore = persistedStore('preferences', {
 ## Testing State Management
 
 ### Unit Tests
+
 ```typescript
 import { get } from 'svelte/store';
 import { tripStore } from './tripStore';
@@ -291,9 +311,9 @@ test('tripStore updates correctly', () => {
   expect(initialState.trips).toEqual([]);
 
   // Update store
-  tripStore.update(state => ({
+  tripStore.update((state) => ({
     ...state,
-    trips: [{ id: '1', name: 'My Trip' }]
+    trips: [{ id: '1', name: 'My Trip' }],
   }));
 
   const updatedState = get(tripStore);
@@ -302,6 +322,7 @@ test('tripStore updates correctly', () => {
 ```
 
 ### Component Tests
+
 ```typescript
 import { render, screen } from '@testing-library/svelte';
 import { tripStore } from './tripStore';
@@ -309,7 +330,7 @@ import TripList from './TripList.svelte';
 
 test('renders trips from store', async () => {
   tripStore.set({
-    trips: [{ id: '1', name: 'My Trip' }]
+    trips: [{ id: '1', name: 'My Trip' }],
   });
 
   render(TripList);
@@ -322,34 +343,38 @@ test('renders trips from store', async () => {
 ## Anti-Patterns to Avoid
 
 ### ❌ Direct DOM Manipulation
+
 ```typescript
 // WRONG - Don't do this
 document.querySelector('.trip-name').textContent = trip.name;
 ```
 
 ### ✅ Store-Based Updates
+
 ```typescript
 // RIGHT - Use stores
-tripStore.update(state => ({
+tripStore.update((state) => ({
   ...state,
-  currentTrip: trip
+  currentTrip: trip,
 }));
 ```
 
 ---
 
 ### ❌ Global Variables
+
 ```typescript
 // WRONG
 window.tripId = '123';
 ```
 
 ### ✅ Store-Based State
+
 ```typescript
 // RIGHT
-tripStore.update(state => ({
+tripStore.update((state) => ({
   ...state,
-  currentTrip: { id: '123' }
+  currentTrip: { id: '123' },
 }));
 ```
 

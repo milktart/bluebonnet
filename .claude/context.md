@@ -45,12 +45,14 @@ Voucher (1)
 ## File Organization
 
 ### Backend (`controllers/`, `models/`, `routes/`)
+
 - **Controllers:** `authController.js`, `tripController.js` (60KB!), `flightController.js`, `hotelController.js`, `eventController.js`, `carRentalController.js`, `transportationController.js`, `companionController.js`, `voucherController.js`, `accountController.js`
 - **Models:** User, Trip, Flight, Hotel, Event, CarRental, Transportation, TravelCompanion, TripCompanion, Voucher, VoucherAttachment, Notification
 - **Routes:** `/auth`, `/trips`, `/flights`, `/hotels`, `/events`, `/car-rentals`, `/transportation`, `/companions`, `/vouchers`, `/api/v1/*`
 - **Middleware:** `auth.js` (ensureAuthenticated, forwardAuthenticated), `validation.js` (form validators)
 
 ### Frontend (`views/`, `public/js/`)
+
 - **Views:** EJS templates in `views/`
   - Main: `dashboard.ejs`, `trips/trip-view.ejs`, `account/`.
   - Partials: `flight-form.ejs`, `hotel-form.ejs`, `event-form.ejs`, etc.
@@ -60,6 +62,7 @@ Voucher (1)
   - Event system: `event-delegation.js`, `eventBus.js`
 
 ### Data (`data/`)
+
 - `airports.json` - 7,000+ airports (seeded to DB on startup)
 - `airlines.json` - Airline codes and names
 
@@ -67,18 +70,18 @@ Voucher (1)
 
 ## Features (All Active)
 
-| Feature | CRUD | Status | Notes |
-|---------|------|--------|-------|
-| **Trip** | ✅ | Active | Create, view, edit, delete trips |
-| **Flight** | ✅ | Active | Flights with timezone inference |
-| **Hotel** | ✅ | Active | Accommodations with check-in/out |
-| **Event** | ✅ | Active | Activities & attractions |
-| **Car Rental** | ✅ | Active | Vehicle rentals |
-| **Transportation** | ✅ | Active | Ground transport (taxi, shuttle, etc.) |
-| **Companions** | ✅ | Active | Invite people, set permissions |
-| **Vouchers** | ✅ | Active | Track travel credits/upgrades |
-| **Calendar** | ✅ | Active | Timeline view of trip items |
-| **Maps** | ✅ | Active | Location visualization |
+| Feature            | CRUD | Status | Notes                                  |
+| ------------------ | ---- | ------ | -------------------------------------- |
+| **Trip**           | ✅   | Active | Create, view, edit, delete trips       |
+| **Flight**         | ✅   | Active | Flights with timezone inference        |
+| **Hotel**          | ✅   | Active | Accommodations with check-in/out       |
+| **Event**          | ✅   | Active | Activities & attractions               |
+| **Car Rental**     | ✅   | Active | Vehicle rentals                        |
+| **Transportation** | ✅   | Active | Ground transport (taxi, shuttle, etc.) |
+| **Companions**     | ✅   | Active | Invite people, set permissions         |
+| **Vouchers**       | ✅   | Active | Track travel credits/upgrades          |
+| **Calendar**       | ✅   | Active | Timeline view of trip items            |
+| **Maps**           | ✅   | Active | Location visualization                 |
 
 **Special:** All items are optional (can create standalone). Trip items CAN be attached to a trip.
 
@@ -98,6 +101,7 @@ Voucher (1)
 ## Common Patterns
 
 ### AJAX Request Detection (Backend)
+
 ```javascript
 const isAsyncRequest = req.get('X-Async-Request') === 'true';
 if (isAsyncRequest) {
@@ -108,6 +112,7 @@ if (isAsyncRequest) {
 ```
 
 ### Form Submission (Frontend)
+
 1. User fills form in sidebar
 2. JavaScript intercepts submit (X-Async-Request header added)
 3. Backend validates, creates/updates item
@@ -115,6 +120,7 @@ if (isAsyncRequest) {
 5. Frontend silently refreshes sidebars/maps (no notifications)
 
 ### Sidebar Navigation
+
 1. Click "Add Item" or "Edit Item"
 2. `loadSidebarContent(url)` fetches form via AJAX
 3. Form loads into secondary sidebar
@@ -139,6 +145,7 @@ if (isAsyncRequest) {
 ## Environment Variables (Key)
 
 **Required:**
+
 ```env
 DB_HOST=localhost
 DB_PORT=5432
@@ -150,6 +157,7 @@ NODE_ENV=development
 ```
 
 **Optional (with defaults):**
+
 - `PORT=3000` - Server port
 - `REDIS_ENABLED=true` - Enable Redis
 - `REDIS_HOST=localhost`, `REDIS_PORT=6379`
@@ -163,6 +171,7 @@ NODE_ENV=development
 **Timeline:** Q1 2026, ~12 weeks
 
 **Approach:**
+
 1. Keep Express backend unchanged
 2. Add SvelteKit frontend alongside EJS
 3. Migrate features one-by-one to Svelte

@@ -319,8 +319,20 @@ describe('Companion Badges - Phase 5 Standardization', () => {
 
     it('should handle companions with identical names', () => {
       const companions = [
-        { id: 'comp-1', firstName: 'John', lastName: 'Doe', email: 'john1@example.com', userId: 'user-1' },
-        { id: 'comp-2', firstName: 'John', lastName: 'Doe', email: 'john2@example.com', userId: 'user-2' },
+        {
+          id: 'comp-1',
+          firstName: 'John',
+          lastName: 'Doe',
+          email: 'john1@example.com',
+          userId: 'user-1',
+        },
+        {
+          id: 'comp-2',
+          firstName: 'John',
+          lastName: 'Doe',
+          email: 'john2@example.com',
+          userId: 'user-2',
+        },
       ];
 
       // Should not deduplicate - they are different users

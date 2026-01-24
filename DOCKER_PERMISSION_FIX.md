@@ -3,6 +3,7 @@
 ## Problem Statement
 
 When rebuilding or restarting the app in the local environment:
+
 - `/frontend/node_modules/` was owned by `1001:1001` (uid 1001, gid 1001)
 - `/app/node_modules/` was owned by `nodejs:nodejs` (uid 1001, gid 1001)
 - All other directories were correctly owned by `home:home`
@@ -21,6 +22,7 @@ Replaced the custom `nodejs:1001:1001` user with the built-in `node:1000:1000` u
 #### 1. **Dockerfile** (All 8 stages)
 
 **Before:**
+
 ```dockerfile
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 && \
@@ -30,6 +32,7 @@ USER nodejs
 ```
 
 **After:**
+
 ```dockerfile
 RUN chown -R node:node /app
 COPY --chown=node:node package*.json ./
@@ -37,6 +40,7 @@ USER node
 ```
 
 **Changes applied to all stages:**
+
 - Base stage: Uses built-in `node` user instead of creating `nodejs:1001`
 - development-deps stage: `USER node` instead of `USER nodejs`
 - production-deps stage: `USER node` instead of `USER nodejs`
@@ -49,8 +53,9 @@ USER node
 #### 2. **docker-compose.yml**
 
 **Added to both services:**
+
 ```yaml
-user: "node"
+user: 'node'
 ```
 
 This ensures containers run as the `node` user, maintaining consistency between host and container.
@@ -58,6 +63,7 @@ This ensures containers run as the `node` user, maintaining consistency between 
 #### 3. **frontend/Dockerfile.dev**
 
 **Before:**
+
 ```dockerfile
 FROM node:20-alpine
 WORKDIR /app
@@ -67,6 +73,7 @@ COPY . .
 ```
 
 **After:**
+
 ```dockerfile
 FROM node:20-alpine
 WORKDIR /app
@@ -80,6 +87,7 @@ COPY --chown=node:node . .
 #### 4. **scripts/docker-entrypoint.sh**
 
 **Removed all permission-fixing logic:**
+
 - ❌ Removed ownership checks for `/app/node_modules`
 - ❌ Removed `chown -R nodejs:nodejs` operations
 - ❌ Removed root permission fixes
@@ -92,11 +100,13 @@ The script now runs cleanly without any permission operations, relying on the co
 ## User ID Mapping
 
 ### Built-in Node User (Used Now)
+
 - **Container:** `node` user, UID 1000, GID 1000
 - **Host:** `home` user, UID 1000, GID 1000 (typical)
 - **Match:** Perfect alignment ✅
 
 ### Old Custom User (No Longer Used)
+
 - **Container:** `nodejs` user, UID 1001, GID 1001
 - **Host:** Unmapped (creates 1001:1001 on mount)
 - **Issue:** Mismatch causes permission problems ❌
@@ -106,6 +116,7 @@ The script now runs cleanly without any permission operations, relying on the co
 ## File Ownership After Fix
 
 ### In Container
+
 ```
 /app                          → node:node (1000:1000)
 /app/node_modules             → node:node (1000:1000)
@@ -116,6 +127,7 @@ All build artifacts           → node:node (1000:1000)
 ```
 
 ### On Host (After Volume Mount)
+
 ```
 ./                            → home:home (1000:1000)
 ./node_modules                → home:home (1000:1000)
@@ -128,6 +140,7 @@ All files                     → home:home (1000:1000)
 ## Testing the Fix
 
 ### Clean Rebuild
+
 ```bash
 # Remove old volumes and containers
 docker compose down --volumes
@@ -142,18 +155,22 @@ docker compose up --build
 ### Verify Permissions
 
 **Inside container:**
+
 ```bash
 docker exec <container_id> ls -la / | grep app
 docker exec <container_id> ls -la /app/node_modules | head -5
 docker exec <container_id> ls -la /app/frontend/node_modules | head -5
 ```
+
 All should show `node` ownership.
 
 **On host:**
+
 ```bash
 ls -la node_modules | head -5
 ls -la frontend/node_modules | head -5
 ```
+
 All should show `home:home` ownership.
 
 ---
@@ -181,6 +198,7 @@ All should show `home:home` ownership.
 ## Rollback Plan
 
 If issues occur, revert to the commit before this fix:
+
 ```bash
 git revert <commit-hash>
 docker compose down --volumes

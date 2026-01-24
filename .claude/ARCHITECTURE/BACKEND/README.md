@@ -21,6 +21,7 @@ Express.js backend handling API endpoints, business logic, and database operatio
 Backend provides REST API for frontend to communicate with database.
 
 ### Tech Stack
+
 - **Framework:** Express.js
 - **Database:** PostgreSQL + Sequelize ORM
 - **Cache:** Redis
@@ -56,15 +57,14 @@ Response (JSON) back to Frontend
 Maps URLs to controllers.
 
 **Example:**
+
 ```javascript
 // routes/flights.js
-router.post('/flights', ensureAuthenticated,
-  validateFlight(),
-  flightController.createFlight
-);
+router.post('/flights', ensureAuthenticated, validateFlight(), flightController.createFlight);
 ```
 
 **Key Routes:**
+
 - `/auth` - Authentication
 - `/trips` - Trip management
 - `/flights`, `/hotels`, `/events`, etc. - Travel items
@@ -77,6 +77,7 @@ router.post('/flights', ensureAuthenticated,
 Handles request processing and business logic.
 
 **Current Controllers:**
+
 - `authController.js` - Login, registration
 - `tripController.js` - Trip CRUD (60KB - being refactored)
 - `flightController.js` - Flight CRUD
@@ -89,6 +90,7 @@ Handles request processing and business logic.
 - `accountController.js` - User account (27KB)
 
 **Example Controller:**
+
 ```javascript
 exports.createFlight = async (req, res) => {
   try {
@@ -137,6 +139,7 @@ exports.createFlight = async (req, res) => {
 Sequelize ORM models representing database tables.
 
 **Current Models:**
+
 - `User.js` - User accounts
 - `Trip.js` - Trips (core entity)
 - `Flight.js` - Flights
@@ -151,6 +154,7 @@ Sequelize ORM models representing database tables.
 - `Notification.js` - User notifications
 
 **Example Model:**
+
 ```javascript
 // models/Flight.js
 module.exports = (sequelize, DataTypes) => {
@@ -187,6 +191,7 @@ module.exports = (sequelize, DataTypes) => {
 Processes requests before reaching controllers.
 
 **Current Middleware:**
+
 - `auth.js` - Authentication guards
   - `ensureAuthenticated` - Protects routes
   - `forwardAuthenticated` - Redirects logged-in users
@@ -196,6 +201,7 @@ Processes requests before reaching controllers.
   - `validateTrip()`
 
 **Example Middleware:**
+
 ```javascript
 // middleware/auth.js
 exports.ensureAuthenticated = (req, res, next) => {
@@ -273,7 +279,7 @@ try {
   if (isAsyncRequest) {
     return res.status(400).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
   req.flash('error_msg', error.message);
@@ -297,6 +303,7 @@ if (!trip || trip.userId !== req.user.id) {
 Reusable utilities for controllers.
 
 **Current Helpers:**
+
 - `resourceController.js`
   - `verifyTripOwnership()` - Check trip ownership
   - `geocodeIfChanged()` - Geocode location
@@ -377,16 +384,19 @@ REDIS_PORT=6379
 ## Performance Considerations
 
 ### Queries
+
 - Use `.include()` for eager loading (avoid N+1)
 - Use `.select()` to limit columns
 - Use indexes on frequently queried columns
 
 ### Caching
+
 - Redis for session data
 - Passport sessions
 - Airport data caching
 
 ### Optimization
+
 - Lazy load companions/vouchers
 - Paginate large result sets
 - Compress responses
@@ -399,10 +409,10 @@ Winston logger configured in `server.js`:
 
 ```javascript
 // Log levels
-logger.error('Error message');    // Errors
-logger.warn('Warning message');   // Warnings
-logger.info('Info message');      // Info
-logger.debug('Debug message');    // Debug
+logger.error('Error message'); // Errors
+logger.warn('Warning message'); // Warnings
+logger.info('Info message'); // Info
+logger.debug('Debug message'); // Debug
 ```
 
 **Never use** `console.log()` (use logger instead)

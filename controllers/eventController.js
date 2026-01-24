@@ -90,7 +90,13 @@ exports.createEvent = async (req, res) => {
 
     // Handle companions - unified method
     try {
-      await itemCompanionService.handleItemCompanions('event', event.id, companions, tripId, req.user.id);
+      await itemCompanionService.handleItemCompanions(
+        'event',
+        event.id,
+        companions,
+        tripId,
+        req.user.id
+      );
     } catch (e) {
       logger.error('Error managing companions for event:', e);
     }
@@ -151,7 +157,9 @@ exports.updateEvent = async (req, res) => {
     // Verify ownership - check if user is item creator OR trip owner OR trip admin with canEdit permission
     const isItemOwner = verifyResourceOwnership(event, req.user.id);
     const { TripCompanion } = require('../models');
-    const canEditTrip = event.tripId ? await verifyTripItemEditAccess(event.tripId, req.user.id, Trip, TripCompanion) : false;
+    const canEditTrip = event.tripId
+      ? await verifyTripItemEditAccess(event.tripId, req.user.id, Trip, TripCompanion)
+      : false;
 
     if (!isItemOwner && !canEditTrip) {
       return sendAsyncOrRedirect(req, res, {
@@ -247,7 +255,9 @@ exports.deleteEvent = async (req, res) => {
     // Verify ownership - check if user is item creator OR trip owner OR trip admin with canEdit permission
     const isItemOwner = verifyResourceOwnership(event, req.user.id);
     const { TripCompanion } = require('../models');
-    const canEditTrip = event.tripId ? await verifyTripItemEditAccess(event.tripId, req.user.id, Trip, TripCompanion) : false;
+    const canEditTrip = event.tripId
+      ? await verifyTripItemEditAccess(event.tripId, req.user.id, Trip, TripCompanion)
+      : false;
 
     if (!isItemOwner && !canEditTrip) {
       return sendAsyncOrRedirect(req, res, {

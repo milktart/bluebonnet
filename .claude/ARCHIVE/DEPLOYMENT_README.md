@@ -7,16 +7,19 @@ Complete guide for deploying and operating Bluebonnet in all environments.
 ## Quick Links
 
 ### Development & Setup
+
 - **[Local Development](./LOCAL_DEVELOPMENT.md)** - Setting up locally
 - **[Docker Setup](./DOCKER_SETUP.md)** - Docker development & production
 - **[Environment Config](./ENVIRONMENT_CONFIG.md)** - Environment variables
 
 ### Production
+
 - **[Production Deployment](./PRODUCTION_DEPLOYMENT.md)** - Pre-deploy checklist
 - **[CI/CD](./CI_CD.md)** - GitHub Actions, automation
 - **[Monitoring](./MONITORING.md)** - Error tracking, logging
 
 ### Troubleshooting
+
 - **[Deployment Issues](../TROUBLESHOOTING/DEPLOYMENT_ISSUES.md)** - Production problems
 
 ---
@@ -24,18 +27,21 @@ Complete guide for deploying and operating Bluebonnet in all environments.
 ## Deployment Environments
 
 ### Development (Local)
+
 **Purpose:** Local development
 **Database:** PostgreSQL locally
 **Cache:** Redis locally
 **Command:** `npm run dev`
 
 ### Staging (Docker)
+
 **Purpose:** Test before production
 **Database:** PostgreSQL in container
 **Cache:** Redis in container
 **Command:** `docker-compose up`
 
 ### Production
+
 **Purpose:** Live users
 **Database:** PostgreSQL (managed service or container)
 **Cache:** Redis (managed service or container)
@@ -46,6 +52,7 @@ Complete guide for deploying and operating Bluebonnet in all environments.
 ## Quick Start
 
 ### Local Development
+
 ```bash
 # 1. Clone repo
 git clone ...
@@ -70,6 +77,7 @@ npm run dev
 See: [Local Development](./LOCAL_DEVELOPMENT.md)
 
 ### Docker Development
+
 ```bash
 # 1. Clone repo
 git clone ...
@@ -87,6 +95,7 @@ docker-compose up --build
 See: [Docker Setup](./DOCKER_SETUP.md)
 
 ### Production Deployment
+
 ```bash
 # 1. Prepare release
 # - Run tests: npm test
@@ -111,6 +120,7 @@ See: [Production Deployment](./PRODUCTION_DEPLOYMENT.md)
 ## Environment Variables
 
 ### Required
+
 ```env
 # PostgreSQL
 DB_HOST=localhost
@@ -126,6 +136,7 @@ PORT=3000
 ```
 
 ### Optional
+
 ```env
 # Redis
 REDIS_ENABLED=true
@@ -147,14 +158,16 @@ See: [Environment Config](./ENVIRONMENT_CONFIG.md)
 ## Docker Compose
 
 ### What's Included
+
 ```yaml
 services:
-  app:           # Express.js backend
-  postgres:      # PostgreSQL database
-  redis:         # Redis cache
+  app: # Express.js backend
+  postgres: # PostgreSQL database
+  redis: # Redis cache
 ```
 
 ### Key Commands
+
 ```bash
 # Start services
 docker-compose up
@@ -182,6 +195,7 @@ See: [Docker Setup](./DOCKER_SETUP.md)
 ## Database Initialization
 
 ### First Run (Automatic with Docker)
+
 ```bash
 docker-compose up
 # Script automatically:
@@ -192,12 +206,14 @@ docker-compose up
 ```
 
 ### Manual (Local Development)
+
 ```bash
 npm run db:sync              # Create/update tables
 npm run db:seed-airports     # Seed airports data
 ```
 
 ### Migrations
+
 ```bash
 npm run db:migrate           # Run pending migrations
 npm run db:migrate:undo      # Undo last migration
@@ -209,12 +225,14 @@ npm run db:migrate:status    # Show migration status
 ## Pre-Deployment Checklist
 
 ### Code Quality
+
 - [ ] All tests passing (`npm test`)
 - [ ] No lint errors (`npm run lint`)
 - [ ] Code formatted (`npm run format:check`)
 - [ ] TypeScript errors (if using TS)
 
 ### Functionality
+
 - [ ] Critical features tested manually
 - [ ] No broken links
 - [ ] Forms submit correctly
@@ -222,6 +240,7 @@ npm run db:migrate:status    # Show migration status
 - [ ] Performance acceptable
 
 ### Build & Deploy
+
 - [ ] CSS built (`npm run build-css-prod`)
 - [ ] JavaScript bundled (`npm run build`)
 - [ ] Environment variables set
@@ -235,6 +254,7 @@ See: [Production Deployment](./PRODUCTION_DEPLOYMENT.md)
 ## CI/CD Pipeline
 
 ### GitHub Actions
+
 ```yaml
 # Runs on every push and PR
 1. Install dependencies
@@ -246,6 +266,7 @@ See: [Production Deployment](./PRODUCTION_DEPLOYMENT.md)
 ```
 
 ### Deployment
+
 ```
 main branch → tests pass → build → deploy to production
 ```
@@ -257,6 +278,7 @@ See: [CI/CD](./CI_CD.md)
 ## Monitoring & Logs
 
 ### Error Tracking
+
 ```
 Errors logged to:
 - File logs (rotating daily)
@@ -265,6 +287,7 @@ Errors logged to:
 ```
 
 ### Performance Monitoring
+
 ```
 Track:
 - Request response times
@@ -274,6 +297,7 @@ Track:
 ```
 
 ### Log Levels
+
 ```
 error  - Application errors
 warn   - Warnings
@@ -288,12 +312,14 @@ See: [Monitoring](./MONITORING.md)
 ## Phase 1 Deployment Changes
 
 ### Current (Express Only)
+
 ```
 Deploy Express backend
 Server runs on port 3000
 ```
 
 ### Phase 1 (Express + SvelteKit)
+
 ```
 Deploy Express backend (port 3000)
 Deploy SvelteKit frontend (port 3001, proxied to 3000 for API)
@@ -306,7 +332,9 @@ OR
 ## Troubleshooting Deployments
 
 ### Issue: Database connection fails
+
 **Check:**
+
 - PostgreSQL running
 - Connection string correct
 - Firewall allows connections
@@ -315,14 +343,18 @@ OR
 See: [Deployment Issues](../TROUBLESHOOTING/DEPLOYMENT_ISSUES.md)
 
 ### Issue: Application won't start
+
 **Check:**
+
 - Node.js version correct
 - Dependencies installed (`npm install`)
 - Environment variables set
 - Database migrations current
 
 ### Issue: Feature not working in production
+
 **Check:**
+
 - Database migrations applied
 - Environment variables correct
 - Logs for errors
@@ -333,6 +365,7 @@ See: [Deployment Issues](../TROUBLESHOOTING/DEPLOYMENT_ISSUES.md)
 ## Deployment Strategy
 
 ### Staging First
+
 ```
 1. Deploy to staging
 2. Test thoroughly
@@ -341,6 +374,7 @@ See: [Deployment Issues](../TROUBLESHOOTING/DEPLOYMENT_ISSUES.md)
 ```
 
 ### Gradual Rollout (Optional)
+
 ```
 1. Deploy to 10% of servers
 2. Monitor for errors
@@ -349,6 +383,7 @@ See: [Deployment Issues](../TROUBLESHOOTING/DEPLOYMENT_ISSUES.md)
 ```
 
 ### Rollback Plan
+
 ```
 1. Keep previous version ready
 2. Can rollback in seconds

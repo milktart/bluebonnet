@@ -43,6 +43,7 @@ Complete documentation of how Bluebonnet is organized and how systems interact.
 ```
 
 ### Current Stack (Phase 1 Target)
+
 - **Frontend:** Svelte + SvelteKit
 - **Backend:** Express.js + Node.js
 - **Database:** PostgreSQL + Sequelize ORM
@@ -56,17 +57,20 @@ Complete documentation of how Bluebonnet is organized and how systems interact.
 ### Frontend Layer (Replacing EJS + Vanilla JS)
 
 **Svelte Components:**
+
 - Page components (`+page.svelte`)
 - Form components (FlightForm, HotelForm, etc.)
 - Layout components (Sidebars, PageLayout)
 - Data components (Tables, Cards)
 
 **State Management:**
+
 - Svelte Stores (authStore, tripStore, uiStore)
 - Reactive bindings
 - Store subscriptions
 
 **Communication:**
+
 - API service layer
 - Fetch requests with auth headers
 - Error handling
@@ -76,17 +80,20 @@ See: [Frontend Architecture](./FRONTEND/README.md)
 ### Backend Layer (Express + Controllers)
 
 **Route Handlers:**
+
 - Auth routes (`/api/auth`)
 - Trip routes (`/api/trips`)
 - Item routes (`/api/flights`, `/api/hotels`, etc.)
 
 **Controllers:**
+
 - Authentication
 - Trip management
 - Resource CRUD (flights, hotels, etc.)
 - Companion management
 
 **Services:**
+
 - Business logic
 - Database queries
 - Validation
@@ -97,6 +104,7 @@ See: [Backend Architecture](./BACKEND/README.md)
 ### Data Model
 
 **Core Entities:**
+
 - User
 - Trip
 - Flight, Hotel, Event, Transportation, CarRental
@@ -156,6 +164,7 @@ See: [Integrations](./INTEGRATIONS/README.md)
    - UI reflects new flight
 
 ### Result:
+
 - Flight created in database
 - User sees flight in trip
 - No page reload
@@ -205,6 +214,7 @@ Frontend
 ## Directory Structure
 
 ### Backend (Express)
+
 ```
 controllers/        ← Route handlers
 ├── helpers/        ← Shared utilities (geocoding, redirects)
@@ -216,6 +226,7 @@ utils/              ← General utilities
 ```
 
 ### Frontend (Svelte)
+
 ```
 src/
 ├── routes/         ← Page components (+page.svelte)
@@ -229,6 +240,7 @@ src/
 ```
 
 ### Database
+
 ```
 PostgreSQL
 ├── users
@@ -249,6 +261,7 @@ PostgreSQL
 ## Key Architectural Decisions
 
 ### Why Express?
+
 - Lightweight, flexible
 - Large ecosystem
 - Easy to integrate with Svelte
@@ -257,6 +270,7 @@ PostgreSQL
 See: [ADR 001](../DECISIONS/ADR_001_EXPRESS.md)
 
 ### Why Svelte (Phase 1)?
+
 - Smallest bundle size
 - Best developer experience
 - Reactive by default
@@ -265,6 +279,7 @@ See: [ADR 001](../DECISIONS/ADR_001_EXPRESS.md)
 See: [ADR 005](../DECISIONS/ADR_005_SVELTE.md)
 
 ### Why PostgreSQL?
+
 - Robust, reliable
 - Great for relational data
 - Good for travel data (trips, items, relationships)
@@ -276,17 +291,20 @@ See: [ADR 004](../DECISIONS/ADR_004_POSTGRES_REDIS.md)
 ## Getting Started
 
 ### New Developer?
+
 1. Read [Current State](./CURRENT_STATE.md) - 10 min
 2. Read [Backend Overview](./BACKEND/README.md) - 10 min
 3. Read [Frontend Overview](./FRONTEND/README.md) - 10 min
 4. Read specific [Data Model](./DATA_MODEL/README.md) section for feature you're working on
 
 ### Making a Change?
+
 1. Check [Patterns Documentation](../PATTERNS/) for your use case
 2. Follow pattern for backend and frontend
 3. Check [Testing Guide](../TESTING/) for test coverage
 
 ### New to Svelte?
+
 1. [Svelte Basics](../LEARNING_RESOURCES/SVELTE_BASICS.md) - Quick reference
 2. [Phase 1 Setup](../MODERNIZATION/PHASE_1_SVELTE_SETUP.md) - Getting started
 3. [Building Components](../MODERNIZATION/PHASE_1_COMPONENTS.md) - Component patterns

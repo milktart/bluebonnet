@@ -61,7 +61,11 @@ describe('Companion Cascade Manager', () => {
       db.Event.findAll.mockResolvedValue(mockEvents);
       db.ItemCompanion.bulkCreate.mockResolvedValue([]);
 
-      const result = await companionCascadeManager.cascadeAddToAllItems(companionId, tripId, userId);
+      const result = await companionCascadeManager.cascadeAddToAllItems(
+        companionId,
+        tripId,
+        userId
+      );
 
       // Should have created 5 records (2 flights + 1 hotel + 1 transportation + 0 car rentals + 1 event)
       expect(result).toBe(5);
@@ -92,12 +96,9 @@ describe('Companion Cascade Manager', () => {
       db.Event.findAll.mockResolvedValue([]);
       db.ItemCompanion.bulkCreate.mockResolvedValue([]);
 
-      await companionCascadeManager.cascadeAddToAllItems(
-        companionId,
-        tripId,
-        userId,
-        { canEdit: true }
-      );
+      await companionCascadeManager.cascadeAddToAllItems(companionId, tripId, userId, {
+        canEdit: true,
+      });
 
       const bulkCreateCall = db.ItemCompanion.bulkCreate.mock.calls[0];
       const records = bulkCreateCall[0];
@@ -116,7 +117,11 @@ describe('Companion Cascade Manager', () => {
       db.CarRental.findAll.mockResolvedValue([]);
       db.Event.findAll.mockResolvedValue([]);
 
-      const result = await companionCascadeManager.cascadeAddToAllItems(companionId, tripId, userId);
+      const result = await companionCascadeManager.cascadeAddToAllItems(
+        companionId,
+        tripId,
+        userId
+      );
 
       expect(result).toBe(0);
       expect(db.ItemCompanion.bulkCreate).not.toHaveBeenCalled();
@@ -132,10 +137,9 @@ describe('Companion Cascade Manager', () => {
 
       await companionCascadeManager.cascadeAddToAllItems(companionId, tripId, userId);
 
-      expect(db.ItemCompanion.bulkCreate).toHaveBeenCalledWith(
-        expect.any(Array),
-        { ignoreDuplicates: true }
-      );
+      expect(db.ItemCompanion.bulkCreate).toHaveBeenCalledWith(expect.any(Array), {
+        ignoreDuplicates: true,
+      });
     });
   });
 
@@ -265,11 +269,9 @@ describe('Companion Cascade Manager', () => {
       db.CarRental.findAll.mockResolvedValue([]);
       db.Event.findAll.mockResolvedValue([]);
 
-      const result = await companionCascadeManager.updateCascadedPermissions(
-        companionId,
-        tripId,
-        { canEdit: true }
-      );
+      const result = await companionCascadeManager.updateCascadedPermissions(companionId, tripId, {
+        canEdit: true,
+      });
 
       expect(result).toBe(0);
       expect(db.ItemCompanion.update).not.toHaveBeenCalled();
@@ -324,9 +326,21 @@ describe('Companion Cascade Manager', () => {
 
       expect(db.ItemCompanion.bulkCreate).toHaveBeenCalledWith(
         expect.arrayContaining([
-          expect.objectContaining({ itemType: 'flight', itemId: 'item-1', inheritedFromTrip: true }),
-          expect.objectContaining({ itemType: 'flight', itemId: 'item-2', inheritedFromTrip: true }),
-          expect.objectContaining({ itemType: 'flight', itemId: 'item-3', inheritedFromTrip: true }),
+          expect.objectContaining({
+            itemType: 'flight',
+            itemId: 'item-1',
+            inheritedFromTrip: true,
+          }),
+          expect.objectContaining({
+            itemType: 'flight',
+            itemId: 'item-2',
+            inheritedFromTrip: true,
+          }),
+          expect.objectContaining({
+            itemType: 'flight',
+            itemId: 'item-3',
+            inheritedFromTrip: true,
+          }),
         ]),
         { ignoreDuplicates: true }
       );

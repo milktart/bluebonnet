@@ -19,16 +19,19 @@ Complete guide to Phase 1: Replacing monolithic Express+EJS with modern Svelte+S
 ## Why Svelte?
 
 ### vs React
+
 - **Bundle:** 8-12KB (Svelte) vs 50-60KB (React)
 - **Learning:** Simpler syntax, reactive by default
 - **Performance:** Pre-compiled, minimal runtime
 
 ### vs Vue 3
+
 - **Size:** Smaller bundles
 - **DX:** Better developer experience
 - **Reactivity:** Simpler model (no hooks)
 
 ### vs Alpine.js
+
 - **Framework:** Full framework vs jQuery-like
 - **Components:** Reusable components vs inline logic
 - **Scalability:** Better for large apps
@@ -58,6 +61,7 @@ Complete guide to Phase 1: Replacing monolithic Express+EJS with modern Svelte+S
 ```
 
 ### No Backend Changes
+
 - Express backend stays exactly as-is
 - All routes/controllers/models unchanged
 - API contracts guaranteed
@@ -68,19 +72,23 @@ Complete guide to Phase 1: Replacing monolithic Express+EJS with modern Svelte+S
 ## Key Technologies
 
 ### Framework
+
 - **SvelteKit** - Full-stack Svelte framework
 - **Vite** - Fast build tool
 - **TypeScript** - Optional type checking
 
 ### State Management
+
 - **Svelte Stores** - Reactive state (authStore, tripStore, uiStore)
 - **Context API** - Component-level state
 
 ### Styling
+
 - **Tailwind CSS** - Utility-first styling (same as before)
 - **SvelteKit CSS** - Component-scoped styles
 
 ### Development
+
 - **Node.js** 18+
 - **npm** or **pnpm**
 - **Docker** for deployment
@@ -90,17 +98,20 @@ Complete guide to Phase 1: Replacing monolithic Express+EJS with modern Svelte+S
 ## Feature Migration Order
 
 ### Week 1-2: Foundation
+
 - [ ] SvelteKit scaffold
 - [ ] API client setup
 - [ ] Stores architecture
 - [ ] Layout components
 
 ### Week 3-4: Core (Dashboard, Trip Management)
+
 - [ ] Dashboard page
 - [ ] Trip create/edit forms
 - [ ] Trip list view
 
 ### Week 5-8: Travel Items
+
 - [ ] Flight management
 - [ ] Hotel management
 - [ ] Event management
@@ -108,11 +119,13 @@ Complete guide to Phase 1: Replacing monolithic Express+EJS with modern Svelte+S
 - [ ] Transportation management
 
 ### Week 9-10: Advanced Features
+
 - [ ] Calendar view
 - [ ] Maps integration
 - [ ] Companion management
 
 ### Week 11-12: Polish
+
 - [ ] Voucher system
 - [ ] Error handling
 - [ ] Performance optimization
@@ -187,6 +200,7 @@ DELETE /api/flights/:id
 ## Development Workflow (Phase 1)
 
 ### Daily Setup
+
 ```bash
 # Start SvelteKit dev server
 npm run dev
@@ -199,6 +213,7 @@ npm run build-css  # If modifying Tailwind
 ```
 
 ### Feature Development
+
 1. Create component in `src/lib/components/`
 2. Create or use page in `src/routes/`
 3. Test with API calls
@@ -206,6 +221,7 @@ npm run build-css  # If modifying Tailwind
 5. Test with real data
 
 ### Testing
+
 ```bash
 npm test
 npm run test:watch
@@ -217,15 +233,17 @@ npm run test:coverage
 ## Stores Architecture
 
 ### authStore
+
 ```typescript
 export const authStore = writable({
   user: null,
   isAuthenticated: false,
-  token: null
+  token: null,
 });
 ```
 
 ### tripStore
+
 ```typescript
 export const tripStore = writable({
   currentTrip: null,
@@ -238,6 +256,7 @@ export const tripStore = writable({
 ```
 
 ### uiStore
+
 ```typescript
 export const uiStore = writable({
   sidebarOpen: false,
@@ -252,6 +271,7 @@ export const uiStore = writable({
 ## Performance Targets
 
 ### Phase 1 Completion Metrics
+
 - ✅ Bundle size: < 50KB gzipped
 - ✅ Time to Interactive: < 2 seconds
 - ✅ Lighthouse Score: > 85
@@ -275,6 +295,7 @@ While frontend develops Phase 1, backend can optionally do Phase 2 in parallel:
 ## Rollout Strategy
 
 ### Option A: Complete Replacement (Recommended)
+
 ```
 Week 12 end: Phase 1 feature-complete
          ↓
@@ -284,6 +305,7 @@ Sunset old EJS frontend
 ```
 
 ### Option B: Gradual Rollout
+
 ```
 Week 12: Deploy with feature flags
 Week 13: Roll out to 25% of users
@@ -291,6 +313,7 @@ Week 14: Roll out to 100% of users
 ```
 
 ### Option C: Parallel Running
+
 ```
 Keep both frontends running
 Users choose which to use (via URL or setting)
@@ -302,6 +325,7 @@ Eventually sunset old one
 ## Success Criteria
 
 ### Technical
+
 - ✅ All features working in Svelte
 - ✅ No data loss or corruption
 - ✅ Same API endpoints working
@@ -310,12 +334,14 @@ Eventually sunset old one
 - ✅ Accessibility compliant
 
 ### Team
+
 - ✅ Developers comfortable with Svelte
 - ✅ Clear patterns established
 - ✅ Documentation complete
 - ✅ Tests passing
 
 ### Business
+
 - ✅ Users have better experience
 - ✅ Faster to add new features
 - ✅ Easier to maintain
@@ -326,11 +352,13 @@ Eventually sunset old one
 ## Known Challenges
 
 ### Technical
+
 - **Learning curve:** Team new to Svelte (mitigated: 1 week training)
 - **Migration scope:** Large codebase (mitigated: feature-by-feature)
 - **Testing:** Need component tests (mitigated: setup from start)
 
 ### Timeline
+
 - **Ambitious:** 12 weeks is tight (mitigated: clear roadmap)
 - **Blockers:** Unclear requirements (mitigated: early planning)
 
@@ -339,17 +367,20 @@ Eventually sunset old one
 ## Next Steps
 
 **Immediately (Before Phase 1 starts):**
+
 1. Read [Phase 1 Svelte Setup](./PHASE_1_SVELTE_SETUP.md)
 2. Attend Svelte training (1 week)
 3. Setup SvelteKit scaffold
 4. Build first component
 
 **Week 1:**
+
 - [ ] SkelveKit project running
 - [ ] API client connecting to backend
 - [ ] First component built and tested
 
 **Weeks 2-12:**
+
 - [ ] Follow feature migration roadmap
 - [ ] Build, test, iterate
 - [ ] Get code reviewed

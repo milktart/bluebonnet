@@ -40,6 +40,7 @@ Transportation covers all ground-based travel: taxis, trains, buses, ride-shares
 ## Types
 
 **Supported Transportation Types:**
+
 - `taxi` - Taxi/cab/uber/lyft
 - `train` - Train/rail
 - `bus` - Bus/coach
@@ -55,6 +56,7 @@ Each type can have specific fields (train number, bus route, confirmation number
 ## API Endpoints
 
 ### Create Transportation
+
 ```
 POST /api/trips/:tripId/transportation
 Body: {
@@ -66,12 +68,14 @@ Returns: { success: true, transportation: {...} }
 ```
 
 ### Get Transportation
+
 ```
 GET /api/trips/:tripId/transportation
 Returns: { success: true, transportation: [...] }
 ```
 
 ### Update Transportation
+
 ```
 PUT /api/transportation/:id
 Body: {...}
@@ -79,6 +83,7 @@ Returns: { success: true, transportation: {...} }
 ```
 
 ### Delete Transportation
+
 ```
 DELETE /api/transportation/:id
 Returns: { success: true }
@@ -89,9 +94,11 @@ Returns: { success: true }
 ## Frontend Implementation
 
 ### Add/Edit Form
+
 **File:** `views/partials/transportation-form.ejs`
 
 Features:
+
 - Transportation type selector
 - Departure/arrival location inputs
 - Datetime pickers
@@ -104,20 +111,26 @@ Features:
 ## Business Logic
 
 ### Layover Detection
+
 System detects when transportation bridges two flights:
+
 - Flight A arrives at airport at time X
 - Transportation departs from airport at time X + Y
 - Gap calculation shown to user
 - Suggested transportation durations
 
 ### Timeline Integration
+
 Transportation appears in trip timeline:
+
 - Between flights (layover transport)
 - Between hotel checkout and next event
 - From airport to hotel
 
 ### Cost Tracking
+
 Total transportation cost calculated:
+
 - Sum of all transportation items
 - Per-leg cost tracking
 - Trip total includes transportation
@@ -127,6 +140,7 @@ Total transportation cost calculated:
 ## Calendar Integration
 
 Transportation displayed as:
+
 - Time block from departure to arrival
 - Different styling from flights/hotels
 - Appears in day view timeline
@@ -137,6 +151,7 @@ Transportation displayed as:
 ## Companions
 
 Can assign to specific companions:
+
 - Which companion taking which transport
 - Group transportation vs individual
 
@@ -145,6 +160,7 @@ Can assign to specific companions:
 ## Maps & Visualization
 
 Routes shown on map:
+
 - Departure marker
 - Arrival marker
 - Route line between (if available)
@@ -155,6 +171,7 @@ Routes shown on map:
 ## Phase 1 Migration (Svelte)
 
 ### New Components
+
 ```
 src/lib/components/
 ├── TransportationForm.svelte

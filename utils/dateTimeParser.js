@@ -12,7 +12,11 @@ const logger = require('./logger');
  * @returns {string|null} Cleaned timezone value or null
  */
 function sanitizeTimezone(timezone) {
-  if (!timezone || timezone === 'undefined' || (typeof timezone === 'string' && timezone.trim() === '')) {
+  if (
+    !timezone ||
+    timezone === 'undefined' ||
+    (typeof timezone === 'string' && timezone.trim() === '')
+  ) {
     return null;
   }
   return timezone;

@@ -61,12 +61,7 @@ function sendSuccess(req, res, options = {}) {
  * @returns {void}
  */
 function sendError(req, res, options = {}) {
-  const {
-    error = 'An error occurred',
-    message,
-    status = 400,
-    redirectUrl = '/',
-  } = options;
+  const { error = 'An error occurred', message, status = 400, redirectUrl = '/' } = options;
 
   const isAsync = isAsyncRequest(req);
 

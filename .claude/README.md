@@ -7,6 +7,7 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 ## 🚀 Quick Start - Choose Your Path
 
 ### I want to...
+
 - **[Get Started Developing](./GETTING_STARTED.md)** - Local setup (10 min)
 - **[Understand the Architecture](./ARCHITECTURE/README.md)** - How the system works (20 min)
 - **[Work on a Feature](./FEATURES/)** - Feature-specific guides
@@ -21,13 +22,16 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 ## 👥 Documentation by Role
 
 ### 👤 New Developer?
+
 **Start here (30 minutes total):**
+
 1. [Getting Started](./GETTING_STARTED.md) - Local setup
 2. [Development Workflow](./DEVELOPMENT.md) - Daily commands
 3. [Architecture Overview](./ARCHITECTURE/README.md) - System overview
 4. Pick a [Feature](./FEATURES/) to work on
 
 ### 👨‍💻 Backend Engineer?
+
 - [Backend Architecture](./ARCHITECTURE/BACKEND/README.md)
 - [Database Schema](./ARCHITECTURE/BACKEND/DATABASE_SCHEMA.md)
 - [Features](./FEATURES/)
@@ -35,6 +39,7 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 - [Testing](./TESTING/README.md)
 
 ### 🎨 Frontend Engineer (Phase 1 - Svelte)?
+
 - [Phase 1 Overview](./MODERNIZATION/PHASE_1_OVERVIEW.md)
 - [Svelte Basics](./LEARNING_RESOURCES/SVELTE_BASICS.md)
 - [Phase 1 Setup Guide](./MODERNIZATION/PHASE_1_SVELTE_SETUP.md)
@@ -42,12 +47,14 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 - [Patterns](./PATTERNS/)
 
 ### 🚀 DevOps/Operations?
+
 - [Deployment Guide](./DEPLOYMENT/README.md)
 - [Environment Setup](./DEPLOYMENT/ENVIRONMENT_CONFIG.md)
 - [Docker Setup](./DEPLOYMENT/DOCKER_SETUP.md)
 - [Troubleshooting](./TROUBLESHOOTING/DEPLOYMENT_ISSUES.md)
 
 ### 📊 Tech Lead/Architect?
+
 - [Modernization Roadmap](./MODERNIZATION/README.md)
 - [Architecture Overview](./ARCHITECTURE/README.md)
 - [Decisions](./DECISIONS/README.md)
@@ -180,6 +187,7 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 ## 🔑 Key Concepts
 
 ### Travel Item Types
+
 - **Flight** - Commercial flights with departure/arrival times
 - **Hotel** - Accommodations with check-in/check-out dates
 - **Event** - Activities, attractions, meetings
@@ -187,6 +195,7 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 - **Car Rental** - Vehicle rentals for trip duration
 
 ### Core Systems
+
 - **Authentication** - Passport.js local strategy
 - **Trip Management** - Create, edit, share trips
 - **Travel Companions** - Invite people, manage permissions
@@ -195,6 +204,7 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 - **Maps** - Location visualization on map
 
 ### Technology Stack (Current)
+
 - **Backend:** Express.js + Node.js
 - **Frontend:** Vanilla JavaScript + EJS templates (→ Svelte in Phase 1)
 - **Database:** PostgreSQL + Sequelize ORM
@@ -202,6 +212,7 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 - **DevOps:** Docker + Docker Compose
 
 ### Technology Stack (Phase 1 Target)
+
 - **Backend:** Express.js + Node.js (same)
 - **Frontend:** Svelte + SvelteKit (replacing vanilla JS + EJS)
 - **Database:** PostgreSQL + Sequelize ORM (same)
@@ -209,6 +220,7 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 - **DevOps:** Docker + Docker Compose (same)
 
 ### Technology Stack (Phase 2 Target - Optional)
+
 - **Backend:** Full SvelteKit (merging Express + Svelte)
 - **Database:** PostgreSQL + Prisma ORM (optional)
 - **Everything else:** Same
@@ -218,6 +230,7 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 ## 📊 Modernization Phases
 
 ### Phase 1: Svelte + SvelteKit Frontend (Weeks 1-12)
+
 - Keep existing Express backend
 - Add SvelteKit frontend alongside
 - Migrate features one-by-one to Svelte
@@ -226,6 +239,7 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 - **See:** [Phase 1 Overview](./MODERNIZATION/PHASE_1_OVERVIEW.md)
 
 ### Phase 2: Backend Refactoring (Weeks 13-16)
+
 - Extract service layer from controllers
 - Refactor large controllers (60KB → 15KB)
 - Introduce TypeScript throughout
@@ -235,6 +249,7 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 - **See:** [Phase 2 Overview](./MODERNIZATION/PHASE_2_OVERVIEW.md)
 
 ### Phase 3: Optional Full Stack (Future)
+
 - Merge SvelteKit + Express into unified SvelteKit app
 - Optional: Migrate to Prisma ORM
 - Optional: Migrate to different database
@@ -247,13 +262,13 @@ Welcome! This directory contains all documentation for the Bluebonnet travel pla
 
 This new documentation structure is designed for **token efficiency**:
 
-| Scenario | Old (CLAUDE.md) | New (.claude/) | Savings |
-|----------|-----------------|---------------|---------|
-| Add form field | 8,000 tokens | 2,000 tokens | 75% ↓ |
-| Debug sidebar | 8,000 tokens | 2,500 tokens | 69% ↓ |
-| Local setup | 8,000 tokens | 1,500 tokens | 81% ↓ |
-| Deploy to prod | 8,000 tokens | 3,000 tokens | 63% ↓ |
-| Write unit test | 8,000 tokens | 2,500 tokens | 69% ↓ |
+| Scenario        | Old (CLAUDE.md) | New (.claude/) | Savings |
+| --------------- | --------------- | -------------- | ------- |
+| Add form field  | 8,000 tokens    | 2,000 tokens   | 75% ↓   |
+| Debug sidebar   | 8,000 tokens    | 2,500 tokens   | 69% ↓   |
+| Local setup     | 8,000 tokens    | 1,500 tokens   | 81% ↓   |
+| Deploy to prod  | 8,000 tokens    | 3,000 tokens   | 63% ↓   |
+| Write unit test | 8,000 tokens    | 2,500 tokens   | 69% ↓   |
 
 **Key principle:** Load only the docs you need, not the entire 35KB reference.
 
@@ -262,11 +277,13 @@ This new documentation structure is designed for **token efficiency**:
 ## 🔗 Cross-Documentation Navigation
 
 Each document includes:
+
 - **Context links** - Prerequisite reading
 - **See also** - Related topics
 - **Next steps** - Suggested next document
 
 Example flow:
+
 1. New dev reads [Getting Started](./GETTING_STARTED.md)
 2. Then reads [Development](./DEVELOPMENT.md)
 3. Then reads [Architecture Overview](./ARCHITECTURE/README.md)
@@ -279,22 +296,26 @@ Example flow:
 ## 📝 How to Use This Documentation
 
 ### For Code Changes
+
 1. Find relevant doc in [FEATURES/](./FEATURES/) or [PATTERNS/](./PATTERNS/)
 2. Follow code examples
 3. Update docs if you learn something new
 
 ### For Debugging
+
 1. Start with [TROUBLESHOOTING/README.md](./TROUBLESHOOTING/)
 2. Find your issue type
 3. Follow debug steps
 
 ### For New Features
+
 1. Read relevant [Feature](./FEATURES/) guide
 2. Follow [CRUD Pattern](./PATTERNS/CRUD_PATTERN.md)
 3. Check [Component Checklist](./COMPONENTS/COMPONENT_CHECKLIST.md)
 4. Write tests per [Testing Guide](./TESTING/)
 
 ### For Learning
+
 1. New to Svelte? Read [Svelte Basics](./LEARNING_RESOURCES/SVELTE_BASICS.md)
 2. New to SvelteKit? Read [SvelteKit Basics](./LEARNING_RESOURCES/SVELTEKIT_BASICS.md)
 3. Questions on TypeScript? Read [TypeScript Guidelines](./LEARNING_RESOURCES/TYPESCRIPT_GUIDELINES.md)
@@ -326,12 +347,14 @@ Example flow:
 ## ✍️ Contributing to Docs
 
 **When you learn something:**
+
 1. Find or create relevant doc
 2. Add example or clarification
 3. Link to related docs
 4. Update [INDEX.md](./INDEX.md)
 
 **Keep in mind:**
+
 - Docs should be 2-5KB (avoid 35KB monoliths)
 - Include code examples
 - Link liberally between docs
@@ -350,4 +373,4 @@ Example flow:
 
 **Happy coding! 🚀**
 
-*For complete list of docs, see [INDEX.md](./INDEX.md)*
+_For complete list of docs, see [INDEX.md](./INDEX.md)_

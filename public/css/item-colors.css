@@ -45,9 +45,9 @@
 }
 
 /* Generic focus ring utility */
-[data-item-type="flight"] input:focus,
-[data-item-type="flight"] textarea:focus,
-[data-item-type="flight"] select:focus {
+[data-item-type='flight'] input:focus,
+[data-item-type='flight'] textarea:focus,
+[data-item-type='flight'] select:focus {
   outline: none;
   ring: 2px;
   ring-color: #f6d965;
@@ -55,9 +55,9 @@
   box-shadow: 0 0 0 3px rgba(246, 217, 101, 0.1);
 }
 
-[data-item-type="hotel"] input:focus,
-[data-item-type="hotel"] textarea:focus,
-[data-item-type="hotel"] select:focus {
+[data-item-type='hotel'] input:focus,
+[data-item-type='hotel'] textarea:focus,
+[data-item-type='hotel'] select:focus {
   outline: none;
   ring: 2px;
   ring-color: #c2a5df;
@@ -65,9 +65,9 @@
   box-shadow: 0 0 0 3px rgba(194, 165, 223, 0.1);
 }
 
-[data-item-type="car-rental"] input:focus,
-[data-item-type="car-rental"] textarea:focus,
-[data-item-type="car-rental"] select:focus {
+[data-item-type='car-rental'] input:focus,
+[data-item-type='car-rental'] textarea:focus,
+[data-item-type='car-rental'] select:focus {
   outline: none;
   ring: 2px;
   ring-color: #fea572;
@@ -75,9 +75,9 @@
   box-shadow: 0 0 0 3px rgba(254, 165, 114, 0.1);
 }
 
-[data-item-type="transportation"] input:focus,
-[data-item-type="transportation"] textarea:focus,
-[data-item-type="transportation"] select:focus {
+[data-item-type='transportation'] input:focus,
+[data-item-type='transportation'] textarea:focus,
+[data-item-type='transportation'] select:focus {
   outline: none;
   ring: 2px;
   ring-color: #67b3e0;
@@ -85,9 +85,9 @@
   box-shadow: 0 0 0 3px rgba(103, 179, 224, 0.1);
 }
 
-[data-item-type="event"] input:focus,
-[data-item-type="event"] textarea:focus,
-[data-item-type="event"] select:focus {
+[data-item-type='event'] input:focus,
+[data-item-type='event'] textarea:focus,
+[data-item-type='event'] select:focus {
   outline: none;
   ring: 2px;
   ring-color: #ff99c9;
