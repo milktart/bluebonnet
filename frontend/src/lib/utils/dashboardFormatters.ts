@@ -69,6 +69,23 @@ export function formatTripDateHeader(dateStr: string): string {
 }
 
 /**
+ * Parse UTC offset string (e.g., "UTC-5", "UTC+3") and return offset in minutes
+ * Returns null if the string is not a UTC offset format
+ */
+function parseUtcOffset(timezone: string): number | null {
+  if (!timezone || !timezone.startsWith('UTC')) return null;
+
+  const match = timezone.match(/^UTC([+-])(\d+)(?::(\d+))?$/);
+  if (!match) return null;
+
+  const sign = match[1] === '+' ? 1 : -1;
+  const hours = parseInt(match[2], 10);
+  const minutes = match[3] ? parseInt(match[3], 10) : 0;
+
+  return sign * (hours * 60 + minutes);
+}
+
+/**
  * Format time only as "HH:mm" with optional timezone conversion
  */
 export function formatTimeOnly(dateStr: string, timezone: string | null = null): string {
@@ -78,6 +95,16 @@ export function formatTimeOnly(dateStr: string, timezone: string | null = null):
   if (!timezone) {
     const hours = String(date.getUTCHours()).padStart(2, '0');
     const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  }
+
+  // Check if it's a UTC offset format (e.g., "UTC-5")
+  const offsetMinutes = parseUtcOffset(timezone);
+  if (offsetMinutes !== null) {
+    // Apply the offset directly
+    const offsetDate = new Date(date.getTime() + offsetMinutes * 60 * 1000);
+    const hours = String(offsetDate.getUTCHours()).padStart(2, '0');
+    const minutes = String(offsetDate.getUTCMinutes()).padStart(2, '0');
     return `${hours}:${minutes}`;
   }
 
@@ -112,6 +139,19 @@ export function formatDateTime(dateStr: string, timezone: string | null = null):
     const day = String(date.getUTCDate()).padStart(2, '0');
     const month = months[date.getUTCMonth()];
     const year = date.getUTCFullYear();
+    return `${day} ${month} ${year} ${hours}:${minutes}`;
+  }
+
+  // Check if it's a UTC offset format (e.g., "UTC-5")
+  const offsetMinutes = parseUtcOffset(timezone);
+  if (offsetMinutes !== null) {
+    // Apply the offset directly
+    const offsetDate = new Date(date.getTime() + offsetMinutes * 60 * 1000);
+    const hours = String(offsetDate.getUTCHours()).padStart(2, '0');
+    const minutes = String(offsetDate.getUTCMinutes()).padStart(2, '0');
+    const day = String(offsetDate.getUTCDate()).padStart(2, '0');
+    const month = months[offsetDate.getUTCMonth()];
+    const year = offsetDate.getUTCFullYear();
     return `${day} ${month} ${year} ${hours}:${minutes}`;
   }
 
@@ -159,6 +199,17 @@ export function formatDateOnly(dateStr: string, timezone: string | null = null):
     const day = String(date.getUTCDate()).padStart(2, '0');
     const month = months[date.getUTCMonth()];
     const year = date.getUTCFullYear();
+    return `${day} ${month} ${year}`;
+  }
+
+  // Check if it's a UTC offset format (e.g., "UTC-5")
+  const offsetMinutes = parseUtcOffset(timezone);
+  if (offsetMinutes !== null) {
+    // Apply the offset directly
+    const offsetDate = new Date(date.getTime() + offsetMinutes * 60 * 1000);
+    const day = String(offsetDate.getUTCDate()).padStart(2, '0');
+    const month = months[offsetDate.getUTCMonth()];
+    const year = offsetDate.getUTCFullYear();
     return `${day} ${month} ${year}`;
   }
 

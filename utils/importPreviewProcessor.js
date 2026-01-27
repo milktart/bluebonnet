@@ -4,7 +4,6 @@
  */
 
 const { v4: uuidv4 } = require('uuid');
-const logger = require('./logger');
 const duplicateDetectionService = require('../services/duplicateDetectionService');
 
 /**
@@ -67,7 +66,7 @@ function generatePreviewData(importData, currentUserData) {
           : null,
         willMerge: tripDuplicate.isDuplicate,
         duplicateSimilarity: tripDuplicate.similarity || 0,
-        selected: true, // Always selected - if it's a duplicate, we add items to existing trip
+        selected: !tripDuplicate.isDuplicate, // Deselect duplicates by default
         data: trip,
       };
 

@@ -28,6 +28,7 @@
   // Re-compute isEditing reactively based on data
   $: isEditing = !!data?.id;
 
+
   // Show trip selector only for non-trip items (not for trip itself)
   $: showTripSelector = itemType !== 'trip';
 
@@ -254,6 +255,23 @@
     }
   }
 
+  // Auto-sync dates: when start/departure date changes, set end/arrival to the same date
+  function handleStartDateChange(fieldName: string, endFieldName: string) {
+    if (formData[fieldName as keyof typeof formData]) {
+      formData = { ...formData, [endFieldName]: formData[fieldName as keyof typeof formData] };
+    }
+  }
+
+  // Auto-sync dates: when end/arrival date changes, check if it's before start/departure date
+  function handleEndDateChange(fieldName: string, startFieldName: string) {
+    const endDate = formData[fieldName as keyof typeof formData];
+    const startDate = formData[startFieldName as keyof typeof formData];
+
+    if (endDate && (!startDate || endDate < startDate)) {
+      formData = { ...formData, [startFieldName]: endDate };
+    }
+  }
+
   // Re-compute config reactively based on isEditing and itemType
   $: config = getFormConfigs(isEditing)[itemType];
 
@@ -351,7 +369,6 @@
             .map(c => c.companionId || c.id)
             .filter(Boolean);
 
-          console.log('[ItemEditForm] Saving companions:', { itemType, itemId: result.id, companionIds, selectedCompanions, currentUserId });
           if (companionIds.length > 0) {
             await itemCompanionsApi.update(itemType, result.id, companionIds);
           }
@@ -556,6 +573,9 @@
               disabled={!canEdit}
               onSelect={(airport) => {
                 formData.origin = airport.iata;
+                if (airport.timezone) {
+                  formData.originTimezone = airport.timezone;
+                }
               }}
             />
           </div>
@@ -568,6 +588,9 @@
               disabled={!canEdit}
               onSelect={(airport) => {
                 formData.destination = airport.iata;
+                if (airport.timezone) {
+                  formData.destinationTimezone = airport.timezone;
+                }
               }}
             />
           </div>
@@ -577,11 +600,11 @@
         <div class="form-row cols-2">
           <div class="form-group">
             <label for="departureDate">Departure Date</label>
-            <input type="date" id="departureDate" name="departureDate" bind:value={formData.departureDate} disabled={!canEdit} />
+            <input type="date" id="departureDate" name="departureDate" bind:value={formData.departureDate} on:change={() => handleStartDateChange('departureDate', 'arrivalDate')} disabled={!canEdit} />
           </div>
           <div class="form-group">
             <label for="arrivalDate">Arrival Date</label>
-            <input type="date" id="arrivalDate" name="arrivalDate" bind:value={formData.arrivalDate} disabled={!canEdit} />
+            <input type="date" id="arrivalDate" name="arrivalDate" bind:value={formData.arrivalDate} on:change={() => handleEndDateChange('arrivalDate', 'departureDate')} disabled={!canEdit} />
           </div>
         </div>
 
@@ -625,11 +648,11 @@
         <div class="form-row cols-2">
           <div class="form-group">
             <label for="checkInDate">Check-in Date</label>
-            <input type="date" id="checkInDate" name="checkInDate" bind:value={formData.checkInDate} required disabled={!canEdit} />
+            <input type="date" id="checkInDate" name="checkInDate" bind:value={formData.checkInDate} on:change={() => handleStartDateChange('checkInDate', 'checkOutDate')} required disabled={!canEdit} />
           </div>
           <div class="form-group">
             <label for="checkOutDate">Check-out Date</label>
-            <input type="date" id="checkOutDate" name="checkOutDate" bind:value={formData.checkOutDate} required disabled={!canEdit} />
+            <input type="date" id="checkOutDate" name="checkOutDate" bind:value={formData.checkOutDate} on:change={() => handleEndDateChange('checkOutDate', 'checkInDate')} required disabled={!canEdit} />
           </div>
         </div>
 
@@ -688,11 +711,11 @@
         <div class="form-row cols-2">
           <div class="form-group">
             <label for="departureDate">Departure Date</label>
-            <input type="date" id="departureDate" name="departureDate" bind:value={formData.departureDate} required disabled={!canEdit} />
+            <input type="date" id="departureDate" name="departureDate" bind:value={formData.departureDate} on:change={() => handleStartDateChange('departureDate', 'arrivalDate')} required disabled={!canEdit} />
           </div>
           <div class="form-group">
             <label for="arrivalDate">Arrival Date</label>
-            <input type="date" id="arrivalDate" name="arrivalDate" bind:value={formData.arrivalDate} required disabled={!canEdit} />
+            <input type="date" id="arrivalDate" name="arrivalDate" bind:value={formData.arrivalDate} on:change={() => handleEndDateChange('arrivalDate', 'departureDate')} required disabled={!canEdit} />
           </div>
         </div>
 
@@ -736,11 +759,11 @@
         <div class="form-row cols-2">
           <div class="form-group">
             <label for="pickupDate">Pickup Date</label>
-            <input type="date" id="pickupDate" name="pickupDate" bind:value={formData.pickupDate} required disabled={!canEdit} />
+            <input type="date" id="pickupDate" name="pickupDate" bind:value={formData.pickupDate} on:change={() => handleStartDateChange('pickupDate', 'dropoffDate')} required disabled={!canEdit} />
           </div>
           <div class="form-group">
             <label for="dropoffDate">Dropoff Date</label>
-            <input type="date" id="dropoffDate" name="dropoffDate" bind:value={formData.dropoffDate} required disabled={!canEdit} />
+            <input type="date" id="dropoffDate" name="dropoffDate" bind:value={formData.dropoffDate} on:change={() => handleEndDateChange('dropoffDate', 'pickupDate')} required disabled={!canEdit} />
           </div>
         </div>
 
@@ -798,11 +821,11 @@
           <div class="form-row cols-2">
             <div class="form-group">
               <label for="startDate">Start Date</label>
-              <input type="date" id="startDate" name="startDate" bind:value={formData.startDate} required disabled={!canEdit} />
+              <input type="date" id="startDate" name="startDate" bind:value={formData.startDate} on:change={() => handleStartDateChange('startDate', 'endDate')} required disabled={!canEdit} />
             </div>
             <div class="form-group">
               <label for="endDate">End Date</label>
-              <input type="date" id="endDate" name="endDate" bind:value={formData.endDate} disabled={!canEdit} />
+              <input type="date" id="endDate" name="endDate" bind:value={formData.endDate} on:change={() => handleEndDateChange('endDate', 'startDate')} disabled={!canEdit} />
             </div>
           </div>
         {:else}
@@ -810,11 +833,11 @@
           <div class="form-row cols-2">
             <div class="form-group">
               <label for="startDate">Start Date</label>
-              <input type="date" id="startDate" name="startDate" bind:value={formData.startDate} required disabled={!canEdit} />
+              <input type="date" id="startDate" name="startDate" bind:value={formData.startDate} on:change={() => handleStartDateChange('startDate', 'endDate')} required disabled={!canEdit} />
             </div>
             <div class="form-group">
               <label for="endDate">End Date</label>
-              <input type="date" id="endDate" name="endDate" bind:value={formData.endDate} disabled={!canEdit} />
+              <input type="date" id="endDate" name="endDate" bind:value={formData.endDate} on:change={() => handleEndDateChange('endDate', 'startDate')} disabled={!canEdit} />
             </div>
           </div>
 
@@ -1037,12 +1060,10 @@
                 .map(c => c.companionId)
                 .filter(Boolean);
 
-              if (companionIds.length > 0 || companions.length === 0) {
-                itemCompanionsApi.update(itemType, data.id, companionIds).catch((err) => {
-                  console.error('[ItemEditForm] Error saving companions:', err);
-                  // Error saving - silently continue
-                });
-              }
+              itemCompanionsApi.update(itemType, data.id, companionIds).catch((err) => {
+                console.error('[ItemEditForm] Error saving companions:', err);
+                // Error saving - silently continue
+              });
             } else if (isEditing && data?.id && !selectedTripId) {
               // Standalone item - also save companions
               const itemOwnerId = data.userId;
@@ -1055,12 +1076,10 @@
                 .map(c => c.companionId)
                 .filter(Boolean);
 
-              if (companionIds.length > 0 || companions.length === 0) {
-                itemCompanionsApi.update(itemType, data.id, companionIds).catch((err) => {
-                  console.error('[ItemEditForm] Error saving companions:', err);
-                  // Error saving - silently continue
-                });
-              }
+              itemCompanionsApi.update(itemType, data.id, companionIds).catch((err) => {
+                console.error('[ItemEditForm] Error saving companions:', err);
+                // Error saving - silently continue
+              });
             }
           }}
           onAddCompanion={null}

@@ -42,6 +42,18 @@
     { value: 'premium', label: 'Premium Coverage' }
   ];
 
+  // Auto-sync dropoff date when pickup date changes
+  $: if (formData.pickupDate) {
+    formData.dropoffDate = formData.pickupDate;
+  }
+
+  // Auto-sync pickup date when dropoff date changes
+  $: if (formData.dropoffDate) {
+    if (!formData.pickupDate || formData.dropoffDate < formData.pickupDate) {
+      formData.pickupDate = formData.dropoffDate;
+    }
+  }
+
   async function handleSubmit() {
     try {
       // Unified validation using validation utilities

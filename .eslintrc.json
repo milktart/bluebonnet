@@ -46,7 +46,8 @@
     "no-use-before-define": "warn",
     "class-methods-use-this": "warn",
     "no-promise-executor-return": "warn",
-    "import/order": "warn"
+    "import/order": "warn",
+    "import/no-unresolved": ["error", { "ignore": ["uuid"] }]
   },
   "overrides": [
     {

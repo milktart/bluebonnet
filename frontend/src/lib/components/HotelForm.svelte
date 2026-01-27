@@ -32,6 +32,18 @@
     roomNumber: hotel?.roomNumber || ''
   };
 
+  // Auto-sync check-out date when check-in date changes
+  $: if (formData.checkInDate) {
+    formData.checkOutDate = formData.checkInDate;
+  }
+
+  // Auto-sync check-in date when check-out date changes
+  $: if (formData.checkOutDate) {
+    if (!formData.checkInDate || formData.checkOutDate < formData.checkInDate) {
+      formData.checkInDate = formData.checkOutDate;
+    }
+  }
+
   async function handleSubmit() {
     try {
       // Unified validation using validation utilities

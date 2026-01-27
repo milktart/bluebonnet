@@ -3,7 +3,7 @@
  * Handles fetching available trips, verifying edit access, and managing item-to-trip associations
  */
 
-const { Trip, TripCompanion, Sequelize } = require('../../models');
+const { Trip, Sequelize } = require('../../models');
 const logger = require('../../utils/logger');
 
 /**

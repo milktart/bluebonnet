@@ -31,7 +31,6 @@ export async function validateSession(
       throw e;
     }
     // If fetch itself fails (network error), redirect to login as a fallback
-    console.error('[validateSession] Error verifying session:', e);
     throw redirect(303, '/login');
   }
 }

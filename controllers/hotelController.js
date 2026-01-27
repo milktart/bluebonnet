@@ -6,8 +6,6 @@ const { sendAsyncOrRedirect } = require('../utils/asyncResponseHandler');
 const {
   verifyTripOwnership,
   geocodeIfChanged,
-  redirectAfterSuccess,
-  redirectAfterError,
   verifyResourceOwnership,
   verifyResourceOwnershipViaTrip,
   verifyTripItemEditAccess,
@@ -84,7 +82,7 @@ exports.createHotel = async (req, res) => {
     // Add hotel to trip via ItemTrip junction table
     if (tripId) {
       try {
-        await itemTripService.addItemToTrip('hotel', hotel.id, tripId);
+        await itemTripService.addItemToTrip('hotel', hotel.id, tripId, req.user.id);
       } catch (e) {
         logger.error('Error adding hotel to trip in ItemTrip:', e);
       }
@@ -206,15 +204,13 @@ exports.updateHotel = async (req, res) => {
         if (hotel.tripId) {
           await itemTripService.removeItemFromTrip('hotel', hotel.id, hotel.tripId);
         }
-        await itemTripService.addItemToTrip('hotel', hotel.id, newTripId);
+        await itemTripService.addItemToTrip('hotel', hotel.id, newTripId, req.user.id);
       } else if (newTripId === null && hotel.tripId) {
         await itemTripService.removeItemFromTrip('hotel', hotel.id, hotel.tripId);
       }
     } catch (e) {
       logger.error('Error updating hotel trip association:', e);
     }
-
-    logger.info('Hotel updated successfully:', { hotelId: req.params.id });
 
     // Centralized async/redirect response handling
     return sendAsyncOrRedirect(req, res, {

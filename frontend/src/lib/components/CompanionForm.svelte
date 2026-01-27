@@ -133,27 +133,12 @@
         const manageChanged = formData.theyManageTrips !== (companion?.theyManageTrips || false);
 
         if ((shareChanged || manageChanged) && companion?.id) {
-          console.log('[CompanionForm] Updating permissions:', {
-            companionId: companion.id,
-            shareChanged,
-            manageChanged,
-            payload: {
-              canShareTrips: formData.canShareTrips,
-              theyManageTrips: formData.theyManageTrips
-            }
-          });
           await settingsApi.updateCompanionPermissions(companion.id, {
             canShareTrips: formData.canShareTrips,
             theyManageTrips: formData.theyManageTrips
           });
-          console.log('[CompanionForm] Permission update completed successfully');
           permissionsUpdated = true;
         } else {
-          console.log('[CompanionForm] No permission changes detected:', {
-            shareChanged,
-            manageChanged,
-            companion: companion?.id
-          });
         }
       } else {
         response = await settingsApi.createCompanion(submitData);
@@ -263,7 +248,6 @@
                 id="manage-trips"
                 type="checkbox"
                 bind:checked={formData.theyManageTrips}
-                on:change={() => console.log('[CompanionForm] theyManageTrips changed to:', formData.theyManageTrips)}
                 disabled={loading}
               />
               Allow them to manage my travel

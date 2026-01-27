@@ -1039,11 +1039,6 @@ exports.viewTrip = async (req, res) => {
     // Check if user is a trip admin (owner or companion with canEdit)
     const isAdmin = isOwner || (companionRecord && companionRecord.canEdit);
 
-    // Debug logging
-    logger.info(
-      `Trip ${trip.id}: isOwner=${isOwner}, companionRecord=${companionRecord ? 'found' : 'not found'}, canEdit=${companionRecord?.canEdit}, isAdmin=${isAdmin}`
-    );
-
     // Get current user's travel companion profile (if they're a companion)
     let userCompanionId = null;
     const userItemCompanions = {};
@@ -1080,7 +1075,7 @@ exports.viewTrip = async (req, res) => {
     }
 
     // Convert Sequelize model to plain object
-    let tripData = trip.toJSON ? trip.toJSON() : trip;
+    const tripData = trip.toJSON ? trip.toJSON() : trip;
 
     // Mark all items as editable if user is the owner or a trip admin
     if (isAdmin) {
@@ -1100,9 +1095,6 @@ exports.viewTrip = async (req, res) => {
       tripData.events?.forEach((e) => {
         e.canEdit = true;
       });
-      logger.info(
-        `Trip ${trip.id}: Marked ${tripData.flights?.length || 0} flights, ${tripData.hotels?.length || 0} hotels as editable`
-      );
     }
 
     // Get airline data for form lookup
@@ -1422,8 +1414,6 @@ exports.updateTrip = async (req, res) => {
       }
     }
 
-    logger.info('Trip updated successfully:', { tripId: req.params.id });
-
     // Centralized async/redirect response handling
     return sendAsyncOrRedirect(req, res, {
       success: true,
@@ -1457,8 +1447,6 @@ exports.deleteTrip = async (req, res) => {
     }
 
     await trip.destroy();
-
-    logger.info('Trip deleted successfully:', { tripId: req.params.id });
 
     // Centralized async/redirect response handling
     return sendAsyncOrRedirect(req, res, {

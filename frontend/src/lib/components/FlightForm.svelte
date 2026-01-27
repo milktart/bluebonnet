@@ -60,6 +60,18 @@
     { value: 'first', label: 'First Class' }
   ];
 
+  // Auto-sync arrival date when departure date changes
+  $: if (formData.departureDate) {
+    formData.arrivalDate = formData.departureDate;
+  }
+
+  // Auto-sync departure date when arrival date changes
+  $: if (formData.arrivalDate) {
+    if (!formData.departureDate || formData.arrivalDate < formData.departureDate) {
+      formData.departureDate = formData.arrivalDate;
+    }
+  }
+
   async function handleSubmit() {
     try {
       // Unified validation using validation utilities

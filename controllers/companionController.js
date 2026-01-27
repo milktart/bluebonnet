@@ -279,13 +279,6 @@ exports.updateCompanionPermissions = async (req, res) => {
       }
     }
 
-    logger.info('UPDATE_COMPANION_PERMISSIONS', {
-      companionId,
-      userId: req.user.id,
-      requestBody: req.body,
-      parsedValues: { canShareTrips, theyManageTrips },
-    });
-
     const isAjax =
       req.get('X-Sidebar-Request') === 'true' ||
       req.xhr ||
@@ -410,15 +403,6 @@ exports.createCompanion = async (req, res) => {
     const share = canShareTrips !== undefined ? canShareTrips : true;
     const manage = canManageTrips !== undefined ? canManageTrips : false;
 
-    logger.info('COMPANION_CREATE_REQUEST', {
-      isAjax,
-      firstName,
-      lastName,
-      email: emailLower,
-      canShareTrips: share,
-      canManageTrips: manage,
-    });
-
     // Check if companion with this email already exists for this user
     const existingCompanion = await TravelCompanion.findOne({
       where: {
@@ -538,8 +522,6 @@ exports.createCompanion = async (req, res) => {
       req.xhr ||
       req.get('Content-Type')?.includes('application/json');
 
-    logger.info('COMPANION_CREATE_ERROR_RESPONSE', { isAjax, errorMsg });
-
     if (isAjax) {
       return res.status(500).json({ success: false, error: errorMsg });
     }
@@ -549,19 +531,11 @@ exports.createCompanion = async (req, res) => {
 
 // API endpoint for autocomplete search
 exports.searchCompanions = async (req, res) => {
-  logger.info('COMPANION_SEARCH_ENDPOINT_HIT', {
-    path: req.path,
-    url: req.originalUrl,
-    method: req.method,
-  });
   const { q = '' } = req.query;
   try {
     const userId = req.user.id;
 
-    logger.info('COMPANION_SEARCH_START', { query: q, userId, queryLength: q ? q.length : 0 });
-
     if (!q || q.length < 2) {
-      logger.info('COMPANION_SEARCH_SHORT_QUERY', { query: q });
       return res.json([]);
     }
 
@@ -598,12 +572,6 @@ exports.searchCompanions = async (req, res) => {
       order: [['name', 'ASC']],
     });
 
-    logger.info('COMPANION_SEARCH_QUERY_EXECUTED', {
-      query: q,
-      userId,
-      companionsFound: companions.length,
-    });
-
     // Deduplicate by email - since email is now globally unique, we should only return one entry per email
     // Prioritize: user-created companions first, then others marked as addable
     const deduplicatedByEmail = new Map();
@@ -629,14 +597,8 @@ exports.searchCompanions = async (req, res) => {
         : null,
     }));
 
-    logger.info('COMPANION_SEARCH_RESPONSE', {
-      query: q,
-      resultsCount: results.length,
-      deduplicatedCount: companions.length,
-    });
     res.json(results);
   } catch (error) {
-    logger.error('COMPANION_SEARCH_ERROR', { query: q, error: error.message, stack: error.stack });
     res.status(500).json({ error: 'Search failed' });
   }
 };
@@ -671,7 +633,6 @@ exports.checkEmailForUser = async (req, res) => {
 
     res.json({ hasUser: false, user: null });
   } catch (error) {
-    logger.error('CHECK_EMAIL_ERROR', { email, error: error.message });
     res.status(500).json({ hasUser: false, error: 'Check failed' });
   }
 };

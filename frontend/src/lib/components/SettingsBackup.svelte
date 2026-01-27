@@ -130,6 +130,7 @@
       // Map to track which items belong to which trips
       const tripMap: { [key: string]: any } = {};
       const selectedItemsSet = new Set(selectedItemIds);
+      const mergeTargetToSourceTrip: { [key: string]: any } = {}; // Track which source trip is being merged into which target trip
 
       // First pass: collect all selected items
       if (importPreview.items && Array.isArray(importPreview.items)) {
@@ -148,7 +149,20 @@
             };
             restructuredData.trips.push(tripMap[item.originalId]);
           } else if (item.type === 'flight') {
-            if (item.parentTripId) {
+            if (item.mergeIntoExistingTrip) {
+              // Track the source trip for this merge to add companions later
+              if (!mergeTargetToSourceTrip[item.mergeIntoExistingTrip]) {
+                const parentItem = importPreview.items.find((i: any) => i.id === item.parentTripId);
+                if (parentItem?.data?.tripCompanions) {
+                  mergeTargetToSourceTrip[item.mergeIntoExistingTrip] = parentItem.data;
+                }
+              }
+              // Item should be added to an existing trip
+              restructuredData.standaloneFlights.push({
+                ...item.data,
+                tripId: item.mergeIntoExistingTrip
+              });
+            } else if (item.parentTripId) {
               // Find the parent trip and add this flight to it
               const parentItem = importPreview.items.find((i: any) => i.id === item.parentTripId);
               if (parentItem && tripMap[parentItem.originalId]) {
@@ -161,7 +175,20 @@
               restructuredData.standaloneFlights.push(item.data);
             }
           } else if (item.type === 'hotel') {
-            if (item.parentTripId) {
+            if (item.mergeIntoExistingTrip) {
+              // Track the source trip for this merge to add companions later
+              if (!mergeTargetToSourceTrip[item.mergeIntoExistingTrip]) {
+                const parentItem = importPreview.items.find((i: any) => i.id === item.parentTripId);
+                if (parentItem?.data?.tripCompanions) {
+                  mergeTargetToSourceTrip[item.mergeIntoExistingTrip] = parentItem.data;
+                }
+              }
+              // Item should be added to an existing trip
+              restructuredData.standaloneHotels.push({
+                ...item.data,
+                tripId: item.mergeIntoExistingTrip
+              });
+            } else if (item.parentTripId) {
               const parentItem = importPreview.items.find((i: any) => i.id === item.parentTripId);
               if (parentItem && tripMap[parentItem.originalId]) {
                 tripMap[parentItem.originalId].hotels.push(item.data);
@@ -173,7 +200,20 @@
               restructuredData.standaloneHotels.push(item.data);
             }
           } else if (item.type === 'transportation') {
-            if (item.parentTripId) {
+            if (item.mergeIntoExistingTrip) {
+              // Track the source trip for this merge to add companions later
+              if (!mergeTargetToSourceTrip[item.mergeIntoExistingTrip]) {
+                const parentItem = importPreview.items.find((i: any) => i.id === item.parentTripId);
+                if (parentItem?.data?.tripCompanions) {
+                  mergeTargetToSourceTrip[item.mergeIntoExistingTrip] = parentItem.data;
+                }
+              }
+              // Item should be added to an existing trip
+              restructuredData.standaloneTransportation.push({
+                ...item.data,
+                tripId: item.mergeIntoExistingTrip
+              });
+            } else if (item.parentTripId) {
               const parentItem = importPreview.items.find((i: any) => i.id === item.parentTripId);
               if (parentItem && tripMap[parentItem.originalId]) {
                 tripMap[parentItem.originalId].transportation.push(item.data);
@@ -185,7 +225,20 @@
               restructuredData.standaloneTransportation.push(item.data);
             }
           } else if (item.type === 'carRental') {
-            if (item.parentTripId) {
+            if (item.mergeIntoExistingTrip) {
+              // Track the source trip for this merge to add companions later
+              if (!mergeTargetToSourceTrip[item.mergeIntoExistingTrip]) {
+                const parentItem = importPreview.items.find((i: any) => i.id === item.parentTripId);
+                if (parentItem?.data?.tripCompanions) {
+                  mergeTargetToSourceTrip[item.mergeIntoExistingTrip] = parentItem.data;
+                }
+              }
+              // Item should be added to an existing trip
+              restructuredData.standaloneCarRentals.push({
+                ...item.data,
+                tripId: item.mergeIntoExistingTrip
+              });
+            } else if (item.parentTripId) {
               const parentItem = importPreview.items.find((i: any) => i.id === item.parentTripId);
               if (parentItem && tripMap[parentItem.originalId]) {
                 tripMap[parentItem.originalId].carRentals.push(item.data);
@@ -197,7 +250,20 @@
               restructuredData.standaloneCarRentals.push(item.data);
             }
           } else if (item.type === 'event') {
-            if (item.parentTripId) {
+            if (item.mergeIntoExistingTrip) {
+              // Track the source trip for this merge to add companions later
+              if (!mergeTargetToSourceTrip[item.mergeIntoExistingTrip]) {
+                const parentItem = importPreview.items.find((i: any) => i.id === item.parentTripId);
+                if (parentItem?.data?.tripCompanions) {
+                  mergeTargetToSourceTrip[item.mergeIntoExistingTrip] = parentItem.data;
+                }
+              }
+              // Item should be added to an existing trip
+              restructuredData.standaloneEvents.push({
+                ...item.data,
+                tripId: item.mergeIntoExistingTrip
+              });
+            } else if (item.parentTripId) {
               const parentItem = importPreview.items.find((i: any) => i.id === item.parentTripId);
               if (parentItem && tripMap[parentItem.originalId]) {
                 tripMap[parentItem.originalId].events.push(item.data);
@@ -219,7 +285,8 @@
       // Send the restructured data and selected item IDs to the backend
       const response = await settingsApi.importData({
         importData: restructuredData,
-        selectedItemIds: selectedItemIds
+        selectedItemIds: selectedItemIds,
+        mergeTargetToSourceTrip: mergeTargetToSourceTrip
       });
 
       if (response && response.success) {

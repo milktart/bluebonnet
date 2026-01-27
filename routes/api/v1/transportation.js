@@ -429,6 +429,8 @@ router.put('/:id', async (req, res) => {
 
     // Transform form data to match model
     const transData = { ...req.body };
+    const newTripId = transData.tripId;
+    const oldTripId = trans.tripId;
 
     // Geocode if origin or destination changed
     if (req.body.origin || req.body.destination) {
@@ -463,6 +465,30 @@ router.put('/:id', async (req, res) => {
 
     // Update transportation
     const updated = await trans.update(transData);
+
+    // Handle trip association changes via ItemTrip junction table
+    if (newTripId !== undefined && newTripId !== oldTripId) {
+      try {
+        const ItemTripService = require('../../../services/itemTripService');
+        const itemTripService = new ItemTripService();
+
+        // Remove from old trip if there was one
+        if (oldTripId) {
+          await itemTripService.removeItemFromTrip('transportation', trans.id, oldTripId);
+        }
+
+        // Add to new trip if one was provided
+        if (newTripId) {
+          await itemTripService.addItemToTrip('transportation', trans.id, newTripId, req.user.id);
+        }
+      } catch (error) {
+        require('../../../utils/logger').error(
+          'Error updating transportation trip association:',
+          error
+        );
+        // Don't fail the update due to ItemTrip errors
+      }
+    }
 
     return apiResponse.success(res, updated, 'Transportation updated successfully');
   } catch (error) {

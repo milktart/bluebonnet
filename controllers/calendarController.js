@@ -235,12 +235,6 @@ exports.getCalendarSidebar = async (req, res) => {
       if (tripData.transportation) {
         tripData.transportation = enrichItemsWithTimezone(tripData.transportation);
       }
-      // DEBUG: Log events structure
-      console.log({
-        hasEvents: !!tripData.events,
-        eventsCount: tripData.events ? tripData.events.length : 0,
-        firstEvent: tripData.events && tripData.events.length > 0 ? tripData.events[0] : 'none',
-      });
       return tripData;
     });
 
@@ -257,52 +251,6 @@ exports.getCalendarSidebar = async (req, res) => {
       standaloneCarRentals: standaloneCarRentals || [],
       standaloneEvents: standaloneEvents || [],
     };
-
-    // DEBUG: Log events
-    uniqueTrips.forEach((trip, idx) => {
-      console.log({
-        hasEvents: !!trip.events,
-        eventsProperty: typeof trip.events,
-        eventsLength: trip.events ? trip.events.length : 0,
-      });
-      if (trip.events && trip.events.length > 0) {
-        trip.events.forEach((event, eventIdx) => {
-          console.log({
-            id: event.id,
-            name: event.name,
-            startDateTime: event.startDateTime,
-          });
-        });
-      }
-    });
-    standaloneEvents.forEach((event, idx) => {
-      console.log({
-        id: event.id,
-        name: event.name,
-        startDateTime: event.startDateTime,
-      });
-    });
-
-    console.log({
-      tripsCount: calendarData.trips.length,
-      standaloneFlightsCount: calendarData.standaloneFlights.length,
-      standaloneHotelsCount: calendarData.standaloneHotels.length,
-      standaloneTransportationCount: calendarData.standaloneTransportation.length,
-      standaloneCarRentalsCount: calendarData.standaloneCarRentals.length,
-      standaloneEventsCount: calendarData.standaloneEvents.length,
-    });
-
-    // Debug: log trip details
-    calendarData.trips.forEach((trip) => {
-      console.log({
-        id: trip.id,
-        name: trip.name,
-        departureDate: trip.departureDate,
-        returnDate: trip.returnDate,
-        departureType: typeof trip.departureDate,
-        returnType: typeof trip.returnDate,
-      });
-    });
 
     // Return calendar data as JSON
     res.json({ success: true, ...calendarData });

@@ -9,8 +9,7 @@
  */
 
 const BaseService = require('./BaseService');
-const { ItemTrip, Trip } = require('../models');
-const logger = require('../utils/logger');
+const { ItemTrip, Trip, TripCompanion, ItemCompanion } = require('../models');
 
 class ItemTripService extends BaseService {
   constructor() {
@@ -22,14 +21,10 @@ class ItemTripService extends BaseService {
    * @param {string} itemType - Type of item ('flight', 'hotel', 'event', 'transportation', 'car_rental')
    * @param {string} itemId - Item ID
    * @param {string} tripId - Trip ID
+   * @param {string} userId - User ID performing the action (for audit trail)
    * @returns {Promise<Object>} Created ItemTrip record
    */
-  async addItemToTrip(itemType, itemId, tripId) {
-    logger.info(`${this.modelName}: Adding ${itemType} to trip`, {
-      itemId,
-      tripId,
-    });
-
+  async addItemToTrip(itemType, itemId, tripId, userId) {
     // Verify trip exists
     const trip = await Trip.findByPk(tripId);
     if (!trip) {
@@ -46,11 +41,6 @@ class ItemTripService extends BaseService {
     });
 
     if (existing) {
-      logger.warn(`${this.modelName}: Item already on trip`, {
-        itemId,
-        itemType,
-        tripId,
-      });
       throw new Error('This item is already on this trip');
     }
 
@@ -61,11 +51,10 @@ class ItemTripService extends BaseService {
       tripId,
     });
 
-    logger.info(`${this.modelName}: Item added to trip`, {
-      itemId,
-      itemType,
-      tripId,
-    });
+    // Cascade trip companions to the item
+    if (userId) {
+      await this.cascadeTripsCompanionsToItem(itemType, itemId, tripId, userId);
+    }
 
     return itemTrip;
   }
@@ -78,11 +67,6 @@ class ItemTripService extends BaseService {
    * @returns {Promise<boolean>} Success
    */
   async removeItemFromTrip(itemType, itemId, tripId) {
-    logger.info(`${this.modelName}: Removing ${itemType} from trip`, {
-      itemId,
-      tripId,
-    });
-
     const result = await ItemTrip.destroy({
       where: {
         itemId,
@@ -91,22 +75,7 @@ class ItemTripService extends BaseService {
       },
     });
 
-    if (result === 0) {
-      logger.warn(`${this.modelName}: Item not found on trip`, {
-        itemId,
-        itemType,
-        tripId,
-      });
-      return false;
-    }
-
-    logger.info(`${this.modelName}: Item removed from trip`, {
-      itemId,
-      itemType,
-      tripId,
-    });
-
-    return true;
+    return result > 0;
   }
 
   /**
@@ -116,8 +85,6 @@ class ItemTripService extends BaseService {
    * @returns {Promise<Array>} Array of trip IDs
    */
   async getItemTrips(itemType, itemId) {
-    logger.debug(`${this.modelName}: Getting trips for ${itemType} ${itemId}`);
-
     const itemTrips = await ItemTrip.findAll({
       where: {
         itemId,
@@ -144,8 +111,6 @@ class ItemTripService extends BaseService {
    * @returns {Promise<Object>} Items grouped by type
    */
   async getTripItems(tripId) {
-    logger.debug(`${this.modelName}: Getting items for trip ${tripId}`);
-
     const itemTrips = await ItemTrip.findAll({
       where: { tripId },
       order: [['createdAt', 'ASC']],
@@ -174,13 +139,20 @@ class ItemTripService extends BaseService {
    * @param {string} itemType - Type of item
    * @param {string} itemId - Item ID
    * @param {Array<string>} tripIds - Array of trip IDs
+   * @param {string} userId - User ID performing the action
    * @returns {Promise<Array>} Created ItemTrip records
    */
-  async setItemTrips(itemType, itemId, tripIds) {
-    logger.info(`${this.modelName}: Setting trips for ${itemType}`, {
-      itemId,
-      tripCount: tripIds.length,
+  async setItemTrips(itemType, itemId, tripIds, userId) {
+    // Get existing trip IDs for this item
+    const existingItemTrips = await ItemTrip.findAll({
+      where: {
+        itemId,
+        itemType,
+      },
+      attributes: ['tripId'],
+      raw: true,
     });
+    const existingTripIds = existingItemTrips.map((it) => it.tripId);
 
     // Remove existing associations
     await ItemTrip.destroy({
@@ -199,11 +171,13 @@ class ItemTripService extends BaseService {
       }))
     );
 
-    logger.info(`${this.modelName}: Item trips updated`, {
-      itemId,
-      itemType,
-      tripCount: itemTrips.length,
-    });
+    // Cascade companions for newly added trips
+    if (userId) {
+      const newTripIds = tripIds.filter((id) => !existingTripIds.includes(id));
+      for (const tripId of newTripIds) {
+        await this.cascadeTripsCompanionsToItem(itemType, itemId, tripId, userId);
+      }
+    }
 
     return itemTrips;
   }
@@ -215,10 +189,6 @@ class ItemTripService extends BaseService {
    * @returns {Promise<boolean>} Success
    */
   async removeItemFromAllTrips(itemType, itemId) {
-    logger.info(`${this.modelName}: Removing ${itemType} from all trips`, {
-      itemId,
-    });
-
     const result = await ItemTrip.destroy({
       where: {
         itemId,
@@ -226,12 +196,55 @@ class ItemTripService extends BaseService {
       },
     });
 
-    logger.info(`${this.modelName}: Item removed from ${result} trip(s)`, {
-      itemId,
-      itemType,
-    });
-
     return result > 0;
+  }
+
+  /**
+   * Cascade trip companions to an item
+   * When an item is moved to a trip, add all trip companions to the item
+   * @param {string} itemType - Type of item
+   * @param {string} itemId - Item ID
+   * @param {string} tripId - Trip ID
+   * @param {string} userId - User ID performing the action
+   * @returns {Promise<number>} Number of companions added
+   * @private
+   */
+  async cascadeTripsCompanionsToItem(itemType, itemId, tripId, userId) {
+    try {
+      // Get all companions for this trip
+      const tripCompanions = await TripCompanion.findAll({
+        where: { tripId },
+        attributes: ['companionId', 'canView', 'canEdit', 'canManageCompanions'],
+      });
+
+      if (tripCompanions.length === 0) {
+        return 0;
+      }
+
+      // Build item companion records
+      const itemCompanionRecords = tripCompanions.map((tc) => ({
+        itemType,
+        itemId,
+        companionId: tc.companionId,
+        status: 'attending',
+        addedBy: userId,
+        inheritedFromTrip: true,
+        // Inherit permissions from trip companion, with sensible defaults
+        canView: tc.canView !== undefined ? tc.canView : true,
+        canEdit: tc.canEdit !== undefined ? tc.canEdit : false,
+        canManageCompanions: tc.canManageCompanions !== undefined ? tc.canManageCompanions : false,
+      }));
+
+      // Bulk create, ignoring duplicates (in case companion already added)
+      await ItemCompanion.bulkCreate(itemCompanionRecords, {
+        ignoreDuplicates: true,
+      });
+
+      return tripCompanions.length;
+    } catch (error) {
+      // Don't throw - allow item to be added even if companion cascade fails
+      return 0;
+    }
   }
 
   /**
@@ -242,44 +255,32 @@ class ItemTripService extends BaseService {
    * @param {string} itemId - Item ID
    * @param {string|null} newTripId - New trip ID (null if making standalone)
    * @param {string|null} oldTripId - Old trip ID (null if was standalone)
+   * @param {string} userId - User ID performing the action
    * @returns {Promise<Object>} Result with added/removed flags
    * @example
    * // When updating a flight's trip assignment
-   * await itemTripService.updateItemTrip('flight', flightId, newTripId, oldTripId);
+   * await itemTripService.updateItemTrip('flight', flightId, newTripId, oldTripId, userId);
    */
-  async updateItemTrip(itemType, itemId, newTripId, oldTripId) {
+  async updateItemTrip(itemType, itemId, newTripId, oldTripId, userId) {
     const changes = { added: false, removed: false };
 
-    try {
-      // Remove from old trip if provided and different from new
-      if (oldTripId && oldTripId !== newTripId) {
-        const removed = await this.removeItemFromTrip(itemType, itemId, oldTripId);
-        if (removed) {
-          changes.removed = true;
-        }
+    // Remove from old trip if provided and different from new
+    if (oldTripId && oldTripId !== newTripId) {
+      const removed = await this.removeItemFromTrip(itemType, itemId, oldTripId);
+      if (removed) {
+        changes.removed = true;
       }
-
-      // Add to new trip if provided
-      if (newTripId) {
-        const added = await this.addItemToTrip(itemType, itemId, newTripId);
-        if (added) {
-          changes.added = true;
-        }
-      }
-
-      logger.info(`${this.modelName}: Trip assignment updated`, {
-        itemType,
-        itemId,
-        oldTripId,
-        newTripId,
-        ...changes,
-      });
-
-      return changes;
-    } catch (error) {
-      logger.error(`${this.modelName}: Error updating trip assignment`, error);
-      throw error;
     }
+
+    // Add to new trip if provided
+    if (newTripId) {
+      const added = await this.addItemToTrip(itemType, itemId, newTripId, userId);
+      if (added) {
+        changes.added = true;
+      }
+    }
+
+    return changes;
   }
 }
 

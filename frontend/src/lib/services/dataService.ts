@@ -220,7 +220,6 @@ class DataService {
           results.push(result.value);
         } else {
           // On error, fallback to original item
-          console.warn(`Failed to fetch item ${i + idx}:`, result.reason);
           results.push(items[i + idx] as any);
         }
       });

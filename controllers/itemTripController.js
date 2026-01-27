@@ -52,7 +52,7 @@ exports.setItemTrips = async (req, res) => {
       }
     }
 
-    const itemTrips = await itemTripService.setItemTrips(itemType, itemId, tripIds);
+    const itemTrips = await itemTripService.setItemTrips(itemType, itemId, tripIds, req.user.id);
 
     res.json({ success: true, trips: itemTrips });
   } catch (error) {
@@ -75,7 +75,7 @@ exports.addItemToTrip = async (req, res) => {
       return res.status(403).json({ success: false, error: 'Access denied' });
     }
 
-    const itemTrip = await itemTripService.addItemToTrip(itemType, itemId, tripId);
+    const itemTrip = await itemTripService.addItemToTrip(itemType, itemId, tripId, req.user.id);
 
     res.status(201).json({ success: true, itemTrip });
   } catch (error) {

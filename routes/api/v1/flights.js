@@ -125,7 +125,7 @@ router.use(ensureAuthenticated);
  */
 router.post('/', async (req, res) => {
   try {
-    const { Flight, Trip } = require('../../../models');
+    const { Flight } = require('../../../models');
     const airportService = require('../../../services/airportService');
     const {
       geocodeWithAirportFallback,
@@ -691,6 +691,8 @@ router.put('/:id', async (req, res) => {
       destResult,
     });
 
+    const oldTripId = flight.tripId;
+
     await flight.update({
       airline,
       flightNumber: flightNumber?.toUpperCase(),
@@ -708,6 +710,27 @@ router.put('/:id', async (req, res) => {
       seat,
       tripId: newTripId || null,
     });
+
+    // Handle trip association changes via ItemTrip junction table
+    if (newTripId !== undefined && newTripId !== oldTripId) {
+      try {
+        const ItemTripService = require('../../../services/itemTripService');
+        const itemTripService = new ItemTripService();
+
+        // Remove from old trip if there was one
+        if (oldTripId) {
+          await itemTripService.removeItemFromTrip('flight', flight.id, oldTripId);
+        }
+
+        // Add to new trip if one was provided
+        if (newTripId) {
+          await itemTripService.addItemToTrip('flight', flight.id, newTripId, req.user.id);
+        }
+      } catch (error) {
+        logger.error('Error updating flight trip association:', error);
+        // Don't fail the update due to ItemTrip errors
+      }
+    }
 
     return apiResponse.success(res, flight, 'Flight updated successfully');
   } catch (error) {

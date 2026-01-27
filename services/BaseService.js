@@ -4,8 +4,6 @@
  * Phase 3 - Service Layer Pattern
  */
 
-const logger = require('../utils/logger');
-
 class BaseService {
   constructor(model, modelName) {
     this.model = model;
@@ -19,12 +17,7 @@ class BaseService {
    * @returns {Promise<Object|null>}
    */
   async findById(id, options = {}) {
-    try {
-      return await this.model.findByPk(id, options);
-    } catch (error) {
-      logger.error(`Error finding ${this.modelName} by ID:`, error);
-      throw error;
-    }
+    return this.model.findByPk(id, options);
   }
 
   /**
@@ -34,12 +27,7 @@ class BaseService {
    * @returns {Promise<Object|null>}
    */
   async findOne(where, options = {}) {
-    try {
-      return await this.model.findOne({ where, ...options });
-    } catch (error) {
-      logger.error(`Error finding ${this.modelName}:`, error);
-      throw error;
-    }
+    return this.model.findOne({ where, ...options });
   }
 
   /**
@@ -49,12 +37,7 @@ class BaseService {
    * @returns {Promise<Array>}
    */
   async findAll(where = {}, options = {}) {
-    try {
-      return await this.model.findAll({ where, ...options });
-    } catch (error) {
-      logger.error(`Error finding all ${this.modelName}:`, error);
-      throw error;
-    }
+    return this.model.findAll({ where, ...options });
   }
 
   /**
@@ -64,14 +47,7 @@ class BaseService {
    * @returns {Promise<Object>}
    */
   async create(data, options = {}) {
-    try {
-      const record = await this.model.create(data, options);
-      logger.info(`${this.modelName} created:`, { id: record.id });
-      return record;
-    } catch (error) {
-      logger.error(`Error creating ${this.modelName}:`, error);
-      throw error;
-    }
+    return this.model.create(data, options);
   }
 
   /**
@@ -81,14 +57,8 @@ class BaseService {
    * @returns {Promise<Object>}
    */
   async update(record, data) {
-    try {
-      await record.update(data);
-      logger.info(`${this.modelName} updated:`, { id: record.id });
-      return record;
-    } catch (error) {
-      logger.error(`Error updating ${this.modelName}:`, error);
-      throw error;
-    }
+    await record.update(data);
+    return record;
   }
 
   /**
@@ -97,13 +67,7 @@ class BaseService {
    * @returns {Promise<void>}
    */
   async delete(record) {
-    try {
-      await record.destroy();
-      logger.info(`${this.modelName} deleted:`, { id: record.id });
-    } catch (error) {
-      logger.error(`Error deleting ${this.modelName}:`, error);
-      throw error;
-    }
+    await record.destroy();
   }
 
   /**
@@ -112,12 +76,7 @@ class BaseService {
    * @returns {Promise<number>}
    */
   async count(where = {}) {
-    try {
-      return await this.model.count({ where });
-    } catch (error) {
-      logger.error(`Error counting ${this.modelName}:`, error);
-      throw error;
-    }
+    return this.model.count({ where });
   }
 
   /**
@@ -126,13 +85,8 @@ class BaseService {
    * @returns {Promise<boolean>}
    */
   async exists(where) {
-    try {
-      const count = await this.count(where);
-      return count > 0;
-    } catch (error) {
-      logger.error(`Error checking ${this.modelName} existence:`, error);
-      throw error;
-    }
+    const count = await this.count(where);
+    return count > 0;
   }
 
   /**
@@ -157,12 +111,10 @@ class BaseService {
     const record = await this.findById(id, options);
 
     if (!record) {
-      logger.warn(`${this.modelName} not found:`, { id });
       return null;
     }
 
     if (!BaseService.verifyOwnership(record, userId)) {
-      logger.warn(`${this.modelName} ownership verification failed:`, { id, userId });
       return null;
     }
 

@@ -292,10 +292,6 @@ export const settingsApi = {
     data: { canShareTrips?: boolean; theyManageTrips?: boolean }
   ): Promise<any> {
     const base = getAccountBase();
-    console.log('[settingsApi.updateCompanionPermissions] Sending request:', {
-      url: `${base}/companions/${companionId}/permissions`,
-      data
-    });
     const response = await fetch(`${base}/companions/${companionId}/permissions`, {
       method: 'PUT',
       headers: {
@@ -306,15 +302,11 @@ export const settingsApi = {
       body: JSON.stringify(data),
     });
 
-    console.log('[settingsApi.updateCompanionPermissions] Response status:', response.status);
-
     if (!response.ok) {
       throw new Error(`Failed to update permissions: ${response.statusText}`);
     }
 
-    const result = await response.json();
-    console.log('[settingsApi.updateCompanionPermissions] Response data:', result);
-    return result;
+    return response.json();
   },
 
   /**

@@ -6,8 +6,6 @@ const { sendAsyncOrRedirect } = require('../utils/asyncResponseHandler');
 const {
   verifyTripOwnership,
   geocodeOriginDestination,
-  redirectAfterSuccess,
-  redirectAfterError,
   verifyResourceOwnership,
   verifyResourceOwnershipViaTrip,
   verifyTripItemEditAccess,
@@ -70,7 +68,7 @@ exports.createCarRental = async (req, res) => {
     // Add car rental to trip via ItemTrip junction table
     if (tripId) {
       try {
-        await itemTripService.addItemToTrip('car_rental', carRental.id, tripId);
+        await itemTripService.addItemToTrip('car_rental', carRental.id, tripId, req.user.id);
       } catch (e) {
         logger.error('Error adding car rental to trip in ItemTrip:', e);
       }
@@ -185,15 +183,13 @@ exports.updateCarRental = async (req, res) => {
         if (carRental.tripId) {
           await itemTripService.removeItemFromTrip('car_rental', carRental.id, carRental.tripId);
         }
-        await itemTripService.addItemToTrip('car_rental', carRental.id, newTripId);
+        await itemTripService.addItemToTrip('car_rental', carRental.id, newTripId, req.user.id);
       } else if (newTripId === null && carRental.tripId) {
         await itemTripService.removeItemFromTrip('car_rental', carRental.id, carRental.tripId);
       }
     } catch (e) {
       logger.error('Error updating car rental trip association:', e);
     }
-
-    logger.info('Car rental updated successfully:', { carRentalId: req.params.id });
 
     // Centralized async/redirect response handling
     return sendAsyncOrRedirect(req, res, {
@@ -324,7 +320,7 @@ exports.getAddForm = async (req, res) => {
       availableTrips: tripSelectorData.availableTrips,
     });
   } catch (error) {
-    logger.error(error);
+    logger.error('Error fetching add form:', error);
     res.status(500).json({ success: false, error: 'Error loading form' });
   }
 };
@@ -424,7 +420,7 @@ exports.getEditForm = async (req, res) => {
       availableTrips: tripSelectorData.availableTrips,
     });
   } catch (error) {
-    logger.error(error);
+    logger.error('Error fetching edit form:', error);
     res.status(500).json({ success: false, error: 'Error loading form' });
   }
 };

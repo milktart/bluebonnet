@@ -8,16 +8,35 @@ const moment = require('moment-timezone');
 const logger = require('./logger');
 
 /**
+ * Parse UTC offset string (e.g., "UTC-5", "UTC+3") and return offset in minutes
+ * Returns null if the string is not a UTC offset format
+ */
+function parseUtcOffset(timezone) {
+  if (!timezone || !timezone.startsWith('UTC')) return null;
+
+  const match = timezone.match(/^UTC([+-])(\d+)(?::(\d+))?$/);
+  if (!match) return null;
+
+  const sign = match[1] === '+' ? 1 : -1;
+  const hours = parseInt(match[2], 10);
+  const minutes = match[3] ? parseInt(match[3], 10) : 0;
+
+  return sign * (hours * 60 + minutes);
+}
+
+/**
  * Convert a datetime-local string (without timezone) to UTC Date object
  * This interprets the datetime as being in the specified timezone
  *
  * @param {string} datetimeLocal - Format: "YYYY-MM-DDTHH:MM" (from datetime-local input)
- * @param {string} timezone - IANA timezone string (e.g., "America/New_York")
+ * @param {string} timezone - IANA timezone string (e.g., "America/New_York") or UTC offset (e.g., "UTC-5")
  * @returns {Date} - Date object in UTC
  *
  * Example:
  *   localToUTC("2025-10-14T14:30", "America/New_York")
  *   -> Returns Date object representing 2025-10-14 14:30 EDT converted to UTC
+ *   localToUTC("2025-10-14T14:30", "UTC-5")
+ *   -> Returns Date object representing 2025-10-14 14:30 UTC-5 converted to UTC
  */
 function localToUTC(datetimeLocal, timezone) {
   if (!datetimeLocal) return null;
@@ -29,8 +48,22 @@ function localToUTC(datetimeLocal, timezone) {
       return moment.utc(datetimeLocal).toDate();
     }
 
+    // Check if it's a UTC offset format (e.g., "UTC-5")
+    const offsetMinutes = parseUtcOffset(timezone);
+    if (offsetMinutes !== null) {
+      // Parse as UTC, then subtract the offset to get the actual UTC time
+      // If local time is 14:30 in UTC-5, UTC time is 14:30 + 5 hours = 19:30
+      const utcMoment = moment.utc(datetimeLocal);
+      if (!utcMoment.isValid()) {
+        logger.error('Invalid datetime:', datetimeLocal);
+        return null;
+      }
+      // Subtract the offset (offsetMinutes is negative for UTC-X, so subtracting makes it positive)
+      return utcMoment.subtract(offsetMinutes, 'minutes').toDate();
+    }
+
     // Parse the datetime as being in the specified timezone
-    // Then convert to UTC
+    // Then convert to UTC (for IANA timezones)
     const localMoment = moment.tz(datetimeLocal, timezone);
 
     if (!localMoment.isValid()) {
@@ -50,12 +83,14 @@ function localToUTC(datetimeLocal, timezone) {
  * Convert UTC Date to local datetime string for datetime-local input
  *
  * @param {Date|string} utcDate - UTC date
- * @param {string} timezone - IANA timezone string
+ * @param {string} timezone - IANA timezone string or UTC offset (e.g., "UTC-5")
  * @returns {string} - Format: "YYYY-MM-DDTHH:MM" for datetime-local input
  *
  * Example:
  *   utcToLocal(utcDateObject, "America/New_York")
  *   -> Returns "2025-10-14T14:30" (representing the time in New York)
+ *   utcToLocal(utcDateObject, "UTC-5")
+ *   -> Returns "2025-10-14T14:30" (representing the time in UTC-5)
  */
 function utcToLocal(utcDate, timezone) {
   if (!utcDate) return '';
@@ -70,6 +105,14 @@ function utcToLocal(utcDate, timezone) {
 
     // Convert to specified timezone if provided
     if (timezone) {
+      // Check if it's a UTC offset format (e.g., "UTC-5")
+      const offsetMinutes = parseUtcOffset(timezone);
+      if (offsetMinutes !== null) {
+        // Apply the offset to get local time
+        return m.add(offsetMinutes, 'minutes').format('YYYY-MM-DDTHH:mm');
+      }
+
+      // Otherwise treat as IANA timezone
       return m.tz(timezone).format('YYYY-MM-DDTHH:mm');
     }
 

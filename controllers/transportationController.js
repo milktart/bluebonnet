@@ -7,8 +7,6 @@ const { sendAsyncOrRedirect } = require('../utils/asyncResponseHandler');
 const {
   verifyTripOwnership,
   geocodeOriginDestination,
-  redirectAfterSuccess,
-  redirectAfterError,
   verifyResourceOwnership,
   verifyTripItemEditAccess,
   convertToUTC,
@@ -72,7 +70,12 @@ exports.createTransportation = async (req, res) => {
     // Add transportation to trip via ItemTrip junction table
     if (tripId) {
       try {
-        await itemTripService.addItemToTrip('transportation', transportation.id, tripId);
+        await itemTripService.addItemToTrip(
+          'transportation',
+          transportation.id,
+          tripId,
+          req.user.id
+        );
       } catch (e) {
         logger.error('Error adding transportation to trip in ItemTrip:', e);
       }
@@ -212,7 +215,12 @@ exports.updateTransportation = async (req, res) => {
             transportation.tripId
           );
         }
-        await itemTripService.addItemToTrip('transportation', transportation.id, newTripId);
+        await itemTripService.addItemToTrip(
+          'transportation',
+          transportation.id,
+          newTripId,
+          req.user.id
+        );
       } else if (newTripId === null && transportation.tripId) {
         await itemTripService.removeItemFromTrip(
           'transportation',
@@ -223,8 +231,6 @@ exports.updateTransportation = async (req, res) => {
     } catch (e) {
       logger.error('Error updating transportation trip association:', e);
     }
-
-    logger.info('Transportation updated successfully:', { transportationId: req.params.id });
 
     // Centralized async/redirect response handling
     return sendAsyncOrRedirect(req, res, {

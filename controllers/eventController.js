@@ -6,8 +6,6 @@ const { sendAsyncOrRedirect } = require('../utils/asyncResponseHandler');
 const {
   verifyTripOwnership,
   geocodeIfChanged,
-  redirectAfterSuccess,
-  redirectAfterError,
   verifyResourceOwnership,
   verifyTripItemEditAccess,
 } = require('./helpers/resourceController');
@@ -82,7 +80,7 @@ exports.createEvent = async (req, res) => {
     // Add event to trip via ItemTrip junction table
     if (tripId) {
       try {
-        await itemTripService.addItemToTrip('event', event.id, tripId);
+        await itemTripService.addItemToTrip('event', event.id, tripId, req.user.id);
       } catch (e) {
         logger.error('Error adding event to trip in ItemTrip:', e);
       }
@@ -110,8 +108,6 @@ exports.createEvent = async (req, res) => {
     });
   } catch (error) {
     logger.error('ERROR in createEvent:', error);
-    logger.error('Request body:', req.body);
-    logger.error('Request params:', req.params);
     return sendAsyncOrRedirect(req, res, {
       success: false,
       error: error.message || 'Error adding event',
@@ -123,21 +119,19 @@ exports.createEvent = async (req, res) => {
 
 exports.updateEvent = async (req, res) => {
   try {
-    let {
+    const {
       name,
-      startDateTime,
-      endDateTime,
       location,
       contactPhone,
       contactEmail,
       description,
-      startDate,
-      startTime,
-      endDate,
-      endTime,
       tripId: newTripId,
       isConfirmed,
     } = req.body;
+
+    let { startDateTime } = req.body;
+    let { endDateTime } = req.body;
+    const { startDate, startTime, endDate, endTime } = req.body;
 
     // Convert separate date/time fields to datetime strings if provided
     if (startDate && !startDateTime) {
@@ -215,15 +209,13 @@ exports.updateEvent = async (req, res) => {
         if (event.tripId) {
           await itemTripService.removeItemFromTrip('event', event.id, event.tripId);
         }
-        await itemTripService.addItemToTrip('event', event.id, newTripId);
+        await itemTripService.addItemToTrip('event', event.id, newTripId, req.user.id);
       } else if (newTripId === null && event.tripId) {
         await itemTripService.removeItemFromTrip('event', event.id, event.tripId);
       }
     } catch (e) {
       logger.error('Error updating event trip association:', e);
     }
-
-    logger.info('Event updated successfully:', { eventId: req.params.id });
 
     // Centralized async/redirect response handling
     return sendAsyncOrRedirect(req, res, {
@@ -234,8 +226,6 @@ exports.updateEvent = async (req, res) => {
     });
   } catch (error) {
     logger.error('ERROR in updateEvent:', error);
-    logger.error('Request body:', req.body);
-    logger.error('Request params:', req.params);
     return sendAsyncOrRedirect(req, res, {
       success: false,
       error: error.message || 'Error updating event',
@@ -346,19 +336,6 @@ exports.getEventSidebar = async (req, res) => {
     const endTime = formatTimeForDisplay(event.endDateTime);
     const startDate = formatDateForDisplay(event.startDateTime);
     const endDate = formatDateForDisplay(event.endDateTime);
-
-    // DEBUG: Log to console
-    const d = new Date(event.startDateTime);
-    console.log({
-      rawDateTime: event.startDateTime,
-      dateObj: d,
-      utcHours: d.getUTCHours(),
-      utcMinutes: d.getUTCMinutes(),
-      localHours: d.getHours(),
-      localMinutes: d.getMinutes(),
-      formattedTime: startTime,
-      formattedDate: startDate,
-    });
 
     // Check if this is an all-day event (times are 00:00 and 23:59)
     const isAllDay = startTime === '00:00' && endTime === '23:59';
@@ -511,19 +488,6 @@ exports.getEditForm = async (req, res) => {
     const endDate = formatDateForInput(event.endDateTime);
     const endTime = formatTimeForInput(event.endDateTime);
 
-    // DEBUG: Log to console
-    const d = new Date(event.startDateTime);
-    console.log({
-      rawDateTime: event.startDateTime,
-      dateObj: d,
-      utcHours: d.getUTCHours(),
-      utcMinutes: d.getUTCMinutes(),
-      localHours: d.getHours(),
-      localMinutes: d.getMinutes(),
-      formattedDate: startDate,
-      formattedTime: startTime,
-    });
-
     const formattedData = {
       id: event.id,
       name: event.name,
@@ -568,7 +532,7 @@ exports.getEditForm = async (req, res) => {
       availableTrips: tripSelectorData.availableTrips,
     });
   } catch (error) {
-    logger.error(error);
+    logger.error('ERROR in getEditForm:', error);
     res.status(500).json({ success: false, error: 'Error loading form' });
   }
 };
@@ -583,7 +547,7 @@ exports.getStandaloneForm = async (req, res) => {
       data: null,
     });
   } catch (error) {
-    logger.error(error);
+    logger.error('ERROR in getStandaloneForm:', error);
     res.status(500).json({ success: false, error: 'Error loading form' });
   }
 };

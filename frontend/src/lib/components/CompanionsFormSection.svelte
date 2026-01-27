@@ -58,18 +58,7 @@
   }
 
   $: if (companions) {
-    console.log('[CompanionsFormSection] companions prop changed:', {
-      type,
-      entityId,
-      companionCount: companions?.length,
-      companions: companions.map((c) => ({
-        id: c.id,
-        email: c.companion?.email || c.email,
-        canEdit: c.canEdit,
-        canEditPath: c.canEdit,
-        rawData: c
-      }))
-    });
+    // companions prop changed
   }
 
   onMount(() => {

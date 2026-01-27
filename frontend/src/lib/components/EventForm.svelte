@@ -64,6 +64,18 @@
     { value: 'other', label: 'Other' }
   ];
 
+  // Auto-sync end date when start date changes
+  $: if (formData.startDate) {
+    formData.endDate = formData.startDate;
+  }
+
+  // Auto-sync start date when end date changes
+  $: if (formData.endDate) {
+    if (!formData.startDate || formData.endDate < formData.startDate) {
+      formData.startDate = formData.endDate;
+    }
+  }
+
   async function handleSubmit() {
     try {
       // Unified validation using validation utilities

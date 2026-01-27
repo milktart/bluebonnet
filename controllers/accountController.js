@@ -167,7 +167,6 @@ exports.getCompanionsSidebar = async (req, res) => {
 exports.revokeCompanionAccess = async (req, res) => {
   try {
     const { companionId } = req.params;
-    const isAjax = req.get('X-Sidebar-Request') === 'true' || req.xhr;
 
     // Find and update the companion to unlink this user
     const companion = await TravelCompanion.findOne({
@@ -760,19 +759,11 @@ exports.importSelectedData = async (req, res) => {
   let transaction;
   try {
     const userId = req.user.id;
-    const { importData, selectedItemIds } = req.body;
+    const { importData, selectedItemIds, mergeTargetToSourceTrip } = req.body;
 
     if (!importData || !selectedItemIds || !Array.isArray(selectedItemIds)) {
       return res.status(400).json({ success: false, error: 'Invalid request parameters' });
     }
-
-    logger.info('Import request received:', {
-      selectedItemIds: selectedItemIds.length,
-      trips: importData.trips?.length || 0,
-      standaloneFlights: importData.standaloneFlights?.length || 0,
-      standaloneHotels: importData.standaloneHotels?.length || 0,
-      previewItems: importData.previewItems?.length || 0,
-    });
 
     // Start transaction for atomicity
     transaction = await sequelize.transaction();
@@ -797,11 +788,20 @@ exports.importSelectedData = async (req, res) => {
     );
 
     const duplicateDetectionService = require('../services/duplicateDetectionService');
+    const models = require('../models');
+    const {
+      Flight: FlightModel,
+      Hotel: HotelModel,
+      Transportation: TransportationModel,
+      CarRental: CarRentalModel,
+      Event: EventModel,
+      ItemCompanion: ItemCompanionModel,
+      TripCompanion: TripCompanionModel,
+    } = models;
 
     // Import trips first and track which ones were imported
     // NOTE: Frontend already filtered to ONLY include selected items, so we can import all of them
     if (importData.trips && Array.isArray(importData.trips)) {
-      logger.info(`Processing ${importData.trips.length} trips for import`);
       for (const tripData of importData.trips) {
         // Check if a matching trip already exists
         const matchedTrip = duplicateDetectionService.checkTripDuplicates(tripData, existingTrips);
@@ -809,13 +809,9 @@ exports.importSelectedData = async (req, res) => {
         let targetTrip;
         if (matchedTrip.isDuplicate) {
           // Use existing trip instead of creating a new one
-          logger.info(
-            `Found matching trip: ${matchedTrip.duplicateOf.id} (${matchedTrip.duplicateOf.name})`
-          );
           targetTrip = matchedTrip.duplicateOf;
         } else {
           // Create trip with new ID and user ID
-          logger.info(`Importing trip: ${tripData.id} (${tripData.name})`);
           targetTrip = await Trip.create(
             {
               ...tripData,
@@ -1050,77 +1046,140 @@ exports.importSelectedData = async (req, res) => {
     }
 
     // Import standalone items (frontend already filtered to selected items)
+    // Track created items by tripId so we can add companions to them
+    const createdItemsByTripId = {};
+
     if (importData.standaloneFlights && Array.isArray(importData.standaloneFlights)) {
       for (const flight of importData.standaloneFlights) {
-        await Flight.create(
+        const createdFlight = await Flight.create(
           {
             ...flight,
             userId,
-            tripId: null,
+            tripId: flight.tripId || null,
             id: undefined,
           },
           { transaction }
         );
+
+        // Track for companion association if merged into a trip
+        if (createdFlight.tripId) {
+          if (!createdItemsByTripId[createdFlight.tripId]) {
+            createdItemsByTripId[createdFlight.tripId] = [];
+          }
+          createdItemsByTripId[createdFlight.tripId].push({
+            itemType: 'flight',
+            itemId: createdFlight.id,
+          });
+        }
+
         stats.flights += 1;
       }
     }
 
     if (importData.standaloneHotels && Array.isArray(importData.standaloneHotels)) {
       for (const hotel of importData.standaloneHotels) {
-        await Hotel.create(
+        const createdHotel = await Hotel.create(
           {
             ...hotel,
             userId,
-            tripId: null,
+            tripId: hotel.tripId || null,
             id: undefined,
           },
           { transaction }
         );
+
+        // Track for companion association if merged into a trip
+        if (createdHotel.tripId) {
+          if (!createdItemsByTripId[createdHotel.tripId]) {
+            createdItemsByTripId[createdHotel.tripId] = [];
+          }
+          createdItemsByTripId[createdHotel.tripId].push({
+            itemType: 'hotel',
+            itemId: createdHotel.id,
+          });
+        }
+
         stats.hotels += 1;
       }
     }
 
     if (importData.standaloneTransportation && Array.isArray(importData.standaloneTransportation)) {
       for (const trans of importData.standaloneTransportation) {
-        await Transportation.create(
+        const createdTrans = await Transportation.create(
           {
             ...trans,
             userId,
-            tripId: null,
+            tripId: trans.tripId || null,
             id: undefined,
           },
           { transaction }
         );
+
+        // Track for companion association if merged into a trip
+        if (createdTrans.tripId) {
+          if (!createdItemsByTripId[createdTrans.tripId]) {
+            createdItemsByTripId[createdTrans.tripId] = [];
+          }
+          createdItemsByTripId[createdTrans.tripId].push({
+            itemType: 'transportation',
+            itemId: createdTrans.id,
+          });
+        }
+
         stats.transportation += 1;
       }
     }
 
     if (importData.standaloneCarRentals && Array.isArray(importData.standaloneCarRentals)) {
       for (const carRental of importData.standaloneCarRentals) {
-        await CarRental.create(
+        const createdCarRental = await CarRental.create(
           {
             ...carRental,
             userId,
-            tripId: null,
+            tripId: carRental.tripId || null,
             id: undefined,
           },
           { transaction }
         );
+
+        // Track for companion association if merged into a trip
+        if (createdCarRental.tripId) {
+          if (!createdItemsByTripId[createdCarRental.tripId]) {
+            createdItemsByTripId[createdCarRental.tripId] = [];
+          }
+          createdItemsByTripId[createdCarRental.tripId].push({
+            itemType: 'car_rental',
+            itemId: createdCarRental.id,
+          });
+        }
+
         stats.carRentals += 1;
       }
     }
 
     if (importData.standaloneEvents && Array.isArray(importData.standaloneEvents)) {
       for (const event of importData.standaloneEvents) {
-        await Event.create(
+        const createdEvent = await Event.create(
           {
             ...event,
             userId,
-            tripId: null,
+            tripId: event.tripId || null,
             id: undefined,
           },
           { transaction }
         );
+
+        // Track for companion association if merged into a trip
+        if (createdEvent.tripId) {
+          if (!createdItemsByTripId[createdEvent.tripId]) {
+            createdItemsByTripId[createdEvent.tripId] = [];
+          }
+          createdItemsByTripId[createdEvent.tripId].push({
+            itemType: 'event',
+            itemId: createdEvent.id,
+          });
+        }
+
         stats.events += 1;
       }
     }
@@ -1129,7 +1188,8 @@ exports.importSelectedData = async (req, res) => {
     if (importData.vouchers && Array.isArray(importData.vouchers)) {
       for (const voucher of importData.vouchers) {
         // Don't include parentVoucherId since parent vouchers won't exist in new database
-        const { parentVoucherId: _parentVoucherId, ...voucherData } = voucher;
+        // eslint-disable-next-line no-unused-vars
+        const { parentVoucherId, ...voucherData } = voucher;
 
         await Voucher.create(
           {
@@ -1151,7 +1211,8 @@ exports.importSelectedData = async (req, res) => {
     if (importData.companions && Array.isArray(importData.companions)) {
       for (const companion of importData.companions) {
         // Don't include userId from imported companion (it references old database)
-        const { userId: _importedUserId, ...companionData } = companion;
+        // eslint-disable-next-line no-unused-vars
+        const { userId: importedUserId, ...companionData } = companion;
         const originalCompanionId = companion.id;
 
         const newCompanion = await TravelCompanion.create(
@@ -1192,7 +1253,7 @@ exports.importSelectedData = async (req, res) => {
 
               // Only import if companion was imported
               if (mappedCompanionId) {
-                await require('../models').TripCompanion.create(
+                await TripCompanionModel.create(
                   {
                     tripId: targetTrip.id,
                     companionId: mappedCompanionId,
@@ -1211,10 +1272,155 @@ exports.importSelectedData = async (req, res) => {
       }
     }
 
+    // Add companions from merged items to their target existing trips
+    // When items are merged into existing trips, they should inherit the trip's companions
+    if (mergeTargetToSourceTrip && Object.keys(mergeTargetToSourceTrip).length > 0) {
+      for (const [targetTripId, sourceTrip] of Object.entries(mergeTargetToSourceTrip)) {
+        if (sourceTrip && sourceTrip.tripCompanions && Array.isArray(sourceTrip.tripCompanions)) {
+          // Add each companion from the source trip to the target trip
+          for (const tripCompanionData of sourceTrip.tripCompanions) {
+            const mappedCompanionId = companionIdMappings[tripCompanionData.companionId];
+
+            if (mappedCompanionId) {
+              // Check if companion is already assigned to this trip
+              const existingRelationship = await TripCompanionModel.findOne(
+                {
+                  where: {
+                    tripId: targetTripId,
+                    companionId: mappedCompanionId,
+                  },
+                },
+                { transaction }
+              );
+
+              if (!existingRelationship) {
+                await TripCompanionModel.create(
+                  {
+                    tripId: targetTripId,
+                    companionId: mappedCompanionId,
+                    addedBy: userId,
+                    canView: tripCompanionData.canView,
+                    canEdit: tripCompanionData.canEdit,
+                    canManageCompanions: tripCompanionData.canManageCompanions,
+                    permissionSource: tripCompanionData.permissionSource || 'explicit',
+                  },
+                  { transaction }
+                );
+              }
+
+              // Also add companion to all items in this trip (both newly created and existing)
+              // Fetch all items in the trip
+              const itemsInTrip = [];
+
+              // Collect all flight items
+              const flights = await FlightModel.findAll(
+                {
+                  where: { tripId: targetTripId, userId },
+                },
+                { transaction }
+              );
+              itemsInTrip.push(
+                ...flights.map((f) => ({
+                  itemType: 'flight',
+                  itemId: f.id,
+                }))
+              );
+
+              // Collect all hotel items
+              const hotels = await HotelModel.findAll(
+                {
+                  where: { tripId: targetTripId, userId },
+                },
+                { transaction }
+              );
+              itemsInTrip.push(
+                ...hotels.map((h) => ({
+                  itemType: 'hotel',
+                  itemId: h.id,
+                }))
+              );
+
+              // Collect all transportation items
+              const transportations = await TransportationModel.findAll(
+                {
+                  where: { tripId: targetTripId, userId },
+                },
+                { transaction }
+              );
+              itemsInTrip.push(
+                ...transportations.map((t) => ({
+                  itemType: 'transportation',
+                  itemId: t.id,
+                }))
+              );
+
+              // Collect all car rental items
+              const carRentals = await CarRentalModel.findAll(
+                {
+                  where: { tripId: targetTripId, userId },
+                },
+                { transaction }
+              );
+              itemsInTrip.push(
+                ...carRentals.map((c) => ({
+                  itemType: 'car_rental',
+                  itemId: c.id,
+                }))
+              );
+
+              // Collect all event items
+              const events = await EventModel.findAll(
+                {
+                  where: { tripId: targetTripId, userId },
+                },
+                { transaction }
+              );
+              itemsInTrip.push(
+                ...events.map((e) => ({
+                  itemType: 'event',
+                  itemId: e.id,
+                }))
+              );
+
+              // Add companion to each item in the trip
+              for (const item of itemsInTrip) {
+                const existingItemCompanion = await ItemCompanionModel.findOne(
+                  {
+                    where: {
+                      itemType: item.itemType,
+                      itemId: item.itemId,
+                      companionId: mappedCompanionId,
+                    },
+                  },
+                  { transaction }
+                );
+
+                if (!existingItemCompanion) {
+                  await ItemCompanionModel.create(
+                    {
+                      itemType: item.itemType,
+                      itemId: item.itemId,
+                      companionId: mappedCompanionId,
+                      addedBy: userId,
+                      inheritedFromTrip: true,
+                      canView: tripCompanionData.canView,
+                      canEdit: tripCompanionData.canEdit,
+                      canManageCompanions: tripCompanionData.canManageCompanions,
+                      status: 'attending',
+                    },
+                    { transaction }
+                  );
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
     // Commit transaction
     await transaction.commit();
 
-    logger.info(`User ${userId} imported data:`, stats);
     res.json({
       success: true,
       message: 'Data imported successfully',

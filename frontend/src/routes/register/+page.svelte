@@ -63,10 +63,6 @@
         credentials: 'include'
       });
 
-      console.log({
-        contentType: response.headers.get('content-type'),
-        ok: response.ok
-      });
 
       const data = await response.json();
 

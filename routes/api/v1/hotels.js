@@ -431,6 +431,8 @@ router.put('/:id', async (req, res) => {
 
     // Transform form data to match model
     const hotelData = { ...req.body };
+    const newTripId = hotelData.tripId;
+    const oldTripId = hotel.tripId;
 
     // Combine date and time fields into datetime
     if (req.body.checkInDate && req.body.checkInTime) {
@@ -447,6 +449,27 @@ router.put('/:id', async (req, res) => {
 
     // Update hotel
     const updated = await hotel.update(hotelData);
+
+    // Handle trip association changes via ItemTrip junction table
+    if (newTripId !== undefined && newTripId !== oldTripId) {
+      try {
+        const ItemTripService = require('../../../services/itemTripService');
+        const itemTripService = new ItemTripService();
+
+        // Remove from old trip if there was one
+        if (oldTripId) {
+          await itemTripService.removeItemFromTrip('hotel', hotel.id, oldTripId);
+        }
+
+        // Add to new trip if one was provided
+        if (newTripId) {
+          await itemTripService.addItemToTrip('hotel', hotel.id, newTripId, req.user.id);
+        }
+      } catch (error) {
+        require('../../../utils/logger').error('Error updating hotel trip association:', error);
+        // Don't fail the update due to ItemTrip errors
+      }
+    }
 
     return apiResponse.success(res, updated, 'Hotel updated successfully');
   } catch (error) {

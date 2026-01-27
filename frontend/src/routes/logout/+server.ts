@@ -20,7 +20,6 @@ export const GET: RequestHandler = async ({ request, cookies }) => {
       },
     });
   } catch (error) {
-    console.error('Logout error:', error);
     // Continue with redirect even if API call fails
   }
 

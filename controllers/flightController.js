@@ -8,8 +8,6 @@ const { sendAsyncOrRedirect } = require('../utils/asyncResponseHandler');
 const { combineDateTimeFields, sanitizeTimezones } = require('../utils/dateTimeParser');
 const {
   verifyTripOwnership,
-  redirectAfterSuccess,
-  redirectAfterError,
   verifyResourceOwnership,
   verifyTripItemEditAccess,
   convertToUTC,
@@ -168,9 +166,8 @@ exports.createFlight = async (req, res) => {
     // Add flight to trip via ItemTrip junction table
     if (tripId) {
       try {
-        await itemTripService.addItemToTrip('flight', flight.id, tripId);
+        await itemTripService.addItemToTrip('flight', flight.id, tripId, req.user.id);
       } catch (e) {
-        logger.error('Error adding flight to trip in ItemTrip:', e);
         // Don't fail the flight creation due to ItemTrip errors
       }
     }
@@ -192,10 +189,6 @@ exports.createFlight = async (req, res) => {
       redirectUrl: tripId ? `/trips/${tripId}` : '/dashboard',
     });
   } catch (error) {
-    logger.error('ERROR in createFlight:', error);
-    logger.error('Request body:', req.body);
-    logger.error('Request params:', req.params);
-
     return sendAsyncOrRedirect(req, res, {
       success: false,
       error: error.message || 'Error adding flight',
@@ -366,13 +359,12 @@ exports.updateFlight = async (req, res) => {
           await itemTripService.removeItemFromTrip('flight', flight.id, flight.tripId);
         }
         // Add to new trip
-        await itemTripService.addItemToTrip('flight', flight.id, newTripId);
+        await itemTripService.addItemToTrip('flight', flight.id, newTripId, req.user.id);
       } else if (newTripId === null && flight.tripId) {
         // Remove from trip if explicitly setting to null
         await itemTripService.removeItemFromTrip('flight', flight.id, flight.tripId);
       }
     } catch (e) {
-      logger.error('Error updating flight trip association:', e);
       // Don't fail the update due to ItemTrip errors
     }
 
@@ -393,12 +385,9 @@ exports.updateFlight = async (req, res) => {
           );
         }
       } catch (e) {
-        logger.error('Error updating flight companions:', e);
         // Don't fail the update due to companion errors
       }
     }
-
-    logger.info('Flight updated successfully:', { flightId: req.params.id });
 
     // Centralized async/redirect response handling
     return sendAsyncOrRedirect(req, res, {
@@ -409,15 +398,7 @@ exports.updateFlight = async (req, res) => {
         newTripId || flight.tripId ? `/trips/${newTripId || flight.tripId}` : '/dashboard',
     });
   } catch (error) {
-    logger.error('ERROR in updateFlight:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-      flightId: req.params.id,
-      requestBody: req.body,
-    });
     const errorMessage = error.message || 'Error updating flight';
-    logger.error('Returning error response:', errorMessage);
 
     return sendAsyncOrRedirect(req, res, {
       success: false,
@@ -461,7 +442,6 @@ exports.deleteFlight = async (req, res) => {
     try {
       await itemTripService.removeItemFromAllTrips('flight', flight.id);
     } catch (e) {
-      logger.error('Error removing flight from ItemTrip records:', e);
       // Don't fail deletion due to ItemTrip cleanup errors
     }
 
@@ -475,7 +455,6 @@ exports.deleteFlight = async (req, res) => {
       redirectUrl: tripId ? `/trips/${tripId}` : '/dashboard',
     });
   } catch (error) {
-    logger.error('ERROR in deleteFlight:', error);
     return sendAsyncOrRedirect(req, res, {
       success: false,
       error: 'Error deleting flight',
@@ -506,7 +485,6 @@ exports.restoreFlight = async (req, res) => {
 
     res.json({ success: true, message: 'Flight restored successfully' });
   } catch (error) {
-    logger.error('Error restoring flight:', error);
     res.status(500).json({ success: false, error: 'Error restoring flight' });
   }
 };
@@ -543,7 +521,6 @@ exports.getAddForm = async (req, res) => {
       availableTrips: tripSelectorData.availableTrips,
     });
   } catch (error) {
-    logger.error('Error fetching add form:', error);
     res.status(500).json({ success: false, error: 'Error loading form' });
   }
 };
@@ -606,16 +583,9 @@ exports.getEditForm = async (req, res) => {
           const attachmentData = attachment.toJSON();
           attachmentData.traveler = traveler ? traveler.toJSON() : null;
           voucherAttachmentsWithTravelers.push(attachmentData);
-
-          logger.info('Attachment traveler data:', {
-            travelerId: attachment.travelerId,
-            travelerType: attachment.travelerType,
-            travelerData: traveler,
-          });
         }
       } catch (travelerError) {
         // Log error but don't fail - allow form to render even if traveler data fetch fails
-        logger.error('Error fetching traveler data for attachments:', travelerError);
         voucherAttachmentsWithTravelers = flight.voucherAttachments.map((att) => att.toJSON());
       }
     }
@@ -656,7 +626,7 @@ exports.getEditForm = async (req, res) => {
       });
       associatedTripIds = itemTrips.map((it) => it.tripId);
     } catch (e) {
-      logger.error('Error fetching ItemTrip associations:', e);
+      // Silently fail if unable to find associated trips
     }
 
     // Use ItemTrip associations if available, otherwise fall back to flight.tripId
@@ -689,8 +659,6 @@ exports.getEditForm = async (req, res) => {
       availableTrips: tripSelectorData.availableTrips,
     });
   } catch (error) {
-    logger.error('Error fetching edit form:', error);
-    logger.error('Stack:', error.stack);
     res.status(500).json({ success: false, error: `Error loading form: ${error.message}` });
   }
 };

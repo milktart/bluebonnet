@@ -18,7 +18,6 @@ const {
   ItemTrip,
   User,
   ItemCompanion,
-  CompanionPermission,
 } = require('../models');
 const logger = require('../utils/logger');
 const cacheService = require('./cacheService');
@@ -691,29 +690,8 @@ class TripService extends BaseService {
       logger.warn('Trip access denied:', { tripId, userId });
       return null;
     }
-    console.log({
-      tripId,
-      tripName: trip.name,
-      flightCount: trip.flights?.length || 0,
-      hotelCount: trip.hotels?.length || 0,
-      eventCount: trip.events?.length || 0,
-    });
     // Convert to plain JSON object to ensure associated items are serialized
     const tripData = trip.toJSON();
-
-    // Debug: Log the structure of tripCompanions
-    logger.debug('TripCompanions structure after toJSON', {
-      count: tripData.tripCompanions?.length,
-      companions: tripData.tripCompanions?.map((tc) => ({
-        id: tc.id,
-        canEdit: tc.canEdit,
-        companion: {
-          id: tc.companion?.id,
-          userId: tc.companion?.userId,
-          name: tc.companion?.name,
-        },
-      })),
-    });
 
     // Ensure trip owner is included in tripCompanions
     // (some older trips may not have the owner in the trip_companions table)
@@ -846,34 +824,11 @@ class TripService extends BaseService {
           const companionUserId = tc.companion?.userId;
           const canEditValue = tc.canEdit;
           const matches = companionUserId === userId && canEditValue === true;
-          logger.debug('Checking trip companion', {
-            companionUserId,
-            canEditValue,
-            userId,
-            matches,
-          });
           return matches;
         });
         item.canEdit = isItemOwner || tripCompanionWithEdit;
         item.canDelete = isItemOwner || tripCompanionWithEdit;
         item.isShared = !isItemOwner && isCompanionAttendeeThroughItem;
-
-        // Debug logging
-        if (item.id) {
-          logger.debug('Item permission check', {
-            itemId: item.id,
-            itemName: item.name || item.hotelName || item.airline,
-            userId,
-            isItemOwner,
-            tripCompanionWithEdit,
-            canEdit: item.canEdit,
-            tripCompanions: tripData.tripCompanions?.map((tc) => ({
-              userId: tc.companion?.userId,
-              canEdit: tc.canEdit,
-              permissionSource: tc.permissionSource,
-            })),
-          });
-        }
       });
     };
     // Load companions for all item types in parallel
@@ -901,17 +856,6 @@ class TripService extends BaseService {
         }
       });
     }
-    // Debug: Log companions attached to items
-    console.log({
-      tripId,
-      tripName: tripData.name,
-      flightsWithCompanions:
-        tripData.flights?.filter((f) => f.itemCompanions?.length > 0).length || 0,
-      hotelsWithCompanions:
-        tripData.hotels?.filter((h) => h.itemCompanions?.length > 0).length || 0,
-      eventsWithCompanions:
-        tripData.events?.filter((e) => e.itemCompanions?.length > 0).length || 0,
-    });
     return tripData;
   }
 
@@ -1086,11 +1030,6 @@ class TripService extends BaseService {
    * @throws {Error} If trip not found or unauthorized
    */
   async getTripCompanions(tripId, userId, userEmail) {
-    console.log({
-      tripId,
-      userId,
-      userEmail,
-    });
     // Verify user owns the trip
     const trip = await Trip.findOne({
       where: { id: tripId, userId },
@@ -1111,16 +1050,6 @@ class TripService extends BaseService {
         },
       ],
     });
-    console.log({
-      count: companions.length,
-      companions: companions.map((tc) => ({
-        id: tc.id,
-        companionId: tc.companionId,
-        companion: tc.companion
-          ? { id: tc.companion.id, name: tc.companion.name, email: tc.companion.email }
-          : 'NULL',
-      })),
-    });
     // Transform to simpler format and filter null companions
     const companionList = companions
       .filter((tc) => tc.companion !== null)
@@ -1129,15 +1058,8 @@ class TripService extends BaseService {
         name: tc.companion.name,
         email: tc.companion.email,
       }));
-    console.log({
-      count: companionList.length,
-      selfEmail: userEmail,
-    });
     // Sort companions: self first, then alphabetically by first name
     const sortedCompanionList = sortCompanions(companionList, userEmail);
-    console.log({
-      count: sortedCompanionList.length,
-    });
     return sortedCompanionList;
   }
 }

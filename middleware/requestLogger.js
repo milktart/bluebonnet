@@ -44,15 +44,8 @@ const requestLogger = (req, res, next) => {
   res.end = function (...args) {
     const duration = Date.now() - startTime;
 
-    // Determine log level based on status code
+    // Get status code for logging context
     const { statusCode } = res;
-    let logLevel = 'info';
-
-    if (statusCode >= 500) {
-      logLevel = 'error';
-    } else if (statusCode >= 400) {
-      logLevel = 'warn';
-    }
 
     // Build log context
     const logContext = {
@@ -70,11 +63,9 @@ const requestLogger = (req, res, next) => {
       logContext.query = req.query;
     }
 
-    // Log slow requests as warnings
+    // Log only slow requests as warnings (disable info logging)
     if (duration > SLOW_REQUEST_THRESHOLD) {
       logger.warn('Slow request detected', logContext);
-    } else {
-      logger[logLevel]('Request completed', logContext);
     }
 
     // Call original end function
