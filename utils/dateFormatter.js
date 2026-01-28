@@ -171,6 +171,120 @@ function formatInTimezone(utcDate, timezone, format = 'DD MMM YYYY HH:mm') {
   return formatInTimezoneHelper(utcDate, timezone, format);
 }
 
+/**
+ * Helper function to validate timezone string
+ * @param {string} timezone - Timezone to validate
+ * @returns {string|null} - Trimmed timezone or null if invalid
+ */
+function validateTimezone(timezone) {
+  return timezone &&
+    typeof timezone === 'string' &&
+    timezone.trim() &&
+    timezone !== 'undefined' &&
+    timezone !== 'null'
+    ? timezone.trim()
+    : null;
+}
+
+/**
+ * Helper function to extract UTC date parts
+ * @param {Date} date - Date to extract parts from
+ * @returns {Object} - { year, month, day, hours, minutes }
+ */
+function getUTCDateParts(date) {
+  return {
+    year: String(date.getUTCFullYear()),
+    month: String(date.getUTCMonth() + 1).padStart(2, '0'),
+    day: String(date.getUTCDate()).padStart(2, '0'),
+    hours: String(date.getUTCHours()).padStart(2, '0'),
+    minutes: String(date.getUTCMinutes()).padStart(2, '0'),
+  };
+}
+
+/**
+ * Format date for HTML input type="date" (YYYY-MM-DD)
+ * Converts UTC date to the specified timezone for display
+ * @param {Date|string} date - Date to format
+ * @param {string} timezone - IANA timezone string
+ * @returns {string} - Formatted date (YYYY-MM-DD)
+ */
+function formatDateForInput(date, timezone) {
+  if (!date) return '';
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return '';
+
+  const validTimezone = validateTimezone(timezone);
+
+  let year;
+  let month;
+  let day;
+
+  if (validTimezone) {
+    try {
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        timeZone: validTimezone,
+      });
+      const parts = formatter.formatToParts(d);
+      year = parts.find((p) => p.type === 'year').value;
+      month = parts.find((p) => p.type === 'month').value;
+      day = parts.find((p) => p.type === 'day').value;
+    } catch (e) {
+      const utcParts = getUTCDateParts(d);
+      ({ year, month, day } = utcParts);
+    }
+  } else {
+    // No timezone, show UTC
+    const utcParts = getUTCDateParts(d);
+    ({ year, month, day } = utcParts);
+  }
+
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Format time for HTML input type="time" (HH:MM)
+ * Converts UTC time to the specified timezone for display
+ * @param {Date|string} date - Date to format
+ * @param {string} timezone - IANA timezone string
+ * @returns {string} - Formatted time (HH:MM)
+ */
+function formatTimeForInput(date, timezone) {
+  if (!date) return '';
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return '';
+
+  const validTimezone = validateTimezone(timezone);
+
+  let hours;
+  let minutes;
+
+  if (validTimezone) {
+    try {
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: validTimezone,
+      });
+      const parts = formatter.formatToParts(d);
+      hours = parts.find((p) => p.type === 'hour').value;
+      minutes = parts.find((p) => p.type === 'minute').value;
+    } catch (e) {
+      const utcParts = getUTCDateParts(d);
+      ({ hours, minutes } = utcParts);
+    }
+  } else {
+    // No timezone, show UTC
+    const utcParts = getUTCDateParts(d);
+    ({ hours, minutes } = utcParts);
+  }
+
+  return `${hours}:${minutes}`;
+}
+
 module.exports = {
   formatDate,
   formatTime,
@@ -183,4 +297,8 @@ module.exports = {
   calculateLayover,
   getLayoverText,
   formatInTimezone,
+  validateTimezone,
+  getUTCDateParts,
+  formatDateForInput,
+  formatTimeForInput,
 };

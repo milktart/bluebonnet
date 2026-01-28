@@ -12,6 +12,7 @@ import '../common-handlers.js'; // Register common event handlers
 
 // Import shared modules
 import '../datetime-formatter.js';
+import '../form-utilities.js';
 import '../time-input-formatter.js';
 import '../main.js';
 import '../notifications.js';

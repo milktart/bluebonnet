@@ -3,7 +3,6 @@ const express = require('express');
 const session = require('express-session');
 const RedisStore = require('connect-redis').default;
 const passport = require('passport');
-const methodOverride = require('method-override');
 const compression = require('compression');
 const cors = require('cors');
 const path = require('path');
@@ -63,7 +62,6 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(methodOverride('_method'));
 
 // Session configuration
 // Initialize session store (Redis if available, otherwise memory store)
@@ -142,11 +140,6 @@ try {
 function getBundle(name) {
   return bundleManifest[name] || `/js/entries/${name}.js`;
 }
-
-// Sidebar content middleware
-const { setSidebarFlag } = require('./middleware/sidebarContent');
-
-app.use(setSidebarFlag);
 
 // Test endpoint to check bundle files (for debugging)
 app.get('/debug/bundles', (req, res) => {

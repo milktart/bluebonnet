@@ -1,6 +1,5 @@
 const { Event, Trip, ItemTrip } = require('../models');
 const logger = require('../utils/logger');
-const itemCompanionService = require('../services/itemCompanionService');
 const itemTripService = require('../services/itemTripService');
 const { sendAsyncOrRedirect } = require('../utils/asyncResponseHandler');
 const {
@@ -11,6 +10,7 @@ const {
 } = require('./helpers/resourceController');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
+const { finalizItemCreation } = require('./helpers/itemFactory');
 
 exports.createEvent = async (req, res) => {
   try {
@@ -77,27 +77,14 @@ exports.createEvent = async (req, res) => {
       isConfirmed: isConfirmed === 'true' || isConfirmed === true || isConfirmed === 'on',
     });
 
-    // Add event to trip via ItemTrip junction table
-    if (tripId) {
-      try {
-        await itemTripService.addItemToTrip('event', event.id, tripId, req.user.id);
-      } catch (e) {
-        logger.error('Error adding event to trip in ItemTrip:', e);
-      }
-    }
-
-    // Handle companions - unified method
-    try {
-      await itemCompanionService.handleItemCompanions(
-        'event',
-        event.id,
-        companions,
-        tripId,
-        req.user.id
-      );
-    } catch (e) {
-      logger.error('Error managing companions for event:', e);
-    }
+    // Add to trip and handle companions
+    await finalizItemCreation({
+      itemType: 'event',
+      item: event,
+      tripId,
+      userId: req.user.id,
+      companions,
+    });
 
     // Centralized async/redirect response handling
     return sendAsyncOrRedirect(req, res, {

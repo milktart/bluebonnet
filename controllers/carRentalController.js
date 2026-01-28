@@ -1,6 +1,5 @@
 const { CarRental, Trip, ItemTrip } = require('../models');
 const logger = require('../utils/logger');
-const itemCompanionService = require('../services/itemCompanionService');
 const itemTripService = require('../services/itemTripService');
 const { sendAsyncOrRedirect } = require('../utils/asyncResponseHandler');
 const {
@@ -14,6 +13,7 @@ const {
 const { utcToLocal } = require('../utils/timezoneHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
+const { finalizItemCreation } = require('./helpers/itemFactory');
 
 exports.createCarRental = async (req, res) => {
   try {
@@ -65,27 +65,14 @@ exports.createCarRental = async (req, res) => {
       userId: req.user.id,
     });
 
-    // Add car rental to trip via ItemTrip junction table
-    if (tripId) {
-      try {
-        await itemTripService.addItemToTrip('car_rental', carRental.id, tripId, req.user.id);
-      } catch (e) {
-        logger.error('Error adding car rental to trip in ItemTrip:', e);
-      }
-    }
-
-    // Handle companions - unified method
-    try {
-      await itemCompanionService.handleItemCompanions(
-        'car_rental',
-        carRental.id,
-        companions,
-        tripId,
-        req.user.id
-      );
-    } catch (e) {
-      logger.error('Error managing companions for car rental:', e);
-    }
+    // Add to trip and handle companions
+    await finalizItemCreation({
+      itemType: 'car_rental',
+      item: carRental,
+      tripId,
+      userId: req.user.id,
+      companions,
+    });
 
     // Centralized async/redirect response handling
     return sendAsyncOrRedirect(req, res, {

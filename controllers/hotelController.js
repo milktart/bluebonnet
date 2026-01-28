@@ -1,6 +1,5 @@
 const { Hotel, Trip, ItemTrip } = require('../models');
 const logger = require('../utils/logger');
-const itemCompanionService = require('../services/itemCompanionService');
 const itemTripService = require('../services/itemTripService');
 const { sendAsyncOrRedirect } = require('../utils/asyncResponseHandler');
 const {
@@ -12,6 +11,7 @@ const {
 } = require('./helpers/resourceController');
 const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
+const { finalizItemCreation } = require('./helpers/itemFactory');
 
 exports.createHotel = async (req, res) => {
   try {
@@ -79,27 +79,14 @@ exports.createHotel = async (req, res) => {
       userId: req.user.id,
     });
 
-    // Add hotel to trip via ItemTrip junction table
-    if (tripId) {
-      try {
-        await itemTripService.addItemToTrip('hotel', hotel.id, tripId, req.user.id);
-      } catch (e) {
-        logger.error('Error adding hotel to trip in ItemTrip:', e);
-      }
-    }
-
-    // Handle companions - unified method
-    try {
-      await itemCompanionService.handleItemCompanions(
-        'hotel',
-        hotel.id,
-        companions,
-        tripId,
-        req.user.id
-      );
-    } catch (e) {
-      logger.error('Error managing companions for hotel:', e);
-    }
+    // Add to trip and handle companions
+    await finalizItemCreation({
+      itemType: 'hotel',
+      item: hotel,
+      tripId,
+      userId: req.user.id,
+      companions,
+    });
 
     // Centralized async/redirect response handling
     return sendAsyncOrRedirect(req, res, {

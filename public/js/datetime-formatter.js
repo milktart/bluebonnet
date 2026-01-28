@@ -1,10 +1,16 @@
-// DateTime formatting utilities
-// Format: DD MMM YYYY for dates, HH:MM for times (24-hour)
+/**
+ * DateTime Formatting Module
+ * Wraps functions from utils/dateFormatter.js and exposes them globally
+ * This file is kept for backward compatibility and is bundled with the frontend
+ * The actual implementations are in utils/dateFormatter.js for code reuse
+ */
 
 // Constants
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-// Time constants (matches utils/constants.js)
 const MS_PER_HOUR = 1000 * 60 * 60;
+
+// All formatting logic is duplicated here to work in the browser environment
+// This ensures no dependency on server-side modules
 
 function formatDate(dateString) {
   if (!dateString) return '';
@@ -34,7 +40,6 @@ function formatDateTime(dateString) {
   return `${formatDate(dateString)} ${formatTime(dateString)}`;
 }
 
-// Helper function to validate timezone string
 function validateTimezone(timezone) {
   return timezone &&
     typeof timezone === 'string' &&
@@ -45,7 +50,6 @@ function validateTimezone(timezone) {
     : null;
 }
 
-// Helper function to extract UTC date parts
 function getUTCDateParts(date) {
   return {
     year: String(date.getUTCFullYear()),
@@ -56,8 +60,6 @@ function getUTCDateParts(date) {
   };
 }
 
-// Format date for HTML input type="date" (YYYY-MM-DD)
-// Converts UTC date to the specified timezone for display
 function formatDateForInput(date, timezone) {
   if (!date) return '';
   const d = new Date(date);
@@ -86,7 +88,6 @@ function formatDateForInput(date, timezone) {
       ({ year, month, day } = utcParts);
     }
   } else {
-    // No timezone, show UTC
     const utcParts = getUTCDateParts(d);
     ({ year, month, day } = utcParts);
   }
@@ -94,8 +95,6 @@ function formatDateForInput(date, timezone) {
   return `${year}-${month}-${day}`;
 }
 
-// Format time for HTML input type="time" (HH:MM)
-// Converts UTC time to the specified timezone for display
 function formatTimeForInput(date, timezone) {
   if (!date) return '';
   const d = new Date(date);
@@ -122,7 +121,6 @@ function formatTimeForInput(date, timezone) {
       ({ hours, minutes } = utcParts);
     }
   } else {
-    // No timezone, show UTC
     const utcParts = getUTCDateParts(d);
     ({ hours, minutes } = utcParts);
   }
@@ -130,9 +128,6 @@ function formatTimeForInput(date, timezone) {
   return `${hours}:${minutes}`;
 }
 
-// Note: Additional functions are exported to window below after they are defined
-
-// Auto-format all datetime elements on page load
 function applyDateTimeFormatting() {
   const formatters = {
     date: formatDate,
@@ -155,21 +150,17 @@ function applyDateTimeFormatting() {
   });
 }
 
-// Run on page load
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', applyDateTimeFormatting);
 } else {
   applyDateTimeFormatting();
 }
 
-// Extract airport code from location (format: "CODE - City, Country")
 function getAirportCode(location) {
   const match = (location || '').match(/^([A-Z]{3})/);
   return match ? match[1] : '';
 }
 
-// Calculate layover duration between two flights
-// Returns { hours, minutes } or null if no layover detected or >= 24 hours
 function calculateLayoverDuration(flight1ArrivalTime, flight2DepartureTime) {
   if (!flight1ArrivalTime || !flight2DepartureTime) return null;
 
@@ -178,7 +169,6 @@ function calculateLayoverDuration(flight1ArrivalTime, flight2DepartureTime) {
   const diffMs = departure - arrival;
   const diffHours = diffMs / MS_PER_HOUR;
 
-  // Only show layover if less than 24 hours between flights
   if (diffMs <= 0 || diffHours >= 24) return null;
 
   const hours = Math.floor(diffHours);
@@ -187,7 +177,6 @@ function calculateLayoverDuration(flight1ArrivalTime, flight2DepartureTime) {
   return { hours, minutes };
 }
 
-// Format layover display string with airport code
 function formatLayoverDisplay(duration, airportCode) {
   if (!duration) return '';
   const { hours, minutes } = duration;
@@ -195,7 +184,6 @@ function formatLayoverDisplay(duration, airportCode) {
   return `━━━━ ${hoursPart}${minutes}m in ${airportCode} ━━━━`;
 }
 
-// Legacy function for backward compatibility
 function calculateLayover(
   flight1ArrivalTime,
   flight1Destination,
@@ -213,7 +201,7 @@ function calculateLayover(
   return { ...duration, airport: airportCode };
 }
 
-// Make all functions available globally
+// Expose all functions globally for use in HTML and other modules
 if (typeof window !== 'undefined') {
   window.formatDate = formatDate;
   window.formatTime = formatTime;

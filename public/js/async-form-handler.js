@@ -1,7 +1,15 @@
 /**
  * Async Form Handler
  * Handles async form submission for sidebar forms
+ *
+ * Global Functions Used (defined in form-utilities.js):
+ * - combineDateTimeFields
+ * - closeSecondarySidebar
+ * - refreshDashboardSidebar
+ * - refreshTripView
  */
+
+/* global combineDateTimeFields, closeSecondarySidebar, refreshDashboardSidebar, refreshTripView */
 
 function setupAsyncFormSubmission(formId) {
   const form = document.getElementById(formId);
@@ -33,47 +41,8 @@ function setupAsyncFormSubmission(formId) {
     const formData = new FormData(form);
     const data = Object.fromEntries(formData);
 
-    // Combine date and time fields for flight, hotel, transportation, and car rental forms
-    if (data.departureDate && data.departureTime && !data.departureDateTime) {
-      data.departureDateTime = `${data.departureDate}T${data.departureTime}`;
-      delete data.departureDate;
-      delete data.departureTime;
-    }
-    if (data.arrivalDate && data.arrivalTime && !data.arrivalDateTime) {
-      data.arrivalDateTime = `${data.arrivalDate}T${data.arrivalTime}`;
-      delete data.arrivalDate;
-      delete data.arrivalTime;
-    }
-    if (data.checkInDate && data.checkInTime && !data.checkInDateTime) {
-      data.checkInDateTime = `${data.checkInDate}T${data.checkInTime}`;
-      delete data.checkInDate;
-      delete data.checkInTime;
-    }
-    if (data.checkOutDate && data.checkOutTime && !data.checkOutDateTime) {
-      data.checkOutDateTime = `${data.checkOutDate}T${data.checkOutTime}`;
-      delete data.checkOutDate;
-      delete data.checkOutTime;
-    }
-    if (data.pickupDate && data.pickupTime && !data.pickupDateTime) {
-      data.pickupDateTime = `${data.pickupDate}T${data.pickupTime}`;
-      delete data.pickupDate;
-      delete data.pickupTime;
-    }
-    if (data.dropoffDate && data.dropoffTime && !data.dropoffDateTime) {
-      data.dropoffDateTime = `${data.dropoffDate}T${data.dropoffTime}`;
-      delete data.dropoffDate;
-      delete data.dropoffTime;
-    }
-    if (data.startDate && data.startTime && !data.startDateTime) {
-      data.startDateTime = `${data.startDate}T${data.startTime}`;
-      delete data.startDate;
-      delete data.startTime;
-    }
-    if (data.endDate && data.endTime && !data.endDateTime) {
-      data.endDateTime = `${data.endDate}T${data.endTime}`;
-      delete data.endDate;
-      delete data.endTime;
-    }
+    // Combine all date and time fields using consolidated utility
+    combineDateTimeFields(data);
 
     const { action } = form;
     const isUpdate =

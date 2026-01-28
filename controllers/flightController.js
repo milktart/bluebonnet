@@ -1,9 +1,9 @@
 const { Flight, Trip, VoucherAttachment, Voucher, ItemTrip } = require('../models');
 const logger = require('../utils/logger');
 const airportService = require('../services/airportService');
-const { utcToLocal } = require('../utils/timezoneHelper');
-const itemTripService = require('../services/itemTripService');
 const itemCompanionService = require('../services/itemCompanionService');
+const itemTripService = require('../services/itemTripService');
+const { utcToLocal } = require('../utils/timezoneHelper');
 const { sendAsyncOrRedirect } = require('../utils/asyncResponseHandler');
 const { combineDateTimeFields, sanitizeTimezones } = require('../utils/dateTimeParser');
 const {
@@ -15,6 +15,7 @@ const {
 } = require('./helpers/resourceController');
 const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
+const { finalizItemCreation } = require('./helpers/itemFactory');
 
 exports.searchAirports = async (req, res) => {
   try {
@@ -163,23 +164,14 @@ exports.createFlight = async (req, res) => {
       seat,
     });
 
-    // Add flight to trip via ItemTrip junction table
-    if (tripId) {
-      try {
-        await itemTripService.addItemToTrip('flight', flight.id, tripId, req.user.id);
-      } catch (e) {
-        // Don't fail the flight creation due to ItemTrip errors
-      }
-    }
-
-    // Handle companions - unified method
-    await itemCompanionService.handleItemCompanions(
-      'flight',
-      flight.id,
-      companions,
+    // Add to trip and handle companions
+    await finalizItemCreation({
+      itemType: 'flight',
+      item: flight,
       tripId,
-      req.user.id
-    );
+      userId: req.user.id,
+      companions,
+    });
 
     // Centralized async/redirect response handling
     return sendAsyncOrRedirect(req, res, {

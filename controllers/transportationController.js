@@ -1,8 +1,7 @@
 const { Transportation, Trip, ItemTrip } = require('../models');
 const logger = require('../utils/logger');
-const { utcToLocal } = require('../utils/timezoneHelper');
-const itemCompanionService = require('../services/itemCompanionService');
 const itemTripService = require('../services/itemTripService');
+const { utcToLocal } = require('../utils/timezoneHelper');
 const { sendAsyncOrRedirect } = require('../utils/asyncResponseHandler');
 const {
   verifyTripOwnership,
@@ -13,6 +12,7 @@ const {
 } = require('./helpers/resourceController');
 const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
+const { finalizItemCreation } = require('./helpers/itemFactory');
 
 exports.createTransportation = async (req, res) => {
   try {
@@ -67,32 +67,14 @@ exports.createTransportation = async (req, res) => {
       seat,
     });
 
-    // Add transportation to trip via ItemTrip junction table
-    if (tripId) {
-      try {
-        await itemTripService.addItemToTrip(
-          'transportation',
-          transportation.id,
-          tripId,
-          req.user.id
-        );
-      } catch (e) {
-        logger.error('Error adding transportation to trip in ItemTrip:', e);
-      }
-    }
-
-    // Handle companions - unified method
-    try {
-      await itemCompanionService.handleItemCompanions(
-        'transportation',
-        transportation.id,
-        companions,
-        tripId,
-        req.user.id
-      );
-    } catch (e) {
-      logger.error('Error managing companions for transportation:', e);
-    }
+    // Add to trip and handle companions
+    await finalizItemCreation({
+      itemType: 'transportation',
+      item: transportation,
+      tripId,
+      userId: req.user.id,
+      companions,
+    });
 
     // Centralized async/redirect response handling
     return sendAsyncOrRedirect(req, res, {

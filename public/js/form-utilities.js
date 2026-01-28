@@ -81,6 +81,57 @@ function initializeTimezoneInference(locationFieldId, timezoneFieldId) {
 }
 
 /**
+ * Generic timezone inference helper
+ * Fetches timezone from geocoding API for a given location
+ * @private
+ */
+async function inferTimezoneFromLocation(location) {
+  if (!location || location.trim().length === 0) return null;
+
+  try {
+    const response = await fetch(`/api/v1/geocode?address=${encodeURIComponent(location)}`);
+    if (response.ok) {
+      const data = await response.json();
+      return data.timezone || null;
+    }
+  } catch (error) {
+    // Silently fail - timezone is not critical
+  }
+  return null;
+}
+
+/**
+ * Setup timezone inference for a location/timezone field pair
+ * @private
+ */
+function setupSingleTimezoneInference(locationFieldId, timezoneFieldId) {
+  const locationInput = document.getElementById(locationFieldId);
+  const timezoneField = document.getElementById(timezoneFieldId);
+
+  if (!locationInput || !timezoneField) return;
+
+  // Infer timezone on initial load if location is present and timezone is empty
+  const initialLocation = locationInput.value;
+  if (initialLocation && initialLocation.trim().length > 0) {
+    if (!timezoneField.value || timezoneField.value === '') {
+      inferTimezoneFromLocation(initialLocation).then((tz) => {
+        if (tz) timezoneField.value = tz;
+      });
+    }
+  }
+
+  // Debounce blur events to avoid too many API calls
+  let timeoutId;
+  locationInput.addEventListener('blur', function () {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(async () => {
+      const tz = await inferTimezoneFromLocation(this.value);
+      if (tz) timezoneField.value = tz;
+    }, 500);
+  });
+}
+
+/**
  * Initialize timezone inference for separate origin and destination fields
  * Used for flights and transportation where origin and destination have separate timezone fields
  *
@@ -95,79 +146,59 @@ function initializeOriginDestTimezoneInference(
   originTimezoneFieldId,
   destTimezoneFieldId
 ) {
-  const originInput = document.getElementById(originFieldId);
-  const destinationInput = document.getElementById(destinationFieldId);
-  const originTimezoneField = document.getElementById(originTimezoneFieldId);
-  const destTimezoneField = document.getElementById(destTimezoneFieldId);
+  // Setup inference for origin
+  setupSingleTimezoneInference(originFieldId, originTimezoneFieldId);
 
-  if (!originInput || !originTimezoneField) return;
-
-  async function inferAndUpdateOriginTimezone(location) {
-    if (!location || location.trim().length === 0) return;
-
-    try {
-      const response = await fetch(`/api/v1/geocode?address=${encodeURIComponent(location)}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.timezone) {
-          originTimezoneField.value = data.timezone;
-        }
-      }
-    } catch (error) {
-      // Silently fail
-    }
+  // Setup inference for destination
+  if (destinationFieldId && destTimezoneFieldId) {
+    setupSingleTimezoneInference(destinationFieldId, destTimezoneFieldId);
   }
+}
 
-  // Infer origin timezone on initial load if location is present and timezone is empty
-  const initialOrigin = originInput.value;
-  if (initialOrigin && initialOrigin.trim().length > 0) {
-    if (!originTimezoneField.value || originTimezoneField.value === '') {
-      inferAndUpdateOriginTimezone(initialOrigin);
+/**
+ * Combine separate date and time fields into datetime strings
+ * Removes the original date/time fields after combining
+ *
+ * @param {Object} data - Form data object
+ * @param {Array<string>} fieldPairs - Array of field pair prefixes
+ *   Each prefix will look for {prefix}Date and {prefix}Time
+ *   and create {prefix}DateTime
+ *   E.g., 'departure' creates departureDateTime from departureDate + departureTime
+ * @returns {Object} - Modified data object with datetime fields and original date/time fields removed
+ *
+ * @example
+ * combineDateTimeFields(data, ['departure', 'arrival'])
+ * // Combines departureDate + departureTime into departureDateTime
+ * // Combines arrivalDate + arrivalTime into arrivalDateTime
+ */
+function combineDateTimeFields(data, fieldPairs = []) {
+  const defaultPairs = [
+    'departure',
+    'arrival',
+    'checkIn',
+    'checkOut',
+    'pickup',
+    'dropoff',
+    'start',
+    'end',
+  ];
+
+  const pairs = fieldPairs.length > 0 ? fieldPairs : defaultPairs;
+
+  pairs.forEach((prefix) => {
+    const dateKey = `${prefix}Date`;
+    const timeKey = `${prefix}Time`;
+    const dateTimeKey = `${prefix}DateTime`;
+
+    // Only combine if datetime field doesn't already exist
+    if (data[dateKey] && data[timeKey] && !data[dateTimeKey]) {
+      data[dateTimeKey] = `${data[dateKey]}T${data[timeKey]}`;
+      delete data[dateKey];
+      delete data[timeKey];
     }
-  }
-
-  let originTimeoutId;
-  originInput.addEventListener('blur', function () {
-    clearTimeout(originTimeoutId);
-    originTimeoutId = setTimeout(() => {
-      inferAndUpdateOriginTimezone(this.value);
-    }, 500);
   });
 
-  // Same for destination
-  if (!destinationInput || !destTimezoneField) return;
-
-  async function inferAndUpdateDestTimezone(location) {
-    if (!location || location.trim().length === 0) return;
-
-    try {
-      const response = await fetch(`/api/v1/geocode?address=${encodeURIComponent(location)}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.timezone) {
-          destTimezoneField.value = data.timezone;
-        }
-      }
-    } catch (error) {
-      // Silently fail
-    }
-  }
-
-  // Infer destination timezone on initial load if location is present and timezone is empty
-  const initialDest = destinationInput.value;
-  if (initialDest && initialDest.trim().length > 0) {
-    if (!destTimezoneField.value || destTimezoneField.value === '') {
-      inferAndUpdateDestTimezone(initialDest);
-    }
-  }
-
-  let destTimeoutId;
-  destinationInput.addEventListener('blur', function () {
-    clearTimeout(destTimeoutId);
-    destTimeoutId = setTimeout(() => {
-      inferAndUpdateDestTimezone(this.value);
-    }, 500);
-  });
+  return data;
 }
 
 /**
@@ -250,6 +281,7 @@ if (typeof window !== 'undefined') {
   window.initializeDateSync = initializeDateSync;
   window.initializeTimezoneInference = initializeTimezoneInference;
   window.initializeOriginDestTimezoneInference = initializeOriginDestTimezoneInference;
+  window.combineDateTimeFields = combineDateTimeFields;
   window.ensureTimezoneBeforeSubmit = ensureTimezoneBeforeSubmit;
   window.initializeFormOnLoad = initializeFormOnLoad;
   window.displayValidationErrors = displayValidationErrors;
@@ -262,6 +294,7 @@ if (typeof module !== 'undefined' && module.exports) {
     initializeDateSync,
     initializeTimezoneInference,
     initializeOriginDestTimezoneInference,
+    combineDateTimeFields,
     ensureTimezoneBeforeSubmit,
     initializeFormOnLoad,
     displayValidationErrors,
