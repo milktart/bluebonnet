@@ -7,7 +7,7 @@ const { getMyCompanionsQuery, getMyCompanionsWhere } = require('../utils/compani
 const { generateCompanionName } = require('../utils/companionNameHelper');
 const { isAjaxRequest } = require('../middleware/ajaxDetection');
 
-// Get all companions for current user
+// Get all companions for current user (consolidated from listCompanions, getCompanionsJson, listCompanionsSidebar)
 exports.listCompanions = async (req, res) => {
   try {
     const companions = await TravelCompanion.findAll(getMyCompanionsQuery(req.user.id));
@@ -29,43 +29,8 @@ exports.listCompanions = async (req, res) => {
   }
 };
 
-// Get companions list sidebar content (AJAX)
-exports.listCompanionsSidebar = async (req, res) => {
-  try {
-    const companions = await TravelCompanion.findAll(getMyCompanionsQuery(req.user.id));
-
-    res.json({ success: true, companions });
-  } catch (error) {
-    logger.error(error);
-    res
-      .status(500)
-      .send(
-        '<div class="p-4"><p class="text-red-600">Error loading companions. Please try again.</p></div>'
-      );
-  }
-};
-
-// Get companions as JSON (for sidebar/dashboard display)
-exports.getCompanionsJson = async (req, res) => {
-  try {
-    const companions = await TravelCompanion.findAll(getMyCompanionsQuery(req.user.id));
-
-    res.json({
-      success: true,
-      companions: companions.map((c) => ({
-        id: c.id,
-        name: c.name,
-        email: c.email,
-        phone: c.phone,
-        linkedAccount: c.linkedAccount,
-        createdAt: c.createdAt,
-      })),
-    });
-  } catch (error) {
-    logger.error(error);
-    res.status(500).json({ success: false, error: 'Error loading companions' });
-  }
-};
+// Alias for backward compatibility
+exports.getCompanionsJson = exports.listCompanions;
 
 // Get all companions with bidirectional relationship info
 // Returns both companions created by user AND companion profiles where user was added

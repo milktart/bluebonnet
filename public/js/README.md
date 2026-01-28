@@ -27,7 +27,7 @@ This directory contains consolidated, optimized JavaScript modules using ES6 mod
 
 ```html
 <script type="module">
-  import { initializeMap, setupTimelineHoverEffects } from '/js/maps.js';
+  import { initializeMap } from '/js/maps.js';
   import { initializeNotifications } from '/js/notifications.js';
   import { CompanionSelector, ItemCompanionLoader } from '/js/companions.js';
 
@@ -67,7 +67,6 @@ All modules export to the global `window` object for backward compatibility:
 export {
   initializeMap,
   initOverviewMap,
-  setupTimelineHoverEffects,
   highlightMapMarker,
   unhighlightMapMarker,
   calculateDistance,

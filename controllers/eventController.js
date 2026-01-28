@@ -11,6 +11,8 @@ const {
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
 const { finalizItemCreation } = require('./helpers/itemFactory');
+const { formatDateForInput, formatTimeForInput } = require('../utils/dateFormatter');
+const { ITEM_TYPE_EVENT } = require('../constants/companionConstants');
 
 exports.createEvent = async (req, res) => {
   try {
@@ -79,7 +81,7 @@ exports.createEvent = async (req, res) => {
 
     // Add to trip and handle companions
     await finalizItemCreation({
-      itemType: 'event',
+      itemType: ITEM_TYPE_EVENT,
       item: event,
       tripId,
       userId: req.user.id,
@@ -370,24 +372,7 @@ exports.getEventEditForm = async (req, res) => {
       return res.status(404).send('<p class="text-red-600">Event not found</p>');
     }
 
-    // Format dates for input fields (YYYY-MM-DD format, use UTC methods to avoid timezone conversion)
-    const formatDateForInput = (date) => {
-      if (!date) return '';
-      const d = new Date(date);
-      const year = d.getUTCFullYear();
-      const month = String(d.getUTCMonth() + 1).padStart(2, '0');
-      const day = String(d.getUTCDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
-
-    const formatTimeForInput = (date) => {
-      if (!date) return '';
-      const d = new Date(date);
-      const hours = String(d.getUTCHours()).padStart(2, '0');
-      const minutes = String(d.getUTCMinutes()).padStart(2, '0');
-      return `${hours}:${minutes}`;
-    };
-
+    // Format dates for input fields using shared dateFormatter utility
     const startDate = formatDateForInput(event.startDateTime);
     const startTime = formatTimeForInput(event.startDateTime);
     const endDate = formatDateForInput(event.endDateTime);
@@ -452,24 +437,7 @@ exports.getEditForm = async (req, res) => {
       return res.status(403).send('Event not found');
     }
 
-    // Format dates for input fields (YYYY-MM-DD format, use UTC methods to avoid timezone conversion)
-    const formatDateForInput = (date) => {
-      if (!date) return '';
-      const d = new Date(date);
-      const year = d.getUTCFullYear();
-      const month = String(d.getUTCMonth() + 1).padStart(2, '0');
-      const day = String(d.getUTCDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
-
-    const formatTimeForInput = (date) => {
-      if (!date) return '';
-      const d = new Date(date);
-      const hours = String(d.getUTCHours()).padStart(2, '0');
-      const minutes = String(d.getUTCMinutes()).padStart(2, '0');
-      return `${hours}:${minutes}`;
-    };
-
+    // Format dates for input fields using shared dateFormatter utility
     const startDate = formatDateForInput(event.startDateTime);
     const startTime = formatTimeForInput(event.startDateTime);
     const endDate = formatDateForInput(event.endDateTime);
@@ -494,7 +462,7 @@ exports.getEditForm = async (req, res) => {
       const itemTrips = await ItemTrip.findAll({
         where: {
           itemId: event.id,
-          itemType: 'event',
+          itemType: ITEM_TYPE_EVENT,
         },
         attributes: ['tripId'],
       });

@@ -526,19 +526,6 @@ function initOverviewMap(tripData, mapElementId = 'tripMap', isPast = false) {
   });
 }
 
-/**
- * DEPRECATED: setupTimelineHoverEffects was replaced by better implementations
- *
- * This function has been replaced by:
- * - dashboard-sidebar-content.ejs: highlightItemOnMap() and setupTripHover()
- * - These use stable itemType/itemId lookup instead of volatile segment indices
- *
- * This stub exists only for backward compatibility with old code that may call it.
- * Remove this after verifying no other code relies on it.
- */
-function setupTimelineHoverEffects(map) {
-  // No-op: hover effects are now handled by dashboard-sidebar-content.ejs
-}
 
 // ============================================================================
 // INTERACTIVE MAP ANIMATIONS (from trip-view-map.js)

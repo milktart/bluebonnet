@@ -312,11 +312,7 @@ async function refreshMapIfPresent() {
     try {
       const map = await initOverviewMap(tripData, 'tripMap');
       window.currentMap = map;
-
-      // Setup hover effects if function exists
-      if (typeof setupTimelineHoverEffects === 'function') {
-        setupTimelineHoverEffects(map);
-      }
+      // Timeline hover effects are handled by dashboard-sidebar-content.ejs
     } catch (error) {
       // Error reinitializing map - silently ignore
     }

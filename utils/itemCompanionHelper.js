@@ -113,14 +113,6 @@ exports.removeItemCompanions = async (itemType, itemId) => {
 };
 
 /**
- * Get companions as "not attending" if they're on the trip but not on this item
- */
-exports.getNotAttendingCompanions = async (itemType, itemId, tripId) => {
-  const allCompanions = await this.getAllCompanionsForItem(itemType, itemId, tripId);
-  return allCompanions.filter((c) => c.status === 'not_attending' || c.inheritedFromTrip);
-};
-
-/**
  * DEPRECATED: Use CompanionCascadeManager service instead
  * This functionality has been moved to services/CompanionCascadeManager.js
  * - cascadeAddToAllItems() - replaces addCompanionToAllItems()

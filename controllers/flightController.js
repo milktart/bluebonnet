@@ -16,6 +16,7 @@ const {
 const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 const { finalizItemCreation } = require('./helpers/itemFactory');
+const { ITEM_TYPE_FLIGHT } = require('../constants/companionConstants');
 
 exports.searchAirports = async (req, res) => {
   try {
@@ -166,7 +167,7 @@ exports.createFlight = async (req, res) => {
 
     // Add to trip and handle companions
     await finalizItemCreation({
-      itemType: 'flight',
+      itemType: ITEM_TYPE_FLIGHT,
       item: flight,
       tripId,
       userId: req.user.id,
@@ -612,7 +613,7 @@ exports.getEditForm = async (req, res) => {
       const itemTrips = await ItemTrip.findAll({
         where: {
           itemId: flight.id,
-          itemType: 'flight',
+          itemType: ITEM_TYPE_FLIGHT,
         },
         attributes: ['tripId'],
       });

@@ -1,22 +1,35 @@
 <script lang="ts">
+  import { utcToLocalTimeString } from '$lib/utils/timezoneUtils';
+
   export let label: string;
   export let value: string = '';
   export let required: boolean = false;
   export let error: string | null = null;
   export let minDate: string | null = null;
+  export let timezone: string | null = null; // IANA timezone or UTC offset
 
   let dateValue: string = '';
   let timeValue: string = '';
 
-  // Parse ISO string into date and time components
+  // Parse ISO string into date and time components using timezone-aware conversion
   $: {
     if (value) {
       try {
+        // Convert UTC datetime to local timezone
+        const localDateTime = timezone
+          ? utcToLocalTimeString(value, timezone)
+          : new Date(value).toISOString().substring(0, 16); // fallback to UTC
+
+        if (localDateTime) {
+          const [date, time] = localDateTime.split('T');
+          dateValue = date;
+          timeValue = time;
+        }
+      } catch (e) {
+        // Invalid date, fallback to direct parsing
         const date = new Date(value);
         dateValue = date.toISOString().split('T')[0];
         timeValue = date.toISOString().split('T')[1]?.substring(0, 5) || '';
-      } catch (e) {
-        // Invalid date, ignore
       }
     }
   }
@@ -34,8 +47,9 @@
   function updateValue() {
     if (dateValue && timeValue) {
       try {
-        // Create ISO string from date and time
-        value = `${dateValue}T${timeValue}:00.000Z`;
+        // Create datetime string in local timezone, which will be converted to UTC by parent
+        // The parent component should handle timezone conversion when saving
+        value = `${dateValue}T${timeValue}`;
       } catch (e) {
         // Invalid input, ignore
       }

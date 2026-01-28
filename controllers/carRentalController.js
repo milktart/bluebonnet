@@ -14,6 +14,7 @@ const { utcToLocal } = require('../utils/timezoneHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
 const { finalizItemCreation } = require('./helpers/itemFactory');
+const { ITEM_TYPE_CAR_RENTAL } = require('../constants/companionConstants');
 
 exports.createCarRental = async (req, res) => {
   try {
@@ -67,7 +68,7 @@ exports.createCarRental = async (req, res) => {
 
     // Add to trip and handle companions
     await finalizItemCreation({
-      itemType: 'car_rental',
+      itemType: ITEM_TYPE_CAR_RENTAL,
       item: carRental,
       tripId,
       userId: req.user.id,
@@ -382,7 +383,7 @@ exports.getEditForm = async (req, res) => {
       const itemTrips = await ItemTrip.findAll({
         where: {
           itemId: carRental.id,
-          itemType: 'car_rental',
+          itemType: ITEM_TYPE_CAR_RENTAL,
         },
         attributes: ['tripId'],
       });

@@ -13,6 +13,7 @@ const {
 const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 const { finalizItemCreation } = require('./helpers/itemFactory');
+const { ITEM_TYPE_TRANSPORTATION } = require('../constants/companionConstants');
 
 exports.createTransportation = async (req, res) => {
   try {
@@ -69,7 +70,7 @@ exports.createTransportation = async (req, res) => {
 
     // Add to trip and handle companions
     await finalizItemCreation({
-      itemType: 'transportation',
+      itemType: ITEM_TYPE_TRANSPORTATION,
       item: transportation,
       tripId,
       userId: req.user.id,
@@ -413,7 +414,7 @@ exports.getEditForm = async (req, res) => {
       const itemTrips = await ItemTrip.findAll({
         where: {
           itemId: transportation.id,
-          itemType: 'transportation',
+          itemType: ITEM_TYPE_TRANSPORTATION,
         },
         attributes: ['tripId'],
       });

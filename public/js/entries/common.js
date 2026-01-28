@@ -11,7 +11,7 @@ import { initializeEventDelegation } from '../event-delegation.js';
 import '../common-handlers.js'; // Register common event handlers
 
 // Import shared modules
-import '../datetime-formatter.js';
+// datetime-formatter removed - using backend dateFormatter utility instead
 import '../form-utilities.js';
 import '../time-input-formatter.js';
 import '../main.js';

@@ -14,6 +14,13 @@ const {
   sequelize,
 } = require('../models');
 const importPreviewProcessor = require('../utils/importPreviewProcessor');
+const {
+  ITEM_TYPE_FLIGHT,
+  ITEM_TYPE_HOTEL,
+  ITEM_TYPE_EVENT,
+  ITEM_TYPE_CAR_RENTAL,
+  ITEM_TYPE_TRANSPORTATION,
+} = require('../constants/companionConstants');
 
 exports.updateProfile = async (req, res) => {
   try {
@@ -925,7 +932,7 @@ exports.importSelectedData = async (req, res) => {
             for (const flight of importedFlights) {
               for (const tripCompanion of tripCompanions) {
                 itemsToCompanion.push({
-                  itemType: 'flight',
+                  itemType: ITEM_TYPE_FLIGHT,
                   itemId: flight.id,
                   companionId: tripCompanion.companionId,
                   addedBy: userId,
@@ -949,7 +956,7 @@ exports.importSelectedData = async (req, res) => {
             for (const hotel of importedHotels) {
               for (const tripCompanion of tripCompanions) {
                 itemsToCompanion.push({
-                  itemType: 'hotel',
+                  itemType: ITEM_TYPE_HOTEL,
                   itemId: hotel.id,
                   companionId: tripCompanion.companionId,
                   addedBy: userId,
@@ -973,7 +980,7 @@ exports.importSelectedData = async (req, res) => {
             for (const trans of importedTransportation) {
               for (const tripCompanion of tripCompanions) {
                 itemsToCompanion.push({
-                  itemType: 'transportation',
+                  itemType: ITEM_TYPE_TRANSPORTATION,
                   itemId: trans.id,
                   companionId: tripCompanion.companionId,
                   addedBy: userId,
@@ -997,7 +1004,7 @@ exports.importSelectedData = async (req, res) => {
             for (const carRental of importedCarRentals) {
               for (const tripCompanion of tripCompanions) {
                 itemsToCompanion.push({
-                  itemType: 'car_rental',
+                  itemType: ITEM_TYPE_CAR_RENTAL,
                   itemId: carRental.id,
                   companionId: tripCompanion.companionId,
                   addedBy: userId,
@@ -1021,7 +1028,7 @@ exports.importSelectedData = async (req, res) => {
             for (const event of importedEvents) {
               for (const tripCompanion of tripCompanions) {
                 itemsToCompanion.push({
-                  itemType: 'event',
+                  itemType: ITEM_TYPE_EVENT,
                   itemId: event.id,
                   companionId: tripCompanion.companionId,
                   addedBy: userId,
@@ -1067,7 +1074,7 @@ exports.importSelectedData = async (req, res) => {
             createdItemsByTripId[createdFlight.tripId] = [];
           }
           createdItemsByTripId[createdFlight.tripId].push({
-            itemType: 'flight',
+            itemType: ITEM_TYPE_FLIGHT,
             itemId: createdFlight.id,
           });
         }
@@ -1094,7 +1101,7 @@ exports.importSelectedData = async (req, res) => {
             createdItemsByTripId[createdHotel.tripId] = [];
           }
           createdItemsByTripId[createdHotel.tripId].push({
-            itemType: 'hotel',
+            itemType: ITEM_TYPE_HOTEL,
             itemId: createdHotel.id,
           });
         }
@@ -1121,7 +1128,7 @@ exports.importSelectedData = async (req, res) => {
             createdItemsByTripId[createdTrans.tripId] = [];
           }
           createdItemsByTripId[createdTrans.tripId].push({
-            itemType: 'transportation',
+            itemType: ITEM_TYPE_TRANSPORTATION,
             itemId: createdTrans.id,
           });
         }
@@ -1148,7 +1155,7 @@ exports.importSelectedData = async (req, res) => {
             createdItemsByTripId[createdCarRental.tripId] = [];
           }
           createdItemsByTripId[createdCarRental.tripId].push({
-            itemType: 'car_rental',
+            itemType: ITEM_TYPE_CAR_RENTAL,
             itemId: createdCarRental.id,
           });
         }
@@ -1175,7 +1182,7 @@ exports.importSelectedData = async (req, res) => {
             createdItemsByTripId[createdEvent.tripId] = [];
           }
           createdItemsByTripId[createdEvent.tripId].push({
-            itemType: 'event',
+            itemType: ITEM_TYPE_EVENT,
             itemId: createdEvent.id,
           });
         }
@@ -1321,7 +1328,7 @@ exports.importSelectedData = async (req, res) => {
               );
               itemsInTrip.push(
                 ...flights.map((f) => ({
-                  itemType: 'flight',
+                  itemType: ITEM_TYPE_FLIGHT,
                   itemId: f.id,
                 }))
               );
@@ -1335,7 +1342,7 @@ exports.importSelectedData = async (req, res) => {
               );
               itemsInTrip.push(
                 ...hotels.map((h) => ({
-                  itemType: 'hotel',
+                  itemType: ITEM_TYPE_HOTEL,
                   itemId: h.id,
                 }))
               );
@@ -1349,7 +1356,7 @@ exports.importSelectedData = async (req, res) => {
               );
               itemsInTrip.push(
                 ...transportations.map((t) => ({
-                  itemType: 'transportation',
+                  itemType: ITEM_TYPE_TRANSPORTATION,
                   itemId: t.id,
                 }))
               );
@@ -1363,7 +1370,7 @@ exports.importSelectedData = async (req, res) => {
               );
               itemsInTrip.push(
                 ...carRentals.map((c) => ({
-                  itemType: 'car_rental',
+                  itemType: ITEM_TYPE_CAR_RENTAL,
                   itemId: c.id,
                 }))
               );
@@ -1377,7 +1384,7 @@ exports.importSelectedData = async (req, res) => {
               );
               itemsInTrip.push(
                 ...events.map((e) => ({
-                  itemType: 'event',
+                  itemType: ITEM_TYPE_EVENT,
                   itemId: e.id,
                 }))
               );

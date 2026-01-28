@@ -94,4 +94,112 @@ module.exports = {
     }),
     handleValidationErrors,
   ],
+
+  validateFlight: [
+    body('flightNumber').notEmpty().trim().withMessage('Flight number is required'),
+    body('airline').optional().trim(),
+    body('origin').notEmpty().trim().withMessage('Origin is required'),
+    body('destination').notEmpty().trim().withMessage('Destination is required'),
+    body('departureDate').notEmpty().withMessage('Departure date is required'),
+    body('departureTime').notEmpty().withMessage('Departure time is required'),
+    body('arrivalDate').notEmpty().withMessage('Arrival date is required'),
+    body('arrivalTime').notEmpty().withMessage('Arrival time is required'),
+    body('confirmationNumber').optional().trim(),
+    body('seatNumber').optional().trim(),
+    handleValidationErrors,
+  ],
+
+  validateHotel: [
+    body('name')
+      .optional()
+      .trim()
+      .custom((value, { req }) => {
+        // Accept either 'name' or 'hotelName' field
+        const hotelName = value || req.body.hotelName;
+        if (!hotelName || hotelName.trim() === '') {
+          throw new Error('Hotel name is required');
+        }
+        return true;
+      }),
+    body('hotelName')
+      .optional()
+      .trim()
+      .custom((value, { req }) => {
+        // Accept either 'name' or 'hotelName' field
+        const name = value || req.body.name;
+        if (!name || name.trim() === '') {
+          throw new Error('Hotel name is required');
+        }
+        return true;
+      }),
+    body('address').notEmpty().trim().withMessage('Address is required'),
+    body('phone').optional().trim(),
+    body('checkInDate').notEmpty().withMessage('Check-in date is required'),
+    body('checkInTime').optional().trim(),
+    body('checkOutDate').notEmpty().withMessage('Check-out date is required'),
+    body('checkOutTime').optional().trim(),
+    body('confirmationNumber').optional().trim(),
+    body('roomNumber').optional().trim(),
+    handleValidationErrors,
+  ],
+
+  validateEvent: [
+    body('name').notEmpty().trim().withMessage('Event name is required'),
+    body('location').notEmpty().trim().withMessage('Location is required'),
+    body('startDate').notEmpty().withMessage('Start date is required'),
+    body('startTime').optional().trim(),
+    body('endDate').optional().trim(),
+    body('endTime').optional().trim(),
+    body('contactPhone').optional().trim(),
+    body('contactEmail').optional().isEmail().normalizeEmail().withMessage('Invalid contact email'),
+    body('description').optional().trim(),
+    handleValidationErrors,
+  ],
+
+  validateTransportation: [
+    body('method')
+      .optional()
+      .trim()
+      .custom((value, { req }) => {
+        // Accept either 'method' or 'type' field
+        const type = value || req.body.type;
+        if (!type || type.trim() === '') {
+          throw new Error('Transportation method is required');
+        }
+        return true;
+      }),
+    body('type')
+      .optional()
+      .trim()
+      .custom((value, { req }) => {
+        // Accept either 'method' or 'type' field
+        const method = value || req.body.method;
+        if (!method || method.trim() === '') {
+          throw new Error('Transportation method is required');
+        }
+        return true;
+      }),
+    body('origin').notEmpty().trim().withMessage('Origin is required'),
+    body('destination').notEmpty().trim().withMessage('Destination is required'),
+    body('departureDate').notEmpty().withMessage('Departure date is required'),
+    body('departureTime').optional().trim(),
+    body('arrivalDate').notEmpty().withMessage('Arrival date is required'),
+    body('arrivalTime').optional().trim(),
+    body('provider').optional().trim(),
+    body('confirmationNumber').optional().trim(),
+    handleValidationErrors,
+  ],
+
+  validateCarRental: [
+    body('company').notEmpty().trim().withMessage('Company is required'),
+    body('pickupLocation').notEmpty().trim().withMessage('Pickup location is required'),
+    body('dropoffLocation').notEmpty().trim().withMessage('Dropoff location is required'),
+    body('pickupDate').notEmpty().withMessage('Pickup date is required'),
+    body('pickupTime').optional().trim(),
+    body('dropoffDate').notEmpty().withMessage('Dropoff date is required'),
+    body('dropoffTime').optional().trim(),
+    body('vehicleType').optional().trim(),
+    body('confirmationNumber').optional().trim(),
+    handleValidationErrors,
+  ],
 };

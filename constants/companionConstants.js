@@ -5,16 +5,29 @@
 
 const { Flight, Hotel, Transportation, CarRental, Event } = require('../models');
 
+// Individual item type constants (use these instead of hardcoded strings)
+const ITEM_TYPE_FLIGHT = 'flight';
+const ITEM_TYPE_HOTEL = 'hotel';
+const ITEM_TYPE_TRANSPORTATION = 'transportation';
+const ITEM_TYPE_CAR_RENTAL = 'car_rental';
+const ITEM_TYPE_EVENT = 'event';
+
 // Item types that can have companions
-const ITEM_TYPES = ['flight', 'hotel', 'transportation', 'car_rental', 'event'];
+const ITEM_TYPES = [
+  ITEM_TYPE_FLIGHT,
+  ITEM_TYPE_HOTEL,
+  ITEM_TYPE_TRANSPORTATION,
+  ITEM_TYPE_CAR_RENTAL,
+  ITEM_TYPE_EVENT,
+];
 
 // Map of item type to Sequelize model
 const ITEM_TYPE_MAP = {
-  flight: Flight,
-  hotel: Hotel,
-  transportation: Transportation,
-  car_rental: CarRental,
-  event: Event,
+  [ITEM_TYPE_FLIGHT]: Flight,
+  [ITEM_TYPE_HOTEL]: Hotel,
+  [ITEM_TYPE_TRANSPORTATION]: Transportation,
+  [ITEM_TYPE_CAR_RENTAL]: CarRental,
+  [ITEM_TYPE_EVENT]: Event,
 };
 
 // Default permission values
@@ -31,8 +44,16 @@ const COMPANION_STATUS = {
 };
 
 module.exports = {
+  // Individual type constants
+  ITEM_TYPE_FLIGHT,
+  ITEM_TYPE_HOTEL,
+  ITEM_TYPE_TRANSPORTATION,
+  ITEM_TYPE_CAR_RENTAL,
+  ITEM_TYPE_EVENT,
+  // Collections
   ITEM_TYPES,
   ITEM_TYPE_MAP,
+  // Permissions and status
   PERMISSION_DEFAULTS,
   COMPANION_STATUS,
 };
