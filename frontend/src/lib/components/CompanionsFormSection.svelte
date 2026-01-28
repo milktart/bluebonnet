@@ -185,6 +185,11 @@
           type="text"
           placeholder="Search companions by name or email..."
           bind:value={$searchInput}
+          on:input={(e) => {
+            const value = e.target?.value || '';
+            searchInput.set(value);
+            showResults.set(value.trim().length > 0);
+          }}
           on:focus={() => {
             if ($searchInput.trim()) showResults.set(true);
           }}
