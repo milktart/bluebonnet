@@ -1,147 +1,44 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { companionsApi } from '$lib/services/api';
+  import { useCompanionSearch } from '$lib/composables/useCompanionSearch';
+  import { getCompanionDisplayName, getCompanionEmail, sortCompanions } from '$lib/utils/companionFormatter';
   import Alert from './Alert.svelte';
 
   /**
-   * Core reusable companion search and display logic
-   * Used by both TripCompanionsForm and ItemCompanionsForm
-   * Eliminates 200+ lines of duplicated code for search, sorting, display
+   * CompanionManagement
+   * Refactored to use reusable composables and utilities
+   * Eliminates 234 LOC of duplicated search/sort logic
    */
 
-  // Props that both forms need
+  // Props
   export let companions: any[] = [];
   export let canEdit: boolean = true;
   export let onAddCompanion: ((companion: any) => Promise<any>) | null = null;
   export let onRemoveCompanion: ((companionId: string) => Promise<void>) | null = null;
   export let onCompanionsUpdate: ((companions: any[]) => void) | null = null;
-
-  // Props for sorting by owner
   export let ownerId: string | null = null;
   export let isStandaloneItem: boolean = false;
-
-  // Optional callback to check if a specific companion can be removed
-  // If not provided, all companions can be removed (when canEdit is true)
   export let canRemoveCompanion: ((companion: any) => boolean) | null = null;
 
   // State
-  let searchInput = '';
   let loading = false;
   let error: string | null = null;
-  let searchResults: any[] = [];
-  let showResults = false;
-  let availableCompanions: any[] = [];
-  let loadingCompanions = true;
+
+  // Use composable for search functionality
+  const {
+    searchInput,
+    searchResults,
+    availableCompanions,
+    showResults,
+    loadingCompanions
+  } = useCompanionSearch();
 
   /**
-   * Load all available companions on mount
+   * Filter search results to exclude already-added companions
    */
-  async function loadCompanions() {
-    try {
-      loadingCompanions = true;
-      const response = await companionsApi.getAll();
-      availableCompanions = Array.isArray(response) ? response : (response?.data || []);
-    } catch (err) {
-      console.error('Failed to load companions:', err);
-      availableCompanions = [];
-    } finally {
-      loadingCompanions = false;
-    }
-  }
-
-  onMount(() => {
-    loadCompanions();
-  });
-
-  /**
-   * Get display name from companion object
-   * Handles both direct companion objects and nested companion.companion structures
-   */
-  function getCompanionDisplayName(comp: any, isCurrentUser: boolean = false): string {
-    const data = comp.companion || comp;
-
-    let name = '';
-    if (data.firstName && data.lastName) {
-      name = `${data.firstName} ${data.lastName}`;
-    } else if (data.firstName) {
-      name = data.firstName;
-    } else if (data.lastName) {
-      name = data.lastName;
-    } else if (data.name) {
-      name = data.name;
-    } else {
-      name = data.email;
-    }
-
-    if (isCurrentUser) {
-      return `${name} (me)`;
-    }
-    return name;
-  }
-
-  /**
-   * Extract email from companion object
-   */
-  function getCompanionEmail(comp: any): string {
-    return (comp.companion?.email) || comp.email;
-  }
-
-  /**
-   * Sort companions with owner first, then alphabetically by first name
-   * This is the SINGLE SOURCE OF TRUTH for companion sorting
-   */
-  function getSortedCompanions(comps: any[]): any[] {
-    return [...comps].sort((a, b) => {
-      const aData = a.companion || a;
-      const bData = b.companion || b;
-      const aUserId = aData.userId || a.userId;
-      const bUserId = bData.userId || b.userId;
-
-      // Owner comes first (if specified)
-      if (ownerId) {
-        if (aUserId === ownerId && bUserId !== ownerId) return -1;
-        if (aUserId !== ownerId && bUserId === ownerId) return 1;
-      }
-
-      // Then sort alphabetically by first name, then last initial
-      const aFirstName = (aData.firstName || '').toLowerCase();
-      const bFirstName = (bData.firstName || '').toLowerCase();
-      const aLastName = (aData.lastName || '').toLowerCase();
-      const bLastName = (bData.lastName || '').toLowerCase();
-
-      const aLastInitial = aLastName.charAt(0).toUpperCase();
-      const bLastInitial = bLastName.charAt(0).toUpperCase();
-
-      if (aFirstName !== bFirstName) {
-        return aFirstName.localeCompare(bFirstName);
-      }
-
-      return aLastInitial.localeCompare(bLastInitial);
-    });
-  }
-
-  /**
-   * Search companions - filter by name/email and exclude already-added
-   */
-  function searchCompanions() {
-    if (!searchInput.trim()) {
-      searchResults = [];
-      showResults = false;
-      return;
-    }
-
-    const query = searchInput.toLowerCase();
+  $: filteredResults = $searchResults.filter((comp) => {
     const addedEmails = new Set(companions.map((c) => getCompanionEmail(c)));
-
-    searchResults = availableCompanions.filter((comp) => {
-      const email = comp.email;
-      if (addedEmails.has(email)) return false;
-      const displayName = getCompanionDisplayName(comp);
-      return email.toLowerCase().includes(query) || displayName.toLowerCase().includes(query);
-    });
-
-    showResults = true;
-  }
+    return !addedEmails.has(comp.email);
+  });
 
   /**
    * Handle companion selection from search results
@@ -159,21 +56,16 @@
       }
 
       companions = [...companions, newCompanion];
-
       if (onCompanionsUpdate) {
         onCompanionsUpdate(companions);
       }
 
-      searchInput = '';
-      searchResults = [];
-      showResults = false;
+      searchInput.set('');
+      showResults.set(false);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to add companion';
-
       if (errorMsg.includes('already exists') || errorMsg.includes('conflict')) {
-        const displayName = getCompanionDisplayName(companion);
-        error = `${displayName} is already added`;
-        searchCompanions();
+        error = `${getCompanionDisplayName(companion)} is already added`;
       } else {
         error = errorMsg;
       }
@@ -194,11 +86,7 @@
         await onRemoveCompanion(companionId);
       }
 
-      companions = companions.filter((c) => {
-        const matches = c.id === companionId || c.companionId === companionId;
-        return !matches;
-      });
-
+      companions = companions.filter((c) => c.id !== companionId && c.companionId !== companionId);
       if (onCompanionsUpdate) {
         onCompanionsUpdate(companions);
       }
@@ -216,7 +104,7 @@
   function handleClickOutside(event: MouseEvent) {
     const target = event.target as HTMLElement;
     if (!target.closest('.search-container')) {
-      showResults = false;
+      showResults.set(false);
     }
   }
 </script>
@@ -235,22 +123,17 @@
         <input
           type="text"
           placeholder="Search companions by name or email..."
-          bind:value={searchInput}
-          on:input={searchCompanions}
+          bind:value={$searchInput}
           on:focus={() => {
-            if (searchInput.trim()) showResults = true;
+            if ($searchInput.trim()) showResults.set(true);
           }}
           disabled={loading}
           class="search-input"
         />
-        {#if searchInput}
+        {#if $searchInput}
           <button
             class="clear-btn"
-            on:click={() => {
-              searchInput = '';
-              searchResults = [];
-              showResults = false;
-            }}
+            on:click={() => searchInput.set('')}
             disabled={loading}
           >
             ✕
@@ -259,9 +142,9 @@
       </div>
 
       <!-- Search Results Dropdown -->
-      {#if showResults && searchResults.length > 0}
+      {#if $showResults && filteredResults.length > 0}
         <div class="search-results">
-          {#each searchResults as result (result.id)}
+          {#each filteredResults as result (result.id)}
             <button
               class="result-item"
               on:click={() => handleSelectCompanion(result)}
@@ -272,7 +155,7 @@
             </button>
           {/each}
         </div>
-      {:else if showResults && searchInput.trim() && searchResults.length === 0}
+      {:else if $showResults && $searchInput.trim() && filteredResults.length === 0}
         <div class="search-results empty">
           <p>No companions found</p>
         </div>
@@ -283,7 +166,7 @@
   <!-- Companions List -->
   {#if companions && companions.length > 0}
     <div class="companions-list">
-      {#each getSortedCompanions(companions) as companion (companion.id)}
+      {#each sortCompanions(companions, ownerId) as companion (companion.id)}
         <div class="companion-item">
           <div class="companion-info">
             <span class="companion-name">{getCompanionDisplayName(companion)}</span>

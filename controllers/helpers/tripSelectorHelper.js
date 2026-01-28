@@ -3,8 +3,9 @@
  * Handles fetching available trips, verifying edit access, and managing item-to-trip associations
  */
 
-const { Trip, Sequelize } = require('../../models');
+const { Trip, Sequelize, TravelCompanion, ItemCompanion } = require('../../models');
 const logger = require('../../utils/logger');
+const companionPermissionService = require('../../services/companionPermissionService');
 
 /**
  * Get all upcoming/in-progress trips for a user
@@ -59,7 +60,7 @@ async function getAvailableTrips(userId) {
  * Verify if a user has edit access to a specific trip
  * Edit access is granted to:
  * - Trip owner
- * - Companions with manage_travel permission
+ * - Users with full trip management permissions (via companionPermissionService)
  *
  * @param {string} tripId - Trip ID
  * @param {string} userId - User ID
@@ -69,17 +70,28 @@ async function verifyTripEditAccess(tripId, userId) {
   try {
     // Check if user is trip owner
     const trip = await Trip.findOne({
-      where: { id: tripId, userId },
+      where: { id: tripId },
+      attributes: ['userId'],
     });
 
-    if (trip) {
+    if (!trip) {
+      return false;
+    }
+
+    // User is owner
+    if (trip.userId === userId) {
       return true;
     }
 
-    // TODO: Check if user has manage_travel permission on the trip
-    // This would be implemented when companion permissions are available
+    // Check if user has full trip management permission from the trip owner
+    // This uses the companion permission system for full-access trip sharing
+    const hasPermission = await companionPermissionService.checkPermission(
+      userId,
+      trip.userId,
+      'manage'
+    );
 
-    return false;
+    return hasPermission;
   } catch (error) {
     logger.error('Error verifying trip edit access:', error);
     return false;
@@ -91,13 +103,14 @@ async function verifyTripEditAccess(tripId, userId) {
  * Edit access is granted to:
  * - Item owner
  * - Trip owner (if item is attached to a trip)
- * - Companions with edit permission on the item
+ * - Companions with edit permission (canEdit=true) on the item
  *
- * @param {Object} item - Item object with userId and tripId
+ * @param {Object} item - Item object with userId and tripId (itemType and id if checking companion)
  * @param {string} userId - User ID
+ * @param {string} itemType - Item type for companion lookup (e.g., 'flight', 'hotel')
  * @returns {Promise<boolean>} - True if user has edit access
  */
-async function verifyItemEditAccess(item, userId) {
+async function verifyItemEditAccess(item, userId, itemType = null) {
   try {
     // Check if user is item owner
     if (item.userId === userId) {
@@ -108,6 +121,7 @@ async function verifyItemEditAccess(item, userId) {
     if (item.tripId) {
       const trip = await Trip.findOne({
         where: { id: item.tripId, userId },
+        attributes: ['id'],
       });
 
       if (trip) {
@@ -115,8 +129,28 @@ async function verifyItemEditAccess(item, userId) {
       }
     }
 
-    // TODO: Check if user is a companion with edit permission on the item
-    // This would be implemented when companion permissions are available
+    // Check if user is a companion with edit permission on the item
+    // First, find if the user has a companion relationship with the item owner
+    if (item.userId && itemType && item.id) {
+      const itemCompanion = await ItemCompanion.findOne({
+        where: {
+          itemType,
+          itemId: item.id,
+          canEdit: true,
+        },
+        include: [
+          {
+            model: TravelCompanion,
+            as: 'companion',
+            where: { userId }, // Find the companion linked to current user
+          },
+        ],
+      });
+
+      if (itemCompanion) {
+        return true;
+      }
+    }
 
     return false;
   } catch (error) {

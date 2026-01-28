@@ -1,20 +1,41 @@
-const { Op } = require('sequelize');
-const { validationResult } = require('express-validator');
-const { TravelCompanion, User, CompanionPermission } = require('../models');
-const logger = require('../utils/logger');
-const apiResponse = require('../utils/apiResponse');
-const { getMyCompanionsQuery, getMyCompanionsWhere } = require('../utils/companionQueryHelper');
-const { generateCompanionName } = require('../utils/companionNameHelper');
-const { isAjaxRequest } = require('../middleware/ajaxDetection');
+import { Request, Response } from 'express';
+import { Op } from 'sequelize';
+import { validationResult } from 'express-validator';
+import { TravelCompanion, User, CompanionPermission } from '../models';
+import logger from '../utils/logger';
+import apiResponse from '../utils/apiResponse';
+import { getMyCompanionsQuery, getMyCompanionsWhere } from '../utils/companionQueryHelper';
+import { generateCompanionName } from '../utils/companionNameHelper';
+import { isAjaxRequest } from '../middleware/ajaxDetection';
+import type {
+  CompanionData,
+  ApiResponse,
+  PermissionUpdate
+} from '../types';
 
-// Get all companions for current user
-exports.listCompanions = async (req, res) => {
+// Extend Express Request to include user
+interface AuthenticatedRequest extends Request {
+  user: {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+    email: string;
+  };
+}
+
+/**
+ * Get all companions for current user
+ */
+export const listCompanions = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
   try {
     const companions = await TravelCompanion.findAll(getMyCompanionsQuery(req.user.id));
 
     res.json({
       success: true,
-      companions: companions.map((c) => ({
+      companions: companions.map((c: any) => ({
         id: c.id,
         name: c.name,
         email: c.email,
@@ -29,30 +50,38 @@ exports.listCompanions = async (req, res) => {
   }
 };
 
-// Get companions list sidebar content (AJAX)
-exports.listCompanionsSidebar = async (req, res) => {
+/**
+ * Get companions list sidebar content (AJAX)
+ */
+export const listCompanionsSidebar = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
   try {
     const companions = await TravelCompanion.findAll(getMyCompanionsQuery(req.user.id));
 
     res.json({ success: true, companions });
   } catch (error) {
     logger.error(error);
-    res
-      .status(500)
-      .send(
-        '<div class="p-4"><p class="text-red-600">Error loading companions. Please try again.</p></div>'
-      );
+    res.status(500).send(
+      '<div class="p-4"><p class="text-red-600">Error loading companions. Please try again.</p></div>'
+    );
   }
 };
 
-// Get companions as JSON (for sidebar/dashboard display)
-exports.getCompanionsJson = async (req, res) => {
+/**
+ * Get companions as JSON (for sidebar/dashboard display)
+ */
+export const getCompanionsJson = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
   try {
     const companions = await TravelCompanion.findAll(getMyCompanionsQuery(req.user.id));
 
     res.json({
       success: true,
-      companions: companions.map((c) => ({
+      companions: companions.map((c: any) => ({
         id: c.id,
         name: c.name,
         email: c.email,
@@ -67,9 +96,14 @@ exports.getCompanionsJson = async (req, res) => {
   }
 };
 
-// Get all companions with bidirectional relationship info
-// Returns both companions created by user AND companion profiles where user was added
-exports.getAllCompanions = async (req, res) => {
+/**
+ * Get all companions with bidirectional relationship info
+ * Returns both companions created by user AND companion profiles where user was added
+ */
+export const getAllCompanions = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
   try {
     const userId = req.user.id;
 
@@ -96,10 +130,6 @@ exports.getAllCompanions = async (req, res) => {
     });
 
     // Get companion profiles (where user was added by others)
-    // This gets companions where userId = current user (meaning current user IS the companion)
-    // We want to see both:
-    // 1. Permissions that the creator granted to us (grantedBy = creator)
-    // 2. Permissions that we granted back to the creator (grantedBy = current user)
     const companionProfiles = await TravelCompanion.findAll({
       where: {
         userId,
@@ -116,8 +146,8 @@ exports.getAllCompanions = async (req, res) => {
           as: 'permissions',
           where: {
             [Op.or]: [
-              { grantedBy: { [Op.ne]: userId } }, // Permissions others granted to us
-              { grantedBy: userId }, // Permissions we granted back
+              { grantedBy: { [Op.ne]: userId } },
+              { grantedBy: userId },
             ],
           },
           required: false,
@@ -127,10 +157,10 @@ exports.getAllCompanions = async (req, res) => {
     });
 
     // Build combined map by email to handle bidirectional relationships
-    const companionMap = new Map();
+    const companionMap = new Map<string, any>();
 
     // Add companions created by user
-    companionsCreated.forEach((companion) => {
+    companionsCreated.forEach((companion: any) => {
       const key = companion.email.toLowerCase();
       const permission = companion.permissions?.[0];
       const linkedUser = companion.linkedAccount;
@@ -140,33 +170,27 @@ exports.getAllCompanions = async (req, res) => {
         lastName: companion.lastName,
         email: companion.email,
         userId: companion.userId,
-        // canShareTrips: What WE grant them - they can view OUR trips
         canShareTrips: permission?.canView ?? true,
-        // canManageTrips: What THEY grant us - we can manage THEIR trips (we don't know yet if they added us)
-        canManageTrips: false, // Will be set if they're also in our companion profiles (when they added us)
-        // theyShareTrips: What THEY grant us - they can view OUR trips (we don't know yet)
-        theyShareTrips: false, // Will be set if they're also in our companion profiles
-        // theyManageTrips: What WE grant them - they can manage OUR trips
+        canManageTrips: false,
+        theyShareTrips: false,
         theyManageTrips: permission?.canEdit || false,
-        companionId: companion.id, // ID of the companion record YOU created
+        companionId: companion.id,
         hasLinkedUser: !!linkedUser,
         linkedUserFirstName: linkedUser?.firstName || null,
         linkedUserLastName: linkedUser?.lastName || null,
       });
     });
 
-    // Add profiles (people who added you) and mark what they grant us
-    companionProfiles.forEach((profile) => {
-      // Use the creator's email as key (the person who added you)
+    // Add profiles and mark what they grant us
+    companionProfiles.forEach((profile: any) => {
       const creatorEmail = profile.creator?.email || profile.email;
       const key = creatorEmail.toLowerCase();
 
-      // Separate permissions: what they granted us vs what we granted them
-      let theyGrantPermission = null; // grantedBy = creator (what they grant to us)
-      let weGrantPermission = null; // grantedBy = current user (what we grant to them)
+      let theyGrantPermission = null;
+      let weGrantPermission = null;
 
       if (profile.permissions && profile.permissions.length > 0) {
-        profile.permissions.forEach((perm) => {
+        profile.permissions.forEach((perm: any) => {
           if (perm.grantedBy === userId) {
             weGrantPermission = perm;
           } else {
@@ -176,18 +200,10 @@ exports.getAllCompanions = async (req, res) => {
       }
 
       if (companionMap.has(key)) {
-        // Bidirectional relationship - merge permissions from both directions
-        // KEEP the original companion ID (the one we created) - don't overwrite with reverse ID
         const existingEntry = companionMap.get(key);
-        // theyShareTrips: Can THEY view OUR trips? (on their companion record - what they allowed us)
         existingEntry.theyShareTrips = theyGrantPermission?.canView ?? true;
-        // theyManageTrips: Can THEY manage OUR trips? (already set correctly from our companion record)
-        // Note: Don't override - it's already set from the permission we granted them
-        // canManageTrips: Can WE manage THEIR trips? (on their companion record - what they allowed us)
         existingEntry.canManageTrips = theyGrantPermission?.canEdit || false;
       } else {
-        // They added you, but you haven't added them - create entry with their info
-        // Use the creator's name (who created this companion record)
         const creatorUser = profile.creator;
         companionMap.set(key, {
           id: profile.id,
@@ -195,15 +211,11 @@ exports.getAllCompanions = async (req, res) => {
           lastName: profile.creator?.lastName || profile.lastName,
           email: creatorEmail,
           userId: profile.creator?.id || profile.userId,
-          // canShareTrips: What WE grant them to view OUR trips - they decided to add us, now we decide (default true)
           canShareTrips: weGrantPermission?.canView ?? true,
-          // canManageTrips: Can WE manage THEIR trips? (permission they granted us in their companion record - canEdit)
           canManageTrips: theyGrantPermission?.canEdit || false,
-          // theyShareTrips: Can they view OUR trips? (permission they granted us in their companion record - canView)
           theyShareTrips: theyGrantPermission?.canView ?? true,
-          // theyManageTrips: Can they manage OUR trips? (we haven't granted them permission yet - false)
           theyManageTrips: weGrantPermission?.canEdit || false,
-          companionId: profile.id, // ID of the companion record THEY created
+          companionId: profile.id,
           hasLinkedUser: !!creatorUser,
           linkedUserFirstName: creatorUser?.firstName || null,
           linkedUserLastName: creatorUser?.lastName || null,
@@ -212,18 +224,22 @@ exports.getAllCompanions = async (req, res) => {
     });
 
     const companions = Array.from(companionMap.values());
-    return apiResponse.success(res, companions, `Retrieved ${companions.length} companions`);
+    apiResponse.success(res, companions, `Retrieved ${companions.length} companions`);
   } catch (error) {
-    logger.error('GET_ALL_COMPANIONS_ERROR', { error: error.message, stack: error.stack });
-    return apiResponse.internalError(res, 'Error loading companions', error);
+    logger.error('GET_ALL_COMPANIONS_ERROR', { error: (error as Error).message });
+    apiResponse.internalError(res, 'Error loading companions', error);
   }
 };
 
-// Update companion permissions (canShareTrips, theyManageTrips)
-exports.updateCompanionPermissions = async (req, res) => {
+/**
+ * Update companion permissions
+ */
+export const updateCompanionPermissions = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
   try {
     const companionId = req.params.id;
-    // Accept both field name formats for backward compatibility
     let { canShareTrips } = req.body;
     if (canShareTrips === undefined) {
       canShareTrips = req.body.canView !== undefined ? req.body.canView : true;
@@ -239,30 +255,23 @@ exports.updateCompanionPermissions = async (req, res) => {
 
     const isAjax = isAjaxRequest(req);
 
-    // Verify companion exists and user has permission to update it
-    // A user can update permissions if:
-    // 1. They created the companion record (createdBy = req.user.id), OR
-    // 2. The companion record references them (userId = req.user.id) - e.g., they're the person being shared with
     const companion = await TravelCompanion.findOne({
       where: {
         id: companionId,
         [Op.or]: [
-          { createdBy: req.user.id }, // User created this companion
-          { userId: req.user.id }, // This companion record represents the current user
+          { createdBy: req.user.id },
+          { userId: req.user.id },
         ],
       },
     });
 
     if (!companion) {
       const errorMsg = 'Companion not found';
-      if (isAjax) {
-        return res.status(404).json({ success: false, error: errorMsg });
-      }
-      return res.status(404).json({ success: false, error: errorMsg });
+      res.status(404).json({ success: false, error: errorMsg });
+      return;
     }
 
     // Update or create permission record
-    // Map friendly names (canShareTrips, theyManageTrips) to database fields (canView, canEdit)
     const [permission, created] = await CompanionPermission.findOrCreate({
       where: {
         companionId,
@@ -271,11 +280,10 @@ exports.updateCompanionPermissions = async (req, res) => {
       defaults: {
         canView: canShareTrips,
         canEdit: theyManageTrips,
-        canManageCompanions: false, // Keep default false, not used in current UI
+        canManageCompanions: false,
       },
     });
 
-    // If record already existed, update it with new values
     if (!created) {
       await permission.update({
         canView: canShareTrips,
@@ -286,7 +294,7 @@ exports.updateCompanionPermissions = async (req, res) => {
 
     const successMsg = 'Companion permissions updated';
     if (isAjax) {
-      return res.json({
+      res.json({
         success: true,
         message: successMsg,
         data: {
@@ -295,35 +303,51 @@ exports.updateCompanionPermissions = async (req, res) => {
           theyManageTrips: permission.canEdit,
         },
       });
+      return;
     }
 
     res.json({ success: true, message: successMsg });
   } catch (error) {
-    logger.error('UPDATE_COMPANION_PERMISSIONS_ERROR', { error: error.message });
+    logger.error('UPDATE_COMPANION_PERMISSIONS_ERROR', { error: (error as Error).message });
     const errorMsg = 'Error updating companion permissions';
     const isAjax = isAjaxRequest(req);
 
     if (isAjax) {
-      return res.status(500).json({ success: false, error: errorMsg });
+      res.status(500).json({ success: false, error: errorMsg });
+      return;
     }
     res.status(500).json({ success: false, error: errorMsg });
   }
 };
 
-// Get form to create new companion
-exports.getCreateCompanion = (req, res) => {
+/**
+ * Get form to create new companion
+ */
+export const getCreateCompanion = (
+  req: AuthenticatedRequest,
+  res: Response
+): void => {
   res.json({ success: true, message: 'Use POST to create a companion' });
 };
 
-// Get form to create new companion (sidebar version)
-exports.getCreateCompanionSidebar = (req, res) => {
+/**
+ * Get form to create new companion (sidebar version)
+ */
+export const getCreateCompanionSidebar = (
+  req: AuthenticatedRequest,
+  res: Response
+): void => {
   res.json({ success: true, message: 'Use POST to create a companion' });
 };
 
-// Create new companion
-exports.createCompanion = async (req, res) => {
+/**
+ * Create new companion
+ */
+export const createCompanion = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
   try {
-    // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       const errorMsg = errors
@@ -332,21 +356,18 @@ exports.createCompanion = async (req, res) => {
         .join(', ');
       const isAjax = isAjaxRequest(req);
 
-      if (isAjax) {
-        return res.status(400).json({ success: false, error: errorMsg });
-      }
-      return res.status(400).json({ success: false, error: errorMsg });
+      res.status(400).json({ success: false, error: errorMsg });
+      return;
     }
 
     const { firstName, lastName, name, email, phone, canShareTrips, canManageTrips } = req.body;
     const isAjax = isAjaxRequest(req);
     const emailLower = email.toLowerCase();
 
-    // Default permissions: share trips by default, don't manage by default
     const share = canShareTrips !== undefined ? canShareTrips : true;
     const manage = canManageTrips !== undefined ? canManageTrips : false;
 
-    // Check if companion with this email already exists for this user
+    // Check if companion with this email already exists
     const existingCompanion = await TravelCompanion.findOne({
       where: {
         email: emailLower,
@@ -356,18 +377,15 @@ exports.createCompanion = async (req, res) => {
 
     if (existingCompanion) {
       const errorMsg = 'You already have a companion with this email address';
-      if (isAjax) {
-        return res.status(400).json({ success: false, error: errorMsg });
-      }
-      return res.status(400).json({ success: false, error: errorMsg });
+      res.status(400).json({ success: false, error: errorMsg });
+      return;
     }
 
-    // Check if there's already a user account with this email to auto-link
+    // Check if there's already a user account with this email
     const existingUser = await User.findOne({
       where: { email: emailLower },
     });
 
-    // Generate display name from firstName/lastName or fallback to name/email
     const companionName = generateCompanionName({
       firstName: firstName || '',
       lastName: lastName || '',
@@ -386,16 +404,15 @@ exports.createCompanion = async (req, res) => {
     });
 
     // Create companion permission record
-    // Map frontend field names (canShareTrips, canManageTrips) to database field names (canView, canEdit)
     await CompanionPermission.create({
       companionId: companion.id,
       grantedBy: req.user.id,
-      canView: share, // canShareTrips -> canView
-      canEdit: manage, // canManageTrips (they manage our trips) -> canEdit
+      canView: share,
+      canEdit: manage,
       canManageCompanions: false,
     });
 
-    // Also create a reverse companion record if the companion is a registered user
+    // Create reverse companion record if the companion is a registered user
     if (existingUser) {
       const reverseCompanion = await TravelCompanion.findOne({
         where: {
@@ -406,7 +423,7 @@ exports.createCompanion = async (req, res) => {
       });
 
       if (!reverseCompanion) {
-        const newReverseCompanion = await TravelCompanion.create({
+        await TravelCompanion.create({
           firstName: req.user.firstName || null,
           lastName: req.user.lastName || null,
           name: req.user.firstName || req.user.email.split('@')[0],
@@ -416,9 +433,8 @@ exports.createCompanion = async (req, res) => {
           userId: req.user.id,
         });
 
-        // Create default permissions for reverse companion (no permissions yet)
         await CompanionPermission.create({
-          companionId: newReverseCompanion.id,
+          companionId: companion.id,
           grantedBy: existingUser.id,
           canShareTrips: false,
           canManageTrips: false,
@@ -431,7 +447,7 @@ exports.createCompanion = async (req, res) => {
       : 'Travel companion added successfully';
 
     if (isAjax) {
-      return res.json({
+      res.json({
         success: true,
         message: successMsg,
         data: {
@@ -449,42 +465,49 @@ exports.createCompanion = async (req, res) => {
           linkedUserLastName: existingUser ? existingUser.lastName : null,
         },
       });
+      return;
     }
 
     res.json({ success: true, message: successMsg });
   } catch (error) {
-    logger.error('COMPANION_CREATE_ERROR', { error: error.message, stack: error.stack });
+    logger.error('COMPANION_CREATE_ERROR', { error: (error as Error).message });
     const errorMsg = 'Error adding travel companion';
     const isAjax = isAjaxRequest(req);
 
     if (isAjax) {
-      return res.status(500).json({ success: false, error: errorMsg });
+      res.status(500).json({ success: false, error: errorMsg });
+      return;
     }
     res.status(500).json({ success: false, error: errorMsg });
   }
 };
 
-// API endpoint for autocomplete search
-exports.searchCompanions = async (req, res) => {
+/**
+ * API endpoint for autocomplete search
+ */
+export const searchCompanions = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
   const { q = '' } = req.query;
   try {
     const userId = req.user.id;
 
-    if (!q || q.length < 2) {
-      return res.json([]);
+    if (!q || (typeof q === 'string' && q.length < 2)) {
+      res.json([]);
+      return;
     }
 
-    // Search companions that:
-    // 1. User created themselves
-    // 2. Match the search query (name or email)
-    // 3. Exclude the account owner's companion profile
+    const searchQuery = typeof q === 'string' ? q : '';
     const companions = await TravelCompanion.findAll({
       where: {
         [Op.and]: [
           getMyCompanionsWhere(userId),
-          // Search filter: name or email matches
           {
-            [Op.or]: [{ name: { [Op.iLike]: `%${q}%` } }, { email: { [Op.iLike]: `%${q}%` } }],
+            [Op.or]: [
+              { name: { [Op.iLike]: `%${searchQuery}%` } },
+              { email: { [Op.iLike]: `%${searchQuery}%` } },
+            ],
           },
         ],
       },
@@ -500,20 +523,16 @@ exports.searchCompanions = async (req, res) => {
       order: [['name', 'ASC']],
     });
 
-    // Deduplicate by email - since email is now globally unique, we should only return one entry per email
-    // Prioritize: user-created companions first, then others marked as addable
-    const deduplicatedByEmail = new Map();
+    const deduplicatedByEmail = new Map<string, any>();
 
-    companions.forEach((companion) => {
+    companions.forEach((companion: any) => {
       const email = companion.email.toLowerCase();
-
-      // Only add if not already in map, OR if this is the user's own creation (prioritize)
       if (!deduplicatedByEmail.has(email) || companion.createdBy === userId) {
         deduplicatedByEmail.set(email, companion);
       }
     });
 
-    const results = Array.from(deduplicatedByEmail.values()).map((companion) => ({
+    const results = Array.from(deduplicatedByEmail.values()).map((companion: any) => ({
       id: companion.id,
       name: companion.name,
       email: companion.email,
@@ -531,24 +550,29 @@ exports.searchCompanions = async (req, res) => {
   }
 };
 
-// Check if an email has a linked user account
-exports.checkEmailForUser = async (req, res) => {
+/**
+ * Check if an email has a linked user account
+ */
+export const checkEmailForUser = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
   const { email } = req.query;
   try {
-    if (!email || !email.trim()) {
-      return res.json({ hasUser: false, user: null });
+    if (!email || !email.toString().trim()) {
+      res.json({ hasUser: false, user: null });
+      return;
     }
 
-    const emailLower = email.toLowerCase().trim();
+    const emailLower = email.toString().toLowerCase().trim();
 
-    // Search for user with this email
     const user = await User.findOne({
       where: { email: emailLower },
       attributes: ['id', 'firstName', 'lastName', 'email'],
     });
 
     if (user) {
-      return res.json({
+      res.json({
         hasUser: true,
         user: {
           id: user.id,
@@ -557,6 +581,7 @@ exports.checkEmailForUser = async (req, res) => {
           email: user.email,
         },
       });
+      return;
     }
 
     res.json({ hasUser: false, user: null });
@@ -565,8 +590,13 @@ exports.checkEmailForUser = async (req, res) => {
   }
 };
 
-// Get edit form for companion (works for both sidebar and regular requests)
-exports.getEditCompanion = async (req, res) => {
+/**
+ * Get edit form for companion
+ */
+export const getEditCompanion = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
   try {
     const companion = await TravelCompanion.findOne({
       where: {
@@ -583,7 +613,8 @@ exports.getEditCompanion = async (req, res) => {
     });
 
     if (!companion) {
-      return res.status(404).json({ success: false, error: 'Companion not found' });
+      res.status(404).json({ success: false, error: 'Companion not found' });
+      return;
     }
 
     res.json({
@@ -602,25 +633,28 @@ exports.getEditCompanion = async (req, res) => {
   }
 };
 
-// Get edit form for companion (sidebar version - kept for backward compatibility)
-exports.getEditCompanionSidebar = exports.getEditCompanion;
+/**
+ * Get edit form for companion (sidebar version)
+ */
+export const getEditCompanionSidebar = getEditCompanion;
 
-// Update companion details
-exports.updateCompanion = async (req, res) => {
+/**
+ * Update companion details
+ */
+export const updateCompanion = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
   try {
-    // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       const errorMsg = errors
         .array()
         .map((e) => e.msg)
         .join(', ');
-      const isAjax = isAjaxRequest(req);
 
-      if (isAjax) {
-        return res.status(400).json({ success: false, error: errorMsg });
-      }
-      return res.status(400).json({ success: false, error: errorMsg });
+      res.status(400).json({ success: false, error: errorMsg });
+      return;
     }
 
     const { firstName, lastName, name, email, phone } = req.body;
@@ -636,13 +670,10 @@ exports.updateCompanion = async (req, res) => {
 
     if (!companion) {
       const errorMsg = 'Companion not found';
-      if (isAjax) {
-        return res.status(404).json({ success: false, error: errorMsg });
-      }
-      return res.status(404).json({ success: false, error: errorMsg });
+      res.status(404).json({ success: false, error: errorMsg });
+      return;
     }
 
-    // Check if email is being changed and if it conflicts (globally unique)
     const emailLower = email.toLowerCase();
     if (emailLower !== companion.email) {
       const existingCompanion = await TravelCompanion.findOne({
@@ -654,18 +685,14 @@ exports.updateCompanion = async (req, res) => {
 
       if (existingCompanion) {
         const errorMsg = 'A companion with this email address already exists';
-        if (isAjax) {
-          return res.status(400).json({ success: false, error: errorMsg });
-        }
-        return res.status(400).json({ success: false, error: errorMsg });
+        res.status(400).json({ success: false, error: errorMsg });
+        return;
       }
 
-      // Check if there's a user account to link to
       const existingUser = await User.findOne({
         where: { email: emailLower },
       });
 
-      // Generate display name from firstName/lastName or fallback
       const companionName = generateCompanionName({
         firstName: firstName || '',
         lastName: lastName || '',
@@ -682,7 +709,6 @@ exports.updateCompanion = async (req, res) => {
         userId: existingUser ? existingUser.id : null,
       });
     } else {
-      // Generate display name from firstName/lastName or fallback, keeping existing if no name provided
       const companionName = generateCompanionName({
         firstName: firstName || '',
         lastName: lastName || '',
@@ -700,7 +726,7 @@ exports.updateCompanion = async (req, res) => {
 
     const successMsg = 'Companion updated successfully';
     if (isAjax) {
-      return res.json({
+      res.json({
         success: true,
         message: successMsg,
         data: {
@@ -713,6 +739,7 @@ exports.updateCompanion = async (req, res) => {
           updatedAt: companion.updatedAt,
         },
       });
+      return;
     }
 
     res.json({ success: true, message: successMsg });
@@ -721,14 +748,20 @@ exports.updateCompanion = async (req, res) => {
     const errorMsg = 'Error updating companion';
     const isAjax = isAjaxRequest(req);
     if (isAjax) {
-      return res.status(500).json({ success: false, error: errorMsg });
+      res.status(500).json({ success: false, error: errorMsg });
+      return;
     }
     res.status(500).json({ success: false, error: errorMsg });
   }
 };
 
-// Delete companion
-exports.deleteCompanion = async (req, res) => {
+/**
+ * Delete companion
+ */
+export const deleteCompanion = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
   try {
     const isAjax = isAjaxRequest(req);
 
@@ -741,17 +774,16 @@ exports.deleteCompanion = async (req, res) => {
 
     if (!companion) {
       const errorMsg = 'Companion not found';
-      if (isAjax) {
-        return res.status(404).json({ success: false, error: errorMsg });
-      }
-      return res.status(404).json({ success: false, error: errorMsg });
+      res.status(404).json({ success: false, error: errorMsg });
+      return;
     }
 
     await companion.destroy();
 
     const successMsg = 'Companion deleted successfully';
     if (isAjax) {
-      return res.json({ success: true, message: successMsg });
+      res.json({ success: true, message: successMsg });
+      return;
     }
 
     res.json({ success: true, message: successMsg });
@@ -760,14 +792,20 @@ exports.deleteCompanion = async (req, res) => {
     const errorMsg = 'Error deleting companion';
     const isAjax = isAjaxRequest(req);
     if (isAjax) {
-      return res.status(500).json({ success: false, error: errorMsg });
+      res.status(500).json({ success: false, error: errorMsg });
+      return;
     }
     res.status(500).json({ success: false, error: errorMsg });
   }
 };
 
-// Remove linked account (unlink companion from user account)
-exports.unlinkCompanion = async (req, res) => {
+/**
+ * Remove linked account (unlink companion from user account)
+ */
+export const unlinkCompanion = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
   try {
     const isAjax = isAjaxRequest(req);
 
@@ -780,17 +818,16 @@ exports.unlinkCompanion = async (req, res) => {
 
     if (!companion) {
       const errorMsg = 'Companion not found';
-      if (isAjax) {
-        return res.status(404).json({ success: false, error: errorMsg });
-      }
-      return res.status(404).json({ success: false, error: errorMsg });
+      res.status(404).json({ success: false, error: errorMsg });
+      return;
     }
 
     await companion.update({ userId: null });
 
     const successMsg = 'Companion account unlinked successfully';
     if (isAjax) {
-      return res.json({ success: true, message: successMsg });
+      res.json({ success: true, message: successMsg });
+      return;
     }
 
     res.json({ success: true, message: successMsg });
@@ -799,7 +836,8 @@ exports.unlinkCompanion = async (req, res) => {
     const errorMsg = 'Error unlinking companion';
     const isAjax = isAjaxRequest(req);
     if (isAjax) {
-      return res.status(500).json({ success: false, error: errorMsg });
+      res.status(500).json({ success: false, error: errorMsg });
+      return;
     }
     res.status(500).json({ success: false, error: errorMsg });
   }

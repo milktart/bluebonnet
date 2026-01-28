@@ -11,7 +11,7 @@ import '../maps.js';
 import '../trip-view-utils.js';
 import '../sidebar-loader.js';
 import '../async-form-handler.js'; // Needed for form submission in sidebar
-import '../companions.js';
+// Companion management now handled by Svelte components
 import '../trip-view-sidebar.js'; // Needed for showAddForm() on dashboard when creating standalone items
 // Voucher module is lazy-loaded on demand
 import '../voucher-lazy-loader.js';

@@ -2,11 +2,16 @@ const express = require('express');
 
 const router = express.Router();
 const { body } = require('express-validator');
+// Import TypeScript controller - will work after build
 const companionController = require('../controllers/companionController');
 const { ensureAuthenticated } = require('../middleware/auth');
+const { middleware: ajaxDetection } = require('../middleware/ajaxDetection');
 
 // All companion routes require authentication
 router.use(ensureAuthenticated);
+
+// Apply AJAX detection middleware to populate req.isAjax
+router.use(ajaxDetection());
 
 // Validation middleware for companion creation/update
 const validateCompanion = [
@@ -17,19 +22,8 @@ const validateCompanion = [
   body('phone').optional().trim(),
 ];
 
-// GET companions list
-// Can render either full page or sidebar content based on context
-router.get('/', (req, res, next) => {
-  // If request comes from sidebar loader, render sidebar content
-  if (req.get('X-Sidebar-Request') === 'true' || req.query.sidebar === 'true') {
-    return companionController.listCompanionsSidebar(req, res);
-  }
-  // Otherwise render full page
-  companionController.listCompanions(req, res);
-});
-
-// GET companions sidebar content (AJAX)
-router.get('/sidebar', companionController.listCompanionsSidebar);
+// GET companions list (unified endpoint - AJAX detection determines response format)
+router.get('/', companionController.listCompanions);
 
 // GET companions as JSON (for dashboard/sidebar display)
 router.get('/api/json', companionController.getCompanionsJson);
@@ -40,17 +34,11 @@ router.get('/api/all', companionController.getAllCompanions);
 // GET create companion form
 router.get('/create', companionController.getCreateCompanion);
 
-// GET create companion form (sidebar version)
-router.get('/sidebar/create', companionController.getCreateCompanionSidebar);
-
 // POST create companion
 router.post('/', validateCompanion, companionController.createCompanion);
 
-// GET edit companion form
+// GET edit companion form (unified endpoint - works for both sidebar and regular)
 router.get('/:id/edit', companionController.getEditCompanion);
-
-// GET edit companion form (sidebar version)
-router.get('/:id/sidebar/edit', companionController.getEditCompanionSidebar);
 
 // PUT update companion
 router.put('/:id', validateCompanion, companionController.updateCompanion);
@@ -69,5 +57,10 @@ router.get('/api/search', companionController.searchCompanions);
 
 // API endpoint to check if email has a linked user account
 router.get('/api/check-email', companionController.checkEmailForUser);
+
+// Backward compatibility: kept for any legacy requests but now point to consolidated endpoints
+router.get('/sidebar', companionController.listCompanions);
+router.get('/sidebar/create', companionController.getCreateCompanion);
+router.get('/:id/sidebar/edit', companionController.getEditCompanion);
 
 module.exports = router;

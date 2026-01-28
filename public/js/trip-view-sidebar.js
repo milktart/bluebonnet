@@ -1,27 +1,19 @@
 /**
  * Trip View - Sidebar Controls
  * Manages secondary sidebar visibility and add item menu
+ *
+ * Note: Companion management is now handled by Svelte components (CompanionManagement,
+ * CompanionsFormSection, ItemCompanionsSelector) in the frontend/
+ * directory. The vanilla JS approach is no longer needed.
  */
-
-// Import companions lazy loader to ensure companions are loaded when needed
-import { loadCompanions } from './lazy/companions-loader.js';
 
 /**
- * Ensure companions module is loaded and initialize item companions
- * This is needed because companions are lazy-loaded, but item forms need them immediately
+ * Companion initialization (now handled by Svelte components)
+ * Kept as no-op for backward compatibility - all companion management is now in Svelte
  */
 async function ensureCompanionsInitialized() {
-  try {
-    // Load companions module if not already loaded
-    await loadCompanions();
-
-    // Now that module is loaded, call the initialization function and wait for it to complete
-    if (typeof window.initializeItemCompanions === 'function') {
-      await window.initializeItemCompanions();
-    }
-  } catch (error) {
-    // Error initializing companions
-  }
+  // No-op: Companion management is now handled by Svelte components
+  // This function is kept for backward compatibility with existing code
 }
 
 /**

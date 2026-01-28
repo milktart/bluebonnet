@@ -17,7 +17,6 @@ import '../shared-handlers.js'; // For trip-specific actions
 // Lazy-loaded modules (loaded on demand)
 import { autoLoadPreline } from '../lazy/preline-loader.js';
 import { loadMaps } from '../lazy/maps-loader.js';
-import { autoLoadCompanions } from '../lazy/companions-loader.js';
 
 // Voucher module is lazy-loaded on demand
 import '../voucher-lazy-loader.js';
@@ -34,6 +33,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadMaps();
   }
 
-  // Lazy load companions when companion UI is detected
-  autoLoadCompanions();
+  // Companion management is now handled by Svelte components in the frontend/
+  // No need for vanilla JS auto-loading
 });

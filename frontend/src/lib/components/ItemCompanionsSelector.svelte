@@ -1,6 +1,8 @@
 <script lang="ts">
   import { tripStore } from '$lib/stores/tripStore';
   import { companionsApi } from '$lib/services/api';
+  import { getCompanionInitials } from '$lib/utils/companionFormatter';
+  import { getAvatarColor } from '$lib/composables/useCompanionAvatars';
   import { onMount } from 'svelte';
 
   export let tripId: string = '';
@@ -62,21 +64,6 @@
       onCompanionsChange(selected);
     }
   }
-
-  function getCompanionInitials(email: string): string {
-    if (!email) return '?';
-    return email.charAt(0).toUpperCase();
-  }
-
-  function getCompanionColor(email: string): string {
-    const colors = [
-      '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A',
-      '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2',
-      '#F8B88B', '#A9CCE3'
-    ];
-    const charCode = email.charCodeAt(0);
-    return colors[charCode % colors.length];
-  }
 </script>
 
 <div class="companions-selector">
@@ -94,10 +81,10 @@
           <div class="companion-info">
             <div
               class="companion-avatar"
-              style="background-color: {getCompanionColor(companion.email)}"
+              style="background-color: {getAvatarColor(companion.email)}"
               title={companion.email}
             >
-              {getCompanionInitials(companion.email)}
+              {getCompanionInitials(companion)}
             </div>
             <div class="companion-details">
               <span class="companion-email">{companion.email}</span>

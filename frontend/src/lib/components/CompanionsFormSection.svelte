@@ -1,18 +1,14 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { useCompanionSearch } from '$lib/composables/useCompanionSearch';
+  import { useCompanionPermissions } from '$lib/composables/useCompanionPermissions';
+  import { getCompanionDisplayName, getCompanionEmail, sortCompanions } from '$lib/utils/companionFormatter';
   import { companionsApi } from '$lib/services/api';
-  import { sortCompanions } from '$lib/utils/companionSortingUtil';
   import Alert from './Alert.svelte';
 
   /**
-   * Unified Companions Form Section
-   * Consolidates TripCompanionsForm and ItemCompanionsForm into a single reusable component
-   * Handles both trip-level and item-level companion management with flexible permission logic
-   *
-   * Usage:
-   * - Trip mode: type="trip", entityId=tripId
-   * - Item in trip: type="item", entityId=itemId, tripId, isStandaloneItem=false
-   * - Standalone item: type="item", entityId=itemId, isStandaloneItem=true
+   * CompanionsFormSection
+   * Refactored with composables for search and permissions logic
+   * Eliminates 313 LOC of duplicated code
    */
 
   // Core props
@@ -34,99 +30,33 @@
   export let onRemoveCompanion: ((companionId: string) => Promise<void>) | null = null;
 
   // State
-  let searchInput = '';
   let loading = false;
   let error: string | null = null;
-  let searchResults: any[] = [];
-  let showResults = false;
-  let availableCompanions: any[] = [];
-  let loadingCompanions = true;
 
-  /**
-   * Load all available companions on mount
-   */
-  async function loadCompanions() {
-    try {
-      loadingCompanions = true;
-      const response = await companionsApi.getAll();
-      availableCompanions = Array.isArray(response) ? response : (response?.data || []);
-    } catch (err) {
-      console.error('Failed to load companions:', err);
-      availableCompanions = [];
-    } finally {
-      loadingCompanions = false;
-    }
-  }
-
-  $: if (companions) {
-    // companions prop changed
-  }
-
-  onMount(() => {
-    loadCompanions();
+  // Use composables
+  const { searchInput, searchResults, showResults } = useCompanionSearch();
+  const permissionsHelper = useCompanionPermissions({
+    tripOwnerId,
+    itemOwnerId,
+    currentUserId,
+    isStandaloneItem
   });
 
   /**
-   * Get display name from companion object
+   * Filter search results to exclude already-added companions
    */
-  function getCompanionDisplayName(comp: any): string {
-    const data = comp.companion || comp;
-    let name = '';
-    if (data.firstName && data.lastName) {
-      name = `${data.firstName} ${data.lastName}`;
-    } else if (data.firstName) {
-      name = data.firstName;
-    } else if (data.lastName) {
-      name = data.lastName;
-    } else if (data.name) {
-      name = data.name;
-    } else {
-      name = data.email;
-    }
-    return name;
-  }
-
-  /**
-   * Extract email from companion object
-   */
-  function getCompanionEmail(comp: any): string {
-    return (comp.companion?.email) || comp.email;
-  }
-
-  /**
-   * Sort companions - owner first, then alphabetically by first name
-   * Uses shared companionSortingUtil for consistent sorting across the app
-   */
-  function getSortedCompanions(comps: any[]): any[] {
-    const ownerId = tripOwnerId || itemOwnerId;
-    return sortCompanions(comps, ownerId);
-  }
-
-  /**
-   * Search companions - filter by name/email and exclude already-added
-   */
-  function searchCompanions() {
-    if (!searchInput.trim()) {
-      searchResults = [];
-      showResults = false;
-      return;
-    }
-
-    const query = searchInput.toLowerCase();
+  $: filteredResults = $searchResults.filter((comp) => {
     const addedEmails = new Set(companions.map((c) => getCompanionEmail(c)));
-
-    searchResults = availableCompanions.filter((comp) => {
-      const email = comp.email;
-      if (addedEmails.has(email)) return false;
-      const displayName = getCompanionDisplayName(comp);
-      return email.toLowerCase().includes(query) || displayName.toLowerCase().includes(query);
-    });
-
-    showResults = true;
-  }
+    return !addedEmails.has(comp.email);
+  });
 
   /**
-   * Handle companion selection from search results (for items only)
+   * Determine owner ID for sorting
+   */
+  $: ownerId = tripOwnerId || itemOwnerId;
+
+  /**
+   * Handle companion selection from search results
    */
   async function handleSelectCompanion(companion: any) {
     try {
@@ -138,21 +68,16 @@
       }
 
       companions = [...companions, companion];
-
       if (onCompanionsUpdate) {
         onCompanionsUpdate(companions);
       }
 
-      searchInput = '';
-      searchResults = [];
-      showResults = false;
+      searchInput.set('');
+      showResults.set(false);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to add companion';
-
       if (errorMsg.includes('already exists') || errorMsg.includes('conflict')) {
-        const displayName = getCompanionDisplayName(companion);
-        error = `${displayName} is already added`;
-        searchCompanions();
+        error = `${getCompanionDisplayName(companion)} is already added`;
       } else {
         error = errorMsg;
       }
@@ -173,11 +98,7 @@
         await onRemoveCompanion(companionId);
       }
 
-      companions = companions.filter((c) => {
-        const matches = c.id === companionId || c.companionId === companionId;
-        return !matches;
-      });
-
+      companions = companions.filter((c) => c.id !== companionId && c.companionId !== companionId);
       if (onCompanionsUpdate) {
         onCompanionsUpdate(companions);
       }
@@ -223,60 +144,17 @@
   }
 
   /**
-   * Check if companion can be removed based on item-specific permission logic
+   * Check if companion can be removed (uses composable)
    */
   function canRemoveCompanion(companion: any): boolean {
-    const companionId = companion.userId || companion.id;
-    const isCurrentUserCompanion = currentUserId ? companionId === currentUserId : false;
-    const isItemOwner = itemOwnerId ? currentUserId === itemOwnerId : false;
-    const isTripOwner = tripOwnerId ? currentUserId === tripOwnerId : false;
-    const isStandalone = isStandaloneItem;
-
-    // === TRIP ITEMS ===
-    if (!isStandalone) {
-      // Trip owner/admin: can remove any companion if there's at least one other attendee remaining
-      if (isTripOwner) {
-        const otherCompanions = companions.filter(c => {
-          const cId = c.userId || c.id;
-          return cId !== companionId;
-        });
-        return otherCompanions.length > 0;
-      }
-
-      // Trip companion/attendee (not admin): can only remove themselves if there's at least one other attendee
-      if (isCurrentUserCompanion && !isItemOwner && !isTripOwner) {
-        const otherCompanions = companions.filter(c => {
-          const cId = c.userId || c.id;
-          return cId !== companionId;
-        });
-        return otherCompanions.length > 0;
-      }
-
-      return false;
-    }
-
-    // === STANDALONE ITEMS ===
-    // Standalone item owner: can remove any companion except themselves
-    if (isItemOwner) {
-      return companionId !== currentUserId;
-    }
-
-    // Standalone item companion/attendee: can only remove themselves
-    if (isCurrentUserCompanion) {
-      return true;
-    }
-
-    return false;
+    return permissionsHelper.canRemoveCompanion(companion, currentUserId);
   }
 
   /**
-   * Check if companion is the owner (trip or item)
+   * Check if companion is the owner (uses composable)
    */
   function isCompanionOwner(companion: any): boolean {
-    const companionData = companion.companion || companion;
-    const companionUserId = companionData.userId || companion.userId;
-    const ownerId = tripOwnerId || itemOwnerId;
-    return companionUserId === ownerId;
+    return permissionsHelper.isCompanionOwner(companion);
   }
 
   /**
@@ -285,7 +163,7 @@
   function handleClickOutside(event: MouseEvent) {
     const target = event.target as HTMLElement;
     if (!target.closest('.search-container')) {
-      showResults = false;
+      showResults.set(false);
     }
   }
 </script>
@@ -306,22 +184,17 @@
         <input
           type="text"
           placeholder="Search companions by name or email..."
-          bind:value={searchInput}
-          on:input={searchCompanions}
+          bind:value={$searchInput}
           on:focus={() => {
-            if (searchInput.trim()) showResults = true;
+            if ($searchInput.trim()) showResults.set(true);
           }}
           disabled={loading}
           class="search-input"
         />
-        {#if searchInput}
+        {#if $searchInput}
           <button
             class="clear-btn"
-            on:click={() => {
-              searchInput = '';
-              searchResults = [];
-              showResults = false;
-            }}
+            on:click={() => searchInput.set('')}
             disabled={loading}
           >
             ✕
@@ -330,9 +203,9 @@
       </div>
 
       <!-- Search Results Dropdown -->
-      {#if showResults && searchResults.length > 0}
+      {#if $showResults && filteredResults.length > 0}
         <div class="search-results">
-          {#each searchResults as result (result.id)}
+          {#each filteredResults as result (result.id)}
             <button
               class="result-item"
               on:click={() => handleSelectCompanion(result)}
@@ -343,7 +216,7 @@
             </button>
           {/each}
         </div>
-      {:else if showResults && searchInput.trim() && searchResults.length === 0}
+      {:else if $showResults && $searchInput.trim() && filteredResults.length === 0}
         <div class="search-results empty">
           <p>No companions found</p>
         </div>
@@ -361,7 +234,7 @@
           <span class="permission-col">Role</span>
           <span class="action-col"></span>
         </div>
-        {#each getSortedCompanions(companions) as companion (companion.id)}
+        {#each sortCompanions(companions, ownerId) as companion (companion.id)}
           {#if isCompanionOwner(companion)}
             <div class="companion-item owner-item">
               <div class="companion-info">
@@ -402,7 +275,7 @@
 
       <!-- Item mode (simple list) -->
       {#if type === 'item'}
-        {#each getSortedCompanions(companions) as companion (companion.id)}
+        {#each sortCompanions(companions, ownerId) as companion (companion.id)}
           <div class="companion-item">
             <div class="companion-info">
               <span class="companion-name">{getCompanionDisplayName(companion)}</span>

@@ -38,11 +38,11 @@ describe('CompanionService', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].firstName).toBe('Jane');
-      expect(TravelCompanion.findAll).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { createdBy: mockUserId },
-        })
-      );
+      // Verify the call includes the filter to exclude the user's own companion profile
+      const callArg = TravelCompanion.findAll.mock.calls[0][0];
+      expect(callArg.where.createdBy).toBe(mockUserId);
+      const orSymbol = Symbol.for('or') || Object.getOwnPropertySymbols(callArg.where)[0];
+      expect(callArg.where[orSymbol]).toBeDefined();
     });
 
     it('should return empty array when user has no companions', async () => {
@@ -389,7 +389,7 @@ describe('CompanionService', () => {
       TravelCompanion.findByPk = jest.fn().mockResolvedValue(mockCompanion);
       User.findByPk = jest.fn().mockResolvedValue(mockUser);
 
-      const result = await companionService.linkCompanionToAccount(mockCompanionId, mockUser.id);
+      await companionService.linkCompanionToAccount(mockCompanionId, mockUser.id);
 
       expect(mockCompanion.update).toHaveBeenCalledWith({ userId: mockUser.id });
     });
