@@ -1,4 +1,5 @@
 const db = require('../models');
+const { ITEM_TYPE_MAP } = require('../constants/companionConstants');
 
 /**
  * CompanionPermissionManager
@@ -359,19 +360,13 @@ class CompanionPermissionManager {
    * @returns {object} Sequelize model
    */
   _getItemModel(itemType) {
-    const models = {
-      flight: db.Flight,
-      hotel: db.Hotel,
-      transportation: db.Transportation,
-      car_rental: db.CarRental,
-      event: db.Event,
-    };
+    const model = ITEM_TYPE_MAP[itemType];
 
-    if (!models[itemType]) {
+    if (!model) {
       throw new Error(`Unknown item type: ${itemType}`);
     }
 
-    return models[itemType];
+    return model;
   }
 }
 

@@ -1,103 +1,13 @@
 const db = require('../models');
 const logger = require('./logger');
+const { sortCompanions } = require('./companionSortingService');
 
 /**
- * Sort companions: self (current user) first, then alphabetically by first name
- * @param {Array} companions - Array of companion objects with name and email
- * @param {string} currentUserEmail - Email of the current user
- * @returns {Array} Sorted array of companions
+ * Re-export sortCompanions from companionSortingService for backward compatibility
+ * @deprecated Use companionSortingService.sortCompanions directly
  */
 exports.sortCompanions = (companions, currentUserEmail) => {
-  const selfCompanion = companions.find((c) => c.email === currentUserEmail);
-  const others = companions
-    .filter((c) => c.email !== currentUserEmail)
-    .sort((a, b) => {
-      const firstNameA = a.name.split(' ')[0];
-      const firstNameB = b.name.split(' ')[0];
-      return firstNameA.localeCompare(firstNameB);
-    });
-
-  return selfCompanion ? [selfCompanion, ...others] : others;
-};
-
-/**
- * Gets trip-level companions for an item's trip
- */
-exports.getTripLevelCompanions = async (tripId) => {
-  const tripCompanions = await db.TripCompanion.findAll({
-    where: { tripId },
-    include: [
-      {
-        model: db.TravelCompanion,
-        as: 'companion',
-      },
-    ],
-  });
-
-  return tripCompanions.map((tc) => ({
-    id: tc.companion.id,
-    name: tc.companion.name,
-    email: tc.companion.email,
-    inheritedFromTrip: true,
-    companionUserId: tc.companion.userId,
-  }));
-};
-
-/**
- * Gets item-level companions for a specific item
- */
-exports.getItemLevelCompanions = async (itemType, itemId) => {
-  const itemCompanions = await db.ItemCompanion.findAll({
-    where: { itemType, itemId },
-    include: [
-      {
-        model: db.TravelCompanion,
-        as: 'companion',
-      },
-    ],
-  });
-
-  return itemCompanions.map((ic) => ({
-    id: ic.companion.id,
-    name: ic.companion.name,
-    email: ic.companion.email,
-    status: ic.status,
-    inheritedFromTrip: ic.inheritedFromTrip,
-    companionUserId: ic.companion.userId,
-  }));
-};
-
-/**
- * Gets all companions for an item (trip-level + item-level)
- */
-exports.getAllCompanionsForItem = async (itemType, itemId, tripId) => {
-  const tripCompanions = tripId ? await this.getTripLevelCompanions(tripId) : [];
-  const itemCompanions = await this.getItemLevelCompanions(itemType, itemId);
-
-  // Merge arrays, avoiding duplicates
-  const companionMap = new Map();
-
-  // Add trip companions
-  tripCompanions.forEach((tc) => {
-    companionMap.set(tc.id, { ...tc, inheritedFromTrip: true });
-  });
-
-  // Add/update with item companions
-  itemCompanions.forEach((ic) => {
-    if (companionMap.has(ic.id)) {
-      // Update existing entry with item-specific status
-      const existing = companionMap.get(ic.id);
-      companionMap.set(ic.id, {
-        ...existing,
-        status: ic.status,
-        inheritedFromTrip: ic.inheritedFromTrip,
-      });
-    } else {
-      companionMap.set(ic.id, ic);
-    }
-  });
-
-  return Array.from(companionMap.values());
+  return sortCompanions(companions, currentUserEmail, 'email');
 };
 
 /**

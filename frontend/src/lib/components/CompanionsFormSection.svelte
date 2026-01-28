@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { companionsApi } from '$lib/services/api';
+  import { sortCompanions } from '$lib/utils/companionSortingUtil';
   import Alert from './Alert.svelte';
 
   /**
@@ -94,34 +95,11 @@
 
   /**
    * Sort companions - owner first, then alphabetically by first name
-   * SINGLE SOURCE OF TRUTH for companion sorting
+   * Uses shared companionSortingUtil for consistent sorting across the app
    */
   function getSortedCompanions(comps: any[]): any[] {
-    return [...comps].sort((a, b) => {
-      const aData = a.companion || a;
-      const bData = b.companion || b;
-      const aUserId = aData.userId || a.userId;
-      const bUserId = bData.userId || b.userId;
-
-      // Owner comes first (trip owner or item owner depending on context)
-      const ownerId = tripOwnerId || itemOwnerId;
-      if (ownerId) {
-        if (aUserId === ownerId && bUserId !== ownerId) return -1;
-        if (aUserId !== ownerId && bUserId === ownerId) return 1;
-      }
-
-      // Then sort alphabetically by first name, then last name
-      const aFirstName = (aData.firstName || '').toLowerCase();
-      const bFirstName = (bData.firstName || '').toLowerCase();
-      const aLastName = (aData.lastName || '').toLowerCase();
-      const bLastName = (bData.lastName || '').toLowerCase();
-
-      if (aFirstName !== bFirstName) {
-        return aFirstName.localeCompare(bFirstName);
-      }
-
-      return aLastName.localeCompare(bLastName);
-    });
+    const ownerId = tripOwnerId || itemOwnerId;
+    return sortCompanions(comps, ownerId);
   }
 
   /**

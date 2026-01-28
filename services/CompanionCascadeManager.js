@@ -1,5 +1,10 @@
 const db = require('../models');
 const logger = require('../utils/logger');
+const {
+  ITEM_TYPES,
+  ITEM_TYPE_MAP,
+  PERMISSION_DEFAULTS,
+} = require('../constants/companionConstants');
 
 /**
  * CompanionCascadeManager
@@ -37,82 +42,26 @@ class CompanionCascadeManager {
         canManageCompanions: permissions.canManageCompanions ?? false,
       };
 
-      // Find all items in the trip (5 item types)
-      const [flights, hotels, transportation, carRentals, events] = await Promise.all([
-        db.Flight.findAll({ where: { tripId }, attributes: ['id'] }),
-        db.Hotel.findAll({ where: { tripId }, attributes: ['id'] }),
-        db.Transportation.findAll({ where: { tripId }, attributes: ['id'] }),
-        db.CarRental.findAll({ where: { tripId }, attributes: ['id'] }),
-        db.Event.findAll({ where: { tripId }, attributes: ['id'] }),
-      ]);
+      // Get all items in the trip
+      const itemsByType = await this._getAllItemsByType(tripId);
 
       // Build array of item companion records to create
       const itemCompanionRecords = [];
 
-      // Add flights
-      flights.forEach((f) => {
-        itemCompanionRecords.push({
-          itemType: 'flight',
-          itemId: f.id,
-          companionId,
-          status: 'attending',
-          addedBy,
-          inheritedFromTrip: true,
-          ...defaultPermissions,
+      // Add companion to all items across all types
+      for (const [itemType, items] of Object.entries(itemsByType)) {
+        items.forEach((item) => {
+          itemCompanionRecords.push({
+            itemType,
+            itemId: item.id,
+            companionId,
+            status: 'attending',
+            addedBy,
+            inheritedFromTrip: true,
+            ...defaultPermissions,
+          });
         });
-      });
-
-      // Add hotels
-      hotels.forEach((h) => {
-        itemCompanionRecords.push({
-          itemType: 'hotel',
-          itemId: h.id,
-          companionId,
-          status: 'attending',
-          addedBy,
-          inheritedFromTrip: true,
-          ...defaultPermissions,
-        });
-      });
-
-      // Add transportation
-      transportation.forEach((t) => {
-        itemCompanionRecords.push({
-          itemType: 'transportation',
-          itemId: t.id,
-          companionId,
-          status: 'attending',
-          addedBy,
-          inheritedFromTrip: true,
-          ...defaultPermissions,
-        });
-      });
-
-      // Add car rentals
-      carRentals.forEach((cr) => {
-        itemCompanionRecords.push({
-          itemType: 'car_rental',
-          itemId: cr.id,
-          companionId,
-          status: 'attending',
-          addedBy,
-          inheritedFromTrip: true,
-          ...defaultPermissions,
-        });
-      });
-
-      // Add events
-      events.forEach((e) => {
-        itemCompanionRecords.push({
-          itemType: 'event',
-          itemId: e.id,
-          companionId,
-          status: 'attending',
-          addedBy,
-          inheritedFromTrip: true,
-          ...defaultPermissions,
-        });
-      });
+      }
 
       // Create all records at once (ignore duplicates silently)
       if (itemCompanionRecords.length > 0) {
@@ -156,37 +105,17 @@ class CompanionCascadeManager {
         `[CompanionCascadeManager] Removing companion ${companionId} from all inherited items in trip ${tripId}`
       );
 
-      // Find all items in the trip
-      const [flights, hotels, transportation, carRentals, events] = await Promise.all([
-        db.Flight.findAll({ where: { tripId }, attributes: ['id'] }),
-        db.Hotel.findAll({ where: { tripId }, attributes: ['id'] }),
-        db.Transportation.findAll({ where: { tripId }, attributes: ['id'] }),
-        db.CarRental.findAll({ where: { tripId }, attributes: ['id'] }),
-        db.Event.findAll({ where: { tripId }, attributes: ['id'] }),
-      ]);
+      // Get all items in the trip
+      const itemsByType = await this._getAllItemsByType(tripId);
 
       // Build array of item references
       const itemReferences = [];
 
-      flights.forEach((f) => {
-        itemReferences.push({ itemType: 'flight', itemId: f.id });
-      });
-
-      hotels.forEach((h) => {
-        itemReferences.push({ itemType: 'hotel', itemId: h.id });
-      });
-
-      transportation.forEach((t) => {
-        itemReferences.push({ itemType: 'transportation', itemId: t.id });
-      });
-
-      carRentals.forEach((cr) => {
-        itemReferences.push({ itemType: 'car_rental', itemId: cr.id });
-      });
-
-      events.forEach((e) => {
-        itemReferences.push({ itemType: 'event', itemId: e.id });
-      });
+      for (const [itemType, items] of Object.entries(itemsByType)) {
+        items.forEach((item) => {
+          itemReferences.push({ itemType, itemId: item.id });
+        });
+      }
 
       // Remove companion from all inherited items
       let totalRemoved = 0;
@@ -237,37 +166,17 @@ class CompanionCascadeManager {
         `[CompanionCascadeManager] Updating permissions for companion ${companionId} on all inherited items in trip ${tripId}`
       );
 
-      // Find all items in the trip
-      const [flights, hotels, transportation, carRentals, events] = await Promise.all([
-        db.Flight.findAll({ where: { tripId }, attributes: ['id'] }),
-        db.Hotel.findAll({ where: { tripId }, attributes: ['id'] }),
-        db.Transportation.findAll({ where: { tripId }, attributes: ['id'] }),
-        db.CarRental.findAll({ where: { tripId }, attributes: ['id'] }),
-        db.Event.findAll({ where: { tripId }, attributes: ['id'] }),
-      ]);
+      // Get all items in the trip
+      const itemsByType = await this._getAllItemsByType(tripId);
 
       // Build array of item references
       const itemReferences = [];
 
-      flights.forEach((f) => {
-        itemReferences.push({ itemType: 'flight', itemId: f.id });
-      });
-
-      hotels.forEach((h) => {
-        itemReferences.push({ itemType: 'hotel', itemId: h.id });
-      });
-
-      transportation.forEach((t) => {
-        itemReferences.push({ itemType: 'transportation', itemId: t.id });
-      });
-
-      carRentals.forEach((cr) => {
-        itemReferences.push({ itemType: 'car_rental', itemId: cr.id });
-      });
-
-      events.forEach((e) => {
-        itemReferences.push({ itemType: 'event', itemId: e.id });
-      });
+      for (const [itemType, items] of Object.entries(itemsByType)) {
+        items.forEach((item) => {
+          itemReferences.push({ itemType, itemId: item.id });
+        });
+      }
 
       // Update permissions for all inherited items
       let totalUpdated = 0;
@@ -296,6 +205,28 @@ class CompanionCascadeManager {
       );
       throw error;
     }
+  }
+
+  /**
+   * Private helper: Get all items of all types for a trip
+   * @private
+   * @param {string} tripId - Trip ID
+   * @returns {Promise<object>} Object with item type keys, each containing array of items
+   */
+  async _getAllItemsByType(tripId) {
+    const promises = ITEM_TYPES.map((itemType) => {
+      const model = ITEM_TYPE_MAP[itemType];
+      return model.findAll({ where: { tripId }, attributes: ['id'] });
+    });
+
+    const results = await Promise.all(promises);
+
+    const itemsByType = {};
+    ITEM_TYPES.forEach((itemType, index) => {
+      itemsByType[itemType] = results[index];
+    });
+
+    return itemsByType;
   }
 }
 

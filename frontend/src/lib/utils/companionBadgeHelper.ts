@@ -6,9 +6,11 @@
  *
  * Single source of truth for:
  * - Companion data normalization (handles both nested and direct formats)
- * - Sorting order (owner first if applicable, then alphabetically by first name)
+ * - Sorting order (uses companionSortingUtil)
  * - Filtering (excluding current user)
  */
+
+import { sortCompanions } from './companionSortingUtil';
 
 /**
  * Normalize companion object to handle both nested (tc.companion) and direct formats
@@ -75,36 +77,8 @@ export function getCompanionBadges(
     return [];
   }
 
-  // Sort companions: owner first (if ownerUserId provided), then alphabetically
-  const sorted = [...filtered].sort((a, b) => {
-    const userIdA = getCompanionUserId(a);
-    const userIdB = getCompanionUserId(b);
-
-    const normalizedA = normalizeCompanion(a);
-    const normalizedB = normalizeCompanion(b);
-
-    // If owner is specified, place owner first
-    if (ownerUserId) {
-      if (userIdA === ownerUserId && userIdB !== ownerUserId) return -1;
-      if (userIdA !== ownerUserId && userIdB === ownerUserId) return 1;
-    }
-
-    // Then sort alphabetically by first name
-    const firstNameA = (normalizedA?.firstName || '').toLowerCase();
-    const firstNameB = (normalizedB?.firstName || '').toLowerCase();
-
-    if (firstNameA !== firstNameB) {
-      return firstNameA.localeCompare(firstNameB);
-    }
-
-    // If first names are same, sort by last name
-    const lastNameA = (normalizedA?.lastName || '').toLowerCase();
-    const lastNameB = (normalizedB?.lastName || '').toLowerCase();
-
-    return lastNameA.localeCompare(lastNameB);
-  });
-
-  return sorted;
+  // Sort companions using shared sorting utility
+  return sortCompanions(filtered, ownerUserId);
 }
 
 /**

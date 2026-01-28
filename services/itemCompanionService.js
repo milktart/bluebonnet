@@ -1,14 +1,6 @@
-const {
-  ItemCompanion,
-  TravelCompanion,
-  Flight,
-  Hotel,
-  Transportation,
-  CarRental,
-  Event,
-  Trip,
-} = require('../models');
-const { sortCompanions } = require('../utils/itemCompanionHelper');
+const { ItemCompanion, TravelCompanion, Trip } = require('../models');
+const { sortCompanions } = require('../utils/companionSortingService');
+const { ITEM_TYPE_MAP } = require('../constants/companionConstants');
 const logger = require('../utils/logger');
 /**
  * Service for managing item companion assignments
@@ -45,7 +37,7 @@ class ItemCompanionService {
         email: ic.companion.email,
       }));
       // Sort companions: self first, then alphabetically by first name
-      const sortedCompanionList = sortCompanions(companionList, userEmail);
+      const sortedCompanionList = sortCompanions(companionList, userEmail, 'email');
       return sortedCompanionList;
     } catch (error) {
       logger.error('ItemCompanionService.getItemCompanions - Error:', error);
@@ -232,14 +224,7 @@ class ItemCompanionService {
    * @returns {Model|null} Sequelize model or null if invalid
    */
   static _getItemModel(itemType) {
-    const modelMap = {
-      flight: Flight,
-      hotel: Hotel,
-      transportation: Transportation,
-      car_rental: CarRental,
-      event: Event,
-    };
-    return modelMap[itemType] || null;
+    return ITEM_TYPE_MAP[itemType] || null;
   }
 }
 module.exports = new ItemCompanionService();
