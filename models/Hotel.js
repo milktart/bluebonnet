@@ -59,6 +59,16 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
+      checkInTimezone: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Timezone for check-in time (e.g., America/New_York)',
+      },
+      checkOutTimezone: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Timezone for check-out time (e.g., America/New_York)',
+      },
     },
     {
       tableName: 'hotels',

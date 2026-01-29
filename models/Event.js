@@ -71,6 +71,16 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: true,
       },
+      startTimezone: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Timezone for start time (e.g., America/Los_Angeles)',
+      },
+      endTimezone: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Timezone for end time (e.g., America/Los_Angeles)',
+      },
     },
     {
       tableName: 'events',
