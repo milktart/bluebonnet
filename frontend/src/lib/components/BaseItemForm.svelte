@@ -15,6 +15,53 @@
   export let onSubmit: () => Promise<void>;
   export let onCancel: (() => void) | null = null;
 
+  /**
+   * Parse ISO datetime string into separate date and time components
+   * Used by all travel item forms to display stored datetimes
+   * @param dateTimeStr - ISO datetime string (e.g., "2024-01-15T14:30")
+   * @returns Object with date (YYYY-MM-DD) and time (HH:MM) components
+   * @example
+   * parseDateTime("2024-01-15T14:30Z") → { date: "2024-01-15", time: "14:30" }
+   */
+  export function parseDateTime(dateTimeStr: string): { date: string; time: string } {
+    if (!dateTimeStr) return { date: '', time: '' };
+    try {
+      const dt = new Date(dateTimeStr);
+      const date = dt.toISOString().split('T')[0];
+      const time = dt.toTimeString().slice(0, 5);
+      return { date, time };
+    } catch (e) {
+      return { date: '', time: '' };
+    }
+  }
+
+  /**
+   * Auto-sync end date to match start date
+   * Prevents impossible date ranges (end before start)
+   * Common pattern: departure/arrival, check-in/check-out, start/end
+   * @param startDateField - Name of start date field (e.g., 'departureDate')
+   * @param endDateField - Name of end date field (e.g., 'arrivalDate')
+   */
+  export function syncEndDate(startDateField: string, endDateField: string) {
+    if (formData[startDateField]) {
+      formData[endDateField] = formData[startDateField];
+    }
+  }
+
+  /**
+   * Auto-sync start date to match end date
+   * Prevents impossible date ranges when end date is manually changed
+   * @param startDateField - Name of start date field
+   * @param endDateField - Name of end date field
+   */
+  export function syncStartDate(startDateField: string, endDateField: string) {
+    if (formData[endDateField]) {
+      if (!formData[startDateField] || formData[endDateField] < formData[startDateField]) {
+        formData[startDateField] = formData[endDateField];
+      }
+    }
+  }
+
   async function handleSubmit() {
     try {
       // Run validation

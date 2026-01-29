@@ -2,9 +2,9 @@
  * Centralized DateTime parsing and handling
  * Eliminates repetitive date/time parsing logic across all controllers
  * Handles both separate date/time fields and combined datetime strings
+ * Note: sanitizeTimezone is imported from timezoneHelper (source of truth for timezone sanitization)
  */
 
-const logger = require('./logger');
 const { sanitizeTimezone } = require('./timezoneHelper');
 
 /**
@@ -99,7 +99,6 @@ function prepareDateTime(data, config = {}) {
 }
 
 module.exports = {
-  sanitizeTimezone,
   combineDateTimeFields,
   sanitizeTimezones,
   prepareDateTime,

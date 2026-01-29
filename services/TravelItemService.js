@@ -6,8 +6,8 @@
 
 const BaseService = require('./BaseService');
 const logger = require('../utils/logger');
-const { combineDateTimeFields, sanitizeTimezones } = require('../utils/dateTimeParser');
-const { convertToUTC, geocodeWithAirportFallback } = require('../controllers/helpers/resourceController');
+const DateTimeService = require('./DateTimeService');
+const { geocodeWithAirportFallback } = require('../controllers/helpers/resourceController');
 const itemCompanionService = require('./itemCompanionService');
 const itemTripService = require('./itemTripService');
 
@@ -30,18 +30,12 @@ class TravelItemService extends BaseService {
 
       // 1. Combine and parse datetime fields if needed
       if (options.datePairs) {
-        processedData = combineDateTimeFields(
-          processedData,
-          options.datePairs
-        );
+        processedData = DateTimeService.combineDateTimeFields(processedData, options.datePairs);
       }
 
       // 2. Sanitize timezone fields
       if (options.timezoneFields) {
-        processedData = sanitizeTimezones(
-          processedData,
-          options.timezoneFields
-        );
+        processedData = DateTimeService.sanitizeTimezones(processedData, options.timezoneFields);
       }
 
       // 3. Geocode location fields if needed
@@ -82,7 +76,7 @@ class TravelItemService extends BaseService {
           const tzField = options.tzPairs[index];
 
           if (processedData[dtField]) {
-            processedData[dtField] = convertToUTC(
+            processedData[dtField] = DateTimeService.convertToUTC(
               processedData[dtField],
               processedData[tzField]
             );
@@ -118,12 +112,7 @@ class TravelItemService extends BaseService {
 
       // Add to trip if tripId provided
       if (options.tripId) {
-        await itemTripService.addItemToTrip(
-          options.tripId,
-          item.id,
-          this.itemType,
-          userId
-        );
+        await itemTripService.addItemToTrip(options.tripId, item.id, this.itemType, userId);
       }
 
       // Add companions if provided
@@ -138,9 +127,7 @@ class TravelItemService extends BaseService {
         }
       }
 
-      logger.info(
-        `${this.modelName} created successfully - ID: ${item.id}, UserID: ${userId}`
-      );
+      logger.info(`${this.modelName} created successfully - ID: ${item.id}, UserID: ${userId}`);
 
       return item;
     } catch (error) {
@@ -187,18 +174,12 @@ class TravelItemService extends BaseService {
         // Remove companions not in new list
         for (const companionId of currentIds) {
           if (!newIds.has(companionId)) {
-            await itemCompanionService.removeCompanionFromItem(
-              item.id,
-              this.itemType,
-              companionId
-            );
+            await itemCompanionService.removeCompanionFromItem(item.id, this.itemType, companionId);
           }
         }
       }
 
-      logger.info(
-        `${this.modelName} updated successfully - ID: ${item.id}`
-      );
+      logger.info(`${this.modelName} updated successfully - ID: ${item.id}`);
 
       return updatedItem;
     } catch (error) {
@@ -218,17 +199,12 @@ class TravelItemService extends BaseService {
       await itemTripService.removeItemFromTrips(item.id, this.itemType);
 
       // Remove companions
-      await itemCompanionService.removeCompanionFromItem(
-        item.id,
-        this.itemType
-      );
+      await itemCompanionService.removeCompanionFromItem(item.id, this.itemType);
 
       // Delete the item
       await this.delete(item);
 
-      logger.info(
-        `${this.modelName} deleted successfully - ID: ${item.id}`
-      );
+      logger.info(`${this.modelName} deleted successfully - ID: ${item.id}`);
     } catch (error) {
       logger.error(`Error deleting ${this.modelName}:`, error);
       throw error;
@@ -247,9 +223,7 @@ class TravelItemService extends BaseService {
         deletedAt: null,
       });
 
-      logger.info(
-        `${this.modelName} restored successfully - ID: ${item.id}`
-      );
+      logger.info(`${this.modelName} restored successfully - ID: ${item.id}`);
 
       return restored;
     } catch (error) {
@@ -272,16 +246,10 @@ class TravelItemService extends BaseService {
       }
 
       // Load companions
-      const companions = await itemCompanionService.getItemCompanions(
-        itemId,
-        this.itemType
-      );
+      const companions = await itemCompanionService.getItemCompanions(itemId, this.itemType);
 
       // Load trip association
-      const tripAssociation = await itemTripService.getItemTrip(
-        itemId,
-        this.itemType
-      );
+      const tripAssociation = await itemTripService.getItemTrip(itemId, this.itemType);
 
       return {
         ...item.toJSON(),
@@ -289,10 +257,7 @@ class TravelItemService extends BaseService {
         trip: tripAssociation,
       };
     } catch (error) {
-      logger.error(
-        `Error loading ${this.modelName} with associations:`,
-        error
-      );
+      logger.error(`Error loading ${this.modelName} with associations:`, error);
       throw error;
     }
   }

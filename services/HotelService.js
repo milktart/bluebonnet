@@ -6,6 +6,7 @@
 
 const TravelItemService = require('./TravelItemService');
 const logger = require('../utils/logger');
+const geocodingService = require('./geocodingService');
 
 class HotelService extends TravelItemService {
   constructor(Hotel) {
@@ -101,6 +102,7 @@ class HotelService extends TravelItemService {
         timezoneFields: ['checkInTimezone', 'checkOutTimezone'],
         // Geocode address as location
         locationFields: ['address'],
+        geocodeService: geocodingService,
         // Convert datetimes to UTC using timezone
         dateTimeFields: ['checkInDateTime', 'checkOutDateTime'],
         tzPairs: ['checkInTimezone', 'checkOutTimezone'],

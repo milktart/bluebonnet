@@ -12,24 +12,32 @@
   export let onSuccess: ((flight: any) => void) | null = null;
   export let onCancel: (() => void) | null = null;
 
-  // Helper function to parse dateTime into separate date and time
-  function parseDateTime(dateTimeStr: string): { date: string; time: string } {
-    if (!dateTimeStr) return { date: '', time: '' };
-    try {
-      const dt = new Date(dateTimeStr);
-      const date = dt.toISOString().split('T')[0];
-      const time = dt.toTimeString().slice(0, 5);
-      return { date, time };
-    } catch (e) {
-      return { date: '', time: '' };
-    }
-  }
+  // Get reference to parent component to use parseDateTime
+  let baseItemForm: any;
 
-  const departureDateTime = parseDateTime(flight?.departureDateTime || '');
-  const arrivalDateTime = parseDateTime(flight?.arrivalDateTime || '');
+  // Parse stored datetimes (if editing existing flight)
+  const departureDateTime = flight?.departureDateTime
+    ? (() => {
+        const dt = new Date(flight.departureDateTime);
+        return {
+          date: dt.toISOString().split('T')[0],
+          time: dt.toTimeString().slice(0, 5)
+        };
+      })()
+    : { date: '', time: '' };
+
+  const arrivalDateTime = flight?.arrivalDateTime
+    ? (() => {
+        const dt = new Date(flight.arrivalDateTime);
+        return {
+          date: dt.toISOString().split('T')[0],
+          time: dt.toTimeString().slice(0, 5)
+        };
+      })()
+    : { date: '', time: '' };
 
   let formData = {
-    tripId: tripId,
+    tripId,
     airline: flight?.airline || '',
     flightNumber: flight?.flightNumber || '',
     origin: flight?.origin || '',

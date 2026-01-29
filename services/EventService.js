@@ -6,6 +6,7 @@
 
 const TravelItemService = require('./TravelItemService');
 const logger = require('../utils/logger');
+const geocodingService = require('./geocodingService');
 
 class EventService extends TravelItemService {
   constructor(Event) {
@@ -101,6 +102,7 @@ class EventService extends TravelItemService {
         timezoneFields: ['startTimezone', 'endTimezone'],
         // Geocode location
         locationFields: ['location'],
+        geocodeService: geocodingService,
         // Convert datetimes to UTC using timezone
         dateTimeFields: ['startDateTime', 'endDateTime'],
         tzPairs: ['startTimezone', 'endTimezone'],

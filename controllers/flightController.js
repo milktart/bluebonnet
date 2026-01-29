@@ -1,21 +1,17 @@
 const { Flight, Trip, VoucherAttachment, Voucher, ItemTrip } = require('../models');
 const logger = require('../utils/logger');
 const airportService = require('../services/airportService');
-const itemCompanionService = require('../services/itemCompanionService');
+const FlightService = require('../services/FlightService');
 const itemTripService = require('../services/itemTripService');
 const { utcToLocal } = require('../utils/timezoneHelper');
 const { sendAsyncOrRedirect } = require('../utils/asyncResponseHandler');
-const { combineDateTimeFields, sanitizeTimezones } = require('../utils/dateTimeParser');
 const {
   verifyTripOwnership,
   verifyResourceOwnership,
   verifyTripItemEditAccess,
-  convertToUTC,
-  geocodeWithAirportFallback,
 } = require('./helpers/resourceController');
 const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
-const { finalizItemCreation } = require('./helpers/itemFactory');
 const { ITEM_TYPE_FLIGHT } = require('../constants/companionConstants');
 
 exports.searchAirports = async (req, res) => {
@@ -87,16 +83,8 @@ exports.searchFlight = async (req, res) => {
 exports.createFlight = async (req, res) => {
   try {
     const { tripId } = req.params;
-    const { flightNumber, pnr, seat, companions } = req.body;
-    let {
-      airline,
-      departureDateTime,
-      arrivalDateTime,
-      origin,
-      originTimezone,
-      destination,
-      destinationTimezone,
-    } = req.body;
+    const { flightNumber, companions } = req.body;
+    let { airline } = req.body;
 
     // Verify trip ownership if tripId provided
     if (tripId) {
@@ -118,59 +106,17 @@ exports.createFlight = async (req, res) => {
       }
     }
 
-    // Centralized datetime and timezone handling
-    let data = {
-      departureDateTime,
-      arrivalDateTime,
-      originTimezone,
-      destinationTimezone,
+    // Use service to prepare flight data (handles datetime parsing, geocoding, timezone conversion)
+    const flightService = new FlightService(Flight);
+    const prepared = await flightService.prepareFlightData({
       ...req.body,
-    };
-    data = combineDateTimeFields(data, ['departure', 'arrival']);
-    data = sanitizeTimezones(data, ['originTimezone', 'destinationTimezone']);
-    departureDateTime = data.departureDateTime;
-    arrivalDateTime = data.arrivalDateTime;
-    originTimezone = data.originTimezone;
-    destinationTimezone = data.destinationTimezone;
-
-    // Geocode origin and destination with airport fallback
-    const originResult = await geocodeWithAirportFallback(origin, airportService, originTimezone);
-    const destResult = await geocodeWithAirportFallback(
-      destination,
-      airportService,
-      destinationTimezone
-    );
-
-    // Update locations and timezones if airport data was found
-    origin = originResult.formattedLocation;
-    destination = destResult.formattedLocation;
-    if (!originTimezone) originTimezone = originResult.timezone;
-    if (!destinationTimezone) destinationTimezone = destResult.timezone;
-
-    const flight = await Flight.create({
-      userId: req.user.id,
       airline,
       flightNumber: flightNumber?.toUpperCase(),
-      departureDateTime: convertToUTC(departureDateTime, originTimezone),
-      arrivalDateTime: convertToUTC(arrivalDateTime, destinationTimezone),
-      origin,
-      originTimezone,
-      originLat: originResult.coords?.lat,
-      originLng: originResult.coords?.lng,
-      destination,
-      destinationTimezone,
-      destinationLat: destResult.coords?.lat,
-      destinationLng: destResult.coords?.lng,
-      pnr,
-      seat,
     });
 
-    // Add to trip and handle companions
-    await finalizItemCreation({
-      itemType: ITEM_TYPE_FLIGHT,
-      item: flight,
+    // Create flight with trip association and companions
+    const flight = await flightService.createFlight(prepared, req.user.id, {
       tripId,
-      userId: req.user.id,
       companions,
     });
 
@@ -193,26 +139,8 @@ exports.createFlight = async (req, res) => {
 
 exports.updateFlight = async (req, res) => {
   try {
-    const {
-      flightNumber,
-      departureDate,
-      departureTime,
-      arrivalDate,
-      arrivalTime,
-      pnr,
-      seat,
-      companions,
-      tripId: newTripId,
-    } = req.body;
-    let {
-      airline,
-      departureDateTime,
-      arrivalDateTime,
-      origin,
-      originTimezone,
-      destination,
-      destinationTimezone,
-    } = req.body;
+    const { flightNumber, companions, tripId: newTripId } = req.body;
+    let { airline } = req.body;
 
     // Find flight with trip
     const flight = await Flight.findByPk(req.params.id, {
@@ -254,94 +182,18 @@ exports.updateFlight = async (req, res) => {
       }
     }
 
-    // Centralized datetime and timezone handling
-    let data = {
-      departureDateTime,
-      arrivalDateTime,
-      departureDate,
-      departureTime,
-      arrivalDate,
-      arrivalTime,
-      originTimezone,
-      destinationTimezone,
+    // Use service to prepare flight data (handles datetime parsing, geocoding, timezone conversion)
+    const flightService = new FlightService(Flight);
+    const prepared = await flightService.prepareFlightData({
       ...req.body,
-    };
-    data = combineDateTimeFields(data, ['departure', 'arrival']);
-    data = sanitizeTimezones(data, ['originTimezone', 'destinationTimezone']);
-    departureDateTime = data.departureDateTime;
-    arrivalDateTime = data.arrivalDateTime;
-    originTimezone = data.originTimezone;
-    destinationTimezone = data.destinationTimezone;
-
-    // Geocode origin and destination if they changed
-    let originResult;
-    let destResult;
-
-    if (origin !== flight.origin) {
-      originResult = await geocodeWithAirportFallback(origin, airportService, originTimezone);
-      origin = originResult.formattedLocation;
-      if (!originTimezone) originTimezone = originResult.timezone;
-    } else {
-      // Origin unchanged, but we might need to detect timezone for old flights
-      if (!originTimezone && !flight.originTimezone) {
-        // Try to detect timezone from airport code in existing origin
-        originResult = await geocodeWithAirportFallback(origin, airportService, originTimezone);
-        originTimezone = originResult.timezone;
-      } else {
-        originTimezone = originTimezone || flight.originTimezone;
-      }
-
-      originResult = {
-        coords: { lat: flight.originLat, lng: flight.originLng },
-        timezone: originTimezone,
-        formattedLocation: flight.origin,
-      };
-    }
-
-    if (destination !== flight.destination) {
-      destResult = await geocodeWithAirportFallback(
-        destination,
-        airportService,
-        destinationTimezone
-      );
-      destination = destResult.formattedLocation;
-      if (!destinationTimezone) destinationTimezone = destResult.timezone;
-    } else {
-      // Destination unchanged, but we might need to detect timezone for old flights
-      if (!destinationTimezone && !flight.destinationTimezone) {
-        // Try to detect timezone from airport code in existing destination
-        destResult = await geocodeWithAirportFallback(
-          destination,
-          airportService,
-          destinationTimezone
-        );
-        destinationTimezone = destResult.timezone;
-      } else {
-        destinationTimezone = destinationTimezone || flight.destinationTimezone;
-      }
-
-      destResult = {
-        coords: { lat: flight.destinationLat, lng: flight.destinationLng },
-        timezone: destinationTimezone,
-        formattedLocation: flight.destination,
-      };
-    }
-
-    await flight.update({
       airline,
       flightNumber: flightNumber?.toUpperCase(),
-      departureDateTime: convertToUTC(departureDateTime, originTimezone),
-      arrivalDateTime: convertToUTC(arrivalDateTime, destinationTimezone),
-      origin,
-      originTimezone,
-      originLat: originResult.coords?.lat,
-      originLng: originResult.coords?.lng,
-      destination,
-      destinationTimezone,
-      destinationLat: destResult.coords?.lat,
-      destinationLng: destResult.coords?.lng,
-      pnr,
-      seat,
+    });
+
+    // Update flight using service
+    const updated = await flightService.updateFlight(flight, prepared, {
+      tripId: newTripId,
+      companions,
     });
 
     // Update trip association via ItemTrip if it changed
@@ -361,31 +213,10 @@ exports.updateFlight = async (req, res) => {
       // Don't fail the update due to ItemTrip errors
     }
 
-    // Update companions for this flight
-    // Note: When editing an existing flight, companions are typically managed via
-    // the real-time API calls in the UI, not via form submission. We only update
-    // companions here if a non-empty array is explicitly provided.
-    if (companions) {
-      try {
-        const currentTripId = newTripId || flight.tripId;
-        if (currentTripId) {
-          await itemCompanionService.handleItemCompanions(
-            'flight',
-            flight.id,
-            companions,
-            currentTripId,
-            req.user.id
-          );
-        }
-      } catch (e) {
-        // Don't fail the update due to companion errors
-      }
-    }
-
     // Centralized async/redirect response handling
     return sendAsyncOrRedirect(req, res, {
       success: true,
-      data: flight,
+      data: updated,
       message: 'Flight updated successfully',
       redirectUrl:
         newTripId || flight.tripId ? `/trips/${newTripId || flight.tripId}` : '/dashboard',

@@ -46,6 +46,7 @@ module.exports = (sequelize, DataTypes) => {
       originTimezone: {
         type: DataTypes.STRING,
         allowNull: true,
+        comment: 'Timezone for origin airport (e.g., America/New_York)',
       },
       destination: {
         type: DataTypes.STRING,
@@ -54,6 +55,7 @@ module.exports = (sequelize, DataTypes) => {
       destinationTimezone: {
         type: DataTypes.STRING,
         allowNull: true,
+        comment: 'Timezone for destination airport (e.g., Europe/Amsterdam)',
       },
       originLat: {
         type: DataTypes.DECIMAL(10, 7),
@@ -97,17 +99,12 @@ module.exports = (sequelize, DataTypes) => {
       as: 'trip',
     });
 
-    // Legacy association with VoucherAttachment via flightId (backward compatible)
-    Flight.hasMany(models.VoucherAttachment, {
-      foreignKey: 'flightId',
-      as: 'voucherAttachments',
-      onDelete: 'CASCADE',
-    });
-
-    // New polymorphic association with VoucherAttachment
+    // Polymorphic association with VoucherAttachment
+    // Note: Uses itemId/itemType for polymorphic relationship (not flightId)
+    // Legacy flightId field in VoucherAttachment kept for backward compatibility
     Flight.hasMany(models.VoucherAttachment, {
       foreignKey: 'itemId',
-      as: 'voucherAttachmentsNew',
+      as: 'voucherAttachments',
       scope: { itemType: 'flight' },
       constraints: false,
     });

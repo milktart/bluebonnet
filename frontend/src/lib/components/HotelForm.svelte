@@ -14,7 +14,7 @@
   export let onCancel: (() => void) | null = null;
 
   let formData = {
-    tripId: tripId,
+    tripId,
     name: hotel?.hotelName || hotel?.name || '',
     address: hotel?.address || '',
     phone: hotel?.phone || hotel?.phoneNumber || '',

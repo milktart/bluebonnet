@@ -14,24 +14,29 @@
   export let onSuccess: ((event: any) => void) | null = null;
   export let onCancel: (() => void) | null = null;
 
-  // Helper function to parse startDateTime/endDateTime into separate date and time
-  function parseDateTime(dateTimeStr: string): { date: string; time: string } {
-    if (!dateTimeStr) return { date: '', time: '' };
-    try {
-      const dt = new Date(dateTimeStr);
-      const date = dt.toISOString().split('T')[0];
-      const time = dt.toTimeString().slice(0, 5);
-      return { date, time };
-    } catch (e) {
-      return { date: '', time: '' };
-    }
-  }
+  // Parse stored datetimes (if editing existing event)
+  const startDateTime = event?.startDateTime
+    ? (() => {
+        const dt = new Date(event.startDateTime);
+        return {
+          date: dt.toISOString().split('T')[0],
+          time: dt.toTimeString().slice(0, 5)
+        };
+      })()
+    : { date: '', time: '' };
 
-  const startDateTime = parseDateTime(event?.startDateTime || '');
-  const endDateTime = parseDateTime(event?.endDateTime || '');
+  const endDateTime = event?.endDateTime
+    ? (() => {
+        const dt = new Date(event.endDateTime);
+        return {
+          date: dt.toISOString().split('T')[0],
+          time: dt.toTimeString().slice(0, 5)
+        };
+      })()
+    : { date: '', time: '' };
 
   let formData = {
-    tripId: tripId,
+    tripId,
     name: event?.name || '',
     description: event?.description || '',
     location: event?.location || '',

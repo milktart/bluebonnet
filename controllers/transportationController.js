@@ -1,36 +1,22 @@
 const { Transportation, Trip, ItemTrip } = require('../models');
 const logger = require('../utils/logger');
+const TransportationService = require('../services/TransportationService');
 const itemTripService = require('../services/itemTripService');
 const { utcToLocal } = require('../utils/timezoneHelper');
 const { sendAsyncOrRedirect } = require('../utils/asyncResponseHandler');
 const {
   verifyTripOwnership,
-  geocodeOriginDestination,
   verifyResourceOwnership,
   verifyTripItemEditAccess,
-  convertToUTC,
 } = require('./helpers/resourceController');
 const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
-const { finalizItemCreation } = require('./helpers/itemFactory');
 const { ITEM_TYPE_TRANSPORTATION } = require('../constants/companionConstants');
 
 exports.createTransportation = async (req, res) => {
   try {
     const { tripId } = req.params;
-    const {
-      method,
-      journeyNumber,
-      origin,
-      originTimezone,
-      destination,
-      destinationTimezone,
-      departureDateTime,
-      arrivalDateTime,
-      confirmationNumber,
-      seat,
-      companions,
-    } = req.body;
+    const { companions } = req.body;
 
     // Verify trip ownership if tripId provided
     if (tripId) {
@@ -44,36 +30,13 @@ exports.createTransportation = async (req, res) => {
       }
     }
 
-    // Geocode origin and destination
-    const { originCoords, destCoords } = await geocodeOriginDestination({
-      originNew: origin,
-      destNew: destination,
-    });
+    // Use service to prepare transportation data (handles datetime parsing, geocoding, timezone conversion)
+    const transportationService = new TransportationService(Transportation);
+    const prepared = await transportationService.prepareTransportationData(req.body);
 
-    const transportation = await Transportation.create({
-      userId: req.user.id,
-      method,
-      journeyNumber,
-      origin,
-      originTimezone,
-      originLat: originCoords?.lat,
-      originLng: originCoords?.lng,
-      destination,
-      destinationTimezone,
-      destinationLat: destCoords?.lat,
-      destinationLng: destCoords?.lng,
-      departureDateTime: convertToUTC(departureDateTime, originTimezone),
-      arrivalDateTime: convertToUTC(arrivalDateTime, destinationTimezone),
-      confirmationNumber,
-      seat,
-    });
-
-    // Add to trip and handle companions
-    await finalizItemCreation({
-      itemType: ITEM_TYPE_TRANSPORTATION,
-      item: transportation,
+    // Create transportation with trip association and companions
+    const transportation = await transportationService.createTransportation(prepared, req.user.id, {
       tripId,
-      userId: req.user.id,
       companions,
     });
 
@@ -97,23 +60,7 @@ exports.createTransportation = async (req, res) => {
 
 exports.updateTransportation = async (req, res) => {
   try {
-    const {
-      method,
-      journeyNumber,
-      origin,
-      originTimezone,
-      destination,
-      destinationTimezone,
-      departureDate,
-      departureTime,
-      arrivalDate,
-      arrivalTime,
-      departureDateTime: departureDateTimeCombined,
-      arrivalDateTime: arrivalDateTimeCombined,
-      confirmationNumber,
-      seat,
-      tripId: newTripId,
-    } = req.body;
+    const { tripId: newTripId, companions } = req.body;
 
     // Find transportation with trip
     const transportation = await Transportation.findByPk(req.params.id, {
@@ -147,45 +94,14 @@ exports.updateTransportation = async (req, res) => {
       }
     }
 
-    // Handle both combined datetime (from async form) and split date/time fields (from traditional forms)
-    let departureDateTime;
-    let arrivalDateTime;
+    // Use service to prepare transportation data (handles datetime parsing, geocoding, timezone conversion)
+    const transportationService = new TransportationService(Transportation);
+    const prepared = await transportationService.prepareTransportationData(req.body);
 
-    if (departureDateTimeCombined && arrivalDateTimeCombined) {
-      // Async form submission sends combined datetime
-      departureDateTime = departureDateTimeCombined;
-      arrivalDateTime = arrivalDateTimeCombined;
-    } else {
-      // Traditional form submission sends split date/time fields
-      departureDateTime = `${departureDate}T${departureTime}`;
-      arrivalDateTime = `${arrivalDate}T${arrivalTime}`;
-    }
-
-    // Geocode origin and destination if they changed
-    const { originCoords, destCoords } = await geocodeOriginDestination({
-      originNew: origin,
-      originOld: transportation.origin,
-      originCoordsOld: { lat: transportation.originLat, lng: transportation.originLng },
-      destNew: destination,
-      destOld: transportation.destination,
-      destCoordsOld: { lat: transportation.destinationLat, lng: transportation.destinationLng },
-    });
-
-    await transportation.update({
-      method,
-      journeyNumber,
-      origin,
-      originTimezone,
-      originLat: originCoords?.lat,
-      originLng: originCoords?.lng,
-      destination,
-      destinationTimezone,
-      destinationLat: destCoords?.lat,
-      destinationLng: destCoords?.lng,
-      departureDateTime: convertToUTC(departureDateTime, originTimezone),
-      arrivalDateTime: convertToUTC(arrivalDateTime, destinationTimezone),
-      confirmationNumber,
-      seat,
+    // Update transportation via service
+    const updated = await transportationService.updateTransportation(transportation, prepared, {
+      tripId: newTripId,
+      companions,
     });
 
     // Update trip association via ItemTrip if it changed
@@ -218,7 +134,7 @@ exports.updateTransportation = async (req, res) => {
     // Centralized async/redirect response handling
     return sendAsyncOrRedirect(req, res, {
       success: true,
-      data: transportation,
+      data: updated,
       message: 'Transportation updated successfully',
       redirectUrl:
         newTripId || transportation.tripId

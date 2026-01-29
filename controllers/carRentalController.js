@@ -1,35 +1,23 @@
 const { CarRental, Trip, ItemTrip } = require('../models');
 const logger = require('../utils/logger');
+const CarRentalService = require('../services/CarRentalService');
 const itemTripService = require('../services/itemTripService');
+const { utcToLocal } = require('../utils/timezoneHelper');
 const { sendAsyncOrRedirect } = require('../utils/asyncResponseHandler');
 const {
   verifyTripOwnership,
-  geocodeOriginDestination,
   verifyResourceOwnership,
-  verifyResourceOwnershipViaTrip,
   verifyTripItemEditAccess,
-  convertToUTC,
+  verifyResourceOwnershipViaTrip,
 } = require('./helpers/resourceController');
-const { utcToLocal } = require('../utils/timezoneHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
-const { finalizItemCreation } = require('./helpers/itemFactory');
 const { ITEM_TYPE_CAR_RENTAL } = require('../constants/companionConstants');
 
 exports.createCarRental = async (req, res) => {
   try {
     const { tripId } = req.params;
-    const {
-      company,
-      pickupLocation,
-      pickupTimezone,
-      dropoffLocation,
-      dropoffTimezone,
-      pickupDateTime,
-      dropoffDateTime,
-      confirmationNumber,
-      companions,
-    } = req.body;
+    const { companions } = req.body;
 
     // Verify trip ownership if tripId provided
     if (tripId) {
@@ -43,35 +31,13 @@ exports.createCarRental = async (req, res) => {
       }
     }
 
-    // Geocode pickup and dropoff locations
-    const { originCoords: pickupCoords, destCoords: dropoffCoords } =
-      await geocodeOriginDestination({
-        originNew: pickupLocation,
-        destNew: dropoffLocation,
-      });
+    // Use service to prepare car rental data (handles datetime parsing, geocoding, timezone conversion)
+    const carRentalService = new CarRentalService(CarRental);
+    const prepared = await carRentalService.prepareCarRentalData(req.body);
 
-    const carRental = await CarRental.create({
-      company,
-      pickupLocation,
-      pickupTimezone,
-      pickupLat: pickupCoords?.lat,
-      pickupLng: pickupCoords?.lng,
-      dropoffLocation,
-      dropoffTimezone,
-      dropoffLat: dropoffCoords?.lat,
-      dropoffLng: dropoffCoords?.lng,
-      pickupDateTime: convertToUTC(pickupDateTime, pickupTimezone),
-      dropoffDateTime: convertToUTC(dropoffDateTime, dropoffTimezone),
-      confirmationNumber,
-      userId: req.user.id,
-    });
-
-    // Add to trip and handle companions
-    await finalizItemCreation({
-      itemType: ITEM_TYPE_CAR_RENTAL,
-      item: carRental,
+    // Create car rental with trip association and companions
+    const carRental = await carRentalService.createCarRental(prepared, req.user.id, {
       tripId,
-      userId: req.user.id,
       companions,
     });
 
@@ -95,17 +61,7 @@ exports.createCarRental = async (req, res) => {
 
 exports.updateCarRental = async (req, res) => {
   try {
-    const {
-      company,
-      pickupLocation,
-      pickupTimezone,
-      dropoffLocation,
-      dropoffTimezone,
-      pickupDateTime,
-      dropoffDateTime,
-      confirmationNumber,
-      tripId: newTripId,
-    } = req.body;
+    const { tripId: newTripId, companions } = req.body;
 
     // Find car rental with trip
     const carRental = await CarRental.findByPk(req.params.id, {
@@ -139,30 +95,14 @@ exports.updateCarRental = async (req, res) => {
       }
     }
 
-    // Geocode locations if they changed
-    const { originCoords: pickupCoords, destCoords: dropoffCoords } =
-      await geocodeOriginDestination({
-        originNew: pickupLocation,
-        originOld: carRental.pickupLocation,
-        originCoordsOld: { lat: carRental.pickupLat, lng: carRental.pickupLng },
-        destNew: dropoffLocation,
-        destOld: carRental.dropoffLocation,
-        destCoordsOld: { lat: carRental.dropoffLat, lng: carRental.dropoffLng },
-      });
+    // Use service to prepare car rental data (handles datetime parsing, geocoding, timezone conversion)
+    const carRentalService = new CarRentalService(CarRental);
+    const prepared = await carRentalService.prepareCarRentalData(req.body);
 
-    await carRental.update({
-      company,
-      pickupLocation,
-      pickupTimezone,
-      pickupLat: pickupCoords?.lat,
-      pickupLng: pickupCoords?.lng,
-      dropoffLocation,
-      dropoffTimezone,
-      dropoffLat: dropoffCoords?.lat,
-      dropoffLng: dropoffCoords?.lng,
-      pickupDateTime: convertToUTC(pickupDateTime, pickupTimezone),
-      dropoffDateTime: convertToUTC(dropoffDateTime, dropoffTimezone),
-      confirmationNumber,
+    // Update car rental via service
+    const updated = await carRentalService.updateCarRental(carRental, prepared, {
+      tripId: newTripId,
+      companions,
     });
 
     // Update trip association via ItemTrip if it changed
@@ -182,7 +122,7 @@ exports.updateCarRental = async (req, res) => {
     // Centralized async/redirect response handling
     return sendAsyncOrRedirect(req, res, {
       success: true,
-      data: carRental,
+      data: updated,
       message: 'Car rental updated successfully',
       redirectUrl:
         newTripId || carRental.tripId ? `/trips/${newTripId || carRental.tripId}` : '/dashboard',

@@ -5,7 +5,10 @@
  */
 
 const { MS_PER_HOUR } = require('./constants');
-const { formatInTimezone: formatInTimezoneHelper } = require('./timezoneHelper');
+const {
+  formatInTimezone: formatInTimezoneHelper,
+  sanitizeTimezone: sanitizeTimezoneHelper,
+} = require('./timezoneHelper');
 
 // Constants
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -129,12 +132,7 @@ function formatLayoverDisplay(duration, airportCode) {
  * Legacy function for backward compatibility
  * Calculate layover and return with airport code
  */
-function calculateLayover(
-  flight1ArrivalTime,
-  flight1Destination,
-  flight2DepartureTime,
-  flight2Origin
-) {
+function calculateLayover(flight1ArrivalTime, flight1Destination, flight2DepartureTime) {
   if (!flight1ArrivalTime || !flight2DepartureTime) return null;
 
   const duration = calculateLayoverDuration(flight1ArrivalTime, flight2DepartureTime);
@@ -178,8 +176,7 @@ function formatInTimezone(utcDate, timezone, format = 'DD MMM YYYY HH:mm') {
  * @returns {string|null} - Trimmed timezone or null if invalid
  */
 function validateTimezone(timezone) {
-  const { sanitizeTimezone } = require('./timezoneHelper');
-  return sanitizeTimezone(timezone);
+  return sanitizeTimezoneHelper(timezone);
 }
 
 /**

@@ -1,39 +1,25 @@
 const { Hotel, Trip, ItemTrip } = require('../models');
 const logger = require('../utils/logger');
+const HotelService = require('../services/HotelService');
 const itemTripService = require('../services/itemTripService');
 const { sendAsyncOrRedirect } = require('../utils/asyncResponseHandler');
 const {
   verifyTripOwnership,
-  geocodeIfChanged,
   verifyResourceOwnership,
   verifyResourceOwnershipViaTrip,
   verifyTripItemEditAccess,
 } = require('./helpers/resourceController');
 const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
-const { finalizItemCreation } = require('./helpers/itemFactory');
 const { formatDateForInput, formatTimeForInput } = require('../utils/dateFormatter');
 const { ITEM_TYPE_HOTEL } = require('../constants/companionConstants');
 
 exports.createHotel = async (req, res) => {
   try {
     const { tripId } = req.params;
-    const {
-      hotelName,
-      address,
-      phone,
-      checkInDate,
-      checkInTime,
-      checkOutDate,
-      checkOutTime,
-      checkInDateTime: checkInDateTimeCombined,
-      checkOutDateTime: checkOutDateTimeCombined,
-      confirmationNumber,
-      roomNumber,
-      companions,
-    } = req.body;
+    const { companions } = req.body;
 
-    // Verify trip ownership if tripId provided (for trip-associated items)
+    // Verify trip ownership if tripId provided
     if (tripId) {
       const trip = await verifyTripOwnership(tripId, req.user.id, Trip);
       if (!trip) {
@@ -45,48 +31,13 @@ exports.createHotel = async (req, res) => {
       }
     }
 
-    // Handle both combined datetime (from async form) and split date/time fields (from traditional forms)
-    let checkInDateTime;
-    let checkOutDateTime;
+    // Use service to prepare hotel data (handles datetime parsing, geocoding, timezone conversion)
+    const hotelService = new HotelService(Hotel);
+    const prepared = await hotelService.prepareHotelData(req.body);
 
-    if (checkInDateTimeCombined && checkOutDateTimeCombined) {
-      checkInDateTime = checkInDateTimeCombined;
-      checkOutDateTime = checkOutDateTimeCombined;
-    } else {
-      // Validate required date/time fields
-      if (!checkInDate || !checkInTime || !checkOutDate || !checkOutTime) {
-        return sendAsyncOrRedirect(req, res, {
-          error: 'All date and time fields are required',
-          status: 400,
-          redirectUrl: tripId ? `/trips/${tripId}` : '/dashboard',
-        });
-      }
-      checkInDateTime = `${checkInDate}T${checkInTime}`;
-      checkOutDateTime = `${checkOutDate}T${checkOutTime}`;
-    }
-
-    // Geocode address
-    const coords = await geocodeIfChanged(address);
-
-    const hotel = await Hotel.create({
-      hotelName,
-      address,
-      phone,
-      checkInDateTime: new Date(checkInDateTime),
-      checkOutDateTime: new Date(checkOutDateTime),
-      lat: coords?.lat,
-      lng: coords?.lng,
-      confirmationNumber,
-      roomNumber,
-      userId: req.user.id,
-    });
-
-    // Add to trip and handle companions
-    await finalizItemCreation({
-      itemType: ITEM_TYPE_HOTEL,
-      item: hotel,
+    // Create hotel with trip association and companions
+    const hotel = await hotelService.createHotel(prepared, req.user.id, {
       tripId,
-      userId: req.user.id,
       companions,
     });
 
@@ -110,20 +61,7 @@ exports.createHotel = async (req, res) => {
 
 exports.updateHotel = async (req, res) => {
   try {
-    const {
-      hotelName,
-      address,
-      phone,
-      checkInDate,
-      checkInTime,
-      checkOutDate,
-      checkOutTime,
-      checkInDateTime: checkInDateTimeCombined,
-      checkOutDateTime: checkOutDateTimeCombined,
-      confirmationNumber,
-      roomNumber,
-      tripId: newTripId,
-    } = req.body;
+    const { tripId: newTripId, companions } = req.body;
 
     // Find hotel with trip
     const hotel = await Hotel.findByPk(req.params.id, {
@@ -157,34 +95,14 @@ exports.updateHotel = async (req, res) => {
       }
     }
 
-    // Handle both combined datetime (from async form) and split date/time fields
-    let checkInDateTime;
-    let checkOutDateTime;
+    // Use service to prepare hotel data (handles datetime parsing, geocoding, timezone conversion)
+    const hotelService = new HotelService(Hotel);
+    const prepared = await hotelService.prepareHotelData(req.body);
 
-    if (checkInDateTimeCombined && checkOutDateTimeCombined) {
-      checkInDateTime = checkInDateTimeCombined;
-      checkOutDateTime = checkOutDateTimeCombined;
-    } else {
-      checkInDateTime = `${checkInDate}T${checkInTime}`;
-      checkOutDateTime = `${checkOutDate}T${checkOutTime}`;
-    }
-
-    // Geocode address if changed
-    const coords = await geocodeIfChanged(address, hotel.address, {
-      lat: hotel.lat,
-      lng: hotel.lng,
-    });
-
-    await hotel.update({
-      hotelName,
-      address,
-      phone,
-      checkInDateTime: new Date(checkInDateTime),
-      checkOutDateTime: new Date(checkOutDateTime),
-      lat: coords?.lat,
-      lng: coords?.lng,
-      confirmationNumber,
-      roomNumber,
+    // Update hotel via service
+    const updated = await hotelService.updateHotel(hotel, prepared, {
+      tripId: newTripId,
+      companions,
     });
 
     // Update trip association via ItemTrip if it changed
@@ -204,7 +122,7 @@ exports.updateHotel = async (req, res) => {
     // Centralized async/redirect response handling
     return sendAsyncOrRedirect(req, res, {
       success: true,
-      data: hotel,
+      data: updated,
       message: 'Hotel updated successfully',
       redirectUrl: newTripId || hotel.tripId ? `/trips/${newTripId || hotel.tripId}` : '/dashboard',
     });

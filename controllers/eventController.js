@@ -1,46 +1,22 @@
 const { Event, Trip, ItemTrip } = require('../models');
 const logger = require('../utils/logger');
+const EventService = require('../services/EventService');
 const itemTripService = require('../services/itemTripService');
 const { sendAsyncOrRedirect } = require('../utils/asyncResponseHandler');
 const {
   verifyTripOwnership,
-  geocodeIfChanged,
   verifyResourceOwnership,
   verifyTripItemEditAccess,
 } = require('./helpers/resourceController');
 const { storeDeletedItem, retrieveDeletedItem } = require('./helpers/deleteManager');
 const { getTripSelectorData, verifyTripEditAccess } = require('./helpers/tripSelectorHelper');
-const { finalizItemCreation } = require('./helpers/itemFactory');
 const { formatDateForInput, formatTimeForInput } = require('../utils/dateFormatter');
 const { ITEM_TYPE_EVENT } = require('../constants/companionConstants');
 
 exports.createEvent = async (req, res) => {
   try {
     const { tripId } = req.params;
-    const {
-      name,
-      location,
-      contactPhone,
-      contactEmail,
-      startDate,
-      startTime,
-      endDate,
-      endTime,
-      description,
-      companions,
-      isConfirmed,
-    } = req.body;
-    let { startDateTime, endDateTime } = req.body;
-
-    // Convert separate date/time fields to datetime strings if provided
-    if (startDate && !startDateTime) {
-      const time = startTime || '00:00';
-      startDateTime = `${startDate}T${time}`;
-    }
-    if (endDate && !endDateTime) {
-      const time = endTime || '23:59';
-      endDateTime = `${endDate}T${time}`;
-    }
+    const { companions } = req.body;
 
     // Verify trip ownership if tripId provided
     if (tripId) {
@@ -54,37 +30,13 @@ exports.createEvent = async (req, res) => {
       }
     }
 
-    // Geocode location if provided
-    const coords = location ? await geocodeIfChanged(location) : null;
+    // Use service to prepare event data (handles datetime parsing, geocoding)
+    const eventService = new EventService(Event);
+    const prepared = await eventService.prepareEventData(req.body);
 
-    // If no endDateTime provided, default to startDateTime
-    const finalEndDateTime = endDateTime || startDateTime;
-
-    // Sanitize optional fields
-    const sanitizedContactEmail = contactEmail && contactEmail.trim() !== '' ? contactEmail : null;
-    const sanitizedContactPhone = contactPhone && contactPhone.trim() !== '' ? contactPhone : null;
-    const sanitizedDescription = description && description.trim() !== '' ? description : null;
-
-    const event = await Event.create({
-      userId: req.user.id,
-      name,
-      startDateTime: new Date(startDateTime),
-      endDateTime: new Date(finalEndDateTime),
-      location,
-      lat: coords?.lat,
-      lng: coords?.lng,
-      contactPhone: sanitizedContactPhone,
-      contactEmail: sanitizedContactEmail,
-      description: sanitizedDescription,
-      isConfirmed: isConfirmed === 'true' || isConfirmed === true || isConfirmed === 'on',
-    });
-
-    // Add to trip and handle companions
-    await finalizItemCreation({
-      itemType: ITEM_TYPE_EVENT,
-      item: event,
+    // Create event with trip association and companions
+    const event = await eventService.createEvent(prepared, req.user.id, {
       tripId,
-      userId: req.user.id,
       companions,
     });
 
@@ -108,29 +60,7 @@ exports.createEvent = async (req, res) => {
 
 exports.updateEvent = async (req, res) => {
   try {
-    const {
-      name,
-      location,
-      contactPhone,
-      contactEmail,
-      description,
-      tripId: newTripId,
-      isConfirmed,
-    } = req.body;
-
-    let { startDateTime } = req.body;
-    let { endDateTime } = req.body;
-    const { startDate, startTime, endDate, endTime } = req.body;
-
-    // Convert separate date/time fields to datetime strings if provided
-    if (startDate && !startDateTime) {
-      const time = startTime || '00:00';
-      startDateTime = `${startDate}T${time}`;
-    }
-    if (endDate && !endDateTime) {
-      const time = endTime || '23:59';
-      endDateTime = `${endDate}T${time}`;
-    }
+    const { tripId: newTripId, companions } = req.body;
 
     // Find event with trip
     const event = await Event.findByPk(req.params.id, {
@@ -164,32 +94,14 @@ exports.updateEvent = async (req, res) => {
       }
     }
 
-    // Geocode location if changed
-    const coords = await geocodeIfChanged(
-      location,
-      event.location,
-      location ? { lat: event.lat, lng: event.lng } : null
-    );
+    // Use service to prepare event data (handles datetime parsing, geocoding)
+    const eventService = new EventService(Event);
+    const prepared = await eventService.prepareEventData(req.body);
 
-    // If no endDateTime provided, default to startDateTime
-    const finalEndDateTime = endDateTime || startDateTime;
-
-    // Sanitize optional fields
-    const sanitizedContactEmail = contactEmail && contactEmail.trim() !== '' ? contactEmail : null;
-    const sanitizedContactPhone = contactPhone && contactPhone.trim() !== '' ? contactPhone : null;
-    const sanitizedDescription = description && description.trim() !== '' ? description : null;
-
-    await event.update({
-      name,
-      startDateTime: new Date(startDateTime),
-      endDateTime: new Date(finalEndDateTime),
-      location,
-      lat: coords?.lat,
-      lng: coords?.lng,
-      contactPhone: sanitizedContactPhone,
-      contactEmail: sanitizedContactEmail,
-      description: sanitizedDescription,
-      isConfirmed: isConfirmed === 'true' || isConfirmed === true || isConfirmed === 'on',
+    // Update event via service
+    const updated = await eventService.updateEvent(event, prepared, {
+      tripId: newTripId,
+      companions,
     });
 
     // Update trip association via ItemTrip if it changed
@@ -209,7 +121,7 @@ exports.updateEvent = async (req, res) => {
     // Centralized async/redirect response handling
     return sendAsyncOrRedirect(req, res, {
       success: true,
-      data: event,
+      data: updated,
       message: 'Event updated successfully',
       redirectUrl: newTripId || event.tripId ? `/trips/${newTripId || event.tripId}` : '/dashboard',
     });

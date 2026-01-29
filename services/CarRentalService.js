@@ -6,6 +6,7 @@
 
 const TravelItemService = require('./TravelItemService');
 const logger = require('../utils/logger');
+const geocodingService = require('./geocodingService');
 
 class CarRentalService extends TravelItemService {
   constructor(CarRental) {
@@ -101,6 +102,7 @@ class CarRentalService extends TravelItemService {
         timezoneFields: ['pickupTimezone', 'dropoffTimezone'],
         // Geocode pickup and dropoff locations
         locationFields: ['pickupLocation', 'dropoffLocation'],
+        geocodeService: geocodingService,
         // Convert datetimes to UTC using timezone
         dateTimeFields: ['pickupDateTime', 'dropoffDateTime'],
         tzPairs: ['pickupTimezone', 'dropoffTimezone'],
