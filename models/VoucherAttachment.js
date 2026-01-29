@@ -15,13 +15,25 @@ module.exports = (sequelize, DataTypes) => {
           key: 'id',
         },
       },
+      itemId: {
+        type: DataTypes.UUID,
+        allowNull: false, // References Flight, Hotel, Event, CarRental, or Transportation
+        comment: 'UUID of the travel item (Flight, Hotel, Event, CarRental, or Transportation)',
+      },
+      itemType: {
+        type: DataTypes.ENUM('flight', 'hotel', 'event', 'car_rental', 'transportation'),
+        allowNull: false, // Discriminator to know which table itemId references
+        comment: 'Type of travel item this voucher is attached to',
+      },
+      // Legacy field for backward compatibility
       flightId: {
         type: DataTypes.UUID,
-        allowNull: false,
+        allowNull: true,
         references: {
           model: 'flights',
           key: 'id',
         },
+        comment: 'DEPRECATED: Use itemId and itemType instead. Kept for backward compatibility.',
       },
       travelerId: {
         type: DataTypes.UUID,
@@ -68,14 +80,17 @@ module.exports = (sequelize, DataTypes) => {
       as: 'voucher',
     });
 
-    // Attachment belongs to a flight
+    // Legacy association with Flight (kept for backward compatibility)
     VoucherAttachment.belongsTo(models.Flight, {
       foreignKey: 'flightId',
       as: 'flight',
     });
 
-    // Note: We'll handle the polymorphic relationship manually in the controller
-    // since travelerId can reference either User or TravelCompanion
+    // Polymorphic associations with travel items
+    // Note: The actual item association is handled manually in controllers
+    // based on itemType (flight, hotel, event, car_rental, transportation)
+    // This approach is used because Sequelize doesn't natively support
+    // polymorphic associations. We'll use a helper function to get the item.
   };
 
   return VoucherAttachment;

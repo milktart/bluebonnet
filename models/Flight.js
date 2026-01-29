@@ -97,10 +97,19 @@ module.exports = (sequelize, DataTypes) => {
       as: 'trip',
     });
 
+    // Legacy association with VoucherAttachment via flightId (backward compatible)
     Flight.hasMany(models.VoucherAttachment, {
       foreignKey: 'flightId',
       as: 'voucherAttachments',
       onDelete: 'CASCADE',
+    });
+
+    // New polymorphic association with VoucherAttachment
+    Flight.hasMany(models.VoucherAttachment, {
+      foreignKey: 'itemId',
+      as: 'voucherAttachmentsNew',
+      scope: { itemType: 'flight' },
+      constraints: false,
     });
   };
 

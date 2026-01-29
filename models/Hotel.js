@@ -86,6 +86,13 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: 'tripId',
       as: 'trip',
     });
+
+    Hotel.hasMany(models.VoucherAttachment, {
+      foreignKey: 'itemId',
+      as: 'voucherAttachments',
+      scope: { itemType: 'hotel' },
+      constraints: false,
+    });
   };
 
   return Hotel;
