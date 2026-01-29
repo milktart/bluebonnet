@@ -2,14 +2,11 @@
   import { eventsApi } from '$lib/services/api';
   import { tripStoreActions } from '$lib/stores/tripStore';
   import { dataService } from '$lib/services/dataService';
-  import { validateEvent, getFirstError } from '$lib/utils/validation';
+  import { validateEvent } from '$lib/utils/validation';
   import TextInput from './TextInput.svelte';
   import Textarea from './Textarea.svelte';
-  import DateTimePicker from './DateTimePicker.svelte';
   import Select from './Select.svelte';
-  import Button from './Button.svelte';
-  import Alert from './Alert.svelte';
-  import FormContainer from './FormContainer.svelte';
+  import BaseItemForm from './BaseItemForm.svelte';
 
   export let tripId: string;
   export let eventId: string | null = null;
@@ -17,17 +14,13 @@
   export let onSuccess: ((event: any) => void) | null = null;
   export let onCancel: (() => void) | null = null;
 
-  let loading = false;
-  let error: string | null = null;
-
   // Helper function to parse startDateTime/endDateTime into separate date and time
   function parseDateTime(dateTimeStr: string): { date: string; time: string } {
     if (!dateTimeStr) return { date: '', time: '' };
-
     try {
       const dt = new Date(dateTimeStr);
       const date = dt.toISOString().split('T')[0];
-      const time = dt.toTimeString().slice(0, 5); // HH:MM format
+      const time = dt.toTimeString().slice(0, 5);
       return { date, time };
     } catch (e) {
       return { date: '', time: '' };
@@ -77,59 +70,39 @@
   }
 
   async function handleSubmit() {
-    try {
-      // Unified validation using validation utilities
-      const validation = validateEvent(formData);
-      if (!validation.isValid) {
-        error = getFirstError(validation.errors);
-        return;
-      }
+    let savedEvent;
+    if (eventId) {
+      savedEvent = await eventsApi.update(eventId, formData);
+      tripStoreActions.updateEvent(eventId, savedEvent);
+      dataService.invalidateCache('trip');
+    } else {
+      savedEvent = await eventsApi.create(tripId, formData);
+      tripStoreActions.addEvent(savedEvent);
+      dataService.invalidateCache('all');
+    }
 
-      loading = true;
-      error = null;
-
-      let savedEvent;
-      if (eventId) {
-        // Update existing event
-        savedEvent = await eventsApi.update(eventId, formData);
-        tripStoreActions.updateEvent(eventId, savedEvent);
-        // Invalidate cache after update
-        dataService.invalidateCache('trip');
-      } else {
-        // Create new event - pass tripId and formData
-        savedEvent = await eventsApi.create(tripId, formData);
-        tripStoreActions.addEvent(savedEvent);
-        // Invalidate cache after create
-        dataService.invalidateCache('all');
-      }
-
-      if (onSuccess) {
-        onSuccess(savedEvent);
-      }
-    } catch (err) {
-      error = err instanceof Error ? err.message : 'Failed to save event';
-    } finally {
-      loading = false;
+    if (onSuccess) {
+      onSuccess(savedEvent);
     }
   }
 
-  function handleCancel() {
-    if (onCancel) {
-      onCancel();
-    }
-  }
+  let loading = false;
+  let error: string | null = null;
 </script>
 
-<FormContainer
+<BaseItemForm
   title={eventId ? 'Edit Event' : 'Add Event'}
   submitLabel={eventId ? 'Update Event' : 'Add Event'}
-  isLoading={loading}
-  error={error}
   itemType="event"
   itemColor="#f59e0b"
-  isEditing={!!eventId}
-  onCancel={handleCancel}
-  onDelete={() => {}}
+  itemId={eventId}
+  tripId={tripId}
+  bind:loading
+  bind:error
+  bind:formData
+  validationFn={validateEvent}
+  onSubmit={handleSubmit}
+  onCancel={onCancel}
 >
   <TextInput
     label="Event Name"
@@ -190,95 +163,4 @@
     placeholder="Event details and notes..."
     rows={3}
   />
-
-  <div slot="actions" class="form-actions">
-    <button type="submit" disabled={loading} class="btn btn-primary">
-      {eventId ? 'Update Event' : 'Add Event'}
-    </button>
-    <button type="button" on:click={handleCancel} disabled={loading} class="btn btn-secondary">
-      Cancel
-    </button>
-  </div>
-</FormContainer>
-
-<style>
-  :global(.two-column) {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-  }
-
-  :global(.input-label) {
-    display: block;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #374151;
-    margin-bottom: 0.25rem;
-  }
-
-  :global(.form-input) {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    font-size: 1rem;
-    transition: all 0.2s ease;
-  }
-
-  :global(.form-input:focus) {
-    outline: none;
-    ring: 2px #3b82f6;
-    border-color: #3b82f6;
-  }
-
-  :global(.form-input:disabled) {
-    background-color: #f3f4f6;
-    color: #9ca3af;
-    cursor: not-allowed;
-  }
-
-  .form-actions {
-    display: flex;
-    gap: 0.75rem;
-  }
-
-  :global(.btn) {
-    padding: 0.5rem 1rem;
-    border: 1px solid transparent;
-    border-radius: 0.375rem;
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    flex: 1;
-    text-align: center;
-  }
-
-  :global(.btn-primary) {
-    background-color: #3b82f6;
-    color: white;
-    border-color: #3b82f6;
-  }
-
-  :global(.btn-primary:hover:not(:disabled)) {
-    background-color: #2563eb;
-    border-color: #2563eb;
-  }
-
-  :global(.btn-secondary) {
-    background-color: white;
-    color: #374151;
-    border-color: #d1d5db;
-  }
-
-  :global(.btn-secondary:hover:not(:disabled)) {
-    background-color: #f9fafb;
-    border-color: #9ca3af;
-  }
-
-  @media (max-width: 600px) {
-    :global(.two-column) {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>
+</BaseItemForm>

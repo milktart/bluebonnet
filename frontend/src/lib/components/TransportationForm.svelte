@@ -2,14 +2,11 @@
   import { transportationApi } from '$lib/services/api';
   import { tripStoreActions } from '$lib/stores/tripStore';
   import { dataService } from '$lib/services/dataService';
-  import { validateTransportation, getFirstError } from '$lib/utils/validation';
+  import { validateTransportation } from '$lib/utils/validation';
   import TextInput from './TextInput.svelte';
   import Textarea from './Textarea.svelte';
-  import DateTimePicker from './DateTimePicker.svelte';
   import Select from './Select.svelte';
-  import Button from './Button.svelte';
-  import Alert from './Alert.svelte';
-  import FormContainer from './FormContainer.svelte';
+  import BaseItemForm from './BaseItemForm.svelte';
 
   export let tripId: string;
   export let transportationId: string | null = null;
@@ -17,8 +14,6 @@
   export let onSuccess: ((transportation: any) => void) | null = null;
   export let onCancel: (() => void) | null = null;
 
-  let loading = false;
-  let error: string | null = null;
   let formData = {
     tripId: tripId,
     type: transportation?.type || 'taxi',
@@ -57,59 +52,39 @@
   }
 
   async function handleSubmit() {
-    try {
-      // Unified validation using validation utilities
-      const validation = validateTransportation(formData);
-      if (!validation.isValid) {
-        error = getFirstError(validation.errors);
-        return;
-      }
+    let savedTransportation;
+    if (transportationId) {
+      savedTransportation = await transportationApi.update(transportationId, formData);
+      tripStoreActions.updateTransportation(transportationId, savedTransportation);
+      dataService.invalidateCache('trip');
+    } else {
+      savedTransportation = await transportationApi.create(tripId, formData);
+      tripStoreActions.addTransportation(savedTransportation);
+      dataService.invalidateCache('all');
+    }
 
-      loading = true;
-      error = null;
-
-      let savedTransportation;
-      if (transportationId) {
-        // Update existing transportation
-        savedTransportation = await transportationApi.update(transportationId, formData);
-        tripStoreActions.updateTransportation(transportationId, savedTransportation);
-        // Invalidate cache after update
-        dataService.invalidateCache('trip');
-      } else {
-        // Create new transportation - pass tripId and formData
-        savedTransportation = await transportationApi.create(tripId, formData);
-        tripStoreActions.addTransportation(savedTransportation);
-        // Invalidate cache after create
-        dataService.invalidateCache('all');
-      }
-
-      if (onSuccess) {
-        onSuccess(savedTransportation);
-      }
-    } catch (err) {
-      error = err instanceof Error ? err.message : 'Failed to save transportation';
-    } finally {
-      loading = false;
+    if (onSuccess) {
+      onSuccess(savedTransportation);
     }
   }
 
-  function handleCancel() {
-    if (onCancel) {
-      onCancel();
-    }
-  }
+  let loading = false;
+  let error: string | null = null;
 </script>
 
-<FormContainer
+<BaseItemForm
   title={transportationId ? 'Edit Transportation' : 'Add Transportation'}
   submitLabel={transportationId ? 'Update Transportation' : 'Add Transportation'}
-  isLoading={loading}
-  error={error}
   itemType="transportation"
   itemColor="#06b6d4"
-  isEditing={!!transportationId}
-  onCancel={handleCancel}
-  onDelete={() => {}}
+  itemId={transportationId}
+  tripId={tripId}
+  bind:loading
+  bind:error
+  bind:formData
+  validationFn={validateTransportation}
+  onSubmit={handleSubmit}
+  onCancel={onCancel}
 >
   <Select
     label="Transportation Type"
@@ -208,94 +183,4 @@
     rows={3}
   />
 
-  <div slot="actions" class="form-actions">
-    <button type="submit" disabled={loading} class="btn btn-primary">
-      {transportationId ? 'Update Transportation' : 'Add Transportation'}
-    </button>
-    <button type="button" on:click={handleCancel} disabled={loading} class="btn btn-secondary">
-      Cancel
-    </button>
-  </div>
-</FormContainer>
-
-<style>
-  :global(.two-column) {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-  }
-
-  :global(.input-label) {
-    display: block;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #374151;
-    margin-bottom: 0.25rem;
-  }
-
-  :global(.form-input) {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    font-size: 1rem;
-    transition: all 0.2s ease;
-  }
-
-  :global(.form-input:focus) {
-    outline: none;
-    ring: 2px #3b82f6;
-    border-color: #3b82f6;
-  }
-
-  :global(.form-input:disabled) {
-    background-color: #f3f4f6;
-    color: #9ca3af;
-    cursor: not-allowed;
-  }
-
-  .form-actions {
-    display: flex;
-    gap: 0.75rem;
-  }
-
-  :global(.btn) {
-    padding: 0.5rem 1rem;
-    border: 1px solid transparent;
-    border-radius: 0.375rem;
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    flex: 1;
-    text-align: center;
-  }
-
-  :global(.btn-primary) {
-    background-color: #3b82f6;
-    color: white;
-    border-color: #3b82f6;
-  }
-
-  :global(.btn-primary:hover:not(:disabled)) {
-    background-color: #2563eb;
-    border-color: #2563eb;
-  }
-
-  :global(.btn-secondary) {
-    background-color: white;
-    color: #374151;
-    border-color: #d1d5db;
-  }
-
-  :global(.btn-secondary:hover:not(:disabled)) {
-    background-color: #f9fafb;
-    border-color: #9ca3af;
-  }
-
-  @media (max-width: 600px) {
-    :global(.two-column) {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>
+</BaseItemForm>
