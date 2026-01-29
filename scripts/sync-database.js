@@ -102,6 +102,18 @@ async function syncDatabase() {
       // Continue anyway - might not exist yet
     }
 
+    // Drop voucher_attachments table if it exists (due to Sequelize ENUM alter issue)
+    // This table will be recreated by sync with the correct schema
+    try {
+      const tables = await sequelize.getQueryInterface().showAllTables();
+      if (tables.includes('voucher_attachments')) {
+        logger.info('Dropping voucher_attachments table to recreate with correct schema...');
+        await sequelize.query('DROP TABLE IF EXISTS voucher_attachments CASCADE');
+      }
+    } catch (tableCheckError) {
+      logger.warn('Could not check voucher_attachments table:', tableCheckError.message);
+    }
+
     // Sync all models with alter:true to update existing tables
     // This creates new tables and alters existing ones to match models
     await sequelize.sync({ force: false, alter: true });
