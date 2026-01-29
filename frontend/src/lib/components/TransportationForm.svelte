@@ -16,7 +16,7 @@
 
   let formData = {
     tripId: tripId,
-    type: transportation?.type || 'taxi',
+    method: transportation?.type || 'taxi',
     fromLocation: transportation?.fromLocation || '',
     toLocation: transportation?.toLocation || '',
     departureDate: transportation?.departureDate || '',
@@ -88,9 +88,9 @@
 >
   <Select
     label="Transportation Type"
-    value={formData.type}
+    value={formData.method}
     options={typeOptions}
-    on:change={(e) => (formData.type = e.target?.value || 'taxi')}
+    on:change={(e) => (formData.method = e.target?.value || 'taxi')}
     required={true}
   />
 

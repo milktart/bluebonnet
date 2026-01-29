@@ -78,10 +78,8 @@ export function validateFlight(data: Record<string, unknown>): ValidationResult 
 export function validateHotel(data: Record<string, unknown>): ValidationResult {
   const errors: ValidationError[] = [];
 
-  // Accept both 'name' and 'hotelName' for backwards compatibility
-  const hotelName = data.name || data.hotelName;
-  if (!isRequired(hotelName)) {
-    errors.push({ field: 'hotelName', message: 'Hotel name is required' });
+  if (!isRequired(data.name)) {
+    errors.push({ field: 'name', message: 'Hotel name is required' });
   }
 
   if (!isRequired(data.address)) {
@@ -128,10 +126,8 @@ export function validateEvent(data: Record<string, unknown>): ValidationResult {
 export function validateTransportation(data: Record<string, unknown>): ValidationResult {
   const errors: ValidationError[] = [];
 
-  // Accept both 'method' and 'type' for backwards compatibility
-  const method = data.method || data.type;
-  if (!isRequired(method)) {
-    errors.push({ field: 'type', message: 'Transportation method is required' });
+  if (!isRequired(data.method)) {
+    errors.push({ field: 'method', message: 'Transportation method is required' });
   }
 
   if (!isRequired(data.origin)) {

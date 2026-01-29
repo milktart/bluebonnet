@@ -5,22 +5,7 @@
  */
 
 const logger = require('./logger');
-
-/**
- * Parse a timezone field, converting empty/undefined strings to null
- * @param {string|null|undefined} timezone - Timezone string
- * @returns {string|null} Cleaned timezone value or null
- */
-function sanitizeTimezone(timezone) {
-  if (
-    !timezone ||
-    timezone === 'undefined' ||
-    (typeof timezone === 'string' && timezone.trim() === '')
-  ) {
-    return null;
-  }
-  return timezone;
-}
+const { sanitizeTimezone } = require('./timezoneHelper');
 
 /**
  * Combine separate date and time fields into a single datetime string

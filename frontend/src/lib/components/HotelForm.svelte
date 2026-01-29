@@ -15,7 +15,7 @@
 
   let formData = {
     tripId: tripId,
-    hotelName: hotel?.hotelName || hotel?.name || '',
+    name: hotel?.hotelName || hotel?.name || '',
     address: hotel?.address || '',
     phone: hotel?.phone || hotel?.phoneNumber || '',
     checkInDate: hotel?.checkInDate || '',
@@ -75,8 +75,8 @@
 >
   <TextInput
     label="Hotel Name"
-    value={formData.hotelName}
-    on:change={(e) => (formData.hotelName = e.target?.value || '')}
+    value={formData.name}
+    on:change={(e) => (formData.name = e.target?.value || '')}
     required={true}
     placeholder="W Bangkok"
   />

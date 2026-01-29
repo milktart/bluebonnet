@@ -173,17 +173,13 @@ function formatInTimezone(utcDate, timezone, format = 'DD MMM YYYY HH:mm') {
 
 /**
  * Helper function to validate timezone string
+ * @deprecated Use timezoneHelper.sanitizeTimezone() instead
  * @param {string} timezone - Timezone to validate
  * @returns {string|null} - Trimmed timezone or null if invalid
  */
 function validateTimezone(timezone) {
-  return timezone &&
-    typeof timezone === 'string' &&
-    timezone.trim() &&
-    timezone !== 'undefined' &&
-    timezone !== 'null'
-    ? timezone.trim()
-    : null;
+  const { sanitizeTimezone } = require('./timezoneHelper');
+  return sanitizeTimezone(timezone);
 }
 
 /**
