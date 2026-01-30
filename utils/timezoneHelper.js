@@ -65,7 +65,7 @@ function localToUTC(datetimeLocal, timezone) {
       // Parse as UTC, then subtract the offset to get the actual UTC time
       // If local time is 14:30 in UTC-5, UTC time is 14:30 + 5 hours = 19:30
       const utcDate = new Date(`${datetimeLocal}Z`);
-      if (isNaN(utcDate.getTime())) {
+      if (Number.isNaN(utcDate.getTime())) {
         logger.error('Invalid datetime:', datetimeLocal);
         return null;
       }
@@ -108,12 +108,12 @@ function localToUTC(datetimeLocal, timezone) {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
-      hour12: false
+      hour12: false,
     });
 
     const parts2 = formatter.formatToParts(referenceUTC);
     const tzValues = {};
-    parts2.forEach(part => {
+    parts2.forEach((part) => {
       if (part.type !== 'literal') {
         tzValues[part.type] = part.value;
       }
@@ -121,7 +121,9 @@ function localToUTC(datetimeLocal, timezone) {
 
     // The reference UTC time, when displayed in the target timezone, shows these values
     // So we need to find: how far off is the displayed time from our desired local time?
-    const displayedInTZ = new Date(`${tzValues.year}-${tzValues.month}-${tzValues.day}T${tzValues.hour}:${tzValues.minute}:${tzValues.second}Z`);
+    const displayedInTZ = new Date(
+      `${tzValues.year}-${tzValues.month}-${tzValues.day}T${tzValues.hour}:${tzValues.minute}:${tzValues.second}Z`
+    );
     const desiredLocal = new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}Z`);
 
     // The difference between what we want and what we got is the timezone offset
@@ -131,8 +133,8 @@ function localToUTC(datetimeLocal, timezone) {
     return new Date(referenceUTC.getTime() + offset);
   } catch (error) {
     logger.error('Error converting local to UTC:', error, { datetimeLocal, timezone });
-    // Fallback: treat as UTC
-    return new Date(`${datetimeLocal}Z`);
+    // Return null on error instead of creating an invalid date
+    return null;
   }
 }
 
@@ -155,7 +157,7 @@ function utcToLocal(utcDate, timezone) {
   try {
     const date = new Date(utcDate);
 
-    if (isNaN(date.getTime())) {
+    if (Number.isNaN(date.getTime())) {
       logger.error('Invalid UTC date:', utcDate);
       return '';
     }
@@ -189,12 +191,12 @@ function utcToLocal(utcDate, timezone) {
         hour: '2-digit',
         minute: '2-digit',
         hour12: false,
-        timeZone: timezone
+        timeZone: timezone,
       });
 
       const parts = formatter.formatToParts(date);
       const values = {};
-      parts.forEach(part => {
+      parts.forEach((part) => {
         if (part.type !== 'literal') {
           values[part.type] = part.value;
         }
@@ -230,7 +232,7 @@ function formatInTimezone(utcDate, timezone, format = 'DD MMM YYYY HH:mm') {
   try {
     const date = new Date(utcDate);
 
-    if (isNaN(date.getTime())) {
+    if (Number.isNaN(date.getTime())) {
       return '';
     }
 
@@ -245,18 +247,34 @@ function formatInTimezone(utcDate, timezone, format = 'DD MMM YYYY HH:mm') {
     const [, year, month, day, hour, minute] = match;
 
     // Convert month number to name
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     const monthName = monthNames[parseInt(month, 10) - 1];
 
     // Format based on the requested format
     // Supporting most common formats used in the codebase
     if (format === 'DD MMM YYYY HH:mm') {
       return `${day} ${monthName} ${year} ${hour}:${minute}`;
-    } else if (format === 'DD MMM YYYY') {
+    }
+    if (format === 'DD MMM YYYY') {
       return `${day} ${monthName} ${year}`;
-    } else if (format === 'HH:mm') {
+    }
+    if (format === 'HH:mm') {
       return `${hour}:${minute}`;
-    } else if (format === 'YYYY-MM-DD') {
+    }
+    if (format === 'YYYY-MM-DD') {
       return `${year}-${month}-${day}`;
     }
 

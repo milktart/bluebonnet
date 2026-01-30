@@ -152,6 +152,14 @@ router.post('/', async (req, res) => {
       arrivalDateTime = `${arrivalDate}T${arrivalTime}`;
     }
 
+    // Validate that datetime values are present and properly formatted
+    if (!departureDateTime) {
+      return apiResponse.badRequest(res, 'Departure date and time are required');
+    }
+    if (!arrivalDateTime) {
+      return apiResponse.badRequest(res, 'Arrival date and time are required');
+    }
+
     // Auto-populate airline from flight number if not provided
     if (!airline && flightNumber) {
       const airlineName = airportService.getAirlineNameFromFlightNumber(flightNumber);
@@ -190,13 +198,31 @@ router.post('/', async (req, res) => {
     if (!originTimezone) originTimezone = originResult.timezone;
     if (!destinationTimezone) destinationTimezone = destResult.timezone;
 
+    // Convert datetimes to UTC
+    const departureUTC = convertToUTC(departureDateTime, originTimezone);
+    const arrivalUTC = convertToUTC(arrivalDateTime, destinationTimezone);
+
+    // Validate that timezone conversion succeeded
+    if (!departureUTC) {
+      return apiResponse.badRequest(
+        res,
+        'Failed to parse departure time. Please check date and time format.'
+      );
+    }
+    if (!arrivalUTC) {
+      return apiResponse.badRequest(
+        res,
+        'Failed to parse arrival time. Please check date and time format.'
+      );
+    }
+
     const flight = await Flight.create({
       userId: req.user.id,
       tripId: null,
       airline,
       flightNumber: flightNumber?.toUpperCase(),
-      departureDateTime: convertToUTC(departureDateTime, originTimezone),
-      arrivalDateTime: convertToUTC(arrivalDateTime, destinationTimezone),
+      departureDateTime: departureUTC,
+      arrivalDateTime: arrivalUTC,
       origin,
       originTimezone,
       originLat: originResult.coords?.lat,
@@ -290,6 +316,14 @@ router.post('/trips/:tripId', async (req, res) => {
       arrivalDateTime = `${arrivalDate}T${arrivalTime}`;
     }
 
+    // Validate that datetime values are present and properly formatted
+    if (!departureDateTime) {
+      return apiResponse.badRequest(res, 'Departure date and time are required');
+    }
+    if (!arrivalDateTime) {
+      return apiResponse.badRequest(res, 'Arrival date and time are required');
+    }
+
     // Auto-populate airline from flight number if not provided
     if (!airline && flightNumber) {
       const airlineName = airportService.getAirlineNameFromFlightNumber(flightNumber);
@@ -328,13 +362,31 @@ router.post('/trips/:tripId', async (req, res) => {
     if (!originTimezone) originTimezone = originResult.timezone;
     if (!destinationTimezone) destinationTimezone = destResult.timezone;
 
+    // Convert datetimes to UTC
+    const departureUTC = convertToUTC(departureDateTime, originTimezone);
+    const arrivalUTC = convertToUTC(arrivalDateTime, destinationTimezone);
+
+    // Validate that timezone conversion succeeded
+    if (!departureUTC) {
+      return apiResponse.badRequest(
+        res,
+        'Failed to parse departure time. Please check date and time format.'
+      );
+    }
+    if (!arrivalUTC) {
+      return apiResponse.badRequest(
+        res,
+        'Failed to parse arrival time. Please check date and time format.'
+      );
+    }
+
     const flight = await Flight.create({
       userId: req.user.id,
       tripId,
       airline,
       flightNumber: flightNumber?.toUpperCase(),
-      departureDateTime: convertToUTC(departureDateTime, originTimezone),
-      arrivalDateTime: convertToUTC(arrivalDateTime, destinationTimezone),
+      departureDateTime: departureUTC,
+      arrivalDateTime: arrivalUTC,
       origin,
       originTimezone,
       originLat: originResult.coords?.lat,
@@ -607,6 +659,14 @@ router.put('/:id', async (req, res) => {
     }
     if (!arrivalDateTime && arrivalDate && arrivalTime) {
       arrivalDateTime = `${arrivalDate}T${arrivalTime}`;
+    }
+
+    // Validate that datetime values are present and properly formatted
+    if (!departureDateTime) {
+      return apiResponse.badRequest(res, 'Departure date and time are required');
+    }
+    if (!arrivalDateTime) {
+      return apiResponse.badRequest(res, 'Arrival date and time are required');
     }
 
     // Auto-populate airline from flight number if not provided
