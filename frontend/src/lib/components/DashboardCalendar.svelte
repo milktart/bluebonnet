@@ -168,6 +168,12 @@
           // Parse full datetime - keep original times for sorting
           let startDate = new Date(flight.departureDateTime);
           let endDate = new Date(flight.arrivalDateTime || flight.departureDateTime);
+
+          // Handle edge case where arrival is before departure (likely timezone issue)
+          if (endDate < startDate) {
+            endDate = new Date(startDate); // Use departure as end if arrival is earlier
+          }
+
           // Create normalized versions for adding to calendar dates
           let startDateNormalized = new Date(startDate);
           startDateNormalized.setHours(0, 0, 0, 0);
@@ -179,7 +185,7 @@
             type: 'flight',
             data: flight,
             startDate: startDate,  // Keep original time for sorting
-            endDate: endDate,      // Keep original time for sorting
+            endDate: endDate,      // Keep original time for sorting (corrected if needed)
             durationDays: flightDurationDays
           };
           // But add to dateToItems using normalized dates
@@ -198,6 +204,10 @@
           if (!hotel.checkInDateTime) return;
           let startDate = new Date(hotel.checkInDateTime);
           let endDate = new Date(hotel.checkOutDateTime || hotel.checkInDateTime);
+          // Handle edge case where checkout is before checkin
+          if (endDate < startDate) {
+            endDate = new Date(startDate);
+          }
           let startDateNormalized = new Date(startDate);
           startDateNormalized.setHours(0, 0, 0, 0);
           let endDateNormalized = new Date(endDate);
@@ -226,6 +236,10 @@
           if (!event.startDateTime) return;
           let startDate = new Date(event.startDateTime);
           let endDate = new Date(event.endDateTime || event.startDateTime);
+          // Handle edge case where end is before start
+          if (endDate < startDate) {
+            endDate = new Date(startDate);
+          }
           let startDateNormalized = new Date(startDate);
           startDateNormalized.setHours(0, 0, 0, 0);
           let endDateNormalized = new Date(endDate);
@@ -254,6 +268,10 @@
           if (!trans.departureDateTime) return;
           let startDate = new Date(trans.departureDateTime);
           let endDate = new Date(trans.arrivalDateTime || trans.departureDateTime);
+          // Handle edge case where arrival is before departure
+          if (endDate < startDate) {
+            endDate = new Date(startDate);
+          }
           let startDateNormalized = new Date(startDate);
           startDateNormalized.setHours(0, 0, 0, 0);
           let endDateNormalized = new Date(endDate);
@@ -282,6 +300,10 @@
           if (!carRental.pickupDateTime) return;
           let startDate = new Date(carRental.pickupDateTime);
           let endDate = new Date(carRental.dropoffDateTime || carRental.pickupDateTime);
+          // Handle edge case where dropoff is before pickup
+          if (endDate < startDate) {
+            endDate = new Date(startDate);
+          }
           let startDateNormalized = new Date(startDate);
           startDateNormalized.setHours(0, 0, 0, 0);
           let endDateNormalized = new Date(endDate);
@@ -338,6 +360,11 @@
             endDate = new Date(item.endDateTime || item.startDateTime);
           } else {
             return;
+          }
+
+          // Handle edge case where end is before start
+          if (endDate < startDate) {
+            endDate = new Date(startDate);
           }
 
           // Create normalized versions for date-based lookup
