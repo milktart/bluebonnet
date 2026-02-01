@@ -88,9 +88,9 @@
   }
 
   function getDateKey(date: Date): string {
-    const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
 
@@ -134,17 +134,12 @@
 
     // Helper to add item across all months it spans
     function addItemAcrossMonths(item: CalendarItem) {
-      const startKey = getDateKey(item.startDate);
-      addItemToDate(startKey, item);
-
-      // For items spanning multiple months, add to first day of each subsequent month
-      let currentMonthStart = new Date(item.startDate);
-      currentMonthStart.setMonth(currentMonthStart.getMonth() + 1);
-      currentMonthStart.setDate(1);
-      while (currentMonthStart <= item.endDate) {
-        const monthStartKey = getDateKey(currentMonthStart);
-        addItemToDate(monthStartKey, item);
-        currentMonthStart.setMonth(currentMonthStart.getMonth() + 1);
+      // Add item to every day it spans
+      let currentDate = new Date(item.startDate);
+      while (currentDate <= item.endDate) {
+        const key = getDateKey(currentDate);
+        addItemToDate(key, item);
+        currentDate.setDate(currentDate.getDate() + 1);
       }
     }
 
@@ -170,19 +165,30 @@
       if (trip.flights) {
         trip.flights.forEach((flight: any) => {
           if (!flight.departureDateTime) return;
+          // Parse full datetime - keep original times for sorting
           let startDate = new Date(flight.departureDateTime);
-          startDate.setHours(0, 0, 0, 0);
           let endDate = new Date(flight.arrivalDateTime || flight.departureDateTime);
-          endDate.setHours(0, 0, 0, 0);
-          const flightDurationDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-          addItemAcrossMonths({
+          // Create normalized versions for adding to calendar dates
+          let startDateNormalized = new Date(startDate);
+          startDateNormalized.setHours(0, 0, 0, 0);
+          let endDateNormalized = new Date(endDate);
+          endDateNormalized.setHours(0, 0, 0, 0);
+          const flightDurationDays = Math.ceil((endDateNormalized.getTime() - startDateNormalized.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+          const item: CalendarItem = {
             id: flight.id,
             type: 'flight',
             data: flight,
-            startDate,
-            endDate,
+            startDate: startDate,  // Keep original time for sorting
+            endDate: endDate,      // Keep original time for sorting
             durationDays: flightDurationDays
-          });
+          };
+          // But add to dateToItems using normalized dates
+          let currentDate = new Date(startDateNormalized);
+          while (currentDate <= endDateNormalized) {
+            const key = getDateKey(currentDate);
+            addItemToDate(key, item);
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
         });
       }
 
@@ -191,18 +197,26 @@
         trip.hotels.forEach((hotel: any) => {
           if (!hotel.checkInDateTime) return;
           let startDate = new Date(hotel.checkInDateTime);
-          startDate.setHours(0, 0, 0, 0);
           let endDate = new Date(hotel.checkOutDateTime || hotel.checkInDateTime);
-          endDate.setHours(0, 0, 0, 0);
-          const hotelDurationDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-          addItemAcrossMonths({
+          let startDateNormalized = new Date(startDate);
+          startDateNormalized.setHours(0, 0, 0, 0);
+          let endDateNormalized = new Date(endDate);
+          endDateNormalized.setHours(0, 0, 0, 0);
+          const hotelDurationDays = Math.ceil((endDateNormalized.getTime() - startDateNormalized.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+          const item: CalendarItem = {
             id: hotel.id,
             type: 'hotel',
             data: hotel,
-            startDate,
-            endDate,
+            startDate: startDate,
+            endDate: endDate,
             durationDays: hotelDurationDays
-          });
+          };
+          let currentDate = new Date(startDateNormalized);
+          while (currentDate <= endDateNormalized) {
+            const key = getDateKey(currentDate);
+            addItemToDate(key, item);
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
         });
       }
 
@@ -211,18 +225,26 @@
         trip.events.forEach((event: any) => {
           if (!event.startDateTime) return;
           let startDate = new Date(event.startDateTime);
-          startDate.setHours(0, 0, 0, 0);
           let endDate = new Date(event.endDateTime || event.startDateTime);
-          endDate.setHours(0, 0, 0, 0);
-          const eventDurationDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-          addItemAcrossMonths({
+          let startDateNormalized = new Date(startDate);
+          startDateNormalized.setHours(0, 0, 0, 0);
+          let endDateNormalized = new Date(endDate);
+          endDateNormalized.setHours(0, 0, 0, 0);
+          const eventDurationDays = Math.ceil((endDateNormalized.getTime() - startDateNormalized.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+          const item: CalendarItem = {
             id: event.id,
             type: 'event',
             data: event,
-            startDate,
-            endDate,
+            startDate: startDate,
+            endDate: endDate,
             durationDays: eventDurationDays
-          });
+          };
+          let currentDate = new Date(startDateNormalized);
+          while (currentDate <= endDateNormalized) {
+            const key = getDateKey(currentDate);
+            addItemToDate(key, item);
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
         });
       }
 
@@ -231,18 +253,26 @@
         trip.transportation.forEach((trans: any) => {
           if (!trans.departureDateTime) return;
           let startDate = new Date(trans.departureDateTime);
-          startDate.setHours(0, 0, 0, 0);
           let endDate = new Date(trans.arrivalDateTime || trans.departureDateTime);
-          endDate.setHours(0, 0, 0, 0);
-          const transDurationDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-          addItemAcrossMonths({
+          let startDateNormalized = new Date(startDate);
+          startDateNormalized.setHours(0, 0, 0, 0);
+          let endDateNormalized = new Date(endDate);
+          endDateNormalized.setHours(0, 0, 0, 0);
+          const transDurationDays = Math.ceil((endDateNormalized.getTime() - startDateNormalized.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+          const item: CalendarItem = {
             id: trans.id,
             type: 'transportation',
             data: trans,
-            startDate,
-            endDate,
+            startDate: startDate,
+            endDate: endDate,
             durationDays: transDurationDays
-          });
+          };
+          let currentDate = new Date(startDateNormalized);
+          while (currentDate <= endDateNormalized) {
+            const key = getDateKey(currentDate);
+            addItemToDate(key, item);
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
         });
       }
 
@@ -251,18 +281,26 @@
         trip.carRentals.forEach((carRental: any) => {
           if (!carRental.pickupDateTime) return;
           let startDate = new Date(carRental.pickupDateTime);
-          startDate.setHours(0, 0, 0, 0);
           let endDate = new Date(carRental.dropoffDateTime || carRental.pickupDateTime);
-          endDate.setHours(0, 0, 0, 0);
-          const carDurationDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-          addItemAcrossMonths({
+          let startDateNormalized = new Date(startDate);
+          startDateNormalized.setHours(0, 0, 0, 0);
+          let endDateNormalized = new Date(endDate);
+          endDateNormalized.setHours(0, 0, 0, 0);
+          const carDurationDays = Math.ceil((endDateNormalized.getTime() - startDateNormalized.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+          const item: CalendarItem = {
             id: carRental.id,
             type: 'carRental',
             data: carRental,
-            startDate,
-            endDate,
+            startDate: startDate,
+            endDate: endDate,
             durationDays: carDurationDays
-          });
+          };
+          let currentDate = new Date(startDateNormalized);
+          while (currentDate <= endDateNormalized) {
+            const key = getDateKey(currentDate);
+            addItemToDate(key, item);
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
         });
       }
     });
@@ -302,18 +340,29 @@
             return;
           }
 
-          startDate.setHours(0, 0, 0, 0);
-          endDate.setHours(0, 0, 0, 0);
+          // Create normalized versions for date-based lookup
+          let startDateNormalized = new Date(startDate);
+          startDateNormalized.setHours(0, 0, 0, 0);
+          let endDateNormalized = new Date(endDate);
+          endDateNormalized.setHours(0, 0, 0, 0);
 
-          const durationDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-          addItemAcrossMonths({
+          const durationDays = Math.ceil((endDateNormalized.getTime() - startDateNormalized.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+          const calendarItem: CalendarItem = {
             id: item.id,
             type: itemType as any,
             data: item,
-            startDate,
-            endDate,
+            startDate: startDate,  // Keep original time for sorting
+            endDate: endDate,      // Keep original time for sorting
             durationDays
-          });
+          };
+
+          // Add to dateToItems using normalized dates
+          let currentDate = new Date(startDateNormalized);
+          while (currentDate <= endDateNormalized) {
+            const dateKey = getDateKey(currentDate);
+            addItemToDate(dateKey, calendarItem);
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
         });
       }
     });
@@ -329,7 +378,26 @@
     globalItemRowAssignments = {};
     const globalRowOccupancy: CalendarItem[][] = [];
     const allItems = Object.values(dateToItems).flat();
-    const uniqueItems = Array.from(new Map(allItems.map(item => [item.id, item])).values());
+    // Keep track of original order for stable sorting
+    const uniqueItemsWithIndex = Array.from(new Map(allItems.map((item, idx) => [item.id, { item, firstIdx: idx }])).values());
+
+    // Sort items by actual start time (not just date), then by duration, then by original order
+    uniqueItemsWithIndex.sort((a, b) => {
+      // Compare actual datetime (not just date)
+      const aStartTime = a.item.startDate.getTime();
+      const bStartTime = b.item.startDate.getTime();
+      if (aStartTime !== bStartTime) return aStartTime - bStartTime;
+      // If same start time, longer items first
+      const aEnd = a.item.endDate.getTime();
+      const bEnd = b.item.endDate.getTime();
+      const aDuration = aEnd - aStartTime;
+      const bDuration = bEnd - bStartTime;
+      if (aDuration !== bDuration) return bDuration - aDuration;
+      // If same duration, preserve original order
+      return a.firstIdx - b.firstIdx;
+    });
+
+    const uniqueItems = uniqueItemsWithIndex.map(x => x.item);
 
     uniqueItems.forEach((item) => {
       const itemStart = normalizeDate(item.startDate).getTime();
@@ -373,12 +441,19 @@
 
       const days: DayData[] = [];
       for (let day = 1; day <= daysInMonth; day++) {
-        const dateObj = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth(), day, 0, 0, 0, 0));
+        const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day, 0, 0, 0, 0);
         const key = getDateKey(dateObj);
+        const dayItems = (dateToItems[key] || []).slice(); // Make a copy
+        // Sort items by their assigned row number
+        dayItems.sort((a, b) => {
+          const aRow = globalItemRowAssignments[a.id] ?? 0;
+          const bRow = globalItemRowAssignments[b.id] ?? 0;
+          return aRow - bRow;
+        });
         days.push({
           day,
           dateKey: key,
-          items: dateToItems[key] || [],
+          items: dayItems,
           isToday: key === getDateKey(today),
           isBlank: false
         });
@@ -436,6 +511,28 @@
   function handleItemClick(item: CalendarItem) {
     onItemClick(item.type, item.type, item.data);
   }
+
+  function getUniqueItemsInMonth(monthDays: DayData[]): CalendarItem[] {
+    const seen = new Set<string>();
+    const unique: CalendarItem[] = [];
+    for (const day of monthDays) {
+      for (const item of day.items) {
+        if (!seen.has(item.id)) {
+          seen.add(item.id);
+          unique.push(item);
+        }
+      }
+    }
+    // Re-sort by row number to ensure correct display order - flights especially need this
+    unique.sort((a, b) => {
+      const aRow = globalItemRowAssignments[a.id] ?? 0;
+      const bRow = globalItemRowAssignments[b.id] ?? 0;
+      if (aRow !== bRow) return aRow - bRow;
+      // If same row (shouldn't happen), maintain order
+      return 0;
+    });
+    return unique;
+  }
 </script>
 
 <div class="calendar-container" bind:this={calendarContainer}>
@@ -458,45 +555,46 @@
         <div class="days-grid">
           <!-- Items layer -->
           <div class="items-layer">
-            {#each monthData.days as day, dayIdx}
-              {#each day.items as item (item.id)}
-                {@const rowInMonth = globalItemRowAssignments[item.id] ?? 0}
-                {@const startDayIdx = monthData.days.findIndex(d => d.dateKey === getDateKey(item.startDate))}
-                {@const endDayIdx = monthData.days.findIndex(d => d.dateKey === getDateKey(item.endDate))}
-                {@const displayStartIdx = startDayIdx >= 0 ? startDayIdx : (startDayIdx < 0 && endDayIdx >= 0 ? 0 : dayIdx)}
-                {@const daysSpanned = Math.max(1, (endDayIdx >= 0 ? endDayIdx : 30) - displayStartIdx + 1)}
+            {#each getUniqueItemsInMonth(monthData.days) as item (item.id)}
+              {@const rowInMonth = globalItemRowAssignments[item.id] ?? 0}
+              {@const startDayIdx = monthData.days.findIndex(d => d.dateKey === getDateKey(item.startDate))}
+              {@const endDayIdx = monthData.days.findIndex(d => d.dateKey === getDateKey(item.endDate))}
+              {@const displayStartIdx = startDayIdx >= 0 ? startDayIdx : 0}
+              {@const daysInMonth = monthData.days.filter(d => !d.isBlank).length}
+              {@const sameDay = getDateKey(item.startDate) === getDateKey(item.endDate)}
+              {@const endDay = sameDay ? displayStartIdx : (endDayIdx >= 0 ? endDayIdx : (daysInMonth - 1))}
+              {@const daysSpanned = Math.max(1, endDay - displayStartIdx + 1)}
 
-                {#if startDayIdx === dayIdx || (startDayIdx < 0 && dayIdx === 0 && endDayIdx >= 0)}
-                  <div
-                    class="item-bar"
-                    class:flight-item={item.type === 'flight'}
-                    class:unconfirmed={item.data.isConfirmed === false}
-                    style="
-                      --day-idx: {displayStartIdx};
-                      --span: {daysSpanned};
-                      --row-in-month: {rowInMonth};
-                      background-color: {getItemColor(item)}4d;
-                      color: {item.type === 'flight' ? '#5a4a0f' : getItemColor(item)};
-                    "
-                    on:click={() => handleItemClick(item)}
-                    role="button"
-                    tabindex="0"
-                    on:keydown={(e) => e.key === 'Enter' && handleItemClick(item)}
-                  >
-                    {#if item.type !== 'flight'}
-                      <span class="material-symbols-outlined">{getItemIcon(item)}</span>
-                    {/if}
-                    {#if item.type === 'flight'}
-                      <div class="flight-info">
-                        <div class="flight-line">{item.data.origin?.substring(0, 3) || '?'}</div>
-                        <div class="flight-line">{item.data.destination?.substring(0, 3) || '?'}</div>
-                      </div>
-                    {:else}
-                      <span class="item-label">{getItemLabel(item)}</span>
-                    {/if}
-                  </div>
-                {/if}
-              {/each}
+              {#if startDayIdx >= 0 || endDayIdx >= 0}
+                <div
+                  class="item-bar"
+                  class:flight-item={item.type === 'flight'}
+                  class:unconfirmed={item.data.isConfirmed === false}
+                  style="
+                    --day-idx: {displayStartIdx};
+                    --span: {daysSpanned};
+                    --row-in-month: {rowInMonth};
+                    background-color: {getItemColor(item)}4d;
+                    color: {item.type === 'flight' ? '#5a4a0f' : getItemColor(item)};
+                  "
+                  on:click={() => handleItemClick(item)}
+                  role="button"
+                  tabindex="0"
+                  on:keydown={(e) => e.key === 'Enter' && handleItemClick(item)}
+                >
+                  {#if item.type !== 'flight'}
+                    <span class="material-symbols-outlined">{getItemIcon(item)}</span>
+                  {/if}
+                  {#if item.type === 'flight'}
+                    <div class="flight-info">
+                      <div class="flight-line">{item.data.origin?.substring(0, 3) || '?'}</div>
+                      <div class="flight-line">{item.data.destination?.substring(0, 3) || '?'}</div>
+                    </div>
+                  {:else}
+                    <span class="item-label">{getItemLabel(item)}</span>
+                  {/if}
+                </div>
+              {/if}
             {/each}
           </div>
 
