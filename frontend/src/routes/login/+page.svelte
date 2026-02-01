@@ -1,4 +1,5 @@
 <script>
+  import { goto } from '$app/navigation';
   import { authStoreActions } from '$lib/stores/authStore';
 
   let email = '';
@@ -46,7 +47,7 @@
         }
         success = 'Login successful, redirecting...';
         setTimeout(() => {
-          window.location.href = '/dashboard';
+          goto('/dashboard');
         }, 500);
       }
     } catch (err) {

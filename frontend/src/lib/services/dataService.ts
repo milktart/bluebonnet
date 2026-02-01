@@ -243,30 +243,13 @@ class DataService {
 export const dataService = new DataService();
 
 /**
- * SETUP HELPER
+ * SETUP HELPER - DEPRECATED
  *
- * Call this in +page.svelte onMount to setup data sync listeners
+ * This function is no longer needed - listeners are registered directly in +page.svelte
+ * Kept for backwards compatibility but does nothing.
  */
 export function setupDataSyncListener() {
-  /**
-   * Listen for data changes from other tabs/windows
-   * Invalidate cache and refresh when changes detected
-   */
-  window.addEventListener('dataChanged', async (e: any) => {
-    const { type } = e.detail;
-
-    if (type.includes('trip')) {
-      // Trip changed - invalidate trip cache and reload
-      dataService.invalidateCache('trip');
-      // Note: actual reload happens in +page.svelte event handler
-    } else if (type.includes('item')) {
-      // Standalone item changed
-      dataService.invalidateCache('item');
-    } else if (type.includes('companion')) {
-      // Companion list changed - invalidate all
-      dataService.invalidateCache('all');
-    }
-  });
+  // No-op: listeners are registered in +page.svelte onMount instead
 }
 
 /**

@@ -391,16 +391,6 @@
       }
 
       onSave(result || submitData);
-
-      // Invalidate cache after successful mutation
-      if (isEditing) {
-        // For updates, invalidate trip cache
-        dataService.invalidateCache('trip');
-      } else {
-        // For creates, could be new trip or new item
-        dataService.invalidateCache('all');
-      }
-
       onClose();
     } catch (err) {
       error = err instanceof Error ? err.message : 'An error occurred';

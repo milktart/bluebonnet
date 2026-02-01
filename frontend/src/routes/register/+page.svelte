@@ -1,4 +1,6 @@
 <script>
+  import { goto } from '$app/navigation';
+
   let firstName = '';
   let lastName = '';
   let email = '';
@@ -81,7 +83,7 @@
         confirmPassword = '';
         // Redirect to login after 1.5 seconds
         setTimeout(() => {
-          window.location.href = '/login';
+          goto('/login');
         }, 1500);
       } else {
         error = data.message || 'Registration failed';

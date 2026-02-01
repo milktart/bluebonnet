@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
   import { authStore, authStoreActions } from '$lib/stores/authStore';
   import Button from './Button.svelte';
 
@@ -6,7 +7,7 @@
 
   function handleLogout() {
     authStoreActions.logout();
-    window.location.href = '/';
+    goto('/');
   }
 
   function toggleMenu() {
@@ -18,12 +19,12 @@
   }
 
   function handleNavClick(href: string) {
-    window.location.href = href;
+    goto(href);
     closeMenu();
   }
 
   function handleDashboardClick() {
-    window.location.href = '/dashboard';
+    goto('/dashboard');
   }
 </script>
 

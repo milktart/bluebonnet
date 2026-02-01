@@ -387,7 +387,7 @@
       window.removeEventListener('edit-user', handleEditUser);
       window.removeEventListener('mobileEdit', handleMobileEdit);
       window.removeEventListener('mobileDelete', handleMobileDelete);
-      window.removeEventListener('dataChanged', () => {});
+      window.removeEventListener('dataChanged', (e: any) => {});
       window.removeEventListener('resize', handleResponsiveResize);
     };
   });
