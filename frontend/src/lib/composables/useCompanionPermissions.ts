@@ -46,7 +46,11 @@ export function useCompanionPermissions(options: UseCompanionPermissionsOptions 
     if (options.itemOwnerId === currentUserId) return true;
 
     // User can remove themselves
-    const companionUserId = companion.userId || companion.linkedAccount?.id;
+    // Handle both direct and nested companion structures
+    let companionUserId = companion.userId || companion.linkedAccount?.id;
+    if (!companionUserId && companion.companion) {
+      companionUserId = companion.companion.userId || companion.companion.linkedAccount?.id;
+    }
     if (companionUserId === currentUserId) return true;
 
     return false;

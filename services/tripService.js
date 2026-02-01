@@ -397,9 +397,31 @@ class TripService extends BaseService {
         })
       );
     };
+    const ownedTripsProcessed = await processTripsWithOwner(ownedTrips);
+    const companionTripsProcessed = await processTripsWithOwner(companionTrips);
+
+    // Attach trip companions to all items in the trip
+    const attachTripCompanionsToItems = (trips) => {
+      trips.forEach((trip) => {
+        const allItems = [
+          ...(trip.flights || []),
+          ...(trip.hotels || []),
+          ...(trip.transportation || []),
+          ...(trip.carRentals || []),
+          ...(trip.events || []),
+        ];
+        allItems.forEach((item) => {
+          item.tripCompanions = trip.tripCompanions || [];
+        });
+      });
+    };
+
+    attachTripCompanionsToItems(ownedTripsProcessed);
+    attachTripCompanionsToItems(companionTripsProcessed);
+
     const result = {
-      ownedTrips: await processTripsWithOwner(ownedTrips),
-      companionTrips: await processTripsWithOwner(companionTrips),
+      ownedTrips: ownedTripsProcessed,
+      companionTrips: companionTripsProcessed,
       standalone: convertedStandalone,
       pagination,
     };
@@ -793,22 +815,24 @@ class TripService extends BaseService {
 
         // Add the item owner as the first companion if they have user data
         if (item.user && item.userId) {
-          const ownerCompanion = {
-            id: item.user.id,
-            email: item.user.email,
-            firstName: item.user.firstName,
-            lastName: item.user.lastName,
-            name:
-              item.user.firstName && item.user.lastName
-                ? `${item.user.firstName} ${item.user.lastName}`
-                : item.user.email,
-            userId: item.user.id,
-            isOwner: true,
-            inheritedFromTrip: false,
-          };
-          // Only add owner if not already in companions list
+          // Check if owner is already in companions list (may have been explicitly added)
           const ownerExists = item.itemCompanions.some((c) => c.userId === item.userId);
+
           if (!ownerExists) {
+            // Owner is not in the companions list, so add them
+            const ownerCompanion = {
+              id: item.user.id,
+              email: item.user.email,
+              firstName: item.user.firstName,
+              lastName: item.user.lastName,
+              name:
+                item.user.firstName && item.user.lastName
+                  ? `${item.user.firstName} ${item.user.lastName}`
+                  : item.user.email,
+              userId: item.user.id,
+              isOwner: true,
+              inheritedFromTrip: false,
+            };
             item.itemCompanions.unshift(ownerCompanion);
           }
         }
@@ -839,6 +863,18 @@ class TripService extends BaseService {
       loadAndTransformItemCompanions(tripData.carRentals, 'car_rental'),
       loadAndTransformItemCompanions(tripData.events, 'event'),
     ]);
+
+    // Attach trip companions to all items for display in edit forms
+    const allItems = [
+      ...(tripData.flights || []),
+      ...(tripData.hotels || []),
+      ...(tripData.transportation || []),
+      ...(tripData.carRentals || []),
+      ...(tripData.events || []),
+    ];
+    allItems.forEach((item) => {
+      item.tripCompanions = tripData.tripCompanions || [];
+    });
     // Add isAllDay flag to all events (use UTC since dates are ISO strings)
     if (tripData.events && Array.isArray(tripData.events)) {
       tripData.events.forEach((event) => {

@@ -165,7 +165,7 @@ router.get('/trips/:tripId', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
-    const { CarRental, Trip, TravelCompanion, ItemCompanion } = require('../../../models');
+    const { CarRental, Trip, TravelCompanion, ItemCompanion, User } = require('../../../models');
     const carRental = await CarRental.findByPk(req.params.id, {
       include: [{ model: Trip, as: 'trip', required: false }],
     });
@@ -188,7 +188,7 @@ router.get('/:id', async (req, res) => {
 
     // Add companions to response
     const rentalData = carRental.toJSON();
-    rentalData.itemCompanions = itemCompanions.map((ic) => ({
+    const companionsList = itemCompanions.map((ic) => ({
       id: ic.companion.id,
       companionId: ic.companion.id,
       email: ic.companion.email,
@@ -199,6 +199,29 @@ router.get('/:id', async (req, res) => {
       inheritedFromTrip: ic.inheritedFromTrip,
     }));
 
+    // Add car rental owner as first companion if not already in list
+    if (carRental.userId) {
+      const ownerInList = companionsList.some((c) => c.userId === carRental.userId);
+      if (!ownerInList) {
+        const owner = await User.findByPk(carRental.userId, {
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        });
+        if (owner) {
+          companionsList.unshift({
+            id: owner.id,
+            email: owner.email,
+            firstName: owner.firstName,
+            lastName: owner.lastName,
+            name: `${owner.firstName} ${owner.lastName}`.trim(),
+            userId: owner.id,
+            isOwner: true,
+          });
+        }
+      }
+    }
+
+    rentalData.itemCompanions = companionsList;
+
     // Set canEdit flag using centralized permission helper
     const userId = req.user?.id;
     const permissions = await getItemPermissions(carRental, userId);
@@ -206,9 +229,20 @@ router.get('/:id', async (req, res) => {
     rentalData.canDelete = permissions.canDelete;
 
     // Add trip companions if car rental is part of a trip
-    const tripCompanions = await loadTripCompanions(carRental.tripId, carRental.trip);
-    if (tripCompanions.length > 0) {
+    let tripCompanions = [];
+    if (carRental.tripId && carRental.trip) {
+      tripCompanions = await loadTripCompanions(carRental.tripId, carRental.trip);
       rentalData.tripCompanions = tripCompanions;
+      rentalData.tripOwnerId = carRental.trip.userId;
+    } else if (carRental.tripId && !carRental.trip) {
+      // If tripId exists but trip wasn't loaded, fetch it
+      const { Trip } = require('../../../models');
+      const trip = await Trip.findByPk(carRental.tripId);
+      if (trip) {
+        tripCompanions = await loadTripCompanions(carRental.tripId, trip);
+        rentalData.tripCompanions = tripCompanions;
+        rentalData.tripOwnerId = trip.userId;
+      }
     }
 
     return apiResponse.success(res, rentalData, 'Car rental retrieved successfully');

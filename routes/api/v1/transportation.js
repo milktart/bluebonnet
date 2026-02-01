@@ -165,7 +165,13 @@ router.get('/trips/:tripId', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
-    const { Transportation, Trip, TravelCompanion, ItemCompanion } = require('../../../models');
+    const {
+      Transportation,
+      Trip,
+      TravelCompanion,
+      ItemCompanion,
+      User,
+    } = require('../../../models');
     const trans = await Transportation.findByPk(req.params.id, {
       include: [{ model: Trip, as: 'trip', required: false }],
     });
@@ -188,7 +194,7 @@ router.get('/:id', async (req, res) => {
 
     // Add companions to response
     const transData = trans.toJSON();
-    transData.itemCompanions = itemCompanions.map((ic) => ({
+    const companionsList = itemCompanions.map((ic) => ({
       id: ic.companion.id,
       companionId: ic.companion.id,
       email: ic.companion.email,
@@ -199,6 +205,29 @@ router.get('/:id', async (req, res) => {
       inheritedFromTrip: ic.inheritedFromTrip,
     }));
 
+    // Add transportation owner as first companion if not already in list
+    if (trans.userId) {
+      const ownerInList = companionsList.some((c) => c.userId === trans.userId);
+      if (!ownerInList) {
+        const owner = await User.findByPk(trans.userId, {
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        });
+        if (owner) {
+          companionsList.unshift({
+            id: owner.id,
+            email: owner.email,
+            firstName: owner.firstName,
+            lastName: owner.lastName,
+            name: `${owner.firstName} ${owner.lastName}`.trim(),
+            userId: owner.id,
+            isOwner: true,
+          });
+        }
+      }
+    }
+
+    transData.itemCompanions = companionsList;
+
     // Set canEdit flag using centralized permission helper
     const userId = req.user?.id;
     const permissions = await getItemPermissions(trans, userId);
@@ -206,9 +235,20 @@ router.get('/:id', async (req, res) => {
     transData.canDelete = permissions.canDelete;
 
     // Add trip companions if transportation is part of a trip
-    const tripCompanions = await loadTripCompanions(trans.tripId, trans.trip);
-    if (tripCompanions.length > 0) {
+    let tripCompanions = [];
+    if (trans.tripId && trans.trip) {
+      tripCompanions = await loadTripCompanions(trans.tripId, trans.trip);
       transData.tripCompanions = tripCompanions;
+      transData.tripOwnerId = trans.trip.userId;
+    } else if (trans.tripId && !trans.trip) {
+      // If tripId exists but trip wasn't loaded, fetch it
+      const { Trip } = require('../../../models');
+      const trip = await Trip.findByPk(trans.tripId);
+      if (trip) {
+        tripCompanions = await loadTripCompanions(trans.tripId, trip);
+        transData.tripCompanions = tripCompanions;
+        transData.tripOwnerId = trip.userId;
+      }
     }
 
     return apiResponse.success(res, transData, 'Transportation retrieved successfully');

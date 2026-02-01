@@ -179,41 +179,8 @@
     formData = initialized;
     selectedTripId = data?.tripId || '';
     // Initialize companions: prioritize tripCompanions (from direct item endpoint) over itemCompanions
-    let companions = data?.tripCompanions || data?.itemCompanions || data?.travelCompanions || [];
-
-    // For non-trip items, add the item owner to the companions list if not already there
-    if (itemType !== 'trip' && data?.userId && !canEdit) {
-      // User is viewing an item they don't own - owner should be in the list
-      // Owner is included in the companions returned from the backend
-      selectedCompanions = companions;
-    } else if (itemType !== 'trip' && data?.userId && canEdit) {
-      // User is the owner viewing their own item - add themselves to the list
-      const currentUser = $authStore.user;
-      const ownerId = data.userId;
-      const ownerName = data.ownerName || currentUser?.firstName || currentUser?.email || 'Unknown';
-
-      // Check if owner is already in the companions list
-      const ownerAlreadyListed = companions.some(c => (c.userId || c.id) === ownerId);
-
-      if (!ownerAlreadyListed && currentUser?.id === ownerId) {
-        // Add the current user (owner) to the beginning of the companions list
-        selectedCompanions = [
-          {
-            id: ownerId,
-            userId: ownerId,
-            firstName: currentUser.firstName || '',
-            lastName: currentUser.lastName || '',
-            email: currentUser.email || '',
-            name: ownerName
-          },
-          ...companions
-        ];
-      } else {
-        selectedCompanions = companions;
-      }
-    } else {
-      selectedCompanions = companions;
-    }
+    // The backend already includes the item owner in itemCompanions, so just use it directly
+    selectedCompanions = data?.tripCompanions || data?.itemCompanions || data?.travelCompanions || [];
   }
 
   // Auto-lookup airline when flight number changes (for flights)
@@ -1149,7 +1116,7 @@
           canEdit={canEdit}
           currentUserId={$authStore.user?.id || null}
           itemOwnerId={data?.userId || null}
-          tripOwnerId={allTrips.find(t => t.id === data?.tripId)?.userId || null}
+          tripOwnerId={allTrips.find(t => t.id === data?.tripId)?.userId || data?.tripOwnerId || null}
           isStandaloneItem={!data?.tripId}
           onCompanionsUpdate={(companions) => {
             selectedCompanions = companions;

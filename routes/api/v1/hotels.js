@@ -168,7 +168,7 @@ router.get('/trips/:tripId', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
-    const { Hotel, Trip, TravelCompanion, ItemCompanion } = require('../../../models');
+    const { Hotel, Trip, TravelCompanion, ItemCompanion, User } = require('../../../models');
     const hotel = await Hotel.findByPk(req.params.id, {
       include: [{ model: Trip, as: 'trip', required: false }],
     });
@@ -191,7 +191,7 @@ router.get('/:id', async (req, res) => {
 
     // Add companions to response
     const hotelData = hotel.toJSON();
-    hotelData.itemCompanions = itemCompanions.map((ic) => ({
+    const companionsList = itemCompanions.map((ic) => ({
       id: ic.companion.id,
       companionId: ic.companion.id,
       email: ic.companion.email,
@@ -202,6 +202,29 @@ router.get('/:id', async (req, res) => {
       inheritedFromTrip: ic.inheritedFromTrip,
     }));
 
+    // Add hotel owner as first companion if not already in list
+    if (hotel.userId) {
+      const ownerInList = companionsList.some((c) => c.userId === hotel.userId);
+      if (!ownerInList) {
+        const owner = await User.findByPk(hotel.userId, {
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        });
+        if (owner) {
+          companionsList.unshift({
+            id: owner.id,
+            email: owner.email,
+            firstName: owner.firstName,
+            lastName: owner.lastName,
+            name: `${owner.firstName} ${owner.lastName}`.trim(),
+            userId: owner.id,
+            isOwner: true,
+          });
+        }
+      }
+    }
+
+    hotelData.itemCompanions = companionsList;
+
     // Set canEdit flag using centralized permission helper
     const userId = req.user?.id;
     const permissions = await getItemPermissions(hotel, userId);
@@ -209,9 +232,20 @@ router.get('/:id', async (req, res) => {
     hotelData.canDelete = permissions.canDelete;
 
     // Get trip companions if item is part of a trip
-    const tripCompanions = await loadTripCompanions(hotel.tripId, hotel.trip);
-    if (tripCompanions.length > 0) {
+    let tripCompanions = [];
+    if (hotel.tripId && hotel.trip) {
+      tripCompanions = await loadTripCompanions(hotel.tripId, hotel.trip);
       hotelData.tripCompanions = tripCompanions;
+      hotelData.tripOwnerId = hotel.trip.userId;
+    } else if (hotel.tripId && !hotel.trip) {
+      // If tripId exists but trip wasn't loaded, fetch it
+      const { Trip } = require('../../../models');
+      const trip = await Trip.findByPk(hotel.tripId);
+      if (trip) {
+        tripCompanions = await loadTripCompanions(hotel.tripId, trip);
+        hotelData.tripCompanions = tripCompanions;
+        hotelData.tripOwnerId = trip.userId;
+      }
     }
 
     return apiResponse.success(res, hotelData, 'Hotel retrieved successfully');
