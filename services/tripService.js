@@ -910,11 +910,8 @@ class TripService extends BaseService {
     if (!trip) {
       return false;
     }
-    // Delete all associated item companions
-    await ItemCompanion.destroy({
-      where: { tripId },
-    });
     // Delete all trip companions
+    // (Item companions will be deleted via CASCADE when items are deleted)
     await TripCompanion.destroy({
       where: { tripId },
     });
