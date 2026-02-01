@@ -15,7 +15,7 @@
     {/if}
   </label>
   <textarea
-    {value}
+    bind:value
     on:change
     {required}
     {placeholder}
@@ -46,6 +46,8 @@
     font-family: inherit;
     resize: vertical;
     box-sizing: border-box;
+    height: auto;
+    min-height: 80px;
   }
 
   /* Mobile: Use 16px font to prevent iOS auto-zoom on focus */

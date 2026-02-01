@@ -795,7 +795,7 @@
 
         <div class="form-group">
           <label for="location">Location</label>
-          <input type="text" id="location" name="location" bind:value={formData.location} required disabled={!canEdit} />
+          <textarea id="location" name="location" bind:value={formData.location} required disabled={!canEdit}></textarea>
         </div>
 
         <!-- All Day Checkbox -->
