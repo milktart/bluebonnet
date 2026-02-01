@@ -867,7 +867,12 @@
           openTertiarySidebar(e.detail.action, e.detail.detail);
         }}
         on:itemClick={(e) => {
-          handleItemClick(e.detail.itemType, e.detail.itemType, e.detail.data);
+          // When clicking an item from the calendar, open it in the tertiary sidebar
+          // while keeping the calendar visible in the secondary sidebar
+          dashboardStoreActions.openTertiarySidebar({
+            type: e.detail.itemType,
+            data: e.detail.data
+          });
         }}
       />
     </div>
@@ -974,6 +979,27 @@
       </div>
       <div class="tertiary-form-container">
         <AirportForm airport={tertiarySidebarContent.data?.airport} />
+      </div>
+    {:else if tertiarySidebarContent?.type === 'trip' || tertiarySidebarContent?.type === 'flight' || tertiarySidebarContent?.type === 'hotel' || tertiarySidebarContent?.type === 'transportation' || tertiarySidebarContent?.type === 'carRental' || tertiarySidebarContent?.type === 'event'}
+      <div class="tertiary-header">
+        <h3>{tertiarySidebarContent.type === 'trip' ? 'Trip' : tertiarySidebarContent.type === 'flight' ? 'Flight' : tertiarySidebarContent.type === 'hotel' ? 'Hotel' : tertiarySidebarContent.type === 'transportation' ? 'Transportation' : tertiarySidebarContent.type === 'carRental' ? 'Car Rental' : 'Event'}</h3>
+        <button class="close-btn" on:click={closeTertiarySidebar} title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="tertiary-form-container">
+        <ItemEditForm
+          itemType={tertiarySidebarContent.type}
+          data={tertiarySidebarContent.data}
+          tripId={tertiarySidebarContent.data?.tripId || ''}
+          allTrips={trips}
+          canEdit={tertiarySidebarContent.data?.canEdit !== false}
+          onClose={closeTertiarySidebar}
+          onSave={(item) => {
+            closeTertiarySidebar();
+            loadTripData();
+          }}
+        />
       </div>
     {/if}
   </div>

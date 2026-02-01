@@ -75,7 +75,7 @@
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
-      <DashboardCalendar {trips} {standaloneItems} onItemClick={(e) => dispatch('itemClick', e)} />
+      <DashboardCalendar {trips} {standaloneItems} onItemClick={(type, itemType, data) => dispatch('itemClick', { itemType, data })} />
     </div>
   {:else if secondarySidebarContent?.type === 'settings-profile'}
     <div class="settings-panel">
