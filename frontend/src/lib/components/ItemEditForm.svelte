@@ -906,9 +906,9 @@
         {#if itemType === 'trip' && config.fields.some(f => f.name === 'departureDate')}
           {#each config.fields as field}
             {#if field.name === 'name'}
-              <!-- Trip Name & Tentative on same row -->
-              <div class="form-row cols-2">
-                <div class="form-group">
+              <!-- Trip Name & Tentative (3-col: 2-1) -->
+              <div class="form-row cols-3">
+                <div class="form-group" style="grid-column: span 2;">
                   <label for={field.name}>{field.label}</label>
                   <input
                     type="text"
@@ -921,11 +921,14 @@
                   />
                 </div>
                 {#if config.fields.some(f => f.name === 'isTentative')}
-                  <div class="form-group checkbox-group" style="display: flex; align-items: flex-end; padding-bottom: 0.5rem;">
-                    <label for="isTentative">
-                      <input type="checkbox" id="isTentative" name="isTentative" bind:checked={formData.isTentative} disabled={!canEdit} />
-                      <span>Tentative</span>
-                    </label>
+                  <div class="form-group" style="display: flex; flex-direction: column; align-items: center;">
+                    <label for="isTentative" style="text-align: center;">Tentative</label>
+                    <div class="checkbox-group" style="display: flex; justify-content: center; align-items: center; flex: 1;">
+                      <label for="isTentative">
+                        <input type="checkbox" id="isTentative" name="isTentative" bind:checked={formData.isTentative} disabled={!canEdit} />
+                        <span></span>
+                      </label>
+                    </div>
                   </div>
                 {/if}
               </div>
