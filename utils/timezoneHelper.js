@@ -96,8 +96,8 @@ function localToUTC(datetimeLocal, timezone) {
     // 1. A date in UTC with the given date/time values
     // 2. Format that same UTC moment in the target timezone to see what the local time would be
 
-    // Start with a reference UTC date
-    const referenceUTC = new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}Z`);
+    // Start with a reference UTC date (midnight UTC on the target date)
+    const referenceUTC = new Date(`${year}-${month}-${day}T00:00:00Z`);
 
     // Format this UTC date as it would appear in the target timezone
     const formatter = new Intl.DateTimeFormat('en-CA', {
@@ -111,26 +111,38 @@ function localToUTC(datetimeLocal, timezone) {
       hour12: false,
     });
 
-    const parts2 = formatter.formatToParts(referenceUTC);
-    const tzValues = {};
-    parts2.forEach((part) => {
-      if (part.type !== 'literal') {
-        tzValues[part.type] = part.value;
-      }
-    });
+    // Format and parse the result to get the timezone offset at this moment
+    const formatted = formatter.format(referenceUTC);
+    // Format can be "YYYY-MM-DD HH:mm:ss" or "YYYY-MM-DD, HH:mm:ss" depending on locale
+    const match = formatted.match(/^(\d{4})-(\d{2})-(\d{2})[,\s]+(\d{2}):(\d{2}):(\d{2})$/);
+    if (!match) {
+      logger.error('Failed to parse formatted timezone string:', { formatted, timezone });
+      return null;
+    }
 
-    // The reference UTC time, when displayed in the target timezone, shows these values
-    // So we need to find: how far off is the displayed time from our desired local time?
+    const [, refYear, refMonth, refDay, refHour, refMinute, refSecond] = match;
+
+    // The reference UTC time (midnight), when displayed in the target timezone, shows these values
+    // Calculate how many milliseconds the timezone shifted the time
     const displayedInTZ = new Date(
-      `${tzValues.year}-${tzValues.month}-${tzValues.day}T${tzValues.hour}:${tzValues.minute}:${tzValues.second}Z`
+      `${refYear}-${refMonth}-${refDay}T${refHour}:${refMinute}:${refSecond}Z`
     );
-    const desiredLocal = new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}Z`);
+    const offset = referenceUTC.getTime() - displayedInTZ.getTime();
 
-    // The difference between what we want and what we got is the timezone offset
-    const offset = desiredLocal.getTime() - displayedInTZ.getTime();
+    // Now create a UTC date for our desired local time by applying the offset in reverse
+    const desiredUTC = new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}Z`);
+    const result = new Date(desiredUTC.getTime() + offset);
 
-    // Apply this offset to get the correct UTC time
-    return new Date(referenceUTC.getTime() + offset);
+    if (Number.isNaN(result.getTime())) {
+      logger.error('Invalid result date after offset calculation:', {
+        desiredUTC: desiredUTC.toISOString(),
+        offset,
+        resultTime: result.getTime(),
+      });
+      return null;
+    }
+
+    return result;
   } catch (error) {
     logger.error('Error converting local to UTC:', error, { datetimeLocal, timezone });
     // Return null on error instead of creating an invalid date
