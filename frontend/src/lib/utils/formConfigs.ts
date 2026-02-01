@@ -34,12 +34,14 @@ export function getFormConfigs(isEditing: boolean): Record<string, FormConfig> {
         },
         { name: 'departureDate', label: 'Departure Date', type: 'date', required: true },
         { name: 'returnDate', label: 'Return Date', type: 'date', required: true },
+        { name: 'isTentative', label: 'Tentative', type: 'checkbox' },
         { name: 'notes', label: 'Notes', type: 'textarea' }
       ]
     },
     flight: {
       title: isEditing ? 'Edit Flight' : 'Add Flight',
       fields: [
+        { name: 'isTentative', label: 'Tentative', type: 'checkbox' },
         { name: 'flightNumber', label: 'Flight Number', type: 'text', required: true, placeholder: 'KL668' },
         { name: 'airline', label: 'Airline', type: 'text', readonly: true },
         { name: 'origin', label: 'Origin', type: 'airport', required: true, placeholder: 'AUS' },
@@ -55,6 +57,7 @@ export function getFormConfigs(isEditing: boolean): Record<string, FormConfig> {
     hotel: {
       title: isEditing ? 'Edit Hotel' : 'Add Hotel',
       fields: [
+        { name: 'isTentative', label: 'Tentative', type: 'checkbox' },
         { name: 'name', label: 'Hotel Name', type: 'text', required: true },
         { name: 'address', label: 'Address', type: 'text', required: true },
         { name: 'checkInDate', label: 'Check In Date', type: 'date', required: true },
@@ -68,6 +71,7 @@ export function getFormConfigs(isEditing: boolean): Record<string, FormConfig> {
     transportation: {
       title: isEditing ? 'Edit Transportation' : 'Add Transportation',
       fields: [
+        { name: 'isTentative', label: 'Tentative', type: 'checkbox' },
         {
           name: 'method',
           label: 'Method',
@@ -99,6 +103,7 @@ export function getFormConfigs(isEditing: boolean): Record<string, FormConfig> {
     carRental: {
       title: isEditing ? 'Edit Car Rental' : 'Add Car Rental',
       fields: [
+        { name: 'isTentative', label: 'Tentative', type: 'checkbox' },
         { name: 'company', label: 'Company', type: 'text', required: true },
         { name: 'pickupLocation', label: 'Pickup Location', type: 'text', required: true },
         { name: 'pickupDate', label: 'Pickup Date', type: 'date', required: true },
@@ -122,6 +127,7 @@ export function getFormConfigs(isEditing: boolean): Record<string, FormConfig> {
         { name: 'endTime', label: 'End Time', type: 'time', placeholder: 'HH:MM' },
         { name: 'description', label: 'Description', type: 'textarea' },
         { name: 'ticketNumber', label: 'Ticket Number', type: 'text' },
+        { name: 'isTentative', label: 'Tentative', type: 'checkbox' },
         { name: 'notes', label: 'Notes', type: 'textarea' }
       ]
     }

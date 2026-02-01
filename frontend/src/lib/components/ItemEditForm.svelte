@@ -157,6 +157,14 @@
       }
     }
 
+    // Convert isConfirmed to isTentative for frontend display
+    // isTentative = !isConfirmed (checked = tentative, unchecked = confirmed)
+    if (sourceData.isConfirmed !== undefined) {
+      formData.isTentative = !sourceData.isConfirmed;
+      // Remove isConfirmed from formData since we're using isTentative
+      delete formData.isConfirmed;
+    }
+
     return formData;
   }
 
@@ -286,6 +294,13 @@
 
       // Prepare form data with tripId for non-trip items
       const submitData = { ...formData };
+
+      // Convert isTentative back to isConfirmed for backend
+      // isConfirmed = !isTentative (unchecked = confirmed, checked = tentative)
+      if (submitData.isTentative !== undefined) {
+        submitData.isConfirmed = !submitData.isTentative;
+        delete submitData.isTentative;
+      }
 
       // Remove old datetime fields when submitting separate date/time fields
       // This prevents the backend from ignoring the new date/time values
@@ -516,14 +531,28 @@
 
     <div class="form-fields">
       {#if showTripSelector}
-        <div class="form-group">
-          <label for="tripSelector">Trip</label>
-          <select id="tripSelector" bind:value={selectedTripId} disabled={!canEdit}>
-            <option value="">Standalone Item</option>
-            {#each upcomingTrips as trip (trip.id)}
-              <option value={trip.id}>{trip.name}</option>
-            {/each}
-          </select>
+        <!-- Trip Selector & Tentative (3-col: 2-1) -->
+        <div class="form-row cols-3">
+          <div class="form-group" style="grid-column: span 2;">
+            <label for="tripSelector">Trip</label>
+            <select id="tripSelector" bind:value={selectedTripId} disabled={!canEdit}>
+              <option value="">Standalone Item</option>
+              {#each upcomingTrips as trip (trip.id)}
+                <option value={trip.id}>{trip.name}</option>
+              {/each}
+            </select>
+          </div>
+          {#if config.fields.some(f => f.name === 'isTentative')}
+            <div class="form-group" style="display: flex; flex-direction: column; align-items: center;">
+              <label for="isTentative" style="text-align: center;">Tentative</label>
+              <div class="checkbox-group" style="display: flex; justify-content: center; align-items: center; flex: 1;">
+                <label for="isTentative">
+                  <input type="checkbox" id="isTentative" name="isTentative" bind:checked={formData.isTentative} disabled={!canEdit} />
+                  <span></span>
+                </label>
+              </div>
+            </div>
+          {/if}
         </div>
       {/if}
       {#if itemType === 'flight'}
@@ -551,6 +580,7 @@
             <input type="text" id="airline" name="airline" bind:value={formData.airline} readonly class="readonly" />
           </div>
         </div>
+
 
         <!-- Origin & Destination (2-col) -->
         <div class="form-row cols-2">
@@ -856,12 +886,50 @@
           <textarea id="description" name="description" bind:value={formData.description} placeholder="Event details" disabled={!canEdit} />
         </div>
 
+        <!-- Tentative Checkbox -->
+        <div class="form-group checkbox-group">
+          <label for="isTentative">
+            <input type="checkbox" id="isTentative" name="isTentative" bind:checked={formData.isTentative} disabled={!canEdit} />
+            <span>Tentative</span>
+          </label>
+        </div>
+
+        <!-- Notes -->
+        <div class="form-group">
+          <label for="notes">Notes</label>
+          <textarea id="notes" name="notes" bind:value={formData.notes} placeholder="Additional information" disabled={!canEdit} />
+        </div>
+
       {:else}
         <!-- Generic form layout fallback -->
         <!-- Special layout for trip departure and return dates -->
         {#if itemType === 'trip' && config.fields.some(f => f.name === 'departureDate')}
           {#each config.fields as field}
-            {#if field.name === 'departureDate'}
+            {#if field.name === 'name'}
+              <!-- Trip Name & Tentative on same row -->
+              <div class="form-row cols-2">
+                <div class="form-group">
+                  <label for={field.name}>{field.label}</label>
+                  <input
+                    type="text"
+                    id={field.name}
+                    name={field.name}
+                    bind:value={formData[field.name]}
+                    placeholder={field.placeholder}
+                    required={field.required}
+                    disabled={!canEdit}
+                  />
+                </div>
+                {#if config.fields.some(f => f.name === 'isTentative')}
+                  <div class="form-group checkbox-group" style="display: flex; align-items: flex-end; padding-bottom: 0.5rem;">
+                    <label for="isTentative">
+                      <input type="checkbox" id="isTentative" name="isTentative" bind:checked={formData.isTentative} disabled={!canEdit} />
+                      <span>Tentative</span>
+                    </label>
+                  </div>
+                {/if}
+              </div>
+            {:else if field.name === 'departureDate'}
               <div class="form-row cols-2">
                 <div class="form-group">
                   <label for={field.name}>{field.label}</label>
@@ -892,7 +960,7 @@
                   {/each}
                 {/if}
               </div>
-            {:else if field.name !== 'returnDate'}
+            {:else if field.name !== 'returnDate' && field.name !== 'isTentative'}
               <div class="form-group">
                 <label for={field.name}>{field.label}</label>
 
@@ -953,6 +1021,13 @@
                     placeholder={field.placeholder}
                     disabled={!canEdit}
                   />
+                {:else if field.type === 'checkbox'}
+                  <div class="checkbox-group">
+                    <label for={field.name}>
+                      <input type="checkbox" id={field.name} name={field.name} bind:checked={formData[field.name]} disabled={!canEdit} />
+                      <span>{field.label}</span>
+                    </label>
+                  </div>
                 {/if}
               </div>
             {/if}
@@ -960,10 +1035,40 @@
         {:else}
           <!-- Default field rendering for all other item types -->
           {#each config.fields as field}
-            <div class="form-group">
-              <label for={field.name}>{field.label}</label>
+            {#if field.name === 'name' && itemType !== 'trip'}
+              <!-- Name & Tentative on same row for items -->
+              <div class="form-row cols-2">
+                <div class="form-group">
+                  <label for={field.name}>{field.label}</label>
 
-              {#if field.type === 'text'}
+                  {#if field.type === 'text'}
+                    <input
+                      type="text"
+                      id={field.name}
+                      name={field.name}
+                      bind:value={formData[field.name]}
+                      placeholder={field.placeholder}
+                      required={field.required}
+                      readonly={field.readonly}
+                      disabled={!canEdit}
+                      class={field.readonly ? 'readonly' : ''}
+                    />
+                  {/if}
+                </div>
+                {#if config.fields.some(f => f.name === 'isTentative')}
+                  <div class="form-group checkbox-group" style="display: flex; align-items: flex-end; padding-bottom: 0.5rem;">
+                    <label for="isTentative">
+                      <input type="checkbox" id="isTentative" name="isTentative" bind:checked={formData.isTentative} disabled={!canEdit} />
+                      <span>Tentative</span>
+                    </label>
+                  </div>
+                {/if}
+              </div>
+            {:else if field.name !== 'isTentative'}
+              <div class="form-group">
+                <label for={field.name}>{field.label}</label>
+
+                {#if field.type === 'text'}
                 <input
                   type="text"
                   id={field.name}
@@ -1016,8 +1121,16 @@
                   placeholder={field.placeholder}
                   disabled={!canEdit}
                 />
+              {:else if field.type === 'checkbox'}
+                <div class="checkbox-group">
+                  <label for={field.name}>
+                    <input type="checkbox" id={field.name} name={field.name} bind:checked={formData[field.name]} disabled={!canEdit} />
+                    <span>{field.label}</span>
+                  </label>
+                </div>
               {/if}
             </div>
+            {/if}
           {/each}
         {/if}
       {/if}
