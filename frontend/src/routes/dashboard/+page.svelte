@@ -150,15 +150,27 @@
         secondarySidebarContent.type
       );
 
-      if (shouldBeFullWidth) {
+      if (shouldBeFullWidth && !tertiarySidebarContent) {
         sidebarEl.classList.add('full-width');
+        // Use CSS variables for full-width calculation
+        sidebarEl.style.setProperty('width', 'calc(100vw - 2.5vh - var(--sidebar-width-primary) - 2.5vh - 2.5vh)', 'important');
+        sidebarEl.style.setProperty('min-width', 'calc(100vw - 2.5vh - var(--sidebar-width-primary) - 2.5vh - 2.5vh)', 'important');
+        sidebarEl.style.setProperty('max-width', 'none', 'important');
       } else {
         sidebarEl.classList.remove('full-width');
+        // Reset to fixed width using CSS variable
+        sidebarEl.style.setProperty('width', 'var(--sidebar-width-secondary)', 'important');
+        sidebarEl.style.setProperty('min-width', 'var(--sidebar-width-secondary)', 'important');
+        sidebarEl.style.setProperty('max-width', 'var(--sidebar-width-secondary)', 'important');
       }
 
       // Add with-tertiary class if tertiary sidebar is open (even in full-width mode)
       if (tertiarySidebarContent) {
         sidebarEl.classList.add('with-tertiary');
+        // If tertiary is open, always use fixed width
+        sidebarEl.style.setProperty('width', 'var(--sidebar-width-secondary)', 'important');
+        sidebarEl.style.setProperty('min-width', 'var(--sidebar-width-secondary)', 'important');
+        sidebarEl.style.setProperty('max-width', 'var(--sidebar-width-secondary)', 'important');
       } else {
         sidebarEl.classList.remove('with-tertiary');
       }
@@ -739,6 +751,8 @@
   highlightedItemType={highlightedItemType}
   highlightedItemId={highlightedItemId}
   allTrips={trips}
+  {secondarySidebarContent}
+  {tertiarySidebarContent}
   bind:mobileActiveTab
   bind:mobileSelectedItem
   bind:mobileSelectedItemType
@@ -1131,6 +1145,7 @@
     height: 100%;
     width: 100%;
     max-width: 100%;
+    min-width: 0;
     padding-bottom: 0;
     overflow-x: hidden;
     box-sizing: border-box;
@@ -1138,6 +1153,7 @@
 
   .primary-content > * {
     max-width: 100%;
+    min-width: 0;
     box-sizing: border-box;
   }
 
@@ -1370,6 +1386,7 @@
     flex-direction: column;
     flex: 1;
     min-height: 0;
+    min-width: 0;
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
@@ -1378,6 +1395,7 @@
 
   .secondary-content > * {
     max-width: 100%;
+    min-width: 0;
     box-sizing: border-box;
   }
 
@@ -1393,12 +1411,14 @@
     height: 100%;
     width: 100%;
     max-width: 100%;
+    min-width: 0;
     overflow-x: hidden;
     box-sizing: border-box;
   }
 
   .tertiary-content > * {
     max-width: 100%;
+    min-width: 0;
     box-sizing: border-box;
   }
 

@@ -20,6 +20,8 @@
   export let highlightedItemType: string | null = null;
   export let highlightedItemId: string | null = null;
   export let allTrips: any[] = [];
+  export let secondarySidebarContent: any = null;
+  export let tertiarySidebarContent: any = null;
 
   // Mobile state
   export let mobileActiveTab: 'list' | 'add' | 'calendar' | 'settings' = 'list';
@@ -105,6 +107,20 @@
       observer.disconnect();
     };
   });
+
+  // Update secondary sidebar opacity based on content prop
+  $: if (secondarySidebarEl) {
+    const hasContent = secondarySidebarContent !== null;
+    secondarySidebarEl.style.opacity = hasContent ? '1' : '0';
+    secondarySidebarEl.style.pointerEvents = hasContent ? 'auto' : 'none';
+  }
+
+  // Update tertiary sidebar opacity based on content prop
+  $: if (tertiarySidebarEl) {
+    const hasContent = tertiarySidebarContent !== null;
+    tertiarySidebarEl.style.opacity = hasContent ? '1' : '0';
+    tertiarySidebarEl.style.pointerEvents = hasContent ? 'auto' : 'none';
+  }
 </script>
 
 <!-- MOBILE VIEW (< 640px) - Always rendered, visibility controlled by CSS media queries only -->
@@ -145,7 +161,7 @@
 </div>
 
 <!-- DESKTOP/TABLET VIEW (640px+) - Always rendered, visibility controlled by CSS media queries only -->
-<div class="map-layout">
+<div class="map-layout" style="--sidebar-width-primary: 340px; --sidebar-width-secondary: 340px; --sidebar-width-tertiary: 340px;">
   <!-- Full-screen map background -->
   <div id="tripMap" class="map-container">
     {#key JSON.stringify(tripData)}
@@ -154,17 +170,17 @@
   </div>
 
   <!-- Primary Sidebar (Left) - Fixed position floating on map -->
-  <aside bind:this={primarySidebarEl} class="primary-sidebar sidebar" style="width: 340px !important; min-width: 340px !important; max-width: 340px !important; overflow: hidden !important;">
+  <aside bind:this={primarySidebarEl} class="primary-sidebar sidebar" style="width: var(--sidebar-width-primary) !important; min-width: var(--sidebar-width-primary) !important; max-width: var(--sidebar-width-primary) !important; overflow: hidden !important;">
     <slot name="primary" />
   </aside>
 
   <!-- Secondary Sidebar (Middle/Right) - Fixed position floating on map -->
-  <aside bind:this={secondarySidebarEl} id="secondary-sidebar" class="secondary-sidebar sidebar" style="width: 340px !important; min-width: 340px !important; max-width: 340px !important; overflow: hidden !important;">
+  <aside bind:this={secondarySidebarEl} id="secondary-sidebar" class="secondary-sidebar sidebar" style="width: var(--sidebar-width-secondary) !important; min-width: var(--sidebar-width-secondary) !important; max-width: var(--sidebar-width-secondary) !important; left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh) !important; overflow: hidden !important;">
     <slot name="secondary" />
   </aside>
 
   <!-- Tertiary Sidebar (Right) - Fixed position floating on map -->
-  <aside bind:this={tertiarySidebarEl} id="tertiary-sidebar" class="tertiary-sidebar sidebar" style="right: 2.5vh !important; left: auto !important; width: auto !important; overflow: hidden !important;">
+  <aside bind:this={tertiarySidebarEl} id="tertiary-sidebar" class="tertiary-sidebar sidebar" style="right: 2.5vh !important; width: auto !important; overflow: hidden !important;">
     <slot name="tertiary" />
   </aside>
 </div>
@@ -277,16 +293,7 @@
     min-width: var(--sidebar-width-secondary) !important;
     left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh) !important;
     z-index: 21 !important;
-    padding: 0 !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
     transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  }
-
-  /* Show secondary sidebar when it has content */
-  .secondary-sidebar.has-content {
-    opacity: 1 !important;
-    pointer-events: auto !important;
   }
 
   /* Secondary sidebar expands to fill available space when in full-width mode (no tertiary) */
@@ -309,15 +316,7 @@
   .tertiary-sidebar {
     left: calc(2.5vh + 340px + 2.5vh + 340px + 2.5vh) !important;
     z-index: 22 !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
     transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  }
-
-  /* Show tertiary sidebar when it has content */
-  .tertiary-sidebar.has-content {
-    opacity: 1 !important;
-    pointer-events: auto !important;
   }
 
   /* Hide/show layouts based on viewport */
