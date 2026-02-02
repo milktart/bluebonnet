@@ -249,6 +249,7 @@
     background: rgba(255, 255, 255, 0.7) !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
     overflow-y: auto !important;
+    overflow-x: hidden !important;
     display: flex !important;
     flex-direction: column !important;
     border-radius: 0.425rem !important;

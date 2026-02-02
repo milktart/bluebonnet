@@ -1129,7 +1129,16 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    width: 100%;
+    max-width: 100%;
     padding-bottom: 0;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  .primary-content > * {
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .header-section {
@@ -1361,6 +1370,15 @@
     flex-direction: column;
     flex: 1;
     min-height: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  .secondary-content > * {
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   :global(#secondary-sidebar) {
@@ -1374,6 +1392,14 @@
     flex-direction: column;
     height: 100%;
     width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  .tertiary-content > * {
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .tertiary-header {
