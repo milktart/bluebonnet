@@ -21,7 +21,7 @@
   export let highlightedItemId: string | null = null;
   export let allTrips: any[] = [];
 
-  // Mobile state (backward compatibility)
+  // Mobile state
   export let mobileActiveTab: 'list' | 'add' | 'calendar' | 'settings' = 'list';
   export let mobileSelectedItem: any = null;
   export let mobileSelectedItemType: string | null = null;
@@ -32,7 +32,6 @@
   let mapComponent: MapVisualization;
   let secondarySidebarEl: HTMLElement;
   let tertiarySidebarEl: HTMLElement;
-  let isMobileView = false;
 
   /**
    * Export map component access for parent
@@ -63,43 +62,19 @@
   }
 
   /**
-   * Monitor window resize and sidebar content changes
+   * Monitor sidebar content and map component availability
    */
   onMount(() => {
-    // Update mobile view state and reset mobile state if transitioning to desktop
-    const handleResize = () => {
-      const wasViewingMobile = isMobileView;
-      isMobileView = window.innerWidth < 640;
-
-      if (!isMobileView && mobileSelectedItem) {
-        mobileSelectedItem = null;
-        mobileSelectedItemType = null;
-      }
-
-      // When transitioning from mobile to desktop, trigger map resize
-      if (wasViewingMobile && !isMobileView) {
-        // Trigger map resize to recalculate bounds after layout changes
-        if (mapComponent?.mapInstance) {
-          mapComponent.mapInstance.invalidateSize();
-        }
-      }
-    };
-
-    // Check initial viewport
-    handleResize();
-
-    // Monitor sidebar content and toggle visibility via inline styles
+    // Monitor sidebar content changes and toggle visibility via class
     const observer = new MutationObserver(() => {
       if (secondarySidebarEl) {
         const secondaryHasContent = secondarySidebarEl.textContent?.trim().length > 0;
-        secondarySidebarEl.style.opacity = secondaryHasContent ? '1' : '0';
-        secondarySidebarEl.style.pointerEvents = secondaryHasContent ? 'auto' : 'none';
+        secondarySidebarEl.classList.toggle('has-content', secondaryHasContent);
       }
 
       if (tertiarySidebarEl) {
         const tertiaryHasContent = tertiarySidebarEl.textContent?.trim().length > 0;
-        tertiarySidebarEl.style.opacity = tertiaryHasContent ? '1' : '0';
-        tertiarySidebarEl.style.pointerEvents = tertiaryHasContent ? 'auto' : 'none';
+        tertiarySidebarEl.classList.toggle('has-content', tertiaryHasContent);
       }
     });
 
@@ -111,8 +86,7 @@
       });
 
       const secondaryHasContent = secondarySidebarEl.textContent?.trim().length > 0;
-      secondarySidebarEl.style.opacity = secondaryHasContent ? '1' : '0';
-      secondarySidebarEl.style.pointerEvents = secondaryHasContent ? 'auto' : 'none';
+      secondarySidebarEl.classList.toggle('has-content', secondaryHasContent);
     }
 
     if (tertiarySidebarEl) {
@@ -123,22 +97,17 @@
       });
 
       const tertiaryHasContent = tertiarySidebarEl.textContent?.trim().length > 0;
-      tertiarySidebarEl.style.opacity = tertiaryHasContent ? '1' : '0';
-      tertiarySidebarEl.style.pointerEvents = tertiaryHasContent ? 'auto' : 'none';
+      tertiarySidebarEl.classList.toggle('has-content', tertiaryHasContent);
     }
-
-    // Listen for window resize
-    window.addEventListener('resize', handleResize);
 
     return () => {
       observer.disconnect();
-      window.removeEventListener('resize', handleResize);
     };
   });
 </script>
 
-<!-- MOBILE VIEW (< 640px) - Always rendered, visibility controlled by CSS -->
-<div class="mobile-layout" class:hidden={!isMobileView}>
+<!-- MOBILE VIEW (< 640px) - Always rendered, visibility controlled by CSS media queries only -->
+<div class="mobile-layout">
   <div class="mobile-content-area">
     {#if mobileActiveTab === 'list'}
       {#if mobileSelectedItem && mobileSelectedItemType}
@@ -174,8 +143,8 @@
   <MobileTabNavigation activeTab={mobileActiveTab} on:tabChange={handleMobileTabChange} />
 </div>
 
-<!-- DESKTOP/TABLET VIEW (640px+) - Always rendered, visibility controlled by CSS -->
-<div class="map-layout" class:hidden={isMobileView}>
+<!-- DESKTOP/TABLET VIEW (640px+) - Always rendered, visibility controlled by CSS media queries only -->
+<div class="map-layout">
   <!-- Full-screen map background -->
   <div id="tripMap" class="map-container">
     {#key JSON.stringify(tripData)}
@@ -218,6 +187,20 @@
     background: #fff;
     overflow: hidden;
     z-index: 1;
+  }
+
+  /* Hide mobile layout on desktop/tablet (640px+) */
+  @media (min-width: 640px) {
+    .mobile-layout {
+      display: none !important;
+    }
+  }
+
+  /* Show mobile layout on mobile (< 640px) */
+  @media (max-width: 639px) {
+    .map-layout {
+      display: none !important;
+    }
   }
 
   .mobile-content-area {
@@ -277,7 +260,7 @@
 
   /* Primary sidebar - left side */
   :global(.primary-sidebar) {
-    width: 340px;
+    width: var(--sidebar-width-primary);
     left: 2.5vh;
     z-index: 20;
     flex-shrink: 0;
@@ -285,11 +268,19 @@
 
   /* Secondary sidebar - middle (can expand full width) */
   :global(.secondary-sidebar) {
-    width: 340px;
-    left: calc(2.5vh + 340px + 2.5vh);
+    width: var(--sidebar-width-secondary);
+    left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh);
     z-index: 21;
     padding: 0;
-    transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Show secondary sidebar when it has content */
+  :global(.secondary-sidebar.has-content) {
+    opacity: 1;
+    pointer-events: auto;
   }
 
   :global(.secondary-sidebar.full-width) {
@@ -306,12 +297,20 @@
 
   /* Tertiary sidebar - right side */
   :global(.tertiary-sidebar) {
-    width: 340px;
+    width: var(--sidebar-width-tertiary);
     right: 2.5vh;
     left: auto;
     z-index: 22;
     flex-shrink: 0;
+    opacity: 0;
+    pointer-events: none;
     transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Show tertiary sidebar when it has content */
+  :global(.tertiary-sidebar.has-content) {
+    opacity: 1;
+    pointer-events: auto;
   }
 
   /* Hide/show layouts based on viewport */
