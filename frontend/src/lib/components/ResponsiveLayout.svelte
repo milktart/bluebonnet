@@ -285,13 +285,13 @@
 
   :global(.secondary-sidebar.full-width) {
     width: auto;
-    right: calc(2.5vh + 340px + 2.5vh);
-    left: calc(2.5vh + 340px + 2.5vh);
+    right: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh);
+    left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh);
   }
 
   :global(.secondary-sidebar.full-width.with-tertiary) {
-    left: calc(2.5vh + 340px + 2.5vh) !important;
-    right: calc(2.5vh + 340px + 2.5vh) !important;
+    left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh) !important;
+    right: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh) !important;
     width: auto !important;
   }
 
