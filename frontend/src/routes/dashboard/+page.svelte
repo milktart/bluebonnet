@@ -1368,13 +1368,13 @@
   }
 
   :global(#secondary-sidebar.full-width) {
-    width: calc(100% - 340px - 7.5vh) !important;
+    width: calc(100% - var(--sidebar-width-primary) - 7.5vh) !important;
   }
 
   :global(#secondary-sidebar.full-width.with-tertiary) {
     width: auto !important;
-    left: calc(2.5vh + 340px + 2.5vh) !important;
-    right: calc(2.5vh + 340px + 2.5vh) !important;
+    left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh) !important;
+    right: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh) !important;
   }
 
   .tertiary-content {
