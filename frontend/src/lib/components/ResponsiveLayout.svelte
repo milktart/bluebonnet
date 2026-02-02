@@ -258,24 +258,22 @@
     padding: 1.2rem 1.2rem .2rem;
   }
 
-  /* Primary sidebar - left side */
+  /* Primary sidebar - fixed width on the left */
   :global(.primary-sidebar) {
-    width: var(--sidebar-width-primary);
-    min-width: var(--sidebar-width-primary);
-    left: 2.5vh;
+    width: var(--sidebar-width-primary) !important;
+    left: 2.5vh !important;
     z-index: 20;
-    flex-shrink: 0;
   }
 
-  /* Secondary sidebar - middle (can expand full width) */
+  /* Secondary sidebar - fixed width next to primary, or expands to fill available space */
   :global(.secondary-sidebar) {
-    width: var(--sidebar-width-secondary);
-    left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh);
+    width: var(--sidebar-width-secondary) !important;
+    left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh) !important;
     z-index: 21;
     padding: 0;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   /* Show secondary sidebar when it has content */
@@ -284,25 +282,24 @@
     pointer-events: auto;
   }
 
+  /* Secondary sidebar expands to fill available space when in full-width mode (no tertiary) */
   :global(.secondary-sidebar.full-width) {
-    width: auto;
-    right: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh);
-    left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh);
-  }
-
-  :global(.secondary-sidebar.full-width.with-tertiary) {
+    width: calc(100% - 2.5vh - var(--sidebar-width-primary) - 2.5vh - 2.5vh) !important;
     left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh) !important;
-    right: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh) !important;
-    width: auto !important;
   }
 
-  /* Tertiary sidebar - right side */
+  /* Secondary sidebar maintains fixed width when tertiary is also visible */
+  :global(.secondary-sidebar.full-width.with-tertiary) {
+    width: var(--sidebar-width-secondary) !important;
+    left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh) !important;
+  }
+
+  /* Tertiary sidebar - fixed width on the right */
   :global(.tertiary-sidebar) {
-    width: var(--sidebar-width-tertiary);
-    right: 2.5vh;
-    left: auto;
+    width: var(--sidebar-width-tertiary) !important;
+    right: 2.5vh !important;
+    left: auto !important;
     z-index: 22;
-    flex-shrink: 0;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);

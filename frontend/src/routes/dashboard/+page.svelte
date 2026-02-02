@@ -1367,16 +1367,6 @@
     transition: width 0.3s ease;
   }
 
-  :global(#secondary-sidebar.full-width) {
-    width: calc(100% - var(--sidebar-width-primary) - 7.5vh) !important;
-  }
-
-  :global(#secondary-sidebar.full-width.with-tertiary) {
-    width: auto !important;
-    left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh) !important;
-    right: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh) !important;
-  }
-
   .tertiary-content {
     padding: 0;
     color: #666;
