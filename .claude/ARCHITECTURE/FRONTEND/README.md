@@ -304,6 +304,177 @@ async function deleteItem(id) {
 
 ---
 
+## Responsive Design & Breakpoints
+
+### 2-Tier Breakpoint System (Updated February 2026)
+
+The application uses a simplified, mobile-first 2-tier responsive design system:
+
+```
+Mobile:   0-639px    (all phones + tablets in portrait mode)
+Desktop:  640px+     (tablets in landscape + all desktops)
+```
+
+**Philosophy:**
+
+- **Mobile-first:** Start with mobile styling, override at 640px for desktop
+- **640px boundary:** Tailwind standard, natural iPad landscape breakpoint
+- **Touch-friendly:** 44px minimum touch targets on all screens
+- **Fluid typography:** Uses `clamp()` for smooth scaling, not discrete jumps
+
+### Tailwind Breakpoint Classes
+
+#### Primary Breakpoint (Recommended)
+
+```html
+<!-- Visible on desktop (640px+) -->
+<div class="hidden desktop:block">Desktop content</div>
+
+<!-- Different styling at 640px+ -->
+<h1 class="text-3xl desktop:text-6xl">Responsive heading</h1>
+
+<!-- Responsive grid -->
+<div class="grid grid-cols-1 desktop:grid-cols-2 gap-4">
+  <!-- 1 column on mobile, 2 columns on desktop -->
+</div>
+```
+
+#### Legacy Breakpoints (Deprecated, but still supported)
+
+```html
+<!-- Old way (deprec) - Still works for backwards compat -->
+<div class="hidden sm:block">Old syntax (480px)</div>
+<div class="hidden md:block">Old syntax (640px)</div>
+<div class="hidden lg:block">Old syntax (1024px)</div>
+
+<!-- New way (recommended) - Use these instead -->
+<div class="hidden desktop:block">Use desktop: instead</div>
+```
+
+### CSS Variable Breakpoints
+
+All responsive CSS uses centralized CSS custom properties in `responsive.css`:
+
+```css
+/* In CSS files, use CSS variables */
+@media (max-width: var(--breakpoint-mobile-max)) {
+  /* Mobile styles: 0-639px */
+}
+
+@media (min-width: var(--breakpoint-desktop-min)) {
+  /* Desktop styles: 640px+ */
+}
+```
+
+**Available variables:**
+
+- `--breakpoint-mobile-max: 639px` - Mobile upper limit
+- `--breakpoint-desktop-min: 640px` - Desktop lower limit
+
+### Visibility Utilities
+
+```html
+<!-- Show only on mobile (< 640px) -->
+<div class="visible-mobile">Mobile menu</div>
+
+<!-- Hide on mobile (< 640px) -->
+<div class="hidden-mobile">Desktop content</div>
+
+<!-- Show only on desktop (>= 640px) -->
+<div class="visible-desktop">Desktop menu</div>
+
+<!-- Hide on desktop (>= 640px) -->
+<div class="hidden-desktop">Mobile content</div>
+```
+
+### Migration Guide for New Components
+
+When building new Svelte components, follow these patterns:
+
+**✅ DO: Use mobile-first approach**
+
+```svelte
+<script>
+  let isMobile = false;
+
+  onMount(() => {
+    // Optional: detect breakpoint changes
+    const mq = window.matchMedia(`(max-width: ${640 - 1}px)`);
+    isMobile = mq.matches;
+    mq.addEventListener('change', (e) => { isMobile = !e.matches; });
+  });
+</script>
+
+<div class="flex flex-col desktop:flex-row gap-4">
+  <!-- Single column on mobile, horizontal on desktop -->
+</div>
+```
+
+**✅ DO: Use Tailwind desktop: prefix**
+
+```html
+<!-- Recommended for all new components -->
+<h1 class="text-2xl desktop:text-4xl">Title</h1>
+<p class="text-sm desktop:text-base">Paragraph</p>
+```
+
+**❌ DON'T: Use old breakpoint names**
+
+```html
+<!-- Avoid in new code (still works, but deprecated) -->
+<div class="hidden sm:block md:flex lg:grid">Bad</div>
+```
+
+### Common Responsive Patterns
+
+**Navigation Bar**
+
+```html
+<nav class="px-4 desktop:px-6 lg:px-8">
+  <!-- Content scales padding at breakpoint -->
+</nav>
+```
+
+**Form Grid (Mobile: 1 column, Desktop: 2 columns)**
+
+```html
+<div class="grid grid-cols-1 desktop:grid-cols-2 gap-4">
+  <input />
+  <input />
+</div>
+```
+
+**Modal/Drawer (Mobile: full width, Desktop: constrained)**
+
+```html
+<div class="w-full desktop:max-w-md mx-auto">
+  <!-- Takes full width on mobile, 28rem max on desktop -->
+</div>
+```
+
+**Hero Section with Scaled Typography**
+
+```html
+<h1 class="text-4xl font-bold desktop:text-6xl">
+  Scales from 2.25rem (mobile) to 3.75rem (desktop)
+</h1>
+```
+
+### Height-Based Media Queries (Landscape Mode)
+
+```html
+<!-- Compressed layout for phones in landscape (height < 600px) -->
+<style>
+  @media (max-height: 600px) {
+    .form-fields {
+      gap: 0.5rem;
+    } /* Tighter spacing */
+  }
+</style>
+```
+
+---
+
 ## Phase 1 Migration (Svelte)
 
 ### What Changes

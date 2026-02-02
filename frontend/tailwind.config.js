@@ -4,15 +4,18 @@ export default {
   theme: {
     extend: {
       screens: {
-        // 4-tier responsive breakpoint system optimized for mobile-first design
-        // mobile: 0-479px (phones)
-        // sm: 480-639px (larger phones/landscape)
-        // md: 640-1023px (tablets)
-        // lg: 1024px+ (desktop)
-        mobile: '0px', // Base (mobile-first)
-        sm: '480px', // Larger phones, landscape
-        md: '640px', // Tablets (iPad mini)
-        lg: '1024px', // Desktop/Laptop (default Tailwind)
+        // 2-tier responsive breakpoint system optimized for mobile-first design
+        // mobile: 0-639px (all phones and tablets in portrait)
+        // desktop: 640px+ (tablets landscape and all desktops)
+        // Legacy names kept for backwards compatibility but considered deprecated
+        mobile: '0px', // Base (mobile-first): 0-639px
+        desktop: '640px', // Desktop and tablet landscape: 640px+
+        // @deprecated sm: 480px - Not needed in 2-tier system, use desktop: instead
+        sm: '480px', // Deprecated: Larger phones, landscape (legacy)
+        // @deprecated md: 640px - Use desktop: instead
+        md: '640px', // Deprecated: Tablets (use desktop: instead)
+        // @deprecated lg: 1024px - Kept for component backwards compatibility
+        lg: '1024px', // Legacy: Desktop/Laptop (kept for backwards compat)
       },
       colors: {
         blue: {

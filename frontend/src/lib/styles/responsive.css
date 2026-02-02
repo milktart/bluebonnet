@@ -11,10 +11,26 @@
   /* =========================================================================
      BREAKPOINTS - Media query reference values
      ========================================================================= */
+  /* Primary breakpoints - 2-tier system */
+  --breakpoint-mobile-max: 639px; /* Mobile max: 0-639px */
+  --breakpoint-desktop-min: 640px; /* Desktop min: 640px+ */
+
+  /* Legacy breakpoint aliases (for backwards compatibility) */
   --bp-mobile: 640px; /* Below this: mobile single-column layout */
   --bp-tablet: 1024px; /* Below this: tablet with collapsible sidebar */
   --bp-desktop: 1440px; /* Below this: desktop 3-column layout */
   /* Above 1440px: ultra-wide 4-column layout (optional expansion) */
+
+  /* Device viewport reference sizes */
+  --viewport-iphone-se: 375px; /* iPhone SE (3rd gen) */
+  --viewport-iphone-12: 390px; /* iPhone 12/13 */
+  --viewport-iphone-14: 390px; /* iPhone 14 */
+  --viewport-iphone-15: 393px; /* iPhone 15 */
+  --viewport-iphone-pro-max: 430px; /* iPhone Pro Max */
+  --viewport-ipad-mini: 768px; /* iPad mini */
+  --viewport-ipad-pro: 1024px; /* iPad Pro 11" */
+  --viewport-desktop: 1920px; /* Standard desktop */
+  --viewport-ultra-wide: 2560px; /* 4K ultra-wide */
 
   /* =========================================================================
      SPACING SCALE - Responsive spacing that scales with viewport
@@ -123,6 +139,39 @@
   --touch-target-lg: 56px; /* Large touch target */
 
   /* =========================================================================
+     FORM INPUT SIZING - Device-specific adjustments
+     ========================================================================= */
+  --form-input-font-size-mobile: 16px; /* iOS zoom prevention */
+  --form-input-font-size-tablet: 0.875rem; /* 14px - balanced sizing */
+  --form-input-font-size-desktop: 0.875rem; /* 14px - standard sizing */
+  --form-input-min-height: 44px; /* Default minimum touch height */
+  --form-input-min-height-tablet: 40px; /* Slightly reduced on tablets */
+  --form-input-min-height-desktop: 36px; /* Compact on desktop */
+  --form-input-padding-mobile: 0.75rem; /* Mobile padding */
+  --form-input-padding-tablet: 0.5rem 0.75rem; /* Tablet padding */
+  --form-input-padding-desktop: 0.375rem 0.75rem; /* Desktop padding */
+
+  /* =========================================================================
+     BUTTON SIZING - Consistent with input sizing
+     ========================================================================= */
+  --button-min-height: 44px; /* Mobile */
+  --button-min-height-tablet: 40px; /* Tablet */
+  --button-min-height-desktop: 36px; /* Desktop */
+  --button-padding-mobile: 0.75rem 1rem; /* Mobile padding */
+  --button-padding-tablet: 0.5rem 0.75rem; /* Tablet padding */
+  --button-padding-desktop: 0.375rem 0.75rem; /* Desktop padding */
+  --button-font-size-mobile: 0.875rem; /* Mobile font size */
+  --button-font-size-desktop: 0.75rem; /* Desktop font size */
+
+  /* =========================================================================
+     SAFE AREA INSETS - For notched devices (iPhone X+, etc.)
+     ========================================================================= */
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+
+  /* =========================================================================
      BREAKPOINT-SPECIFIC OVERRIDES (Applied via media queries below)
      ========================================================================= */
   /* These are set by media queries and cascade down */
@@ -184,26 +233,6 @@
     /* Desktop spacing - standard */
     --spacing-lg: 1rem;
     --spacing-xl: 1.5rem;
-
-    /* Desktop nav height */
-    --nav-height: var(--nav-height-desktop);
-
-    /* Standard sidebar widths */
-    --sidebar-width-primary: 340px;
-    --sidebar-width-secondary: 340px;
-    --sidebar-width-tertiary: 340px;
-  }
-}
-
-/* =====================================================================
-   ULTRA-WIDE LAYOUT (1440px+)
-   All content visible with generous spacing
-   ===================================================================== */
-@media (min-width: 1440px) {
-  :root {
-    /* Ultra-wide spacing - generous */
-    --spacing-lg: clamp(1.125rem, 2vw, 1.5rem);
-    --spacing-xl: clamp(1.5rem, 3vw, 2rem);
 
     /* Desktop nav height */
     --nav-height: var(--nav-height-desktop);
@@ -340,51 +369,95 @@
    Display and visibility helpers
    ===================================================================== */
 
-/* Hide on mobile */
-.hide-mobile {
+/* =========================================================================
+   MOBILE-FIRST VISIBILITY UTILITIES (standardized naming)
+   Mobile: 0-639px | Desktop: 640px+
+   ========================================================================= */
+
+/* Visible only on mobile (< 640px) */
+.visible-mobile {
   display: none;
 }
 
-@media (min-width: 640px) {
-  .hide-mobile {
-    display: initial;
+@media (max-width: var(--breakpoint-mobile-max)) {
+  .visible-mobile {
+    display: block;
   }
 }
 
-/* Show only on mobile */
+/* Hidden on mobile (< 640px) */
+.hidden-mobile {
+  display: block;
+}
+
+@media (max-width: var(--breakpoint-mobile-max)) {
+  .hidden-mobile {
+    display: none;
+  }
+}
+
+/* Visible only on desktop (>= 640px) */
+.visible-desktop {
+  display: none;
+}
+
+@media (min-width: var(--breakpoint-desktop-min)) {
+  .visible-desktop {
+    display: block;
+  }
+}
+
+/* Hidden on desktop (>= 640px) */
+.hidden-desktop {
+  display: block;
+}
+
+@media (min-width: var(--breakpoint-desktop-min)) {
+  .hidden-desktop {
+    display: none;
+  }
+}
+
+/* =========================================================================
+   DEPRECATED ALIASES (backwards compatibility)
+   These are replaced by standardized names above.
+   Gradual migration: replace old names with new ones in components.
+   ========================================================================= */
+
+/* @deprecated Use .visible-mobile instead */
 .show-mobile {
   display: initial;
 }
 
-@media (min-width: 640px) {
+@media (min-width: var(--breakpoint-desktop-min)) {
   .show-mobile {
     display: none;
   }
 }
 
-/* Hide on tablet and below */
-.hide-tablet-down {
+/* @deprecated Use .hidden-mobile instead */
+.hide-mobile {
   display: none;
 }
 
-@media (min-width: 1024px) {
-  .hide-tablet-down {
+@media (min-width: var(--breakpoint-desktop-min)) {
+  .hide-mobile {
     display: initial;
   }
 }
 
-/* Show only on tablet and below */
-.show-tablet-down {
-  display: initial;
+/* @deprecated Use .visible-desktop instead */
+.show-desktop {
+  display: none;
 }
 
 @media (min-width: 1024px) {
-  .show-tablet-down {
-    display: none;
+  .show-desktop {
+    display: initial;
   }
 }
 
-/* Hide on desktop */
+/* @deprecated Use .hidden-desktop instead */
 .hide-desktop {
   display: initial;
 }
@@ -395,13 +468,24 @@
   }
 }
 
-/* Show only on desktop */
-.show-desktop {
+/* @deprecated - tablet-specific visibility */
+.show-tablet-down {
+  display: initial;
+}
+
+@media (min-width: 1024px) {
+  .show-tablet-down {
+    display: none;
+  }
+}
+
+/* @deprecated - tablet-specific visibility */
+.hide-tablet-down {
   display: none;
 }
 
 @media (min-width: 1024px) {
-  .show-desktop {
+  .hide-tablet-down {
     display: initial;
   }
 }
@@ -527,11 +611,5 @@
 @media (min-width: 1024px) {
   .bp-debug::before {
     content: 'Desktop';
-  }
-}
-
-@media (min-width: 1440px) {
-  .bp-debug::before {
-    content: 'Ultra-Wide';
   }
 }

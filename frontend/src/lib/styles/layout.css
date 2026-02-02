@@ -39,7 +39,7 @@
    └────────────────────┘
    ===================================================================== */
 
-@media (max-width: 639px) {
+@media (max-width: var(--breakpoint-mobile-max)) {
   .responsive-mobile {
     display: flex;
     flex-direction: column;
@@ -121,7 +121,7 @@
    └──────────┴───────────────────────────┘
    ===================================================================== */
 
-@media (min-width: 640px) {
+@media (min-width: var(--breakpoint-desktop-min)) {
   .responsive-mobile {
     display: none;
   }
@@ -133,7 +133,7 @@
   }
 }
 
-@media (min-width: 640px) and (max-width: 1023px) {
+@media (min-width: var(--breakpoint-desktop-min)) and (max-width: 1023px) {
   .app-layout {
     grid-template-columns: auto 1fr;
     grid-template-rows: auto 1fr;
@@ -435,121 +435,12 @@
 }
 
 /* =====================================================================
-   ULTRA-WIDE LAYOUT (1440px+)
-   Top navigation + four columns visible (no overlays)
-
-   Structure:
-   ┌──────────────────────────────────────────────────────┐
-   │             Top Navigation Bar    │  60px            │
-   ├──────────┬──────────────────┬──────────────┬────────┤
-   │          │                  │              │        │
-   │ Primary  │    Map           │  Secondary   │Tertiary│
-   │ Sidebar  │    (Background)  │  Sidebar     │Sidebar │
-   │ (340px)  │                  │  (340px)     │(340px) │
-   │          │                  │              │        │
-   └──────────┴──────────────────┴──────────────┴────────┘
-   ===================================================================== */
-
-@media (min-width: 1440px) {
-  .app-layout {
-    grid-template-columns: 340px 1fr 340px 340px;
-    grid-template-rows: auto 1fr;
-  }
-
-  /* Primary sidebar (trip list) */
-  .primary-sidebar {
-    grid-column: 1;
-    grid-row: 2;
-    width: 340px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    border-right: 1px solid var(--color-border);
-    background: white;
-    z-index: var(--z-sidebar-primary);
-  }
-
-  /* Collapsed state (still available via hamburger) */
-  .primary-sidebar.collapsed {
-    position: fixed;
-    left: 0;
-    top: var(--nav-height-desktop);
-    bottom: 0;
-    width: var(--sidebar-width-mobile);
-    max-width: 360px;
-    transform: translateX(-100%);
-    border-right: none;
-    z-index: var(--z-drawer);
-    transition: transform var(--transition-smooth);
-  }
-
-  /* Main content area */
-  .app-content {
-    grid-column: 2;
-    grid-row: 2;
-    position: relative;
-    overflow: hidden;
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  /* Map container (background) */
-  .map-container {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    z-index: var(--z-map);
-    top: 0;
-    left: 0;
-  }
-
-  /* Secondary sidebar (always visible) */
-  .secondary-sidebar {
-    grid-column: 3;
-    grid-row: 2;
-    width: 340px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    border-left: 1px solid var(--color-border);
-    background: white;
-    z-index: var(--z-sidebar-secondary);
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  /* Tertiary sidebar (always visible, rightmost) */
-  .tertiary-sidebar {
-    grid-column: 4;
-    grid-row: 2;
-    position: relative;
-    width: 340px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    border-left: 1px solid var(--color-border);
-    background: white;
-    z-index: var(--z-sidebar-tertiary);
-    opacity: 1;
-    pointer-events: auto;
-    max-height: none;
-    border-radius: 0;
-    box-shadow: none;
-    border: none;
-    border-left: 1px solid var(--color-border);
-  }
-
-  /* Disable backdrops in ultra-wide */
-  .sidebar-backdrop,
-  .drawer-backdrop {
-    display: none;
-  }
-}
-
-/* =====================================================================
    MODAL & OVERLAY SYSTEM
    Bottom sheets, side drawers, and modals
    ===================================================================== */
 
 /* Bottom sheet (Mobile < 640px) */
-@media (max-width: 639px) {
+@media (max-width: var(--breakpoint-mobile-max)) {
   .bottom-sheet {
     position: fixed;
     bottom: 0;

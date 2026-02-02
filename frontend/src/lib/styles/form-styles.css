@@ -140,7 +140,7 @@
 }
 
 /* Mobile padding for edit-content */
-@media (max-width: 639px) {
+@media (max-width: var(--breakpoint-mobile-max)) {
   .edit-content {
     padding: 0 clamp(0.5rem, 2vw, 1rem);
   }
@@ -221,7 +221,7 @@
 }
 
 /* Mobile: Use 16px font to prevent iOS auto-zoom on focus */
-@media (max-width: 639px) {
+@media (max-width: var(--breakpoint-mobile-max)) {
   .form-group input,
   .form-group select,
   .form-group textarea {
@@ -280,7 +280,7 @@
 }
 
 /* Mobile: Use 16px font to prevent iOS auto-zoom on focus */
-@media (max-width: 639px) {
+@media (max-width: var(--breakpoint-mobile-max)) {
   .form-group textarea {
     font-size: 16px;
   }
@@ -349,7 +349,7 @@
 }
 
 /* Mobile: Add background for form-buttons */
-@media (max-width: 639px) {
+@media (max-width: var(--breakpoint-mobile-max)) {
   .form-buttons {
     gap: clamp(0.5rem, 2vw, 0.75rem);
     padding: clamp(0.375rem, 1vw, 0.5rem) 0;
@@ -377,7 +377,7 @@
 }
 
 /* Mobile: Full width buttons in form-buttons container */
-@media (max-width: 639px) {
+@media (max-width: var(--breakpoint-mobile-max)) {
   .submit-btn,
   .cancel-btn {
     flex: 1;
@@ -456,7 +456,7 @@
 }
 
 /* Mobile: Full width delete button with proper spacing */
-@media (max-width: 639px) {
+@media (max-width: var(--breakpoint-mobile-max)) {
   .delete-btn {
     width: 100%;
     margin: 0;
@@ -501,100 +501,76 @@
   gap: 0.5rem;
 }
 
-/* Mobile-first responsive form behavior */
+/* =====================================================================
+   RESPONSIVE FORM GRID BEHAVIOR - Consolidated & Simplified
+   Mobile-first approach with single-column base, multi-column on desktop
+   ===================================================================== */
 
-/* Mobile (0-479px) - Single column with date/time side-by-side, optimized spacing */
-@media (max-width: 479px) {
+/* Mobile (0-639px) - Responsive grid with 2-column support for paired fields */
+@media (max-width: var(--breakpoint-mobile-max)) {
   .form-row {
-    gap: clamp(0.75rem, 2vw, 1rem);
+    --cols: 2; /* Default 2 columns for mobile */
+    grid-template-columns: repeat(var(--cols), 1fr);
+    gap: clamp(0.625rem, 1.5vw, 0.75rem);
   }
 
-  .form-row.cols-2 {
-    grid-template-columns: 1fr 1fr;
-  }
-
+  /* Force 2 columns for .cols-2 and .cols-3 on mobile (3-col becomes 2) */
   .form-row.cols-3 {
-    grid-template-columns: 1fr 1fr;
+    --cols: 2;
   }
 
+  /* Force 1 column for .cols-2-1 (ratio layout doesn't work on mobile) */
   .form-row.cols-2-1 {
-    grid-template-columns: 1fr;
+    --cols: 1;
   }
 
   /* Reset grid-column spans for mobile */
   .form-row.cols-3 .form-group[style*='grid-column'] {
     grid-column: auto !important;
   }
-
-  .form-group label {
-    font-size: clamp(0.7rem, 1.5vw, 0.75rem);
-  }
-
-  .form-fields {
-    gap: clamp(0.75rem, 2vw, 1rem);
-  }
-
-  .edit-header {
-    gap: clamp(0.375rem, 1.5vw, 0.5rem);
-  }
-
-  .edit-header h3 {
-    font-size: clamp(0.9rem, 2.5vw, 0.95rem);
-  }
 }
 
-/* Small mobile (480-639px) - Two columns for date/time and flight fields, single for others */
-@media (min-width: 480px) and (max-width: 639px) {
+/* Tablet (640px-1023px) - Two columns where applicable */
+@media (min-width: var(--breakpoint-desktop-min)) and (max-width: 1023px) {
   .form-row {
-    gap: clamp(0.625rem, 1.5vw, 0.75rem);
+    --cols: 2; /* Default 2 columns for tablet */
   }
 
-  .form-row.cols-2 {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .form-row.cols-3 {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .form-row.cols-2-1 {
-    grid-template-columns: 1fr;
-  }
-
-  /* Reset grid-column spans for mobile */
-  .form-row.cols-3 .form-group[style*='grid-column'] {
-    grid-column: auto !important;
-  }
-
-  .form-fields {
-    gap: clamp(0.625rem, 1.5vw, 0.75rem);
-  }
-}
-
-/* Tablet (640-1023px) - Two columns where applicable */
-@media (min-width: 640px) and (max-width: 1023px) {
   .form-row.cols-2,
   .form-row.cols-2-1 {
-    grid-template-columns: 1fr 1fr;
+    --cols: 2;
   }
 
   .form-row.cols-3 {
-    grid-template-columns: 1fr 1fr;
+    --cols: 2; /* 3-col becomes 2 on tablet */
+  }
+
+  .form-row {
+    grid-template-columns: repeat(var(--cols), 1fr);
   }
 }
 
 /* Desktop (1024px+) - Full three-column support */
 @media (min-width: 1024px) {
+  .form-row {
+    --cols: 2; /* Default 2 columns */
+  }
+
   .form-row.cols-2 {
-    grid-template-columns: 1fr 1fr;
+    --cols: 2;
   }
 
   .form-row.cols-3 {
-    grid-template-columns: repeat(3, 1fr);
+    --cols: 3;
   }
 
   .form-row.cols-2-1 {
-    grid-template-columns: 2fr 1fr;
+    --cols: 2;
+    grid-template-columns: 2fr 1fr; /* Special ratio layout for desktop */
+  }
+
+  .form-row {
+    grid-template-columns: repeat(var(--cols), 1fr);
   }
 }
 

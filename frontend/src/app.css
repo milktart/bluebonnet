@@ -87,9 +87,9 @@ select {
   border: 1px solid #d1d5db;
   color: #111827;
   box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  font-size: 16px;
+  font-size: var(--form-input-font-size-mobile);
   line-height: 1.5rem;
-  min-height: 44px;
+  min-height: var(--form-input-min-height);
   box-sizing: border-box;
   transition: all 0.15s ease-in-out;
 }
@@ -138,12 +138,12 @@ input[type='date']::-webkit-calendar-picker-indicator {
 
 /* Button styling - Touch-friendly sizing */
 button {
-  min-height: 44px;
+  min-height: var(--button-min-height);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem 1rem;
-  font-size: 0.875rem;
+  padding: var(--button-padding-mobile);
+  font-size: var(--button-font-size-mobile);
   font-weight: 500;
   transition: all 0.15s ease-in-out;
   cursor: pointer;
@@ -160,14 +160,14 @@ button:disabled {
 
 /* Responsive adjustments */
 
-/* Mobile (0-479px) - Maximum touch-friendly sizing */
-@media (max-width: 479px) {
+/* Mobile (0-639px) - Touch-friendly sizing */
+@media (max-width: var(--breakpoint-mobile-max)) {
   input,
   textarea,
   select {
-    font-size: 16px;
-    min-height: 44px;
-    padding: 0.75rem;
+    font-size: var(--form-input-font-size-mobile);
+    min-height: var(--form-input-min-height);
+    padding: var(--form-input-padding-mobile);
   }
 
   textarea {
@@ -175,38 +175,24 @@ button:disabled {
   }
 
   button {
-    min-height: 44px;
-    padding: 0.75rem 1rem;
+    min-height: var(--button-min-height);
+    padding: var(--button-padding-mobile);
   }
 }
 
-/* Small mobile (480-639px) - Slightly optimized */
-@media (min-width: 480px) and (max-width: 639px) {
+/* Tablet (640px-1023px) - Balanced sizing */
+@media (min-width: var(--breakpoint-desktop-min)) and (max-width: 1023px) {
   input,
   textarea,
   select {
-    font-size: 16px;
-    min-height: 44px;
+    font-size: var(--form-input-font-size-tablet);
+    min-height: var(--form-input-min-height-tablet);
+    padding: var(--form-input-padding-tablet);
   }
 
   button {
-    min-height: 44px;
-  }
-}
-
-/* Tablet (640-1023px) - Balanced sizing */
-@media (min-width: 640px) and (max-width: 1023px) {
-  input,
-  textarea,
-  select {
-    font-size: 0.875rem;
-    min-height: 40px;
-    padding: 0.5rem 0.75rem;
-  }
-
-  button {
-    min-height: 40px;
-    padding: 0.5rem 0.75rem;
+    min-height: var(--button-min-height-tablet);
+    padding: var(--button-padding-tablet);
   }
 }
 
@@ -215,15 +201,15 @@ button:disabled {
   input,
   textarea,
   select {
-    font-size: 0.875rem;
-    min-height: 36px;
-    padding: 0.375rem 0.75rem;
+    font-size: var(--form-input-font-size-desktop);
+    min-height: var(--form-input-min-height-desktop);
+    padding: var(--form-input-padding-desktop);
   }
 
   button {
-    min-height: 36px;
-    padding: 0.375rem 0.75rem;
-    font-size: 0.75rem;
+    min-height: var(--button-min-height-desktop);
+    padding: var(--button-padding-desktop);
+    font-size: var(--button-font-size-desktop);
   }
 }
 
@@ -232,15 +218,15 @@ button:disabled {
   input,
   textarea,
   select {
-    min-height: 40px;
+    min-height: var(--form-input-min-height-tablet);
     padding: 0.375rem 0.5rem;
-    font-size: 14px;
+    font-size: var(--form-input-font-size-mobile);
   }
 
   button {
-    min-height: 40px;
+    min-height: var(--button-min-height-tablet);
     padding: 0.5rem;
-    font-size: 0.75rem;
+    font-size: var(--button-font-size-desktop);
   }
 }
 
@@ -281,13 +267,13 @@ button:disabled {
   input,
   textarea,
   select {
-    padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
-    padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+    padding-left: max(0.75rem, var(--safe-area-inset-left));
+    padding-right: max(0.75rem, var(--safe-area-inset-right));
   }
 }
 
 /* Disable all zoom gestures on mobile devices */
-@media (max-width: 639px) {
+@media (max-width: var(--breakpoint-mobile-max)) {
   html,
   body,
   * {
