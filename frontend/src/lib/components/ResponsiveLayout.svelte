@@ -30,6 +30,7 @@
 
   // Component references
   let mapComponent: MapVisualization;
+  let primarySidebarEl: HTMLElement;
   let secondarySidebarEl: HTMLElement;
   let tertiarySidebarEl: HTMLElement;
 
@@ -153,17 +154,17 @@
   </div>
 
   <!-- Primary Sidebar (Left) - Fixed position floating on map -->
-  <aside class="primary-sidebar sidebar">
+  <aside bind:this={primarySidebarEl} class="primary-sidebar sidebar" style="width: 340px !important; min-width: 340px !important; max-width: 340px !important; overflow: hidden !important;">
     <slot name="primary" />
   </aside>
 
   <!-- Secondary Sidebar (Middle/Right) - Fixed position floating on map -->
-  <aside bind:this={secondarySidebarEl} id="secondary-sidebar" class="secondary-sidebar sidebar">
+  <aside bind:this={secondarySidebarEl} id="secondary-sidebar" class="secondary-sidebar sidebar" style="width: 340px !important; min-width: 340px !important; max-width: 340px !important; overflow: hidden !important;">
     <slot name="secondary" />
   </aside>
 
   <!-- Tertiary Sidebar (Right) - Fixed position floating on map -->
-  <aside bind:this={tertiarySidebarEl} id="tertiary-sidebar" class="tertiary-sidebar sidebar">
+  <aside bind:this={tertiarySidebarEl} id="tertiary-sidebar" class="tertiary-sidebar sidebar" style="right: 2.5vh !important; left: auto !important; width: auto !important; overflow: hidden !important;">
     <slot name="tertiary" />
   </aside>
 </div>
@@ -261,7 +262,7 @@
   }
 
   /* Primary sidebar - fixed width on the left */
-  :global(.primary-sidebar) {
+  .primary-sidebar {
     width: var(--sidebar-width-primary) !important;
     min-width: var(--sidebar-width-primary) !important;
     max-width: var(--sidebar-width-primary) !important;
@@ -271,7 +272,7 @@
   }
 
   /* Secondary sidebar - fixed width next to primary, or expands to fill available space */
-  :global(.secondary-sidebar) {
+  .secondary-sidebar {
     width: var(--sidebar-width-secondary) !important;
     min-width: var(--sidebar-width-secondary) !important;
     left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh) !important;
@@ -283,34 +284,30 @@
   }
 
   /* Show secondary sidebar when it has content */
-  :global(.secondary-sidebar.has-content) {
+  .secondary-sidebar.has-content {
     opacity: 1 !important;
     pointer-events: auto !important;
   }
 
   /* Secondary sidebar expands to fill available space when in full-width mode (no tertiary) */
-  :global(.secondary-sidebar.full-width) {
-    width: calc(100% - 2.5vh - var(--sidebar-width-primary) - 2.5vh - 2.5vh) !important;
-    min-width: unset !important;
-    left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh) !important;
+  .secondary-sidebar.full-width {
+    width: calc(100vw - 2.5vh - 340px - 2.5vh - 2.5vh) !important;
+    min-width: calc(100vw - 2.5vh - 340px - 2.5vh - 2.5vh) !important;
+    max-width: none !important;
+    left: calc(2.5vh + 340px + 2.5vh) !important;
   }
 
   /* Secondary sidebar maintains fixed width when tertiary is also visible */
-  :global(.secondary-sidebar.full-width.with-tertiary) {
-    width: var(--sidebar-width-secondary) !important;
-    min-width: var(--sidebar-width-secondary) !important;
-    max-width: var(--sidebar-width-secondary) !important;
-    left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh) !important;
-    flex: 0 0 var(--sidebar-width-secondary) !important;
+  .secondary-sidebar.full-width.with-tertiary {
+    width: 340px !important;
+    min-width: 340px !important;
+    max-width: 340px !important;
+    left: calc(2.5vh + 340px + 2.5vh) !important;
   }
 
   /* Tertiary sidebar - expands to fill remaining space on the right */
-  :global(.tertiary-sidebar) {
-    right: 2.5vh !important;
-    left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh + var(--sidebar-width-secondary) + 2.5vh) !important;
-    width: auto !important;
-    min-width: 0 !important;
-    max-width: none !important;
+  .tertiary-sidebar {
+    left: calc(2.5vh + 340px + 2.5vh + 340px + 2.5vh) !important;
     z-index: 22 !important;
     opacity: 0 !important;
     pointer-events: none !important;
@@ -318,7 +315,7 @@
   }
 
   /* Show tertiary sidebar when it has content */
-  :global(.tertiary-sidebar.has-content) {
+  .tertiary-sidebar.has-content {
     opacity: 1 !important;
     pointer-events: auto !important;
   }
