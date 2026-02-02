@@ -514,7 +514,7 @@
               <label for="isTentative" style="text-align: center;">Tentative</label>
               <div class="checkbox-group" style="display: flex; justify-content: center; align-items: center; flex: 1;">
                 <label for="isTentative">
-                  <input type="checkbox" id="isTentative" name="isTentative" bind:checked={formData.isTentative} disabled={!canEdit} />
+                  <input type="checkbox" id="isTentative" name="isTentative" checked={formData.isTentative} on:change={(e) => formData.isTentative = e.target.checked} disabled={!canEdit} />
                   <span></span>
                 </label>
               </div>
@@ -856,7 +856,7 @@
         <!-- Tentative Checkbox -->
         <div class="form-group checkbox-group">
           <label for="isTentative">
-            <input type="checkbox" id="isTentative" name="isTentative" bind:checked={formData.isTentative} disabled={!canEdit} />
+            <input type="checkbox" id="isTentative" name="isTentative" checked={formData.isTentative} on:change={(e) => formData.isTentative = e.target.checked} disabled={!canEdit} />
             <span>Tentative</span>
           </label>
         </div>
@@ -892,7 +892,7 @@
                     <label for="isTentative" style="text-align: center;">Tentative</label>
                     <div class="checkbox-group" style="display: flex; justify-content: center; align-items: center; flex: 1;">
                       <label for="isTentative">
-                        <input type="checkbox" id="isTentative" name="isTentative" bind:checked={formData.isTentative} disabled={!canEdit} />
+                        <input type="checkbox" id="isTentative" name="isTentative" checked={formData.isTentative} on:change={(e) => formData.isTentative = e.target.checked} disabled={!canEdit} />
                         <span></span>
                       </label>
                     </div>
@@ -1028,7 +1028,7 @@
                 {#if config.fields.some(f => f.name === 'isTentative')}
                   <div class="form-group checkbox-group" style="display: flex; align-items: flex-end; padding-bottom: 0.5rem;">
                     <label for="isTentative">
-                      <input type="checkbox" id="isTentative" name="isTentative" bind:checked={formData.isTentative} disabled={!canEdit} />
+                      <input type="checkbox" id="isTentative" name="isTentative" checked={formData.isTentative} on:change={(e) => formData.isTentative = e.target.checked} disabled={!canEdit} />
                       <span>Tentative</span>
                     </label>
                   </div>
@@ -1350,16 +1350,20 @@
     margin-bottom: 0;
     cursor: pointer;
     user-select: none;
+    pointer-events: auto;
+    position: relative;
+    z-index: 10;
   }
 
   .checkbox-group input[type='checkbox'] {
-    width: auto;
-    height: auto;
+    width: 1.2rem;
+    height: 1.2rem;
     padding: 0;
     margin: 0;
     accent-color: #3b82f6;
     cursor: pointer;
-    min-height: auto;
+    -webkit-appearance: checkbox;
+    appearance: checkbox;
   }
 
   .checkbox-group span {

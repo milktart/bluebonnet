@@ -367,7 +367,7 @@
   border: none;
   border-radius: 0.425rem;
   font-weight: 600;
-  font-size: 0.75rem;
+  font-size: 0.75rem !important;
   cursor: pointer;
   transition: all 0.15s;
   min-height: 36px;
@@ -392,7 +392,7 @@
   .submit-btn,
   .cancel-btn {
     padding: 0.3rem 0.4rem;
-    font-size: 0.7rem;
+    font-size: 0.7rem !important;
     min-height: 32px;
   }
 }
@@ -443,7 +443,7 @@
   border: none;
   border-radius: 0.425rem;
   font-weight: 600;
-  font-size: 0.75rem;
+  font-size: 0.75rem !important;
   cursor: pointer;
   transition: all 0.15s;
   box-sizing: border-box;

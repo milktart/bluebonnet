@@ -182,11 +182,4 @@
 
 <style>
   @import '$lib/styles/timeline.css';
-
-  .items-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    flex: 1;
-  }
 </style>

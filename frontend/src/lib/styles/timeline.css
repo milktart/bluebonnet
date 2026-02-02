@@ -6,25 +6,18 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  padding-left: 0;
   margin: 0.5rem 0 0 0;
-  border-left: none;
 }
 
 .timeline-date-header {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  padding: 0;
 }
 
 .date-badge {
   display: inline-block;
   padding: 0.4rem 0;
-  background: transparent;
   color: #007bff;
-  border: none;
-  border-radius: 0;
   font-size: 0.75rem;
   font-weight: 700;
   white-space: nowrap;
@@ -140,14 +133,15 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.15rem;
 }
 
 .trip-name-row {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: -2px;
+  margin-bottom: -6px;
+  margin-top: -6px;
 }
 
 .trip-name {
@@ -156,7 +150,6 @@
   font-weight: 700;
   color: #111827;
   line-height: 1;
-  text-align: left;
 }
 
 .trip-dates {
@@ -165,7 +158,8 @@
   font-weight: 600;
   color: #4b5563;
   line-height: 1;
-  text-align: left;
+  white-space: nowrap;
+  letter-spacing: 1;
 }
 
 .trip-cities {
@@ -175,12 +169,9 @@
   color: #6b7280;
   font-style: italic;
   line-height: 1;
-  text-align: left;
 }
 
 .edit-btn {
-  background: none;
-  border: none;
   cursor: pointer;
   padding: 0;
   display: flex;
@@ -192,21 +183,18 @@
   transition:
     opacity 0.2s,
     color 0.2s;
-  font-size: 1rem;
-  width: 1rem;
-  height: 1rem;
-  margin-top: -2px;
+  width: 0.65rem;
+  height: 0.65rem;
+  margin-top: -4px;
   line-height: 1;
+  font-size: 0.65rem;
 }
 
 .edit-btn span {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
-  width: 100%;
-  height: 100%;
-  line-height: 1;
+  font-size: 0.8rem !important;
 }
 
 .trip-card:hover .edit-btn {
@@ -218,8 +206,6 @@
 }
 
 .expand-btn {
-  background: none;
-  border: none;
   cursor: pointer;
   padding: 0.5rem;
   display: flex;
@@ -259,9 +245,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  padding-left: 0;
   margin: 0.75rem 0 0 0;
-  border-left: none;
 }
 
 .trip-card.expanded .trip-item-date-group {
@@ -273,16 +257,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.15rem 0px;
 }
 
 .trip-date-badge {
   display: inline-block;
   padding: 0.2rem 0;
-  background: transparent;
   color: #666;
-  border: none;
-  border-radius: 0;
   font-size: 0.65rem;
   font-weight: 700;
   white-space: nowrap;
@@ -294,4 +274,408 @@
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
+}
+
+/* ============================================================================
+   PRIMARY SIDEBAR STYLES
+   All styles for the primary sidebar (trip cards, items list, headers, tabs)
+   ============================================================================ */
+
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  flex: 1;
+}
+
+.primary-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding-bottom: 0;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.header-section {
+  padding: 0;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.header-top h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.add-btn {
+  background: #007bff;
+  color: white;
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.425rem;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.add-btn:hover {
+  background: #0056b3;
+}
+
+.add-btn :global(.material-symbols-outlined) {
+  font-size: 1.25rem !important;
+}
+
+.icon-btn {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.425rem;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon-btn:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.icon-btn :global(.material-symbols-outlined) {
+  font-size: 1.25rem !important;
+}
+
+.tabs {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 0 0;
+}
+
+.tabs-left {
+  display: flex;
+  gap: 1rem;
+}
+
+.tab-btn {
+  background: none;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #666;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.425rem 0.425rem 0 0;
+}
+
+.tab-btn:hover {
+  color: #333;
+  background-color: #e0e0e0;
+}
+
+.tab-btn.active {
+  color: #007bff;
+  border-bottom-color: #007bff;
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+.tab-btn.settings-btn.active {
+  border-bottom-color: #007bff;
+}
+
+.tab-btn.settings-btn :global(.material-symbols-outlined) {
+  font-size: 1.1rem !important;
+  line-height: 1.1em !important;
+}
+
+.trips-content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 1rem;
+}
+
+.trips-content::-webkit-scrollbar {
+  display: none;
+}
+
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  color: #666;
+}
+
+.empty-icon {
+  font-size: 3rem !important;
+  color: #ccc;
+  margin-bottom: 1rem;
+}
+
+.trips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 1rem 0;
+}
+
+.date-header-layovers {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.item-time {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #4b5563;
+  line-height: 1;
+  margin: 0;
+}
+
+.item-dates {
+  font-size: 0.75rem;
+  color: #666;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.item-icon {
+  line-height: 1;
+  height: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+  line-height: 1;
+}
+
+.item-route {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1;
+}
+
+/* ============================================================================
+   SECONDARY & TERTIARY SIDEBAR STYLES
+   All styles for secondary and tertiary sidebars (forms, details, maps)
+   ============================================================================ */
+
+.secondary-content {
+  padding: 0;
+  color: #666;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+#secondary-sidebar {
+  transition: width 0.3s ease;
+}
+
+.tertiary-content {
+  padding: 0;
+  color: #666;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.tertiary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+  margin: 0 0 0.75rem;
+}
+
+.tertiary-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.tertiary-form-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.calendar-sidebar-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.calendar-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+  margin: 0 0 0.75rem;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.add-companion-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  background-color: #007bff;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.add-companion-btn:hover {
+  background-color: #0056b3;
+}
+
+.add-companion-btn :global(.material-symbols-outlined) {
+  font-size: 1.1rem;
+}
+
+/* ============================================================================
+   RESPONSIVE LAYOUT SIDEBAR POSITIONING
+   Fixed positioning and z-index management for all sidebars
+   ============================================================================ */
+
+.sidebar {
+  position: fixed !important;
+  background: rgba(255, 255, 255, 0.7) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border-radius: 0.425rem !important;
+  border: 1px solid #e5e7eb !important;
+  top: 2.5vh !important;
+  bottom: 2.5vh !important;
+  padding: 1.2rem 1.2rem 0.2rem !important;
+  box-sizing: border-box !important;
+}
+
+.primary-sidebar {
+  width: var(--sidebar-width-primary) !important;
+  min-width: var(--sidebar-width-primary) !important;
+  max-width: var(--sidebar-width-primary) !important;
+  left: 2.5vh !important;
+  z-index: 20 !important;
+  flex: 0 0 var(--sidebar-width-primary) !important;
+}
+
+.secondary-sidebar {
+  width: var(--sidebar-width-secondary) !important;
+  min-width: var(--sidebar-width-secondary) !important;
+  max-width: var(--sidebar-width-secondary) !important;
+  left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh) !important;
+  z-index: 21 !important;
+  transition:
+    opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.secondary-sidebar.full-width {
+  width: calc(100vw - 2.5vh - 340px - 2.5vh - 2.5vh) !important;
+  min-width: calc(100vw - 2.5vh - 340px - 2.5vh - 2.5vh) !important;
+  max-width: none !important;
+  left: calc(2.5vh + 340px + 2.5vh) !important;
+}
+
+.secondary-sidebar.full-width.with-tertiary {
+  width: 340px !important;
+  min-width: 340px !important;
+  max-width: 340px !important;
+  left: calc(2.5vh + 340px + 2.5vh) !important;
+}
+
+.tertiary-sidebar {
+  width: var(--sidebar-width-tertiary) !important;
+  min-width: var(--sidebar-width-tertiary) !important;
+  max-width: var(--sidebar-width-tertiary) !important;
+  right: 2.5vh !important;
+  z-index: 22 !important;
+  transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }

@@ -186,6 +186,8 @@
 </div>
 
 <style>
+  @import '$lib/styles/timeline.css';
+
   :global(body) {
     overflow: hidden;
     margin: 0;
@@ -259,63 +261,6 @@
     left: 0;
     z-index: 1;
     background: transparent;
-  }
-
-  .sidebar {
-    position: fixed !important;
-    background: rgba(255, 255, 255, 0.7) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
-    border-radius: 0.425rem !important;
-    border: 1px solid #e5e7eb !important;
-    top: 2.5vh !important;
-    bottom: 2.5vh !important;
-    padding: 1.2rem 1.2rem .2rem !important;
-    box-sizing: border-box !important;
-  }
-
-  /* Primary sidebar - fixed width on the left */
-  .primary-sidebar {
-    width: var(--sidebar-width-primary) !important;
-    min-width: var(--sidebar-width-primary) !important;
-    max-width: var(--sidebar-width-primary) !important;
-    left: 2.5vh !important;
-    z-index: 20 !important;
-    flex: 0 0 var(--sidebar-width-primary) !important;
-  }
-
-  /* Secondary sidebar - fixed width next to primary, or expands to fill available space */
-  .secondary-sidebar {
-    width: var(--sidebar-width-secondary) !important;
-    min-width: var(--sidebar-width-secondary) !important;
-    left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh) !important;
-    z-index: 21 !important;
-    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  }
-
-  /* Secondary sidebar expands to fill available space when in full-width mode (no tertiary) */
-  .secondary-sidebar.full-width {
-    width: calc(100vw - 2.5vh - 340px - 2.5vh - 2.5vh) !important;
-    min-width: calc(100vw - 2.5vh - 340px - 2.5vh - 2.5vh) !important;
-    max-width: none !important;
-    left: calc(2.5vh + 340px + 2.5vh) !important;
-  }
-
-  /* Secondary sidebar maintains fixed width when tertiary is also visible */
-  .secondary-sidebar.full-width.with-tertiary {
-    width: 340px !important;
-    min-width: 340px !important;
-    max-width: 340px !important;
-    left: calc(2.5vh + 340px + 2.5vh) !important;
-  }
-
-  /* Tertiary sidebar - fixed width on the right */
-  .tertiary-sidebar {
-    z-index: 22 !important;
-    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
 
   /* Hide/show layouts based on viewport */
