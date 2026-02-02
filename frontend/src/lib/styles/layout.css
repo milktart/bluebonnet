@@ -185,8 +185,10 @@
     align-items: center;
   }
 
+  /* DEPRECATED: Old layout system - now using ResponsiveLayout component with fixed positioning
+
   /* Primary sidebar (collapsible) */
-  .primary-sidebar {
+  /* .primary-sidebar {
     grid-column: 1;
     grid-row: 2;
     width: var(--sidebar-width-primary);
@@ -201,7 +203,7 @@
   }
 
   /* Collapsed state */
-  .primary-sidebar.collapsed {
+  /* .primary-sidebar.collapsed {
     position: fixed;
     left: 0;
     top: var(--nav-height-tablet);
@@ -212,7 +214,7 @@
   }
 
   /* Drawer backdrop (appears when sidebar is open in collapsed state) */
-  .sidebar-backdrop {
+  /* .sidebar-backdrop {
     position: fixed;
     top: 0;
     left: 0;
@@ -228,10 +230,10 @@
   .primary-sidebar.collapsed.open ~ .sidebar-backdrop {
     opacity: 1;
     pointer-events: auto;
-  }
+  } */
 
   /* Main content area */
-  .app-content {
+  /* .app-content {
     grid-column: 2;
     grid-row: 2;
     position: relative;
@@ -242,7 +244,7 @@
   }
 
   /* Map container (background) */
-  .map-container {
+  /* .map-container {
     grid-column: 1;
     grid-row: 1;
     position: absolute;
@@ -252,7 +254,7 @@
   }
 
   /* Secondary sidebar (right drawer) */
-  .secondary-sidebar {
+  /* .secondary-sidebar {
     position: absolute;
     right: 0;
     top: 0;
@@ -273,7 +275,7 @@
   }
 
   /* Tertiary sidebar (layered over secondary) */
-  .tertiary-sidebar {
+  /* .tertiary-sidebar {
     position: absolute;
     right: 0;
     top: 0;
@@ -294,7 +296,7 @@
   }
 
   /* Secondary/tertiary drawer backdrop */
-  .drawer-backdrop {
+  /* .drawer-backdrop {
     position: fixed;
     top: var(--nav-height-tablet);
     left: 0;
@@ -311,7 +313,7 @@
   .tertiary-sidebar.open ~ .drawer-backdrop {
     opacity: 1;
     pointer-events: auto;
-  }
+  } */
 }
 
 /* =====================================================================
@@ -330,14 +332,15 @@
    └──────────┴──────────────────┴────────────────┘
    ===================================================================== */
 
-@media (min-width: 1024px) and (max-width: 1439px) {
+/* DEPRECATED: Old layout system - now using ResponsiveLayout component with fixed positioning */
+/* @media (min-width: 1024px) and (max-width: 1439px) {
   .app-layout {
     grid-template-columns: auto 1fr auto;
     grid-template-rows: auto 1fr;
   }
 
   /* Primary sidebar (trip list) */
-  .primary-sidebar {
+/* .primary-sidebar {
     grid-column: 1;
     grid-row: 2;
     width: var(--sidebar-width-primary);
@@ -349,7 +352,7 @@
   }
 
   /* Collapsed state */
-  .primary-sidebar.collapsed {
+/* .primary-sidebar.collapsed {
     position: fixed;
     left: 0;
     top: var(--nav-height-desktop);
@@ -361,7 +364,7 @@
   }
 
   /* Main content area with map */
-  .app-content {
+/* .app-content {
     grid-column: 2;
     grid-row: 2;
     position: relative;
@@ -371,7 +374,7 @@
   }
 
   /* Map container (full background) */
-  .map-container {
+/* .map-container {
     position: absolute;
     width: 100%;
     height: 100%;
@@ -381,7 +384,7 @@
   }
 
   /* Secondary sidebar (details/forms) */
-  .secondary-sidebar {
+/* .secondary-sidebar {
     grid-column: 3;
     grid-row: 2;
     width: var(--sidebar-width-secondary);
@@ -401,7 +404,7 @@
   }
 
   /* Tertiary sidebar (additional forms, floating) */
-  .tertiary-sidebar {
+/* .tertiary-sidebar {
     position: absolute;
     right: var(--spacing-lg);
     top: var(--spacing-lg);
@@ -425,14 +428,14 @@
   }
 
   /* Sidebar backdrop for overlays */
-  .sidebar-backdrop {
+/* .sidebar-backdrop {
     display: none;
   }
 
   .drawer-backdrop {
     display: none;
   }
-}
+*/
 
 /* =====================================================================
    MODAL & OVERLAY SYSTEM
