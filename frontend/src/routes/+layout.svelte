@@ -2,7 +2,6 @@
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
   import { authStore, authStoreActions } from '$lib/stores/authStore';
-  import MapLayout from '$lib/components/MapLayout.svelte';
 
   // Check if current page is a map-based route
   $: isMapView = $page.route.id?.startsWith('/(map)') ||
