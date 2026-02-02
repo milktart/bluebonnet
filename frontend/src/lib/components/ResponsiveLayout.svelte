@@ -245,70 +245,82 @@
   }
 
   .sidebar {
-    position: fixed;
+    position: fixed !important;
     background: rgba(255, 255, 255, 0.7) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    border-radius: 0.425rem;
-    border: 1px solid #e5e7eb;
-    top: 2.5vh;
-    bottom: 2.5vh;
-    padding: 1.2rem 1.2rem .2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+    overflow-y: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    border-radius: 0.425rem !important;
+    border: 1px solid #e5e7eb !important;
+    top: 2.5vh !important;
+    bottom: 2.5vh !important;
+    padding: 1.2rem 1.2rem .2rem !important;
+    box-sizing: border-box !important;
   }
 
   /* Primary sidebar - fixed width on the left */
   :global(.primary-sidebar) {
     width: var(--sidebar-width-primary) !important;
+    min-width: var(--sidebar-width-primary) !important;
+    max-width: var(--sidebar-width-primary) !important;
     left: 2.5vh !important;
-    z-index: 20;
+    z-index: 20 !important;
+    flex: 0 0 var(--sidebar-width-primary) !important;
   }
 
   /* Secondary sidebar - fixed width next to primary, or expands to fill available space */
   :global(.secondary-sidebar) {
     width: var(--sidebar-width-secondary) !important;
+    min-width: var(--sidebar-width-secondary) !important;
     left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh) !important;
-    z-index: 21;
-    padding: 0;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 21 !important;
+    padding: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
 
   /* Show secondary sidebar when it has content */
   :global(.secondary-sidebar.has-content) {
-    opacity: 1;
-    pointer-events: auto;
+    opacity: 1 !important;
+    pointer-events: auto !important;
   }
 
   /* Secondary sidebar expands to fill available space when in full-width mode (no tertiary) */
   :global(.secondary-sidebar.full-width) {
     width: calc(100% - 2.5vh - var(--sidebar-width-primary) - 2.5vh - 2.5vh) !important;
+    min-width: unset !important;
     left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh) !important;
   }
 
   /* Secondary sidebar maintains fixed width when tertiary is also visible */
   :global(.secondary-sidebar.full-width.with-tertiary) {
     width: var(--sidebar-width-secondary) !important;
+    min-width: var(--sidebar-width-secondary) !important;
+    max-width: var(--sidebar-width-secondary) !important;
     left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh) !important;
+    flex: 0 0 var(--sidebar-width-secondary) !important;
   }
 
   /* Tertiary sidebar - fixed width on the right */
   :global(.tertiary-sidebar) {
     width: var(--sidebar-width-tertiary) !important;
+    min-width: var(--sidebar-width-tertiary) !important;
+    max-width: var(--sidebar-width-tertiary) !important;
     right: 2.5vh !important;
     left: auto !important;
-    z-index: 22;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 22 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    flex: 0 0 var(--sidebar-width-tertiary) !important;
   }
 
   /* Show tertiary sidebar when it has content */
   :global(.tertiary-sidebar.has-content) {
-    opacity: 1;
-    pointer-events: auto;
+    opacity: 1 !important;
+    pointer-events: auto !important;
   }
 
   /* Hide/show layouts based on viewport */
