@@ -304,18 +304,17 @@
     flex: 0 0 var(--sidebar-width-secondary) !important;
   }
 
-  /* Tertiary sidebar - fixed width on the right */
+  /* Tertiary sidebar - expands to fill remaining space on the right */
   :global(.tertiary-sidebar) {
-    width: var(--sidebar-width-tertiary) !important;
-    min-width: var(--sidebar-width-tertiary) !important;
-    max-width: var(--sidebar-width-tertiary) !important;
     right: 2.5vh !important;
-    left: auto !important;
+    left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh + var(--sidebar-width-secondary) + 2.5vh) !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
     z-index: 22 !important;
     opacity: 0 !important;
     pointer-events: none !important;
     transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    flex: 0 0 var(--sidebar-width-tertiary) !important;
   }
 
   /* Show tertiary sidebar when it has content */
