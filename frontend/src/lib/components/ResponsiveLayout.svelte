@@ -291,7 +291,7 @@
 
   :global(.secondary-sidebar.full-width.with-tertiary) {
     left: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh) !important;
-    right: calc(2.5vh + var(--sidebar-width-primary) + 2.5vh) !important;
+    right: calc(2.5vh + var(--sidebar-width-tertiary) + 2.5vh) !important;
     width: auto !important;
   }
 
