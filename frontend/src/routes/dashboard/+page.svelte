@@ -150,29 +150,29 @@
         secondarySidebarContent.type
       );
 
-      if (shouldBeFullWidth && !tertiarySidebarContent) {
+      if (shouldBeFullWidth) {
         sidebarEl.classList.add('full-width');
-        // Use CSS variables for full-width calculation
-        sidebarEl.style.setProperty('width', 'calc(100vw - 2.5vh - var(--sidebar-width-primary) - 2.5vh - 2.5vh)', 'important');
-        sidebarEl.style.setProperty('min-width', 'calc(100vw - 2.5vh - var(--sidebar-width-primary) - 2.5vh - 2.5vh)', 'important');
-        sidebarEl.style.setProperty('max-width', 'none', 'important');
-      } else {
-        sidebarEl.classList.remove('full-width');
-        // Reset to fixed width using CSS variable
-        sidebarEl.style.setProperty('width', 'var(--sidebar-width-secondary)', 'important');
-        sidebarEl.style.setProperty('min-width', 'var(--sidebar-width-secondary)', 'important');
-        sidebarEl.style.setProperty('max-width', 'var(--sidebar-width-secondary)', 'important');
-      }
 
-      // Add with-tertiary class if tertiary sidebar is open (even in full-width mode)
-      if (tertiarySidebarContent) {
-        sidebarEl.classList.add('with-tertiary');
-        // If tertiary is open, always use fixed width
+        if (tertiarySidebarContent) {
+          // When tertiary is open: secondary fills space between primary and tertiary
+          sidebarEl.classList.add('with-tertiary');
+          sidebarEl.style.setProperty('width', 'calc(100vw - 2.5vh - var(--sidebar-width-primary) - 2.5vh - 2.5vh - var(--sidebar-width-tertiary) - 2.5vh)', 'important');
+          sidebarEl.style.setProperty('min-width', 'calc(100vw - 2.5vh - var(--sidebar-width-primary) - 2.5vh - 2.5vh - var(--sidebar-width-tertiary) - 2.5vh)', 'important');
+          sidebarEl.style.setProperty('max-width', 'none', 'important');
+        } else {
+          // When tertiary is closed: secondary fills all remaining space
+          sidebarEl.classList.remove('with-tertiary');
+          sidebarEl.style.setProperty('width', 'calc(100vw - 2.5vh - var(--sidebar-width-primary) - 2.5vh - 2.5vh)', 'important');
+          sidebarEl.style.setProperty('min-width', 'calc(100vw - 2.5vh - var(--sidebar-width-primary) - 2.5vh - 2.5vh)', 'important');
+          sidebarEl.style.setProperty('max-width', 'none', 'important');
+        }
+      } else {
+        // Not full-width mode: use fixed width
+        sidebarEl.classList.remove('full-width');
+        sidebarEl.classList.remove('with-tertiary');
         sidebarEl.style.setProperty('width', 'var(--sidebar-width-secondary)', 'important');
         sidebarEl.style.setProperty('min-width', 'var(--sidebar-width-secondary)', 'important');
         sidebarEl.style.setProperty('max-width', 'var(--sidebar-width-secondary)', 'important');
-      } else {
-        sidebarEl.classList.remove('with-tertiary');
       }
     }
   }

@@ -180,7 +180,7 @@
   </aside>
 
   <!-- Tertiary Sidebar (Right) - Fixed position floating on map -->
-  <aside bind:this={tertiarySidebarEl} id="tertiary-sidebar" class="tertiary-sidebar sidebar" style="right: 2.5vh !important; width: auto !important; overflow: hidden !important;">
+  <aside bind:this={tertiarySidebarEl} id="tertiary-sidebar" class="tertiary-sidebar sidebar" style="width: var(--sidebar-width-tertiary) !important; min-width: var(--sidebar-width-tertiary) !important; max-width: var(--sidebar-width-tertiary) !important; right: 2.5vh !important; overflow: hidden !important;">
     <slot name="tertiary" />
   </aside>
 </div>
@@ -312,9 +312,8 @@
     left: calc(2.5vh + 340px + 2.5vh) !important;
   }
 
-  /* Tertiary sidebar - expands to fill remaining space on the right */
+  /* Tertiary sidebar - fixed width on the right */
   .tertiary-sidebar {
-    left: calc(2.5vh + 340px + 2.5vh + 340px + 2.5vh) !important;
     z-index: 22 !important;
     transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
