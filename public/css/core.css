@@ -1,5 +1,4 @@
 /* ===== Sidebar Base Styles ===== */
-/* Use same spacing variables as trips.css */
 :root {
   --sidebar-spacing: 3vh;
   --sidebar-width: 400px;
