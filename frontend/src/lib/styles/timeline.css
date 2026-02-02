@@ -229,6 +229,10 @@
   transition: transform 0.3s;
 }
 
+.expand-btn.rotated {
+  transform: rotate(180deg);
+}
+
 .trip-companions {
   position: absolute;
   top: 0.45rem;
