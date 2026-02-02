@@ -261,6 +261,7 @@
   /* Primary sidebar - left side */
   :global(.primary-sidebar) {
     width: var(--sidebar-width-primary);
+    min-width: var(--sidebar-width-primary);
     left: 2.5vh;
     z-index: 20;
     flex-shrink: 0;
