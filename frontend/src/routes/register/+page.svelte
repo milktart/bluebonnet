@@ -131,7 +131,7 @@
     <div class="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-blue-200 to-blue-400 opacity-30 desktop:left-[calc(50%-30rem)] desktop:w-[72.1875rem]" style="clip-path: polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)"></div>
   </div>
 
-  <div class="desktop:mx-auto desktop:w-full desktop:max-w-md">
+  <div class="sm:mx-auto sm:w-full sm:max-w-md">
     <div class="text-center">
       <div class="flex justify-center">
         <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -151,7 +151,7 @@
     </div>
   </div>
 
-  <div class="mt-6 desktop:mx-auto desktop:w-full desktop:max-w-md">
+  <div class="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
     {#if error}
       <div class="rounded-lg bg-red-50 p-4 text-sm text-red-700 mb-4 border border-red-200">
         <div class="flex">
@@ -174,7 +174,7 @@
       </div>
     {/if}
 
-    <div class="bg-white py-6 px-4 shadow-xl ring-1 ring-gray-900/5 desktop:rounded-xl desktop:px-10">
+    <div class="bg-white py-6 px-4 shadow-xl ring-1 ring-gray-900/5 sm:rounded-xl sm:px-10">
       <form on:submit={handleRegister} class="space-y-4">
         <!-- Name Fields Row -->
         <div class="grid grid-cols-1 gap-4 desktop:grid-cols-2">
