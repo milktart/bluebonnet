@@ -624,24 +624,39 @@ class TripService extends BaseService {
         items.forEach((item) => {
           item.itemCompanions = companionsByItemId[item.id] || [];
 
-          // Add the item owner as the first companion if they have user data
-          if (item.user && item.userId) {
-            const ownerCompanion = {
-              id: item.user.id,
-              email: item.user.email,
-              firstName: item.user.firstName,
-              lastName: item.user.lastName,
-              name:
-                item.user.firstName && item.user.lastName
-                  ? `${item.user.firstName} ${item.user.lastName}`
-                  : item.user.email,
-              userId: item.user.id,
-              isOwner: true,
-              inheritedFromTrip: false,
-            };
-            // Only add owner if not already in companions list
+          // Add the item owner as the first companion
+          if (item.userId) {
             const ownerExists = item.itemCompanions.some((c) => c.userId === item.userId);
             if (!ownerExists) {
+              // Use item.user if available, otherwise construct from userId alone
+              let ownerCompanion;
+              if (item.user) {
+                ownerCompanion = {
+                  id: item.user.id,
+                  email: item.user.email,
+                  firstName: item.user.firstName,
+                  lastName: item.user.lastName,
+                  name:
+                    item.user.firstName && item.user.lastName
+                      ? `${item.user.firstName} ${item.user.lastName}`
+                      : item.user.email,
+                  userId: item.user.id,
+                  isOwner: true,
+                  inheritedFromTrip: false,
+                };
+              } else {
+                // Fallback if user data isn't loaded
+                ownerCompanion = {
+                  id: item.userId,
+                  email: item.userId,
+                  firstName: '',
+                  lastName: '',
+                  name: 'Item Owner',
+                  userId: item.userId,
+                  isOwner: true,
+                  inheritedFromTrip: false,
+                };
+              }
               item.itemCompanions.unshift(ownerCompanion);
             }
           }
@@ -810,50 +825,63 @@ class TripService extends BaseService {
         });
       });
       // Attach companions to each item and add permission metadata
-      items.forEach((item) => {
-        item.itemCompanions = companionsByItemId[item.id] || [];
+      await Promise.all(
+        items.map(async (item) => {
+          item.itemCompanions = companionsByItemId[item.id] || [];
 
-        // Add the item owner as the first companion if they have user data
-        if (item.user && item.userId) {
-          // Check if owner is already in companions list (may have been explicitly added)
-          const ownerExists = item.itemCompanions.some((c) => c.userId === item.userId);
+          // Add the item owner as the first companion
+          if (item.userId) {
+            // Check if owner is already in companions list (may have been explicitly added)
+            const ownerExists = item.itemCompanions.some((c) => c.userId === item.userId);
 
-          if (!ownerExists) {
-            // Owner is not in the companions list, so add them
-            const ownerCompanion = {
-              id: item.user.id,
-              email: item.user.email,
-              firstName: item.user.firstName,
-              lastName: item.user.lastName,
-              name:
-                item.user.firstName && item.user.lastName
-                  ? `${item.user.firstName} ${item.user.lastName}`
-                  : item.user.email,
-              userId: item.user.id,
-              isOwner: true,
-              inheritedFromTrip: false,
-            };
-            item.itemCompanions.unshift(ownerCompanion);
+            if (!ownerExists) {
+              // Try to use loaded user data, otherwise fetch it
+              let ownerData = item.user;
+              if (!ownerData) {
+                // User not included in query, fetch it now
+                ownerData = await User.findByPk(item.userId, {
+                  attributes: ['id', 'firstName', 'lastName', 'email'],
+                });
+              }
+
+              if (ownerData) {
+                // Owner is not in the companions list, so add them
+                const ownerCompanion = {
+                  id: ownerData.id,
+                  email: ownerData.email,
+                  firstName: ownerData.firstName,
+                  lastName: ownerData.lastName,
+                  name:
+                    ownerData.firstName && ownerData.lastName
+                      ? `${ownerData.firstName} ${ownerData.lastName}`
+                      : ownerData.email,
+                  userId: ownerData.id,
+                  isOwner: true,
+                  inheritedFromTrip: false,
+                };
+                item.itemCompanions.unshift(ownerCompanion);
+              }
+            }
           }
-        }
 
-        // Add permission flags
-        // For trip items: owner can edit, companions with canEdit on trip can also edit all items
-        const isItemOwner = item.userId === userId;
-        const isCompanionAttendeeThroughItem = item.itemCompanions?.some(
-          (ic) => ic.userId === userId
-        );
-        // Check if user is a trip companion with canEdit permission
-        const tripCompanionWithEdit = tripData.tripCompanions?.some((tc) => {
-          const companionUserId = tc.companion?.userId;
-          const canEditValue = tc.canEdit;
-          const matches = companionUserId === userId && canEditValue === true;
-          return matches;
-        });
-        item.canEdit = isItemOwner || tripCompanionWithEdit;
-        item.canDelete = isItemOwner || tripCompanionWithEdit;
-        item.isShared = !isItemOwner && isCompanionAttendeeThroughItem;
-      });
+          // Add permission flags
+          // For trip items: owner can edit, companions with canEdit on trip can also edit all items
+          const isItemOwner = item.userId === userId;
+          const isCompanionAttendeeThroughItem = item.itemCompanions?.some(
+            (ic) => ic.userId === userId
+          );
+          // Check if user is a trip companion with canEdit permission
+          const tripCompanionWithEdit = tripData.tripCompanions?.some((tc) => {
+            const companionUserId = tc.companion?.userId;
+            const canEditValue = tc.canEdit;
+            const matches = companionUserId === userId && canEditValue === true;
+            return matches;
+          });
+          item.canEdit = isItemOwner || tripCompanionWithEdit;
+          item.canDelete = isItemOwner || tripCompanionWithEdit;
+          item.isShared = !isItemOwner && isCompanionAttendeeThroughItem;
+        })
+      );
     };
     // Load companions for all item types in parallel
     await Promise.all([
