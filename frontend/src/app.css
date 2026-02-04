@@ -88,7 +88,6 @@ select {
   color: #111827;
   box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   font-size: var(--form-input-font-size-mobile);
-  line-height: 1.5rem;
   min-height: var(--form-input-min-height);
   box-sizing: border-box;
   transition: all 0.15s ease-in-out;

@@ -61,7 +61,11 @@ export function useCompanionPermissions(options: UseCompanionPermissionsOptions 
    */
   function isCompanionOwner(companion: any): boolean {
     if (!options.itemOwnerId) return false;
-    const companionUserId = companion.userId || companion.linkedAccount?.id;
+    // Handle both direct structure and nested companion structure
+    let companionUserId = companion.userId || companion.linkedAccount?.id;
+    if (!companionUserId && companion.companion) {
+      companionUserId = companion.companion.userId || companion.companion.linkedAccount?.id;
+    }
     return companionUserId === options.itemOwnerId;
   }
 
@@ -70,7 +74,11 @@ export function useCompanionPermissions(options: UseCompanionPermissionsOptions 
    */
   function isCompanionTripOwner(companion: any): boolean {
     if (!options.tripOwnerId) return false;
-    const companionUserId = companion.userId || companion.linkedAccount?.id;
+    // Handle both direct structure and nested companion structure
+    let companionUserId = companion.userId || companion.linkedAccount?.id;
+    if (!companionUserId && companion.companion) {
+      companionUserId = companion.companion.userId || companion.companion.linkedAccount?.id;
+    }
     return companionUserId === options.tripOwnerId;
   }
 

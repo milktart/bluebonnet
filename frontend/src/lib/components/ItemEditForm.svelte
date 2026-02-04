@@ -298,9 +298,9 @@
 
       if (itemType === 'trip') {
         if (isEditing) {
-          result = await tripsApi.update(data.id, formData);
+          result = await tripsApi.update(data.id, submitData);
         } else {
-          result = await tripsApi.create(formData);
+          result = await tripsApi.create(submitData);
         }
       } else if (itemType === 'flight') {
         if (isEditing) {
@@ -515,7 +515,6 @@
               <div class="checkbox-group" style="display: flex; justify-content: center; align-items: center; flex: 1;">
                 <label for="isTentative">
                   <input type="checkbox" id="isTentative" name="isTentative" checked={formData.isTentative} on:change={(e) => formData.isTentative = e.target.checked} disabled={!canEdit} />
-                  <span></span>
                 </label>
               </div>
             </div>
@@ -853,14 +852,6 @@
           <textarea id="description" name="description" bind:value={formData.description} placeholder="Event details" disabled={!canEdit} />
         </div>
 
-        <!-- Tentative Checkbox -->
-        <div class="form-group checkbox-group">
-          <label for="isTentative">
-            <input type="checkbox" id="isTentative" name="isTentative" checked={formData.isTentative} on:change={(e) => formData.isTentative = e.target.checked} disabled={!canEdit} />
-            <span>Tentative</span>
-          </label>
-        </div>
-
         <!-- Notes -->
         <div class="form-group">
           <label for="notes">Notes</label>
@@ -893,7 +884,6 @@
                     <div class="checkbox-group" style="display: flex; justify-content: center; align-items: center; flex: 1;">
                       <label for="isTentative">
                         <input type="checkbox" id="isTentative" name="isTentative" checked={formData.isTentative} on:change={(e) => formData.isTentative = e.target.checked} disabled={!canEdit} />
-                        <span></span>
                       </label>
                     </div>
                   </div>
@@ -1025,14 +1015,6 @@
                     />
                   {/if}
                 </div>
-                {#if config.fields.some(f => f.name === 'isTentative')}
-                  <div class="form-group checkbox-group" style="display: flex; align-items: flex-end; padding-bottom: 0.5rem;">
-                    <label for="isTentative">
-                      <input type="checkbox" id="isTentative" name="isTentative" checked={formData.isTentative} on:change={(e) => formData.isTentative = e.target.checked} disabled={!canEdit} />
-                      <span>Tentative</span>
-                    </label>
-                  </div>
-                {/if}
               </div>
             {:else if field.name !== 'isTentative'}
               <div class="form-group">

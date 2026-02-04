@@ -154,6 +154,9 @@
    * Check if companion is the owner (uses composable)
    */
   function isCompanionOwner(companion: any): boolean {
+    if (type === 'trip') {
+      return permissionsHelper.isCompanionTripOwner(companion);
+    }
     return permissionsHelper.isCompanionOwner(companion);
   }
 
@@ -195,6 +198,8 @@
           }}
           disabled={loading}
           class="search-input"
+          autocorrect="off"
+          autocomplete="off"
         />
         {#if $searchInput}
           <button
@@ -256,14 +261,14 @@
                 <span class="companion-name">{getCompanionDisplayName(companion)}</span>
               </div>
               <div class="permission-cell">
-                <input
-                  type="checkbox"
-                  checked={companion.canEdit}
-                  on:change={() => togglePermission(companion.companionId || companion.id)}
+                <button
+                  class="permission-toggle"
+                  on:click={() => togglePermission(companion.companionId || companion.id)}
                   disabled={loading}
                   title={companion.canEdit ? 'Click to revoke edit access' : 'Click to grant edit access'}
-                  class="permission-checkbox"
-                />
+                >
+                  {companion.canEdit ? 'Editor' : 'Viewer'}
+                </button>
               </div>
               <button
                 class="remove-btn"
@@ -423,11 +428,12 @@
     border: none;
     background: none;
     cursor: pointer;
-    text-align: left;
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
     transition: background-color 0.15s;
+    justify-content: flex-start;
+    align-items: flex-start;
   }
 
   .result-item:hover {
@@ -527,14 +533,29 @@
     min-width: 60px;
   }
 
-  .permission-checkbox {
-    width: 1.125rem;
-    height: 1.125rem;
+  .permission-toggle {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #ffffff;
+    background-color: #10b981;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.3rem;
+    text-align: center;
+    min-width: 40px;
+    border: none;
     cursor: pointer;
-    accent-color: #3b82f6;
+    transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 1;
+    height: auto;
   }
 
-  .permission-checkbox:disabled {
+  .permission-toggle:hover:not(:disabled) {
+    background-color: #059669;
+  }
+
+  .permission-toggle:disabled {
     cursor: not-allowed;
     opacity: 0.5;
   }
