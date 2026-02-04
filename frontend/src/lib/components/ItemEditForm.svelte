@@ -852,12 +852,6 @@
           <textarea id="description" name="description" bind:value={formData.description} placeholder="Event details" disabled={!canEdit} />
         </div>
 
-        <!-- Notes -->
-        <div class="form-group">
-          <label for="notes">Notes</label>
-          <textarea id="notes" name="notes" bind:value={formData.notes} placeholder="Additional information" disabled={!canEdit} />
-        </div>
-
       {:else}
         <!-- Generic form layout fallback -->
         <!-- Special layout for trip departure and return dates -->
