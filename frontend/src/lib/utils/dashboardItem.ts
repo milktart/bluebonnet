@@ -110,8 +110,148 @@ export function getTripCities(trip: any): string {
 }
 
 /**
+ * Check if there's a long layover (> 25 hours) without accommodation
+ * Returns layover info and next item if applicable
+ */
+export function checkLongLayoverWithoutAccommodation(
+  trip: any,
+  flightId: string
+): { duration: string; location: string; nextItemDate: string; nextItemType: string } | null {
+  const allItems: any[] = [];
+
+  // Collect all items from the trip and sort chronologically
+  if (trip.flights) {
+    trip.flights.forEach((f: any) => {
+      allItems.push({ type: 'flight', ...f });
+    });
+  }
+  if (trip.hotels) {
+    trip.hotels.forEach((h: any) => {
+      allItems.push({ type: 'hotel', ...h });
+    });
+  }
+  if (trip.transportation) {
+    trip.transportation.forEach((t: any) => {
+      allItems.push({ type: 'transportation', ...t });
+    });
+  }
+  if (trip.carRentals) {
+    trip.carRentals.forEach((c: any) => {
+      allItems.push({ type: 'carRental', ...c });
+    });
+  }
+  if (trip.events) {
+    trip.events.forEach((e: any) => {
+      allItems.push({ type: 'event', ...e });
+    });
+  }
+
+  // Sort items chronologically
+  allItems.sort((a, b) => {
+    const dateA =
+      a.type === 'flight'
+        ? new Date(a.departureDateTime)
+        : a.type === 'hotel'
+          ? new Date(a.checkInDateTime)
+          : a.type === 'transportation'
+            ? new Date(a.departureDateTime)
+            : a.type === 'carRental'
+              ? new Date(a.pickupDateTime)
+              : a.type === 'event'
+                ? new Date(a.startDateTime)
+                : new Date(0);
+    const dateB =
+      b.type === 'flight'
+        ? new Date(b.departureDateTime)
+        : b.type === 'hotel'
+          ? new Date(b.checkInDateTime)
+          : b.type === 'transportation'
+            ? new Date(b.departureDateTime)
+            : b.type === 'carRental'
+              ? new Date(b.pickupDateTime)
+              : b.type === 'event'
+                ? new Date(b.startDateTime)
+                : new Date(0);
+    return dateA.getTime() - dateB.getTime();
+  });
+
+  // Find the flight
+  for (let i = 0; i < allItems.length; i++) {
+    if (allItems[i].type === 'flight' && allItems[i].id === flightId) {
+      const currentFlight = allItems[i];
+
+      // Look for next flight or transportation
+      let nextFlightOrTransport = null;
+      let nextFlightOrTransportIndex = -1;
+
+      for (let j = i + 1; j < allItems.length; j++) {
+        if (allItems[j].type === 'flight' || allItems[j].type === 'transportation') {
+          nextFlightOrTransport = allItems[j];
+          nextFlightOrTransportIndex = j;
+          break;
+        }
+      }
+
+      if (!nextFlightOrTransport) return null;
+
+      // Get arrival time of current flight and departure time of next flight/transport
+      const arrivalTime = new Date(currentFlight.arrivalDateTime);
+      const departureTime = new Date(nextFlightOrTransport.departureDateTime);
+
+      // Calculate duration
+      const durationMs = departureTime.getTime() - arrivalTime.getTime();
+      const durationHours = durationMs / (1000 * 60 * 60);
+
+      // Only show suggestion if layover is > 25 hours
+      if (durationHours <= 25) {
+        return null;
+      }
+
+      // Check if there's already a hotel between these items
+      let hasHotel = false;
+      for (let j = i + 1; j < nextFlightOrTransportIndex; j++) {
+        if (allItems[j].type === 'hotel') {
+          const hotelCheckIn = new Date(allItems[j].checkInDateTime);
+          const hotelCheckOut = new Date(allItems[j].checkOutDateTime);
+
+          // Check if hotel covers the layover period
+          if (hotelCheckIn <= arrivalTime && hotelCheckOut >= departureTime) {
+            hasHotel = true;
+            break;
+          }
+        }
+      }
+
+      if (hasHotel) {
+        return null;
+      }
+
+      // Convert to hours and minutes
+      const hours = Math.floor(durationHours);
+      const minutes = Math.round((durationHours - hours) * 60);
+
+      // Format duration
+      const durationStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+      const location = currentFlight.destination?.split(' - ')[0]?.trim() || '';
+
+      return {
+        duration: durationStr,
+        location,
+        nextItemDate:
+          nextFlightOrTransport.type === 'flight'
+            ? nextFlightOrTransport.departureDateTime
+            : nextFlightOrTransport.departureDateTime,
+        nextItemType: nextFlightOrTransport.type
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
  * Calculate layover between two consecutive flights
- * Returns duration and location if layover exists and is < 24 hours
+ * Returns duration and location if layover exists and is <= 25 hours
  */
 export function calculateLayover(flight1: any, flight2: any): { duration: string; location: string } | null {
   // Check if both are flights
@@ -135,8 +275,8 @@ export function calculateLayover(flight1: any, flight2: any): { duration: string
   const durationMs = departureTime.getTime() - arrivalTime.getTime();
   const durationHours = durationMs / (1000 * 60 * 60);
 
-  // Only show layover if less than 24 hours
-  if (durationHours < 0 || durationHours >= 24) {
+  // Only show layover if less than or equal to 25 hours
+  if (durationHours < 0 || durationHours > 25) {
     return null;
   }
 

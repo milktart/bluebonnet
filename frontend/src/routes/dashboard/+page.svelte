@@ -342,6 +342,17 @@
     window.addEventListener('mobileEdit', handleMobileEdit);
     window.addEventListener('mobileDelete', handleMobileDelete);
 
+    // Listen for hotel form opening from accommodation suggestion
+    const handleOpenHotelForm = (e: any) => {
+      const { tripId, hotelData } = e.detail;
+      dashboardStoreActions.openSecondarySidebar({
+        type: 'hotel',
+        itemType: 'hotel',
+        data: hotelData
+      });
+    };
+    window.addEventListener('openHotelForm', handleOpenHotelForm);
+
     // Store form data when switching between mobile and desktop to preserve user input
     let formDataBuffer: any = null;
 
@@ -399,6 +410,7 @@
       window.removeEventListener('edit-user', handleEditUser);
       window.removeEventListener('mobileEdit', handleMobileEdit);
       window.removeEventListener('mobileDelete', handleMobileDelete);
+      window.removeEventListener('openHotelForm', handleOpenHotelForm);
       window.removeEventListener('dataChanged', (e: any) => {});
       window.removeEventListener('resize', handleResponsiveResize);
     };
