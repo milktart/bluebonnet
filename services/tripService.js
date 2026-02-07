@@ -335,67 +335,88 @@ class TripService extends BaseService {
     };
     // Process trips to ensure owner is always in tripCompanions
     const processTripsWithOwner = async (trips) => {
-      return Promise.all(
-        trips.map(async (trip) => {
-          const tripJson = addIsAllDayToTrip(trip.toJSON());
-          // Ensure trip owner is included in tripCompanions
-          const ownerInCompanions = tripJson.tripCompanions?.some(
-            (tc) => tc.companion?.userId === trip.userId
-          );
-          if (!ownerInCompanions && trip.userId) {
-            // Find the owner's TravelCompanion record
-            let ownerCompanion = await TravelCompanion.findOne({
-              where: { userId: trip.userId },
-              include: [
-                {
-                  model: User,
-                  as: 'linkedAccount',
-                  attributes: ['id', 'firstName', 'lastName'],
-                },
-              ],
-            });
-            // If no TravelCompanion exists, fetch the User directly
-            if (!ownerCompanion) {
-              const user = await User.findByPk(trip.userId, {
-                attributes: ['id', 'firstName', 'lastName', 'email'],
-              });
-              if (user) {
-                ownerCompanion = {
+      if (trips.length === 0) return [];
+
+      // Batch fetch all owner companions in one query to avoid lock exhaustion
+      const uniqueUserIds = [...new Set(trips.map((t) => t.userId))];
+      const ownerCompanionsMap = new Map();
+      const usersMap = new Map();
+
+      // Fetch all TravelCompanion records for these users in one query
+      const ownerCompanions = await TravelCompanion.findAll({
+        where: { userId: { [Op.in]: uniqueUserIds } },
+        include: [
+          {
+            model: User,
+            as: 'linkedAccount',
+            attributes: ['id', 'firstName', 'lastName'],
+          },
+        ],
+      });
+
+      ownerCompanions.forEach((companion) => {
+        ownerCompanionsMap.set(companion.userId, companion);
+      });
+
+      // Fetch all remaining users that don't have TravelCompanion records
+      const userIdsNeedingFetch = uniqueUserIds.filter((id) => !ownerCompanionsMap.has(id));
+      if (userIdsNeedingFetch.length > 0) {
+        const users = await User.findAll({
+          where: { id: { [Op.in]: userIdsNeedingFetch } },
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        });
+        users.forEach((user) => {
+          usersMap.set(user.id, user);
+        });
+      }
+
+      return trips.map((trip) => {
+        const tripJson = addIsAllDayToTrip(trip.toJSON());
+        // Ensure trip owner is included in tripCompanions
+        const ownerInCompanions = tripJson.tripCompanions?.some(
+          (tc) => tc.companion?.userId === trip.userId
+        );
+        if (!ownerInCompanions && trip.userId) {
+          // Use pre-fetched data
+          let ownerCompanion = ownerCompanionsMap.get(trip.userId);
+          if (!ownerCompanion) {
+            const user = usersMap.get(trip.userId);
+            if (user) {
+              ownerCompanion = {
+                id: `virtual-companion-${user.id}`,
+                userId: user.id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                name: `${user.firstName} ${user.lastName}`.trim(),
+                toJSON: () => ({
                   id: `virtual-companion-${user.id}`,
                   userId: user.id,
                   firstName: user.firstName,
                   lastName: user.lastName,
                   email: user.email,
                   name: `${user.firstName} ${user.lastName}`.trim(),
-                  toJSON: () => ({
-                    id: `virtual-companion-${user.id}`,
-                    userId: user.id,
-                    firstName: user.firstName,
-                    lastName: user.lastName,
-                    email: user.email,
-                    name: `${user.firstName} ${user.lastName}`.trim(),
-                  }),
-                };
-              }
-            }
-            if (ownerCompanion) {
-              if (!tripJson.tripCompanions) {
-                tripJson.tripCompanions = [];
-              }
-              // Add owner as first companion
-              tripJson.tripCompanions.unshift({
-                id: `virtual-owner-${trip.userId}`,
-                tripId: trip.id,
-                companionId: ownerCompanion.id,
-                companion: ownerCompanion.toJSON ? ownerCompanion.toJSON() : ownerCompanion,
-                permissionSource: 'owner',
-                canAddItems: true,
-              });
+                }),
+              };
             }
           }
-          return tripJson;
-        })
-      );
+          if (ownerCompanion) {
+            if (!tripJson.tripCompanions) {
+              tripJson.tripCompanions = [];
+            }
+            // Add owner as first companion
+            tripJson.tripCompanions.unshift({
+              id: `virtual-owner-${trip.userId}`,
+              tripId: trip.id,
+              companionId: ownerCompanion.id,
+              companion: ownerCompanion.toJSON ? ownerCompanion.toJSON() : ownerCompanion,
+              permissionSource: 'owner',
+              canAddItems: true,
+            });
+          }
+        }
+        return tripJson;
+      });
     };
     const ownedTripsProcessed = await processTripsWithOwner(ownedTrips);
     const companionTripsProcessed = await processTripsWithOwner(companionTrips);
