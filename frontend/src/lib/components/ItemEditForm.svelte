@@ -69,8 +69,8 @@
 
     // Hotel transformation
     if (itemType === 'hotel' && sourceData.checkInDateTime) {
-      // Use hotel timezone for both check-in and check-out
-      const checkInStr = utcToLocalTimeString(sourceData.checkInDateTime, sourceData.timezone);
+      // Use hotel's check-in timezone for check-in, check-out timezone for check-out
+      const checkInStr = utcToLocalTimeString(sourceData.checkInDateTime, sourceData.checkInTimezone);
       if (checkInStr) {
         const [date, time] = checkInStr.split('T');
         formData.checkInDate = date;
@@ -78,7 +78,7 @@
       }
 
       if (sourceData.checkOutDateTime) {
-        const checkOutStr = utcToLocalTimeString(sourceData.checkOutDateTime, sourceData.timezone);
+        const checkOutStr = utcToLocalTimeString(sourceData.checkOutDateTime, sourceData.checkOutTimezone);
         if (checkOutStr) {
           const [date, time] = checkOutStr.split('T');
           formData.checkOutDate = date;

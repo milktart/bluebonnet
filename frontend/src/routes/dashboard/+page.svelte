@@ -6,7 +6,7 @@
   import { tripsApi, flightsApi, hotelsApi, transportationApi, carRentalsApi, eventsApi } from '$lib/services/api';
   import { dataService, setupDataSyncListener } from '$lib/services/dataService';
   import { dashboardStore, dashboardStoreActions } from '$lib/stores/dashboardStore';
-  import { formatTimeInTimezone, formatDateTimeInTimezone } from '$lib/utils/timezoneUtils';
+  import { formatTimeInTimezone, formatDateTimeInTimezone, getUTCTimestampForSorting } from '$lib/utils/timezoneUtils';
   import ResponsiveLayout from '$lib/components/ResponsiveLayout.svelte';
   import Button from '$lib/components/Button.svelte';
   import Loading from '$lib/components/Loading.svelte';
@@ -465,8 +465,66 @@
           return item.sortDate >= now;
         }
       });
-      // Sort chronologically (oldest first)
-      filtered.sort((a, b) => a.sortDate.getTime() - b.sortDate.getTime());
+      // Sort chronologically (oldest first) - accounting for timezones
+      filtered.sort((a, b) => {
+        if (a.type === 'trip' && b.type === 'trip') {
+          return a.sortDate.getTime() - b.sortDate.getTime();
+        }
+
+        // For standalone items, convert to UTC timestamps for proper sorting
+        let timestampA = a.sortDate.getTime();
+        let timestampB = b.sortDate.getTime();
+
+        if (a.type === 'standalone') {
+          const item = a.data;
+          let dateTimeStr = '';
+          let timezone = null;
+
+          if (a.itemType === 'flight') {
+            dateTimeStr = item.departureDateTime;
+            timezone = item.originTimezone;
+          } else if (a.itemType === 'hotel') {
+            dateTimeStr = item.checkInDateTime;
+            timezone = item.checkInTimezone;
+          } else if (a.itemType === 'transportation') {
+            dateTimeStr = item.departureDateTime;
+            timezone = item.originTimezone;
+          } else if (a.itemType === 'carRental') {
+            dateTimeStr = item.pickupDateTime;
+            timezone = item.pickupTimezone;
+          } else if (a.itemType === 'event') {
+            dateTimeStr = item.startDateTime;
+            timezone = item.startTimezone;
+          }
+          timestampA = getUTCTimestampForSorting(dateTimeStr, timezone);
+        }
+
+        if (b.type === 'standalone') {
+          const item = b.data;
+          let dateTimeStr = '';
+          let timezone = null;
+
+          if (b.itemType === 'flight') {
+            dateTimeStr = item.departureDateTime;
+            timezone = item.originTimezone;
+          } else if (b.itemType === 'hotel') {
+            dateTimeStr = item.checkInDateTime;
+            timezone = item.checkInTimezone;
+          } else if (b.itemType === 'transportation') {
+            dateTimeStr = item.departureDateTime;
+            timezone = item.originTimezone;
+          } else if (b.itemType === 'carRental') {
+            dateTimeStr = item.pickupDateTime;
+            timezone = item.pickupTimezone;
+          } else if (b.itemType === 'event') {
+            dateTimeStr = item.startDateTime;
+            timezone = item.startTimezone;
+          }
+          timestampB = getUTCTimestampForSorting(dateTimeStr, timezone);
+        }
+
+        return timestampA - timestampB;
+      });
     } else if ($dashboardStore.activeTab === 'past') {
       filtered = allItems.filter((item) => {
         if (item.type === 'trip') {
@@ -476,8 +534,66 @@
           return item.sortDate < now;
         }
       });
-      // Sort reverse chronologically (most recent first)
-      filtered.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
+      // Sort reverse chronologically (most recent first) - accounting for timezones
+      filtered.sort((a, b) => {
+        if (a.type === 'trip' && b.type === 'trip') {
+          return b.sortDate.getTime() - a.sortDate.getTime();
+        }
+
+        // For standalone items, convert to UTC timestamps for proper sorting
+        let timestampA = a.sortDate.getTime();
+        let timestampB = b.sortDate.getTime();
+
+        if (a.type === 'standalone') {
+          const item = a.data;
+          let dateTimeStr = '';
+          let timezone = null;
+
+          if (a.itemType === 'flight') {
+            dateTimeStr = item.departureDateTime;
+            timezone = item.originTimezone;
+          } else if (a.itemType === 'hotel') {
+            dateTimeStr = item.checkInDateTime;
+            timezone = item.checkInTimezone;
+          } else if (a.itemType === 'transportation') {
+            dateTimeStr = item.departureDateTime;
+            timezone = item.originTimezone;
+          } else if (a.itemType === 'carRental') {
+            dateTimeStr = item.pickupDateTime;
+            timezone = item.pickupTimezone;
+          } else if (a.itemType === 'event') {
+            dateTimeStr = item.startDateTime;
+            timezone = item.startTimezone;
+          }
+          timestampA = getUTCTimestampForSorting(dateTimeStr, timezone);
+        }
+
+        if (b.type === 'standalone') {
+          const item = b.data;
+          let dateTimeStr = '';
+          let timezone = null;
+
+          if (b.itemType === 'flight') {
+            dateTimeStr = item.departureDateTime;
+            timezone = item.originTimezone;
+          } else if (b.itemType === 'hotel') {
+            dateTimeStr = item.checkInDateTime;
+            timezone = item.checkInTimezone;
+          } else if (b.itemType === 'transportation') {
+            dateTimeStr = item.departureDateTime;
+            timezone = item.originTimezone;
+          } else if (b.itemType === 'carRental') {
+            dateTimeStr = item.pickupDateTime;
+            timezone = item.pickupTimezone;
+          } else if (b.itemType === 'event') {
+            dateTimeStr = item.startDateTime;
+            timezone = item.startTimezone;
+          }
+          timestampB = getUTCTimestampForSorting(dateTimeStr, timezone);
+        }
+
+        return timestampB - timestampA;
+      });
     }
 
     // Update store with filtered items

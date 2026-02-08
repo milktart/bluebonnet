@@ -5,6 +5,8 @@
  * layovers, and generating display icons/colors.
  */
 
+import { getUTCTimestampForSorting } from './timezoneUtils';
+
 /**
  * Extract city name from location string
  * Handles formats: "CODE - City, State, Country" or "City, State, Country"
@@ -207,15 +209,18 @@ export function checkLongLayoverWithoutAccommodation(
         return null;
       }
 
-      // Check if there's already a hotel between these items
+      // Check if there's already a hotel covering this layover
+      // Look through ALL hotels in the trip (not just those chronologically between the flights)
+      // because due to timezone differences, hotels might be sorted in unexpected positions
       let hasHotel = false;
-      for (let j = i + 1; j < nextFlightOrTransportIndex; j++) {
-        if (allItems[j].type === 'hotel') {
-          const hotelCheckIn = new Date(allItems[j].checkInDateTime);
-          const hotelCheckOut = new Date(allItems[j].checkOutDateTime);
+      if (trip.hotels && trip.hotels.length > 0) {
+        for (const hotel of trip.hotels) {
+          const hotelCheckIn = new Date(hotel.checkInDateTime);
+          const hotelCheckOut = new Date(hotel.checkOutDateTime);
 
           // Check if hotel covers the layover period
-          if (hotelCheckIn <= arrivalTime && hotelCheckOut >= departureTime) {
+          // Hotel must check in before/at departure and check out after/at arrival
+          if (hotelCheckIn <= departureTime && hotelCheckOut >= arrivalTime) {
             hasHotel = true;
             break;
           }

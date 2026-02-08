@@ -99,6 +99,53 @@
     }
   }
 
+  /**
+   * Convert a local time to UTC using the provided timezone
+   * The database stores times as UTC, but they represent local times in the given timezone
+   * To sort correctly, we need to convert them all to UTC for comparison
+   */
+  function getUTCTime(dateStr: string, timezone: string | undefined): number {
+    const date = new Date(dateStr);
+
+    if (!timezone) {
+      return date.getTime();
+    }
+
+    try {
+      // Create a formatter to get the offset for this timezone at this date
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+
+      const parts = formatter.formatToParts(date);
+      const partMap: Record<string, string> = {};
+      parts.forEach(p => {
+        if (p.type !== 'literal') partMap[p.type] = p.value;
+      });
+
+      // Create a date in UTC with the same values as the timezone date
+      const year = parseInt(partMap.year, 10);
+      const month = parseInt(partMap.month, 10) - 1;
+      const day = parseInt(partMap.day, 10);
+      const hour = parseInt(partMap.hour, 10);
+      const minute = parseInt(partMap.minute, 10);
+      const second = parseInt(partMap.second, 10);
+
+      const utcDate = new Date(Date.UTC(year, month, day, hour, minute, second));
+      return utcDate.getTime();
+    } catch {
+      // If timezone parsing fails, return the original time
+      return date.getTime();
+    }
+  }
+
   function buildTimeline() {
     if (!tripData) return;
 
@@ -115,8 +162,8 @@
         allItems.push({
           type: 'flight',
           id: f.id,
-          time: f.departureDate ? new Date(f.departureDate) : new Date(),
-          timezone: f.timezone,
+          time: f.departureDateTime ? new Date(getUTCTime(f.departureDateTime, f.originTimezone)) : new Date(),
+          timezone: f.originTimezone,
           data: f,
           display: `${originCity} → ${destCity}`,
           icon: itemIcons.flight,
@@ -131,10 +178,10 @@
         allItems.push({
           type: 'hotel',
           id: h.id,
-          time: h.checkInDate ? new Date(h.checkInDate) : new Date(),
-          timezone: h.timezone,
+          time: h.checkInDateTime ? new Date(getUTCTime(h.checkInDateTime, h.checkInTimezone)) : new Date(),
+          timezone: h.checkInTimezone,
           data: h,
-          display: h.name || 'Hotel',
+          display: h.hotelName || 'Hotel',
           icon: itemIcons.hotel,
           color: itemColors.hotel
         });
@@ -150,7 +197,7 @@
         allItems.push({
           type: 'transportation',
           id: t.id,
-          time: t.date ? new Date(t.date) : new Date(),
+          time: t.departureDateTime ? new Date(getUTCTime(t.departureDateTime, t.timezone)) : new Date(),
           timezone: t.timezone,
           data: t,
           display: `${originCity} → ${destCity}`,
@@ -166,7 +213,7 @@
         allItems.push({
           type: 'carRental',
           id: c.id,
-          time: c.pickupDate ? new Date(c.pickupDate) : new Date(),
+          time: c.pickupDateTime ? new Date(getUTCTime(c.pickupDateTime, c.timezone)) : new Date(),
           timezone: c.timezone,
           data: c,
           display: c.company || 'Car Rental',
@@ -182,8 +229,8 @@
         allItems.push({
           type: 'event',
           id: e.id,
-          time: e.date ? new Date(e.date) : new Date(),
-          timezone: e.timezone,
+          time: e.startDateTime ? new Date(getUTCTime(e.startDateTime, e.startTimezone)) : new Date(),
+          timezone: e.startTimezone,
           data: e,
           display: e.name || 'Event',
           icon: itemIcons.event,
@@ -192,7 +239,7 @@
       });
     }
 
-    // Sort by date
+    // Sort by date (now properly accounting for timezones)
     allItems.sort((a, b) => a.time.getTime() - b.time.getTime());
 
     // Group by date
@@ -259,8 +306,8 @@
                 <div class="flex gap-3 flex-1 items-start min-w-0">
                   <div class="flex flex-col items-center gap-1 flex-shrink-0">
                     <span class="text-xs font-medium text-gray-900">
-                      {#if item.data.departureDate || item.data.checkInDate || item.data.pickupDate || item.data.date}
-                        {formatTime(item.data.departureDate || item.data.checkInDate || item.data.pickupDate || item.data.date)}
+                      {#if item.data.departureDateTime || item.data.checkInDateTime || item.data.pickupDateTime || item.data.startDateTime}
+                        {formatTime(item.data.departureDateTime || item.data.checkInDateTime || item.data.pickupDateTime || item.data.startDateTime)}
                       {/if}
                     </span>
                     <span class="material-symbols-outlined text-sm" style="color: {item.color};">

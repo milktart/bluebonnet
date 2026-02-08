@@ -202,3 +202,73 @@ export function formatDateTimeInTimezone(utcDateString: string, timezone: string
     return '';
   }
 }
+
+/**
+ * Get a sortable UTC timestamp for a date/time in a specific timezone
+ * The database stores times as UTC, but they represent local times in the given timezone
+ * This function converts them to UTC for proper chronological sorting
+ *
+ * @param dateTimeString - UTC datetime string from database
+ * @param timezone - IANA timezone or UTC offset string
+ * @returns Unix timestamp in UTC (for sorting)
+ */
+export function getUTCTimestampForSorting(dateTimeString: string, timezone: string | null): number {
+  if (!dateTimeString) return 0;
+
+  try {
+    const date = new Date(dateTimeString);
+    if (isNaN(date.getTime())) return 0;
+
+    // If no timezone, use the date as-is (it's already UTC)
+    if (!timezone) {
+      return date.getTime();
+    }
+
+    // Check if it's a UTC offset format (e.g., "UTC-5")
+    const offsetMinutes = parseUtcOffset(timezone);
+    if (offsetMinutes !== null) {
+      // Apply the offset directly
+      const offsetDate = new Date(date.getTime() + offsetMinutes * 60 * 1000);
+      return offsetDate.getTime();
+    }
+
+    // Otherwise, treat it as an IANA timezone
+    if (!isValidIanaTimezone(timezone)) {
+      return date.getTime();
+    }
+
+    // Use Intl.DateTimeFormat to get the local date/time components
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+      timeZone: timezone
+    });
+
+    const parts = formatter.formatToParts(date);
+    const values: Record<string, string> = {};
+    parts.forEach(part => {
+      if (part.type !== 'literal') {
+        values[part.type] = part.value;
+      }
+    });
+
+    // Create a UTC date with the same values as the timezone date
+    const year = parseInt(values.year, 10);
+    const month = parseInt(values.month, 10) - 1;
+    const day = parseInt(values.day, 10);
+    const hour = parseInt(values.hour, 10);
+    const minute = parseInt(values.minute, 10);
+    const second = parseInt(values.second, 10);
+
+    const utcDate = new Date(Date.UTC(year, month, day, hour, minute, second));
+    return utcDate.getTime();
+  } catch (error) {
+    console.error('Error getting UTC timestamp for sorting:', error);
+    return date?.getTime() || 0;
+  }
+}

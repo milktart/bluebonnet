@@ -5,6 +5,8 @@
  * and organizing data for dashboard display.
  */
 
+import { getUTCTimestampForSorting } from './timezoneUtils';
+
 /**
  * Parse a local date string (YYYY-MM-DD) into a Date object
  */
@@ -51,13 +53,13 @@ export function getDateKeyForItem(item: any): string {
     if (item.itemType === 'flight') {
       timezone = item.data.originTimezone;
     } else if (item.itemType === 'hotel') {
-      timezone = item.data.timezone;
+      timezone = item.data.checkInTimezone;
     } else if (item.itemType === 'transportation') {
       timezone = item.data.originTimezone;
     } else if (item.itemType === 'carRental') {
       timezone = item.data.pickupTimezone;
     } else if (item.itemType === 'event') {
-      timezone = item.data.timezone;
+      timezone = item.data.startTimezone;
     }
   }
 
@@ -101,7 +103,7 @@ export function getDayKeyForItem(item: any): string {
     timezone = item.originTimezone;
   } else if (item.type === 'hotel') {
     date = new Date(item.checkInDateTime);
-    timezone = item.timezone;
+    timezone = item.checkInTimezone;
   } else if (item.type === 'transportation') {
     date = new Date(item.departureDateTime);
     timezone = item.originTimezone;
@@ -110,7 +112,7 @@ export function getDayKeyForItem(item: any): string {
     timezone = item.pickupTimezone;
   } else if (item.type === 'event') {
     date = new Date(item.startDateTime);
-    timezone = item.timezone;
+    timezone = item.startTimezone;
   } else {
     return '';
   }
@@ -185,33 +187,54 @@ export function groupTripItemsByDate(trip: any): Record<string, Array<any>> {
     });
   }
 
-  // Sort items chronologically
+  // Sort items chronologically (accounting for timezones)
   allItems.sort((a, b) => {
-    const dateA =
-      a.type === 'flight'
-        ? new Date(a.departureDateTime)
-        : a.type === 'hotel'
-          ? new Date(a.checkInDateTime)
-          : a.type === 'transportation'
-            ? new Date(a.departureDateTime)
-            : a.type === 'carRental'
-              ? new Date(a.pickupDateTime)
-              : a.type === 'event'
-                ? new Date(a.startDateTime)
-                : new Date(0);
-    const dateB =
-      b.type === 'flight'
-        ? new Date(b.departureDateTime)
-        : b.type === 'hotel'
-          ? new Date(b.checkInDateTime)
-          : b.type === 'transportation'
-            ? new Date(b.departureDateTime)
-            : b.type === 'carRental'
-              ? new Date(b.pickupDateTime)
-              : b.type === 'event'
-                ? new Date(b.startDateTime)
-                : new Date(0);
-    return dateA.getTime() - dateB.getTime();
+    let dateTimeA: string;
+    let timezoneA: string | null = null;
+    let dateTimeB: string;
+    let timezoneB: string | null = null;
+
+    if (a.type === 'flight') {
+      dateTimeA = a.departureDateTime;
+      timezoneA = a.originTimezone;
+    } else if (a.type === 'hotel') {
+      dateTimeA = a.checkInDateTime;
+      timezoneA = a.checkInTimezone;
+    } else if (a.type === 'transportation') {
+      dateTimeA = a.departureDateTime;
+      timezoneA = a.originTimezone;
+    } else if (a.type === 'carRental') {
+      dateTimeA = a.pickupDateTime;
+      timezoneA = a.pickupTimezone;
+    } else if (a.type === 'event') {
+      dateTimeA = a.startDateTime;
+      timezoneA = a.startTimezone;
+    } else {
+      dateTimeA = '';
+    }
+
+    if (b.type === 'flight') {
+      dateTimeB = b.departureDateTime;
+      timezoneB = b.originTimezone;
+    } else if (b.type === 'hotel') {
+      dateTimeB = b.checkInDateTime;
+      timezoneB = b.checkInTimezone;
+    } else if (b.type === 'transportation') {
+      dateTimeB = b.departureDateTime;
+      timezoneB = b.originTimezone;
+    } else if (b.type === 'carRental') {
+      dateTimeB = b.pickupDateTime;
+      timezoneB = b.pickupTimezone;
+    } else if (b.type === 'event') {
+      dateTimeB = b.startDateTime;
+      timezoneB = b.startTimezone;
+    } else {
+      dateTimeB = '';
+    }
+
+    const timestampA = getUTCTimestampForSorting(dateTimeA, timezoneA);
+    const timestampB = getUTCTimestampForSorting(dateTimeB, timezoneB);
+    return timestampA - timestampB;
   });
 
   // Group by date
