@@ -349,7 +349,7 @@
               return true;
             })
             .map(c => c.companionId || c.id)
-            .filter(Boolean);
+            .filter(id => id && !String(id).startsWith('virtual-companion-'));
 
           if (companionIds.length > 0) {
             await itemCompanionsApi.update(itemType, result.id, companionIds);

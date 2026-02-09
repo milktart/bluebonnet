@@ -60,6 +60,10 @@ class ItemCompanionService {
       if (!Array.isArray(companionIds)) {
         throw new Error('companionIds must be an array');
       }
+      // Filter out virtual companion IDs (non-UUID display-only IDs from trip owner)
+      const validCompanionIds = companionIds.filter(
+        (id) => !String(id).startsWith('virtual-companion-')
+      );
       // Get the item model based on type
       const itemModel = ItemCompanionService._getItemModel(itemType);
       if (!itemModel) {
@@ -95,7 +99,7 @@ class ItemCompanionService {
       });
       const existingIds = existingCompanions.map((ic) => ic.companionId);
       // Remove companions that are no longer in the list
-      const toRemove = existingIds.filter((id) => !companionIds.includes(id));
+      const toRemove = existingIds.filter((id) => !validCompanionIds.includes(id));
       if (toRemove.length > 0) {
         await ItemCompanion.destroy({
           where: {
@@ -106,7 +110,7 @@ class ItemCompanionService {
         });
       }
       // Add new companions that aren't already there
-      const toAdd = companionIds.filter((id) => !existingIds.includes(id));
+      const toAdd = validCompanionIds.filter((id) => !existingIds.includes(id));
       if (toAdd.length > 0) {
         const newCompanions = toAdd.map((companionId) => ({
           itemType,
