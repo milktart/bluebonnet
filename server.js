@@ -153,20 +153,8 @@ app.get('/health', async (req, res) => {
 // const { authLimiter, apiLimiter, formLimiter } = require('./middleware/rateLimiter');
 
 // Routes
-app.use('/', require('./routes/index'));
-app.use('/auth', require('./routes/auth')); // Rate limiting disabled
-app.use('/account', require('./routes/account'));
-app.use('/companions', require('./routes/companions'));
-app.use('/companion-relationships', require('./routes/companionRelationships'));
-app.use('/api', require('./routes/api')); // Rate limiting disabled
-app.use('/trips', require('./routes/trips'));
-app.use('/trip-invitations', require('./routes/tripInvitations'));
-app.use('/flights', require('./routes/flights')); // Rate limiting disabled
-app.use('/hotels', require('./routes/hotels'));
-app.use('/transportation', require('./routes/transportation'));
-app.use('/car-rentals', require('./routes/carRentals'));
-app.use('/events', require('./routes/events'));
-app.use('/vouchers', require('./routes/vouchers'));
+app.use('/auth', require('./routes/auth'));
+app.use('/api', require('./routes/api'));
 
 // Mount SvelteKit frontend handler for all non-API routes
 // This must come after all API/auth routes so they take precedence
@@ -176,21 +164,7 @@ let svelteKitLoadError = null;
 
 app.use(async (req, res, next) => {
   // Skip SvelteKit for API routes (already handled above)
-  if (
-    req.path.startsWith('/api') ||
-    req.path.startsWith('/auth') ||
-    req.path.startsWith('/account') ||
-    req.path.startsWith('/companions') ||
-    req.path.startsWith('/trips') ||
-    req.path.startsWith('/flights') ||
-    req.path.startsWith('/hotels') ||
-    req.path.startsWith('/transportation') ||
-    req.path.startsWith('/car-rentals') ||
-    req.path.startsWith('/events') ||
-    req.path.startsWith('/vouchers') ||
-    req.path.startsWith('/companion-relationships') ||
-    req.path.startsWith('/trip-invitations')
-  ) {
+  if (req.path.startsWith('/api') || req.path.startsWith('/auth')) {
     return next();
   }
 

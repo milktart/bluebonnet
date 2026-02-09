@@ -112,7 +112,7 @@ class TravelItemService extends BaseService {
 
       // Add to trip if tripId provided
       if (options.tripId) {
-        await itemTripService.addItemToTrip(options.tripId, item.id, this.itemType, userId);
+        await itemTripService.addItemToTrip(this.itemType, item.id, options.tripId, userId);
       }
 
       // Add companions if provided
@@ -196,7 +196,7 @@ class TravelItemService extends BaseService {
   async deleteItem(item) {
     try {
       // Remove from trips
-      await itemTripService.removeItemFromTrips(item.id, this.itemType);
+      await itemTripService.removeItemFromAllTrips(this.itemType, item.id);
 
       // Remove companions
       await itemCompanionService.removeCompanionFromItem(item.id, this.itemType);
