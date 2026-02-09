@@ -18,6 +18,7 @@ jest.mock('../../middleware/auth', () => ({
     }
     next();
   },
+  requireAdmin: (req, res, next) => next(),
 }));
 
 describe('Trips API - Integration Tests', () => {

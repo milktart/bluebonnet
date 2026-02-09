@@ -11,13 +11,8 @@ process.env.DB_USER = process.env.TEST_DB_USER || 'postgres';
 process.env.DB_PASSWORD = process.env.TEST_DB_PASSWORD || 'postgres';
 process.env.LOG_LEVEL = 'error'; // Suppress logs during testing
 
-// Mock logger to prevent console spam in tests
-jest.mock('../utils/logger', () => ({
-  info: jest.fn(),
-  error: jest.fn(),
-  warn: jest.fn(),
-  debug: jest.fn(),
-}));
+// DO NOT mock logger globally - logger.test.js needs to test the real implementation
+// Individual test files should mock logger locally if needed
 
 // Increase timeout for database operations
 jest.setTimeout(10000);

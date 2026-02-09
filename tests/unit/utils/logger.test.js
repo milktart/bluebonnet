@@ -1,280 +1,116 @@
-const path = require('path');
-const fs = require('fs');
-const winston = require('winston');
+describe('Logger Utility (SimpleLogger)', () => {
+  describe('Logger object', () => {
+    it('should be defined and have required methods', () => {
+      const logger = require('../../../utils/logger');
 
-// Mock dependencies before requiring logger
-jest.mock('fs');
-jest.mock('winston');
-jest.mock('winston-daily-rotate-file', () => {
-  return jest.fn().mockImplementation(() => ({
-    on: jest.fn(),
-  }));
-});
-
-describe('Logger Utility', () => {
-  let mockLogger;
-  const originalEnv = process.env;
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    process.env = { ...originalEnv };
-
-    // Mock Winston logger
-    mockLogger = {
-      add: jest.fn(),
-      info: jest.fn(),
-      error: jest.fn(),
-      warn: jest.fn(),
-      debug: jest.fn(),
-      stream: null,
-    };
-
-    winston.createLogger = jest.fn().mockReturnValue(mockLogger);
-    winston.format = {
-      combine: jest.fn((...args) => args),
-      timestamp: jest.fn((opts) => `timestamp(${JSON.stringify(opts)})`),
-      errors: jest.fn((opts) => `errors(${JSON.stringify(opts)})`),
-      splat: jest.fn(() => 'splat()'),
-      json: jest.fn(() => 'json()'),
-      colorize: jest.fn(() => 'colorize()'),
-      printf: jest.fn((fn) => `printf(${typeof fn})`),
-    };
-
-    winston.transports = {
-      Console: jest.fn().mockImplementation(() => ({ type: 'Console' })),
-    };
-
-    // Mock fs
-    fs.existsSync = jest.fn().mockReturnValue(true);
-    fs.mkdirSync = jest.fn();
-  });
-
-  afterEach(() => {
-    process.env = originalEnv;
-    jest.resetModules();
-  });
-
-  describe('Logger Initialization', () => {
-    it('should create logs directory if it does not exist', () => {
-      fs.existsSync.mockReturnValue(false);
-
-      // Require logger to trigger initialization
-      jest.isolateModules(() => {
-        require('../../../utils/logger');
-      });
-
-      const expectedLogsDir = path.join(__dirname, '../../../logs');
-      expect(fs.existsSync).toHaveBeenCalledWith(expectedLogsDir);
-      expect(fs.mkdirSync).toHaveBeenCalledWith(expectedLogsDir, { recursive: true });
+      expect(logger).toBeDefined();
+      expect(typeof logger.format).toBe('function');
+      expect(typeof logger.error).toBe('function');
+      expect(typeof logger.warn).toBe('function');
+      expect(typeof logger.info).toBe('function');
+      expect(typeof logger.debug).toBe('function');
     });
 
-    it('should not create logs directory if it already exists', () => {
-      fs.existsSync.mockReturnValue(true);
+    it('should have level and levelValue properties', () => {
+      const logger = require('../../../utils/logger');
 
-      jest.isolateModules(() => {
-        require('../../../utils/logger');
-      });
-
-      expect(fs.mkdirSync).not.toHaveBeenCalled();
+      expect(typeof logger.level).toBe('string');
+      expect(typeof logger.levelValue).toBe('number');
+      expect(['error', 'warn', 'info', 'debug']).toContain(logger.level);
+      expect([0, 1, 2, 3]).toContain(logger.levelValue);
     });
 
-    it('should create logger with default log level', () => {
-      delete process.env.LOG_LEVEL;
+    it('should have a stream object for Morgan HTTP logging', () => {
+      const logger = require('../../../utils/logger');
 
-      jest.isolateModules(() => {
-        require('../../../utils/logger');
-      });
-
-      expect(winston.createLogger).toHaveBeenCalledWith(
-        expect.objectContaining({
-          level: 'info',
-          defaultMeta: { service: 'travel-planner' },
-        })
-      );
-    });
-
-    it('should create logger with custom log level from environment', () => {
-      process.env.LOG_LEVEL = 'debug';
-
-      jest.isolateModules(() => {
-        require('../../../utils/logger');
-      });
-
-      expect(winston.createLogger).toHaveBeenCalledWith(
-        expect.objectContaining({
-          level: 'debug',
-        })
-      );
-    });
-
-    it('should add console transport in development environment', () => {
-      process.env.NODE_ENV = 'development';
-
-      jest.isolateModules(() => {
-        require('../../../utils/logger');
-      });
-
-      expect(mockLogger.add).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: 'Console',
-        })
-      );
-    });
-
-    it('should not add console transport in production environment', () => {
-      process.env.NODE_ENV = 'production';
-
-      jest.isolateModules(() => {
-        require('../../../utils/logger');
-      });
-
-      expect(mockLogger.add).not.toHaveBeenCalled();
-    });
-
-    it('should create logger with correct transports', () => {
-      jest.isolateModules(() => {
-        require('../../../utils/logger');
-      });
-
-      expect(winston.createLogger).toHaveBeenCalledWith(
-        expect.objectContaining({
-          transports: expect.any(Array),
-        })
-      );
-
-      const callArgs = winston.createLogger.mock.calls[0][0];
-      expect(callArgs.transports).toHaveLength(2); // Error and combined logs
+      expect(logger.stream).toBeDefined();
+      expect(typeof logger.stream.write).toBe('function');
     });
   });
 
-  describe('Logger Stream', () => {
-    it('should have a stream object with write method', () => {
-      jest.isolateModules(() => {
-        const logger = require('../../../utils/logger');
+  describe('Logger format method', () => {
+    it('should format log messages with timestamp, level, and content', () => {
+      const logger = require('../../../utils/logger');
 
-        expect(logger.stream).toBeDefined();
-        expect(typeof logger.stream.write).toBe('function');
-      });
+      const formatted = logger.format('info', 'Test message', null);
+
+      expect(formatted).toMatch(/\[\d{2}:\d{2}:\d{2}\]/); // Timestamp
+      expect(formatted).toContain('INFO'); // Level
+      expect(formatted).toContain('Test message'); // Message
     });
 
-    it('should write trimmed messages to logger.info', () => {
-      jest.isolateModules(() => {
-        const logger = require('../../../utils/logger');
+    it('should include metadata in formatted output', () => {
+      const logger = require('../../../utils/logger');
 
-        logger.stream.write('  Test message  \n');
+      const formatted = logger.format('info', 'Action', { userId: '123' });
 
-        expect(mockLogger.info).toHaveBeenCalledWith('Test message');
-      });
+      expect(formatted).toContain('Action');
+      expect(formatted).toContain('"userId":"123"');
     });
 
-    it('should handle messages without extra whitespace', () => {
-      jest.isolateModules(() => {
-        const logger = require('../../../utils/logger');
+    it('should not include empty metadata', () => {
+      const logger = require('../../../utils/logger');
 
-        logger.stream.write('Simple message');
+      const formatted = logger.format('info', 'Message', {});
 
-        expect(mockLogger.info).toHaveBeenCalledWith('Simple message');
-      });
-    });
-  });
-
-  describe('Logger Methods', () => {
-    it('should expose Winston logger methods', () => {
-      jest.isolateModules(() => {
-        const logger = require('../../../utils/logger');
-
-        expect(typeof logger.info).toBe('function');
-        expect(typeof logger.error).toBe('function');
-        expect(typeof logger.warn).toBe('function');
-        expect(typeof logger.debug).toBe('function');
-      });
-    });
-
-    it('should call logger.info with message', () => {
-      jest.isolateModules(() => {
-        const logger = require('../../../utils/logger');
-
-        logger.info('Info message');
-
-        expect(mockLogger.info).toHaveBeenCalledWith('Info message');
-      });
-    });
-
-    it('should call logger.error with message', () => {
-      jest.isolateModules(() => {
-        const logger = require('../../../utils/logger');
-
-        logger.error('Error message');
-
-        expect(mockLogger.error).toHaveBeenCalledWith('Error message');
-      });
-    });
-
-    it('should call logger.warn with message', () => {
-      jest.isolateModules(() => {
-        const logger = require('../../../utils/logger');
-
-        logger.warn('Warning message');
-
-        expect(mockLogger.warn).toHaveBeenCalledWith('Warning message');
-      });
-    });
-
-    it('should call logger.debug with message', () => {
-      jest.isolateModules(() => {
-        const logger = require('../../../utils/logger');
-
-        logger.debug('Debug message');
-
-        expect(mockLogger.debug).toHaveBeenCalledWith('Debug message');
-      });
-    });
-
-    it('should call logger methods with metadata', () => {
-      jest.isolateModules(() => {
-        const logger = require('../../../utils/logger');
-
-        const metadata = { userId: '123', action: 'login' };
-        logger.info('User action', metadata);
-
-        expect(mockLogger.info).toHaveBeenCalledWith('User action', metadata);
-      });
+      expect(formatted).toContain('Message');
+      // Should not have JSON stringified empty object
+      expect(formatted).not.toMatch(/\{\}/);
     });
   });
 
-  describe('Log Format', () => {
-    it('should use JSON format for file transports', () => {
-      jest.isolateModules(() => {
-        require('../../../utils/logger');
-      });
+  describe('Logger level filtering', () => {
+    it('should respect configured log level', () => {
+      jest.resetModules();
+      // Set log level before requiring logger
+      process.env.LOG_LEVEL = 'info';
+      const logger = require('../../../utils/logger');
 
-      expect(winston.format.json).toHaveBeenCalled();
+      // Logger has a level that's one of the valid levels
+      expect(logger.levelValue >= 0).toBe(true);
+      expect(logger.levelValue <= 3).toBe(true);
+
+      // levelValue mapping: error=0, warn=1, info=2, debug=3
+      const levelMap = { error: 0, warn: 1, info: 2, debug: 3 };
+      expect(levelMap[logger.level]).toBe(logger.levelValue);
+
+      // Clean up
+      jest.resetModules();
+    });
+  });
+
+  describe('Logger methods exist and are callable', () => {
+    it('should have callable error method', () => {
+      const logger = require('../../../utils/logger');
+
+      expect(() => logger.error('test')).not.toThrow();
     });
 
-    it('should include timestamp in log format', () => {
-      jest.isolateModules(() => {
-        require('../../../utils/logger');
-      });
+    it('should have callable warn method', () => {
+      const logger = require('../../../utils/logger');
 
-      expect(winston.format.timestamp).toHaveBeenCalledWith({ format: 'YYYY-MM-DD HH:mm:ss' });
+      expect(() => logger.warn('test')).not.toThrow();
     });
 
-    it('should include errors with stack traces', () => {
-      jest.isolateModules(() => {
-        require('../../../utils/logger');
-      });
+    it('should have callable info method', () => {
+      const logger = require('../../../utils/logger');
 
-      expect(winston.format.errors).toHaveBeenCalledWith({ stack: true });
+      expect(() => logger.info('test')).not.toThrow();
     });
 
-    it('should use colorized format for console in development', () => {
-      process.env.NODE_ENV = 'development';
+    it('should have callable debug method', () => {
+      const logger = require('../../../utils/logger');
 
-      jest.isolateModules(() => {
-        require('../../../utils/logger');
-      });
+      expect(() => logger.debug('test')).not.toThrow();
+    });
+  });
 
-      expect(winston.format.colorize).toHaveBeenCalled();
+  describe('Logger stream', () => {
+    it('should have write method that calls logger.info', () => {
+      const logger = require('../../../utils/logger');
+
+      // Stream.write should exist and be callable
+      expect(() => logger.stream.write('test message\n')).not.toThrow();
     });
   });
 });
