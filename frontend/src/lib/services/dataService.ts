@@ -22,20 +22,10 @@ import { tripsApi } from '$lib/services/api.js';
 import type { Trip, Flight, Hotel, Event, CarRental, Transportation } from '../../../types/index.js';
 
 /**
- * Cache entry with TTL (Time To Live)
- */
-interface CacheEntry<T> {
-  data: T;
-  timestamp: number;
-  ttl: number;
-}
-
-/**
  * Data Service class
- * Singleton instance handles all data loading and caching
+ * Singleton instance handles all data loading
  */
 class DataService {
-  private cache: Map<string, CacheEntry<any>> = new Map();
   private readonly MAX_CONCURRENT_REQUESTS = 5;
 
   /**
@@ -128,15 +118,6 @@ class DataService {
   }
 
   /**
-   * No-op: Cache invalidation not needed since no caching is used
-   *
-   * @deprecated Cache is disabled - data is always fetched fresh from the database
-   */
-  invalidateCache(itemType: 'trip' | 'item' | 'all' = 'all') {
-    // No-op: no caching is used, so invalidation is not needed
-  }
-
-  /**
    * Broadcast data change to all tabs/windows
    *
    * Triggers listeners in other dashboard instances via window event
@@ -156,8 +137,7 @@ class DataService {
    * window.addEventListener('dataChanged', (e: any) => {
    *   const { type, data } = e.detail;
    *   if (type.includes('trip')) {
-   *     dataService.invalidateCache('trip');
-   *     await dataService.loadAllTrips(true); // Force refresh
+   *     await dataService.loadAllTrips();
    *   }
    * });
    */
@@ -228,12 +208,6 @@ class DataService {
     return results;
   }
 
-  /**
-   * Clear any remaining cache (for logout)
-   */
-  clearCache() {
-    this.cache.clear();
-  }
 }
 
 /**
@@ -242,27 +216,3 @@ class DataService {
  */
 export const dataService = new DataService();
 
-/**
- * SETUP HELPER - DEPRECATED
- *
- * This function is no longer needed - listeners are registered directly in +page.svelte
- * Kept for backwards compatibility but does nothing.
- */
-export function setupDataSyncListener() {
-  // No-op: listeners are registered in +page.svelte onMount instead
-}
-
-/**
- * TYPES FOR EXTERNAL USE
- */
-
-export interface CacheStats {
-  size: number;
-  entries: Array<{
-    key: string;
-    ageMs: number;
-    ttlMs: number;
-    expired: boolean;
-  }>;
-  totalSize: number;
-}

@@ -4,7 +4,7 @@
   import { onMount } from 'svelte';
   import { authStore, authStoreActions } from '$lib/stores/authStore';
   import { tripsApi, flightsApi, hotelsApi, transportationApi, carRentalsApi, eventsApi } from '$lib/services/api';
-  import { dataService, setupDataSyncListener } from '$lib/services/dataService';
+  import { dataService } from '$lib/services/dataService';
   import { dashboardStore, dashboardStoreActions } from '$lib/stores/dashboardStore';
   import { formatTimeInTimezone, formatDateTimeInTimezone, getUTCTimestampForSorting } from '$lib/utils/timezoneUtils';
   import ResponsiveLayout from '$lib/components/ResponsiveLayout.svelte';
@@ -299,17 +299,10 @@
     // Initialize store synchronization
     syncStoreState();
 
-    // Setup cross-tab data synchronization
-    setupDataSyncListener();
-
     // Listen for data changes from other tabs
     window.addEventListener('dataChanged', async (e: any) => {
       const { type } = e.detail;
-      if (type.includes('trip')) {
-        dataService.invalidateCache('trip');
-        await loadTripData();
-      } else if (type.includes('item')) {
-        dataService.invalidateCache('item');
+      if (type.includes('trip') || type.includes('item')) {
         await loadTripData();
       }
     });
@@ -658,7 +651,6 @@
     try {
       await tripsApi.delete(tripId);
       dashboardStoreActions.deleteTrip(tripId);
-      dataService.invalidateCache('trip');
       filterTrips();
       updateMapData();
     } catch (err) {

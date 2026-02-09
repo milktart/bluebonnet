@@ -116,36 +116,6 @@ jobs:
           name: codecov-umbrella
           fail_ci_if_error: false
 
-  build:
-    name: Build Application
-    runs-on: ubuntu-latest
-    timeout-minutes: 10  # Build should complete in under 10 minutes
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build JavaScript bundles
-        run: npm run build-js
-
-      - name: Build CSS
-        run: npm run build-css-prod
-
-      - name: Verify build artifacts
-        run: |
-          ls -la public/dist/
-          test -f public/dist/manifest.json || exit 1
-          echo "Build artifacts verified successfully"
-
   security:
     name: Security Scan
     runs-on: ubuntu-latest

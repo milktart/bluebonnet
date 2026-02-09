@@ -104,10 +104,6 @@ COPY --from=development-deps --chown=node:node /app/node_modules ./node_modules
 # Copy source code with proper ownership
 COPY --chown=node:node . .
 
-# Build JavaScript bundles as node user (consistent with production)
-USER node
-RUN npm run build-js
-
 # Don't install or build frontend in Docker for development
 # Let it be handled at runtime in docker-entrypoint.sh
 # This avoids permission issues with Vite cache when npm runs as non-root
@@ -145,10 +141,6 @@ COPY --from=development-deps --chown=node:node /app/node_modules ./node_modules
 # Copy source code with proper ownership
 COPY --chown=node:node . .
 
-# Build JavaScript bundles as node user (consistent with dev/prod)
-USER node
-RUN npm run build-js
-
 # Don't install or build frontend in Docker for test
 # Let it be handled at runtime in docker-entrypoint.sh
 
@@ -184,13 +176,6 @@ COPY --from=development-deps --chown=node:node /app/node_modules ./node_modules
 
 # Copy application code with proper ownership (exclude dev files via .dockerignore)
 COPY --chown=node:node . .
-
-# Build JavaScript bundles as node user (consistent with dev/test)
-USER node
-RUN npm run build-js
-
-# Don't build frontend in Docker - let it be handled at runtime
-# This ensures consistent behavior across all environments and avoids permission issues
 
 # Create logs directory with proper permissions
 USER root
@@ -232,14 +217,6 @@ COPY --from=development-deps --chown=node:node /app/node_modules ./node_modules
 
 # Copy application code with proper ownership (exclude dev files via .dockerignore)
 COPY --chown=node:node . .
-
-# Build JavaScript bundles as node user (consistent with dev/test)
-USER node
-RUN npm run build-js
-
-# Don't build frontend in Docker - let it be handled at runtime
-# This ensures consistent behavior across all environments and avoids permission issues
-# Production will still benefit from pre-built frontend in the entrypoint
 
 # Create logs directory with proper permissions
 USER root

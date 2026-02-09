@@ -109,56 +109,6 @@ const requestLogger = require('./middleware/requestLogger');
 
 app.use(requestLogger);
 
-// Asset version for cache-busting (set once at server start)
-const ASSET_VERSION = Date.now();
-
-// Load bundle manifest for esbuild bundles
-let bundleManifest = {};
-try {
-  const manifestPath = path.join(__dirname, 'public/dist/manifest.json');
-  logger.debug('Looking for manifest', { manifestPath, cwd: process.cwd(), dirname: __dirname });
-
-  if (fs.existsSync(manifestPath)) {
-    bundleManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-    logger.info('Loaded bundle manifest', { bundles: Object.keys(bundleManifest) });
-    logger.debug('Bundle paths', { bundleManifest });
-  } else {
-    logger.warn('Bundle manifest not found - run "npm run build-js" to generate bundles', {
-      manifestPath,
-    });
-    // List what's in public/ directory
-    const publicPath = path.join(__dirname, 'public');
-    if (fs.existsSync(publicPath)) {
-      logger.debug('Public directory contents', { files: fs.readdirSync(publicPath) });
-    }
-  }
-} catch (error) {
-  logger.error('Error loading bundle manifest', { error: error.message, stack: error.stack });
-}
-
-// Helper function to get bundle path
-function getBundle(name) {
-  return bundleManifest[name] || `/js/entries/${name}.js`;
-}
-
-// Test endpoint to check bundle files (for debugging)
-app.get('/debug/bundles', (req, res) => {
-  const distPath = path.join(__dirname, 'public/dist');
-  const result = {
-    __dirname,
-    distPath,
-    distExists: fs.existsSync(distPath),
-    bundleManifest,
-    files: [],
-  };
-
-  if (fs.existsSync(distPath)) {
-    result.files = fs.readdirSync(distPath);
-  }
-
-  res.json(result);
-});
-
 // Health check endpoint (Phase 7 - DevOps)
 app.get('/health', async (req, res) => {
   const health = {

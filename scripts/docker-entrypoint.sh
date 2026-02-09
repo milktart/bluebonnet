@@ -45,10 +45,6 @@ fi
 
 echo "✅ Database setup complete!"
 
-# Build JavaScript bundles
-echo "📦 Building JavaScript bundles..."
-npm run build-js
-
 # Build or prepare SvelteKit frontend based on environment
 if [ "$NODE_ENV" = "development" ]; then
   echo "🔥 Setting up SvelteKit frontend for development with hot-reload..."
