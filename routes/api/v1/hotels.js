@@ -7,62 +7,9 @@ const express = require('express');
 const apiResponse = require('../../../utils/apiResponse');
 const { ensureAuthenticated } = require('../../../middleware/auth');
 const { getItemPermissions } = require('../../../utils/itemPermissionHelper');
+const { loadItemCompanionsData } = require('../../../utils/itemCompanionLoader');
 
 const router = express.Router();
-
-/**
- * Helper function to load trip companions with trip owner listed first
- */
-async function loadTripCompanions(tripId, trip) {
-  if (!tripId || !trip) return [];
-
-  const { TripCompanion, TravelCompanion, User } = require('../../../models');
-  const tripCompanions = [];
-
-  const tripCompanionRecords = await TripCompanion.findAll({
-    where: { tripId },
-    include: [
-      {
-        model: TravelCompanion,
-        as: 'companion',
-        attributes: ['id', 'email', 'firstName', 'lastName', 'name', 'userId'],
-      },
-    ],
-  });
-
-  // Add trip owner as first companion if not already in list
-  const tripOwnerInList = tripCompanionRecords.some((tc) => tc.companion?.userId === trip.userId);
-  if (!tripOwnerInList && trip.userId) {
-    const owner = await User.findByPk(trip.userId, {
-      attributes: ['id', 'firstName', 'lastName', 'email'],
-    });
-    if (owner) {
-      tripCompanions.push({
-        id: owner.id,
-        email: owner.email,
-        firstName: owner.firstName,
-        lastName: owner.lastName,
-        name: `${owner.firstName} ${owner.lastName}`.trim(),
-        userId: owner.id,
-        isOwner: true,
-      });
-    }
-  }
-
-  // Add other trip companions
-  tripCompanions.push(
-    ...tripCompanionRecords.map((tc) => ({
-      id: tc.companion.id,
-      email: tc.companion.email,
-      firstName: tc.companion.firstName,
-      lastName: tc.companion.lastName,
-      name: tc.companion.name,
-      userId: tc.companion.userId,
-    }))
-  );
-
-  return tripCompanions;
-}
 
 // Handle CORS preflight requests
 router.options('*', (req, res) => {
@@ -168,7 +115,7 @@ router.get('/trips/:tripId', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
-    const { Hotel, Trip, TravelCompanion, ItemCompanion, User } = require('../../../models');
+    const { Hotel, Trip } = require('../../../models');
     const hotel = await Hotel.findByPk(req.params.id, {
       include: [{ model: Trip, as: 'trip', required: false }],
     });
@@ -177,53 +124,15 @@ router.get('/:id', async (req, res) => {
       return apiResponse.notFound(res, 'Hotel not found');
     }
 
-    // Get companions for this hotel
-    const itemCompanions = await ItemCompanion.findAll({
-      where: { itemType: 'hotel', itemId: hotel.id },
-      include: [
-        {
-          model: TravelCompanion,
-          as: 'companion',
-          attributes: ['id', 'email', 'firstName', 'lastName', 'name', 'userId'],
-        },
-      ],
-    });
-
-    // Add companions to response
     const hotelData = hotel.toJSON();
-    const companionsList = itemCompanions.map((ic) => ({
-      id: ic.companion.id,
-      companionId: ic.companion.id,
-      email: ic.companion.email,
-      firstName: ic.companion.firstName,
-      lastName: ic.companion.lastName,
-      name: ic.companion.name,
-      userId: ic.companion.userId,
-      inheritedFromTrip: ic.inheritedFromTrip,
-    }));
 
-    // Add hotel owner as first companion if not already in list
-    if (hotel.userId) {
-      const ownerInList = companionsList.some((c) => c.userId === hotel.userId);
-      if (!ownerInList) {
-        const owner = await User.findByPk(hotel.userId, {
-          attributes: ['id', 'firstName', 'lastName', 'email'],
-        });
-        if (owner) {
-          companionsList.unshift({
-            id: owner.id,
-            email: owner.email,
-            firstName: owner.firstName,
-            lastName: owner.lastName,
-            name: `${owner.firstName} ${owner.lastName}`.trim(),
-            userId: owner.id,
-            isOwner: true,
-          });
-        }
-      }
-    }
+    // Load all companion data using shared helper
+    const { itemCompanions, tripCompanions, tripOwnerId } = await loadItemCompanionsData(
+      hotel,
+      'hotel'
+    );
 
-    hotelData.itemCompanions = companionsList;
+    hotelData.itemCompanions = itemCompanions;
 
     // Set canEdit flag using centralized permission helper
     const userId = req.user?.id;
@@ -231,21 +140,9 @@ router.get('/:id', async (req, res) => {
     hotelData.canEdit = permissions.canEdit;
     hotelData.canDelete = permissions.canDelete;
 
-    // Get trip companions if item is part of a trip
-    let tripCompanions = [];
-    if (hotel.tripId && hotel.trip) {
-      tripCompanions = await loadTripCompanions(hotel.tripId, hotel.trip);
+    if (tripCompanions.length > 0) {
       hotelData.tripCompanions = tripCompanions;
-      hotelData.tripOwnerId = hotel.trip.userId;
-    } else if (hotel.tripId && !hotel.trip) {
-      // If tripId exists but trip wasn't loaded, fetch it
-      const { Trip } = require('../../../models');
-      const trip = await Trip.findByPk(hotel.tripId);
-      if (trip) {
-        tripCompanions = await loadTripCompanions(hotel.tripId, trip);
-        hotelData.tripCompanions = tripCompanions;
-        hotelData.tripOwnerId = trip.userId;
-      }
+      hotelData.tripOwnerId = tripOwnerId;
     }
 
     return apiResponse.success(res, hotelData, 'Hotel retrieved successfully');

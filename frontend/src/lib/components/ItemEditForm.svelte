@@ -172,15 +172,83 @@
   let airlineLookupLoading = false;
   let selectedTripId: string = '';
   let selectedCompanions: Array<{ id: string; name: string }> = [];
+  let fetchedItemId: string | null = null;
+  let freshItemData: any = null;
 
-  // Re-initialize formData and selectedTripId when data or itemType changes
-  $: if (data) {
-    const initialized = initializeFormData(data);
+  // Fetch fresh item data from the canonical GET /:id endpoint.
+  // This ensures companion data always comes from a single code path (itemCompanionLoader)
+  // regardless of how the edit form was opened (dashboard click vs URL navigation).
+  async function fetchFreshItemData(id: string, type: ItemType): Promise<any> {
+    try {
+      if (type === 'flight') return await flightsApi.getById(id);
+      if (type === 'hotel') return await hotelsApi.getById(id);
+      if (type === 'event') return await eventsApi.getById(id);
+      if (type === 'transportation') return await transportationApi.getById(id);
+      if (type === 'carRental') return await carRentalsApi.getById(id);
+    } catch {
+      return null;
+    }
+    return null;
+  }
+
+  function initializeFromItemData(itemData: any) {
+    const initialized = initializeFormData(itemData);
     formData = initialized;
-    selectedTripId = data?.tripId || '';
-    // Initialize companions: prioritize tripCompanions (from direct item endpoint) over itemCompanions
-    // The backend already includes the item owner in itemCompanions, so just use it directly
-    selectedCompanions = data?.tripCompanions || data?.itemCompanions || data?.travelCompanions || [];
+    selectedTripId = itemData?.tripId || '';
+
+    // Companions come from the canonical GET /:id endpoint which provides
+    // properly structured itemCompanions and tripCompanions
+    const itemComps = itemData?.itemCompanions || [];
+    const tripComps = itemData?.tripCompanions || [];
+
+    // Combine both lists, avoiding duplicates
+    // Use userId as primary dedup key when available (handles owner appearing in both lists)
+    const seenIdentifiers = new Set<string>();
+    const processedComps: any[] = [];
+
+    for (const comp of [...itemComps, ...tripComps]) {
+      const userIdKey = comp.userId ? `user:${comp.userId}` : null;
+      const companionKey = comp.companionId || comp.id;
+
+      if (userIdKey && !seenIdentifiers.has(userIdKey)) {
+        seenIdentifiers.add(userIdKey);
+        if (companionKey) seenIdentifiers.add(String(companionKey));
+        processedComps.push(comp);
+      } else if (!userIdKey && companionKey && !seenIdentifiers.has(String(companionKey))) {
+        seenIdentifiers.add(String(companionKey));
+        processedComps.push(comp);
+      }
+    }
+
+    selectedCompanions = processedComps;
+  }
+
+  // Re-initialize formData and selectedTripId when data or itemType changes.
+  // For existing non-trip items, always fetch fresh data from the GET /:id endpoint
+  // so companion data comes from a single canonical code path.
+  $: if (data) {
+    if (data.id && itemType !== 'trip' && fetchedItemId !== data.id) {
+      // Mark as fetching to avoid duplicate requests
+      fetchedItemId = data.id;
+      freshItemData = null;
+      // Initialize form fields immediately for responsiveness, but NOT companions
+      const initialized = initializeFormData(data);
+      formData = initialized;
+      selectedTripId = data?.tripId || '';
+      // Fetch fresh data — companions will ONLY come from this canonical endpoint
+      fetchFreshItemData(data.id, itemType).then((fetched) => {
+        if (fetched) {
+          freshItemData = fetched;
+          initializeFromItemData(fetched);
+        }
+      });
+    } else if (data.id && itemType !== 'trip' && freshItemData) {
+      // Already fetched fresh data for this item — use it instead of stale store data
+      // (This branch runs when the reactive block re-fires from store updates)
+      initializeFromItemData(freshItemData);
+    } else {
+      initializeFromItemData(data);
+    }
   }
 
   // Auto-lookup airline when flight number changes (for flights)

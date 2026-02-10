@@ -101,6 +101,7 @@ exports.getAllCompanions = async (req, res) => {
       const linkedUser = companion.linkedAccount;
       companionMap.set(key, {
         id: companion.id,
+        name: companion.name,
         firstName: companion.firstName,
         lastName: companion.lastName,
         email: companion.email,
@@ -156,6 +157,7 @@ exports.getAllCompanions = async (req, res) => {
         const creatorUser = profile.creator;
         companionMap.set(key, {
           id: profile.id,
+          name: profile.creator?.name || profile.name,
           firstName: profile.creator?.firstName || profile.firstName,
           lastName: profile.creator?.lastName || profile.lastName,
           email: creatorEmail,

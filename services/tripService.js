@@ -654,6 +654,7 @@ class TripService extends BaseService {
               if (item.user) {
                 ownerCompanion = {
                   id: item.user.id,
+                  companionId: null,
                   email: item.user.email,
                   firstName: item.user.firstName,
                   lastName: item.user.lastName,
@@ -669,6 +670,7 @@ class TripService extends BaseService {
                 // Fallback if user data isn't loaded
                 ownerCompanion = {
                   id: item.userId,
+                  companionId: null,
                   email: item.userId,
                   firstName: '',
                   lastName: '',
@@ -867,8 +869,10 @@ class TripService extends BaseService {
 
               if (ownerData) {
                 // Owner is not in the companions list, so add them
+                // companionId: null distinguishes the owner from TravelCompanion records
                 const ownerCompanion = {
                   id: ownerData.id,
+                  companionId: null,
                   email: ownerData.email,
                   firstName: ownerData.firstName,
                   lastName: ownerData.lastName,
