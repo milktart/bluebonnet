@@ -144,6 +144,7 @@
     color: #374151;
     transition: all 0.2s;
     text-decoration: none;
+    justify-content: normal;
   }
 
   .settings-item:hover {
