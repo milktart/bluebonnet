@@ -87,14 +87,14 @@
   </div>
 </nav>
 
-<main class="relative isolate px-6 py-4 lg:px-8 min-h-[calc(100vh-4rem)] flex flex-col justify-center">
+<main class="relative isolate px-6 py-4 lg:px-8 min-h-[calc(100vh-4rem)] flex flex-col justify-center items-center">
   <!-- Blurred Background Elements -->
   <div class="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl desktop:-top-80" aria-hidden="true">
     <div class="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-blue-200 to-blue-400 opacity-30 desktop:left-[calc(50%-30rem)] desktop:w-[72.1875rem]" style="clip-path: polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)"></div>
   </div>
 
-  <div class="sm:mx-auto sm:w-full sm:max-w-md">
-    <div class="text-center">
+  <div class="w-full sm:max-w-md space-y-6">
+    <div class="text-center space-y-3">
       <div class="flex justify-center">
         <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
           <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,17 +103,18 @@
         </div>
       </div>
 
-      <h2 class="text-3xl font-bold tracking-tight text-gray-900">
-        Welcome to Travel Planner
-      </h2>
+      <div>
+        <h2 class="text-3xl font-bold tracking-tight text-gray-900">
+          Welcome to Travel Planner
+        </h2>
 
-      <p class="mt-2 text-center text-sm text-gray-600">
-        Sign in to your account to continue
-      </p>
+        <p class="text-center text-sm text-gray-600 mt-2">
+          Sign in to your account to continue
+        </p>
+      </div>
     </div>
-  </div>
 
-  <div class="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
+    <div>
     {#if error}
       <div class="rounded-lg bg-red-50 p-4 text-sm text-red-700 mb-4 border border-red-200">
         <div class="flex">
@@ -136,8 +137,8 @@
       </div>
     {/if}
 
-    <div class="bg-white py-6 px-4 shadow-xl ring-1 ring-gray-900/5 sm:rounded-xl sm:px-10">
-      <form on:submit={handleLogin} class="space-y-6">
+    <div class="bg-white px-4 shadow-xl ring-1 ring-gray-900/5 sm:rounded-xl" style="padding: 1.5rem 2rem 1.75rem;">
+      <form on:submit={handleLogin} class="space-y-4">
         <!-- Email Field -->
         <div>
           <label for="email" class="block text-sm font-medium leading-6 text-gray-900">
