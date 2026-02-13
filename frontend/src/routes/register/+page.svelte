@@ -107,56 +107,55 @@
 </svelte:head>
 
 <!-- Navigation Bar -->
-<nav class="bg-transparent relative z-50">
-  <div class="mx-auto max-w-7xl px-4 desktop:px-6 lg:px-8">
-    <div class="flex h-16 items-center justify-between">
-      <div class="flex items-center space-x-2">
-        <div class="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center">
-          <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<nav class="navbar">
+  <div class="navbar-container">
+    <div class="navbar-content">
+      <div class="navbar-brand">
+        <div class="logo-icon">
+          <svg class="logo-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
           </svg>
         </div>
-        <span class="text-lg font-semibold text-gray-900">Travel Planner</span>
+        <span class="logo-text">Travel Planner</span>
       </div>
-      <a href="/login" class="inline-flex items-center px-4 py-2 rounded-md bg-blue-600 text-sm font-semibold text-white hover:bg-blue-500 transition-colors duration-200">
+      <a href="/login" class="navbar-button">
         Log In
       </a>
     </div>
   </div>
 </nav>
 
-<main class="relative isolate px-6 lg:px-8 min-h-[calc(100vh-4rem)] flex flex-col justify-center items-center">
+<main class="register-main">
   <!-- Blurred Background Elements -->
-  <div class="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl desktop:-top-80" aria-hidden="true">
-    <div class="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-blue-200 to-blue-400 opacity-30 desktop:left-[calc(50%-30rem)] desktop:w-[72.1875rem]" style="clip-path: polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)"></div>
+  <div class="background-blur" aria-hidden="true">
+    <div class="blur-gradient"></div>
   </div>
 
-  <div class="w-full sm:max-w-md space-y-6">
-    <div class="text-center space-y-3">
-      <div class="flex justify-center">
-        <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <div class="register-container">
+    <div class="register-header">
+      <div class="header-icon-container">
+        <div class="header-icon">
+          <svg class="header-icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
           </svg>
         </div>
       </div>
 
-      <div>
-        <h2 class="text-3xl font-bold tracking-tight text-gray-900">
+      <div class="header-text">
+        <h2 class="header-title">
           Create your account
         </h2>
 
-        <p class="text-center text-sm text-gray-600 mt-2">
+        <p class="header-subtitle">
           Join Travel Planner and start organizing your adventures
         </p>
       </div>
     </div>
 
-    <div>
     {#if error}
-      <div class="rounded-lg bg-red-50 p-4 text-sm text-red-700 mb-4 border border-red-200">
-        <div class="flex">
-          <svg class="h-5 w-5 text-red-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
+      <div class="alert alert-error">
+        <div class="alert-content">
+          <svg class="alert-icon" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
           </svg>
           <span>{error}</span>
@@ -165,9 +164,9 @@
     {/if}
 
     {#if success}
-      <div class="rounded-lg bg-green-50 p-4 text-sm text-green-700 mb-4 border border-green-200">
-        <div class="flex">
-          <svg class="h-5 w-5 text-green-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
+      <div class="alert alert-success">
+        <div class="alert-content">
+          <svg class="alert-icon" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
           </svg>
           <span>{success}</span>
@@ -175,16 +174,16 @@
       </div>
     {/if}
 
-    <div class="bg-white px-4 shadow-xl ring-1 ring-gray-900/5 sm:rounded-xl" style="padding: 1.5rem 2rem 1.75rem;">
-      <form on:submit={handleRegister} class="space-y-4">
+    <div class="form-card">
+      <form on:submit={handleRegister} class="register-form">
         <!-- Name Fields Row -->
-        <div class="grid grid-cols-1 gap-4 desktop:grid-cols-2">
+        <div class="form-name-row">
           <!-- First Name Field -->
-          <div>
-            <label for="firstName" class="block text-sm font-medium leading-6 text-gray-900">
+          <div class="form-group">
+            <label for="firstName" class="form-label">
               First name
             </label>
-            <div class="mt-2">
+            <div class="form-input-wrapper">
               <input
                 id="firstName"
                 name="firstName"
@@ -193,18 +192,18 @@
                 required
                 bind:value={firstName}
                 on:keypress={handleKeyPress}
-                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 desktop:text-sm desktop:leading-6 px-3"
+                class="form-input"
                 placeholder="John"
               >
             </div>
           </div>
 
           <!-- Last Initial Field -->
-          <div>
-            <label for="lastName" class="block text-sm font-medium leading-6 text-gray-900">
+          <div class="form-group">
+            <label for="lastName" class="form-label">
               Last initial
             </label>
-            <div class="mt-2">
+            <div class="form-input-wrapper">
               <input
                 id="lastName"
                 name="lastName"
@@ -214,7 +213,7 @@
                 maxlength="1"
                 bind:value={lastName}
                 on:keypress={handleKeyPress}
-                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 desktop:text-sm desktop:leading-6 px-3"
+                class="form-input"
                 placeholder="D"
               >
             </div>
@@ -222,11 +221,11 @@
         </div>
 
         <!-- Email Field -->
-        <div>
-          <label for="email" class="block text-sm font-medium leading-6 text-gray-900">
+        <div class="form-group">
+          <label for="email" class="form-label">
             Email address
           </label>
-          <div class="mt-2">
+          <div class="form-input-wrapper">
             <input
               id="email"
               name="email"
@@ -235,18 +234,18 @@
               required
               bind:value={email}
               on:keypress={handleKeyPress}
-              class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 desktop:text-sm desktop:leading-6 px-3"
+              class="form-input"
               placeholder="john@example.com"
             >
           </div>
         </div>
 
         <!-- Password Field -->
-        <div>
-          <label for="password" class="block text-sm font-medium leading-6 text-gray-900">
+        <div class="form-group">
+          <label for="password" class="form-label">
             Password
           </label>
-          <div class="mt-2">
+          <div class="form-input-wrapper">
             <input
               id="password"
               name="password"
@@ -256,19 +255,19 @@
               minlength="6"
               bind:value={password}
               on:keypress={handleKeyPress}
-              class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 desktop:text-sm desktop:leading-6 px-3"
+              class="form-input"
               placeholder="Enter your password"
             >
           </div>
-          <p class="mt-2 text-sm text-gray-500">Must be at least 6 characters long.</p>
+          <p class="password-hint">Must be at least 6 characters long.</p>
         </div>
 
         <!-- Confirm Password Field -->
-        <div>
-          <label for="confirmPassword" class="block text-sm font-medium leading-6 text-gray-900">
+        <div class="form-group">
+          <label for="confirmPassword" class="form-label">
             Confirm password
           </label>
-          <div class="mt-2">
+          <div class="form-input-wrapper">
             <input
               id="confirmPassword"
               name="confirmPassword"
@@ -277,18 +276,18 @@
               required
               bind:value={confirmPassword}
               on:keypress={handleKeyPress}
-              class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 desktop:text-sm desktop:leading-6 px-3"
+              class="form-input"
               placeholder="Confirm your password"
             >
           </div>
         </div>
 
         <!-- Submit Button -->
-        <div>
+        <div class="form-button-wrapper">
           <button
             type="submit"
             disabled={loading}
-            class="flex w-full justify-center rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="submit-button"
           >
             {loading ? 'Creating account...' : 'Create account'}
           </button>
@@ -296,20 +295,13 @@
       </form>
 
       <!-- Login Link -->
-      <div class="mt-6">
-        <div class="relative">
-          <div class="absolute inset-0 flex items-center">
-            <div class="w-full border-t border-gray-300"></div>
-          </div>
-          <div class="relative flex justify-center text-sm">
-            <span class="bg-white px-2 text-gray-500">Already have an account?</span>
-          </div>
+      <div class="form-divider-section">
+        <div class="form-divider">
+          <div class="divider-line"></div>
+          <div class="divider-text">Already have an account?</div>
         </div>
-        <div class="mt-6">
-          <a
-            href="/login"
-            class="flex w-full justify-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors duration-200"
-          >
+        <div class="form-login-link">
+          <a href="/login" class="login-button">
             Sign in to your account
           </a>
         </div>
@@ -317,3 +309,375 @@
     </div>
   </div>
 </main>
+
+<style>
+  /* Navigation Styles */
+  .navbar {
+    background: transparent;
+    position: relative;
+    z-index: var(--z-nav);
+  }
+
+  .navbar-container {
+    margin: 0 auto;
+    max-width: 80rem;
+    padding: var(--spacing-md);
+  }
+
+  .navbar-content {
+    display: flex;
+    height: 4rem;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
+
+  .logo-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    background: var(--color-primary);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .logo-svg {
+    width: 0.75rem;
+    height: 0.75rem;
+    color: white;
+  }
+
+  .logo-text {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  .navbar-button {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    background: var(--color-primary);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: white;
+    transition: background-color var(--transition-fast);
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .navbar-button:hover {
+    background: var(--color-primary-hover);
+  }
+
+  /* Main Layout */
+  .register-main {
+    position: relative;
+    isolation: isolate;
+    padding: var(--spacing-md) var(--spacing-lg);
+    min-height: calc(100vh - 4rem);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .background-blur {
+    position: absolute;
+    inset-inline: 0;
+    top: -10rem;
+    z-index: -10;
+    overflow: hidden;
+    filter: blur(60px);
+  }
+
+  .blur-gradient {
+    position: relative;
+    left: calc(50% - 11rem);
+    aspect-ratio: 1155 / 678;
+    width: 36.125rem;
+    transform: translateX(-50%) rotate(30deg);
+    background: linear-gradient(to top right, #bfdbfe, #93c5fd);
+    opacity: 0.3;
+  }
+
+  @media (min-width: 640px) {
+    .blur-gradient {
+      left: calc(50% - 30rem);
+      width: 72.1875rem;
+      top: -20rem;
+    }
+  }
+
+  .register-container {
+    width: 100%;
+    max-width: 28rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2xl);
+  }
+
+  /* Header Section */
+  .register-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    text-align: center;
+  }
+
+  .header-icon-container {
+    display: flex;
+    justify-content: center;
+  }
+
+  .header-icon {
+    width: 3rem;
+    height: 3rem;
+    background: var(--color-primary);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .header-icon-svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    color: white;
+  }
+
+  .header-text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .header-title {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--color-text-primary);
+  }
+
+  .header-subtitle {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin-top: var(--spacing-sm);
+  }
+
+  /* Alert Styles */
+  .alert {
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    border: 1px solid;
+    font-size: var(--text-sm);
+  }
+
+  .alert-error {
+    background: var(--color-error-bg);
+    color: var(--color-error-text);
+    border-color: var(--color-error-light);
+  }
+
+  .alert-success {
+    background: var(--color-success-bg);
+    color: var(--color-success-text);
+    border-color: var(--color-success-light);
+  }
+
+  .alert-content {
+    display: flex;
+    gap: var(--spacing-sm);
+  }
+
+  .alert-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  .alert-error .alert-icon {
+    color: var(--color-error-light);
+  }
+
+  .alert-success .alert-icon {
+    color: var(--color-success-light);
+  }
+
+  /* Form Card */
+  .form-card {
+    background: var(--color-bg-primary);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    border: 1px solid rgba(17, 24, 39, 0.05);
+    padding: 1.5rem 2rem 1.75rem;
+  }
+
+  .register-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+  }
+
+  /* Form Name Row */
+  .form-name-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+
+  @media (min-width: 640px) {
+    .form-name-row {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  /* Form Group */
+  .form-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .form-label {
+    display: block;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .form-input-wrapper {
+    margin-top: var(--spacing-sm);
+  }
+
+  .form-input {
+    width: 100%;
+    border-radius: var(--radius-md);
+    border: none;
+    padding: 0.375rem 0.75rem;
+    font-size: var(--text-sm);
+    color: var(--color-text-primary);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  }
+
+  .form-input::placeholder {
+    color: var(--color-text-tertiary);
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .password-hint {
+    margin-top: var(--spacing-sm);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+  }
+
+  /* Submit Button */
+  .form-button-wrapper {
+    margin-top: var(--spacing-sm);
+  }
+
+  .submit-button {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    background: var(--color-primary);
+    padding: 0.375rem 0.75rem;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    line-height: 1.5;
+    color: white;
+    box-shadow: var(--shadow-sm);
+    border: none;
+    transition: background-color var(--transition-fast);
+    cursor: pointer;
+  }
+
+  .submit-button:hover {
+    background: var(--color-primary-hover);
+  }
+
+  .submit-button:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .submit-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Form Divider */
+  .form-divider-section {
+    margin-top: var(--spacing-2xl);
+  }
+
+  .form-divider {
+    position: relative;
+    margin-bottom: var(--spacing-2xl);
+  }
+
+  .divider-line {
+    position: absolute;
+    inset-inline: 0;
+    top: 50%;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .divider-text {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    font-size: var(--text-sm);
+    background: white;
+    padding: 0 var(--spacing-sm);
+    color: var(--color-text-secondary);
+  }
+
+  /* Login Link */
+  .form-login-link {
+    margin-top: var(--spacing-2xl);
+  }
+
+  .login-button {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: white;
+    padding: 0.375rem 0.75rem;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    box-shadow: var(--shadow-sm);
+    transition: background-color var(--transition-fast);
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .login-button:hover {
+    background: var(--color-bg-secondary);
+  }
+
+  .login-button:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+</style>
