@@ -87,9 +87,9 @@
   /* =========================================================================
      COLORS - Brand colors and semantic palettes
      ========================================================================= */
-  --color-primary: #007bff; /* Primary action color (blue) */
-  --color-primary-dark: #0056b3; /* Primary hover state */
-  --color-primary-light: #e7f1ff; /* Primary background */
+  --color-primary: #3b82f6; /* Primary action color (blue) - Tailwind, not Bootstrap */
+  --color-primary-dark: #2563eb; /* Primary hover state */
+  --color-primary-light: #dbeafe; /* Primary background */
 
   --color-text-primary: #111827; /* Main text color */
   --color-text-secondary: #6b7280; /* Secondary text color */

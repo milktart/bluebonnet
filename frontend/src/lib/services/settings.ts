@@ -93,8 +93,8 @@ export const settingsApi = {
    * Get all vouchers
    */
   async getVouchers(): Promise<any> {
-    const base = getAccountBase();
-    const response = await fetch(`${base}/vouchers`, {
+    const base = getApiBase();
+    const response = await fetch(`${base}/api/v1/vouchers`, {
       method: 'GET',
       credentials: 'include',
     });
@@ -127,8 +127,8 @@ export const settingsApi = {
    * Create a new voucher
    */
   async createVoucher(data: any): Promise<any> {
-    const base = getAccountBase();
-    const response = await fetch(`${base}/vouchers`, {
+    const base = getApiBase();
+    const response = await fetch(`${base}/api/v1/vouchers`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -148,8 +148,8 @@ export const settingsApi = {
    * Update a voucher
    */
   async updateVoucher(voucherId: string, data: any): Promise<any> {
-    const base = getAccountBase();
-    const response = await fetch(`${base}/vouchers/${voucherId}`, {
+    const base = getApiBase();
+    const response = await fetch(`${base}/api/v1/vouchers/${voucherId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -169,8 +169,8 @@ export const settingsApi = {
    * Delete a voucher
    */
   async deleteVoucher(voucherId: string): Promise<any> {
-    const base = getAccountBase();
-    const response = await fetch(`${base}/vouchers/${voucherId}`, {
+    const base = getApiBase();
+    const response = await fetch(`${base}/api/v1/vouchers/${voucherId}`, {
       method: 'DELETE',
       credentials: 'include',
     });
@@ -210,8 +210,8 @@ export const settingsApi = {
    * Get all companions with bidirectional relationship info
    */
   async getAllCompanions(): Promise<any> {
-    const base = getAccountBase();
-    const response = await fetch(`${base}/companions/api/all`, {
+    const base = getApiBase();
+    const response = await fetch(`${base}/api/v1/companions/all`, {
       method: 'GET',
       credentials: 'include',
     });
@@ -227,8 +227,8 @@ export const settingsApi = {
    * Create a new travel companion
    */
   async createCompanion(data: any): Promise<any> {
-    const base = getAccountBase();
-    const response = await fetch(`${base}/companions`, {
+    const base = getApiBase();
+    const response = await fetch(`${base}/api/v1/companions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -249,8 +249,8 @@ export const settingsApi = {
    * Update a travel companion
    */
   async updateCompanion(companionId: string, data: any): Promise<any> {
-    const base = getAccountBase();
-    const response = await fetch(`${base}/companions/${companionId}`, {
+    const base = getApiBase();
+    const response = await fetch(`${base}/api/v1/companions/${companionId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -271,8 +271,8 @@ export const settingsApi = {
    * Remove a travel companion
    */
   async removeCompanion(companionId: string): Promise<any> {
-    const base = getAccountBase();
-    const response = await fetch(`${base}/companions/${companionId}`, {
+    const base = getApiBase();
+    const response = await fetch(`${base}/api/v1/companions/${companionId}`, {
       method: 'DELETE',
       credentials: 'include',
     });
@@ -291,8 +291,8 @@ export const settingsApi = {
     companionId: string,
     data: { canShareTrips?: boolean; theyManageTrips?: boolean }
   ): Promise<any> {
-    const base = getAccountBase();
-    const response = await fetch(`${base}/companions/${companionId}/permissions`, {
+    const base = getApiBase();
+    const response = await fetch(`${base}/api/v1/companions/${companionId}/permissions`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

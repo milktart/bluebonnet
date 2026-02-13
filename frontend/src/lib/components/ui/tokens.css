@@ -1,0 +1,109 @@
+/* ============================================================================
+   DESIGN TOKENS - Unified Color, Typography, Radius, and Shadow System
+   ============================================================================
+
+   This file provides CSS custom properties for all design system tokens.
+   Uses Tailwind palette and simplifies type scale from 20+ sizes to 8.
+   All hardcoded colors in components should be replaced with var() references.
+   ============================================================================ */
+
+:root {
+  /* =========================================================================
+     COLORS - Tailwind palette (standardized across the application)
+     ========================================================================= */
+
+  /* Primary Blue - replaces Bootstrap #007bff everywhere */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-primary-active: #1d4ed8;
+  --color-primary-light: #dbeafe;
+  --color-primary-bg: #eff6ff;
+
+  /* Success Green - replaces Bootstrap #28a745 */
+  --color-success: #10b981;
+  --color-success-hover: #059669;
+  --color-success-active: #047857;
+  --color-success-light: #ecfdf5;
+  --color-success-bg: #ecfdf5;
+  --color-success-text: #065f46;
+
+  /* Warning Amber */
+  --color-warning: #f59e0b;
+  --color-warning-hover: #d97706;
+  --color-warning-active: #b45309;
+  --color-warning-light: #fef3c7;
+  --color-warning-bg: #fffbeb;
+  --color-warning-text: #92400e;
+
+  /* Error Red - replaces Bootstrap #dc3545 */
+  --color-error: #ef4444;
+  --color-error-hover: #dc2626;
+  --color-error-active: #b91c1c;
+  --color-error-light: #fee2e2;
+  --color-error-bg: #fef2f2;
+  --color-error-text: #991b1b;
+
+  /* Info Blue (alias for primary) */
+  --color-info: #3b82f6;
+  --color-info-bg: #eff6ff;
+  --color-info-text: #1e40af;
+
+  /* Neutral Text Colors */
+  --color-text-primary: #111827;
+  --color-text-secondary: #6b7280;
+  --color-text-tertiary: #9ca3af;
+
+  /* Neutral Background Colors */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f9fafb;
+  --color-bg-tertiary: #f3f4f6;
+
+  /* Neutral Border Colors */
+  --color-border: #d1d5db;
+  --color-border-light: #e5e7eb;
+  --color-border-dark: #9ca3af;
+
+  /* =========================================================================
+     TYPOGRAPHY SCALE - Consolidated from 20+ sizes to 8 tokens
+     Scale: 10px to 24px covering all use cases
+     ========================================================================= */
+
+  --text-2xs: 0.625rem; /* 10px - icon labels, badges */
+  --text-xs: 0.75rem; /* 12px - form labels, captions */
+  --text-sm: 0.8125rem; /* 13px - compact text, descriptions */
+  --text-base: 0.875rem; /* 14px - body text (default) */
+  --text-md: 1rem; /* 16px - mobile inputs, larger paragraphs */
+  --text-lg: 1.125rem; /* 18px - subheadings */
+  --text-xl: 1.25rem; /* 20px - section headers */
+  --text-2xl: 1.5rem; /* 24px - page headings */
+
+  /* =========================================================================
+     BORDER RADIUS - Consistent corner rounding
+     ========================================================================= */
+
+  --radius-sm: 0.25rem; /* 4px - tight corners */
+  --radius-md: 0.375rem; /* 6px - standard input radius */
+  --radius-lg: 0.5rem; /* 8px - card radius */
+  --radius-xl: 0.75rem; /* 12px - larger components */
+  --radius-full: 9999px; /* Fully rounded (circles/pills) */
+
+  /* =========================================================================
+     SHADOWS - Depth layering
+     ========================================================================= */
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+
+  /* =========================================================================
+     SPACING - Already defined in responsive.css, referenced here for completeness
+     ========================================================================= */
+  /* --spacing-xs, --spacing-sm, --spacing-md, --spacing-lg, --spacing-xl, --spacing-2xl */
+  /* defined in responsive.css */
+
+  /* =========================================================================
+     Z-INDEX - Already defined in responsive.css, referenced here for completeness
+     ========================================================================= */
+  /* --z-modal, --z-modal-backdrop, etc. defined in responsive.css */
+}

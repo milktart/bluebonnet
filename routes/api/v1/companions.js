@@ -8,6 +8,7 @@ const apiResponse = require('../../../utils/apiResponse');
 const { ensureAuthenticated } = require('../../../middleware/auth');
 const companionController = require('../../../controllers/companionController');
 const companionCascadeManager = require('../../../services/CompanionCascadeManager');
+const { TravelCompanion, CompanionPermission } = require('../../../models');
 
 const router = express.Router();
 
@@ -49,6 +50,139 @@ router.use(ensureAuthenticated);
  * @requires authentication - User must be logged in
  */
 router.get('/all', companionController.getAllCompanions);
+
+/**
+ * POST /api/v1/companions
+ * Create a new travel companion
+ *
+ * @param {Object} req.body - Companion data
+ * @param {string} req.body.email - Companion email (required)
+ * @param {string} [req.body.firstName] - Companion first name
+ * @param {string} [req.body.lastName] - Companion last name
+ * @param {boolean} [req.body.canShareTrips] - Whether to share trips (default: true)
+ * @param {boolean} [req.body.theyManageTrips] - Whether they can manage trips (default: false)
+ *
+ * @returns {Object} 201 Created response with new companion
+ *
+ * @throws {400} Bad request - Invalid data
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
+ */
+router.post('/', async (req, res) => {
+  try {
+    const { email, firstName, lastName, canShareTrips, theyManageTrips } = req.body;
+
+    if (!email) {
+      return apiResponse.badRequest(res, 'Email is required');
+    }
+
+    // Create companion
+    const companion = await TravelCompanion.create({
+      email,
+      firstName: firstName || null,
+      lastName: lastName || null,
+      createdBy: req.user.id,
+    });
+
+    // Set permissions if provided
+    if (canShareTrips !== undefined || theyManageTrips !== undefined) {
+      await CompanionPermission.create({
+        companionId: companion.id,
+        grantedBy: req.user.id,
+        canView: canShareTrips !== undefined ? canShareTrips : true,
+        canEdit: theyManageTrips !== undefined ? theyManageTrips : false,
+        canManageCompanions: false,
+      });
+    }
+
+    return apiResponse.created(res, companion, 'Companion created successfully');
+  } catch (error) {
+    return apiResponse.internalError(res, 'Failed to create companion', error);
+  }
+});
+
+/**
+ * PUT /api/v1/companions/:id
+ * Update a travel companion
+ *
+ * @param {string} req.params.id - Companion ID
+ * @param {Object} req.body - Companion data to update
+ * @param {string} [req.body.firstName] - Updated first name
+ * @param {string} [req.body.lastName] - Updated last name
+ *
+ * @returns {Object} 200 OK response with updated companion
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {403} Forbidden - User doesn't own this companion
+ * @throws {404} Not found - Companion not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
+ */
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { firstName, lastName } = req.body;
+
+    // Find companion created by this user
+    const companion = await TravelCompanion.findOne({
+      where: { id, createdBy: req.user.id },
+    });
+
+    if (!companion) {
+      return apiResponse.notFound(res, 'Companion not found');
+    }
+
+    // Update companion
+    await companion.update({
+      firstName: firstName !== undefined ? firstName : companion.firstName,
+      lastName: lastName !== undefined ? lastName : companion.lastName,
+    });
+
+    return apiResponse.success(res, companion, 'Companion updated successfully');
+  } catch (error) {
+    return apiResponse.internalError(res, 'Failed to update companion', error);
+  }
+});
+
+/**
+ * DELETE /api/v1/companions/:id
+ * Delete a travel companion
+ *
+ * @param {string} req.params.id - Companion ID
+ *
+ * @returns {Object} 204 No Content
+ *
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {403} Forbidden - User doesn't own this companion
+ * @throws {404} Not found - Companion not found
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
+ */
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find companion created by this user
+    const companion = await TravelCompanion.findOne({
+      where: { id, createdBy: req.user.id },
+    });
+
+    if (!companion) {
+      return apiResponse.notFound(res, 'Companion not found');
+    }
+
+    // Delete companion
+    await companion.destroy();
+
+    return apiResponse.noContent(res);
+  } catch (error) {
+    return apiResponse.internalError(res, 'Failed to delete companion', error);
+  }
+});
 
 /**
  * GET /api/v1/companions/trips/:tripId

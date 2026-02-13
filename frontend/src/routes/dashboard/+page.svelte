@@ -316,7 +316,9 @@
       const section = params.get('section');
       if (section) {
         dashboardStoreActions.setActiveView('settings');
-        dashboardStoreActions.openSecondarySidebar({ type: section, data: {} });
+        // Prepend 'settings-' if not already present
+        const settingsType = section.startsWith('settings-') ? section : `settings-${section}`;
+        dashboardStoreActions.openSecondarySidebar({ type: settingsType, data: {} });
       }
     }
 

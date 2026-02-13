@@ -22,55 +22,81 @@ router.options('*', (req, res) => {
 router.use(ensureAuthenticated);
 
 /**
- * GET /api/v1/vouchers/trips/:tripId
- * Retrieve all vouchers associated with a specific trip
+ * GET /api/v1/vouchers
+ * Retrieve all vouchers for the current user
  *
- * Returns vouchers ordered by creation date (newest first)
- * Validates that requesting user owns the trip
- *
- * @param {string} req.params.tripId - Trip ID (UUID)
+ * Returns all vouchers ordered by creation date (newest first)
  *
  * @returns {Object} 200 OK response with vouchers array
  * @returns {Array} returns - Array of voucher objects
  * @returns {string} returns[].id - Voucher ID (UUID)
- * @returns {string} returns[].tripId - Associated trip ID
- * @returns {string} returns[].name - Voucher name
- * @returns {string} [returns[].code] - Voucher/discount code
- * @returns {string} [returns[].description] - Voucher description
- * @returns {number} [returns[].value] - Voucher value/amount
- * @returns {string} [returns[].expiryDate] - Expiry date (ISO format)
+ * @returns {string} returns[].userId - Associated user ID
+ * @returns {string} returns[].type - Voucher type (e.g., TRAVEL_CREDIT, UPGRADE_CERT)
+ * @returns {string} returns[].issuer - Issuing company/airline
+ * @returns {string} returns[].voucherNumber - Voucher number
+ * @returns {number} [returns[].totalValue] - Voucher value/amount
+ * @returns {string} [returns[].expirationDate] - Expiry date (ISO format)
+ * @returns {string} returns[].status - Voucher status (OPEN, USED, EXPIRED, etc.)
  * @returns {string} returns.createdAt - Creation date
  *
  * @throws {401} Unauthorized - User not authenticated
- * @throws {403} Forbidden - User does not own the trip
- * @throws {404} Not found - Trip not found
  * @throws {500} Server error - Database error
  *
  * @requires authentication - User must be logged in
  */
-router.get('/trips/:tripId', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const { tripId } = req.params;
     const { Voucher } = require('../../../models');
-    const { Trip } = require('../../../models');
 
-    // Verify trip belongs to user
-    const trip = await Trip.findOne({
-      where: { id: tripId, userId: req.user.id },
-    });
-
-    if (!trip) {
-      return apiResponse.forbidden(res, 'Access denied');
-    }
-
+    // Get all vouchers for the current user
     const vouchers = await Voucher.findAll({
-      where: { tripId },
+      where: { userId: req.user.id },
       order: [['createdAt', 'DESC']],
     });
 
     return apiResponse.success(res, vouchers, `Retrieved ${vouchers.length} vouchers`);
   } catch (error) {
     return apiResponse.internalError(res, 'Failed to retrieve vouchers', error);
+  }
+});
+
+/**
+ * POST /api/v1/vouchers
+ * Create a new voucher for the current user
+ *
+ * @param {Object} req.body - Voucher data
+ * @param {string} req.body.type - Voucher type (TRAVEL_CREDIT, UPGRADE_CERT, etc.)
+ * @param {string} req.body.issuer - Issuing company/airline
+ * @param {string} req.body.voucherNumber - Voucher number
+ * @param {string} [req.body.associatedAccount] - Associated account (e.g., frequent flyer number)
+ * @param {string} [req.body.pinCode] - PIN code
+ * @param {string} [req.body.currency] - Currency code (default: USD)
+ * @param {number} [req.body.totalValue] - Voucher value
+ * @param {string} [req.body.expirationDate] - Expiration date (ISO format)
+ * @param {string} [req.body.notes] - Additional notes
+ *
+ * @returns {Object} 201 Created response with new voucher
+ *
+ * @throws {400} Bad request - Missing required fields
+ * @throws {401} Unauthorized - User not authenticated
+ * @throws {500} Server error - Database error
+ *
+ * @requires authentication - User must be logged in
+ */
+router.post('/', async (req, res) => {
+  try {
+    const { Voucher } = require('../../../models');
+
+    const voucherData = {
+      ...req.body,
+      userId: req.user.id,
+    };
+
+    const voucher = await Voucher.create(voucherData);
+
+    return apiResponse.created(res, voucher, 'Voucher created successfully');
+  } catch (error) {
+    return apiResponse.internalError(res, 'Failed to create voucher', error);
   }
 });
 
@@ -103,7 +129,9 @@ router.get('/trips/:tripId', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { Voucher } = require('../../../models');
-    const voucher = await Voucher.findByPk(req.params.id);
+    const voucher = await Voucher.findOne({
+      where: { id: req.params.id, userId: req.user.id },
+    });
 
     if (!voucher) {
       return apiResponse.notFound(res, 'Voucher not found');
@@ -205,7 +233,9 @@ router.post('/trips/:tripId', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { Voucher } = require('../../../models');
-    const voucher = await Voucher.findByPk(req.params.id);
+    const voucher = await Voucher.findOne({
+      where: { id: req.params.id, userId: req.user.id },
+    });
 
     if (!voucher) {
       return apiResponse.notFound(res, 'Voucher not found');
@@ -240,7 +270,9 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { Voucher } = require('../../../models');
-    const voucher = await Voucher.findByPk(req.params.id);
+    const voucher = await Voucher.findOne({
+      where: { id: req.params.id, userId: req.user.id },
+    });
 
     if (!voucher) {
       return apiResponse.notFound(res, 'Voucher not found');

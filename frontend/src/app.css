@@ -1,7 +1,8 @@
 /* ============================================================================
-   IMPORT RESPONSIVE DESIGN SYSTEM
+   IMPORT RESPONSIVE DESIGN SYSTEM & DESIGN TOKENS
    ============================================================================ */
 @import './lib/styles/responsive.css';
+@import './lib/components/ui/tokens.css';
 @import './lib/styles/layout.css';
 
 @tailwind base;
