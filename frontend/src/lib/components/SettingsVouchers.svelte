@@ -302,7 +302,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--color-border-light);
     padding-bottom: 0;
   }
 
@@ -319,18 +319,18 @@
     cursor: pointer;
     font-size: 0.8rem;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--color-text-secondary);
     border-bottom: 2px solid transparent;
     transition: all 0.15s;
   }
 
   .tab-btn:hover {
-    color: #374151;
+    color: var(--color-text-primary);
   }
 
   .tab-btn.active {
-    color: #3b82f6;
-    border-bottom-color: #3b82f6;
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
   }
 
   .loading-state {
@@ -384,7 +384,7 @@
     padding: 0.5rem 1rem;
     background: none;
     border: none;
-    color: #1976d2;
+    color: var(--color-primary);
     cursor: pointer;
     font-size: 0.95rem;
     font-weight: 500;
@@ -392,7 +392,7 @@
   }
 
   .back-btn:hover {
-    color: #1565c0;
+    color: var(--color-primary-hover);
   }
 
   .back-btn :global(.material-symbols-outlined) {
@@ -401,7 +401,7 @@
 
   .vouchers-table-container {
     overflow-x: hidden;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--color-border-light);
     border-radius: 0.425rem;
     background: #ffffff90;
   }
@@ -415,15 +415,15 @@
   }
 
   .vouchers-table thead {
-    background-color: #f5f5f5;
-    border-bottom: 1px solid #e0e0e0;
+    background-color: var(--color-bg-secondary);
+    border-bottom: 1px solid var(--color-border-light);
   }
 
   .vouchers-table th {
     padding: 0.75rem;
     text-align: left;
     font-weight: 600;
-    color: #374151;
+    color: var(--color-text-primary);
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -432,12 +432,12 @@
   }
 
   .vouchers-table tbody tr {
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--color-border-light);
     transition: background-color 0.2s ease;
   }
 
   .vouchers-table tbody tr:hover {
-    background-color: #fafafa;
+    background-color: var(--color-bg-secondary);
   }
 
   .vouchers-table tbody tr.expired {
@@ -450,19 +450,19 @@
 
   .vouchers-table td {
     padding: 0.875rem;
-    color: #1f2937;
+    color: var(--color-text-primary);
     vertical-align: middle;
   }
 
   .vouchers-table td.voucher-number {
     font-family: 'Courier New', monospace;
     font-weight: 500;
-    color: #1f2937;
+    color: var(--color-text-primary);
   }
 
   .vouchers-table td.currency-value {
     font-family: 'Courier New', monospace;
-    color: #1f2937;
+    color: var(--color-text-primary);
     font-weight: 500;
   }
 
@@ -476,18 +476,18 @@
   }
 
   .status-badge.open {
-    background-color: #d4edda;
-    color: #155724;
+    background-color: var(--color-success-bg);
+    color: var(--color-success-text);
   }
 
   .status-badge.used {
-    background-color: #cce5ff;
-    color: #004085;
+    background-color: var(--color-info-bg);
+    color: var(--color-info-text);
   }
 
   .status-badge.expired-badge {
-    background-color: #f8d7da;
-    color: #721c24;
+    background-color: var(--color-error-bg);
+    color: var(--color-error-text);
   }
 
   .actions-cell {
@@ -524,21 +524,21 @@
   }
 
   .action-btn.edit {
-    background-color: #e3f2fd;
-    color: #1976d2;
+    background-color: var(--color-info-bg);
+    color: var(--color-primary);
   }
 
   .action-btn.edit:hover:not(:disabled) {
-    background-color: #bbdefb;
+    background-color: var(--color-primary-light);
   }
 
   .action-btn.delete {
-    background-color: #ffebee;
-    color: #c62828;
+    background-color: var(--color-error-bg);
+    color: var(--color-error);
   }
 
   .action-btn.delete:hover:not(:disabled) {
-    background-color: #ffcdd2;
+    background-color: var(--color-error-light);
   }
 
   .action-btn:disabled {

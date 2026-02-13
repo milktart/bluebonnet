@@ -234,7 +234,7 @@
 
   .table-wrapper {
     overflow-x: hidden;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--color-border-light);
     border-radius: 0.425rem;
   }
 
@@ -247,15 +247,15 @@
   }
 
   .companions-table thead {
-    background-color: #f5f5f5;
-    border-bottom: 1px solid #e0e0e0;
+    background-color: var(--color-bg-secondary);
+    border-bottom: 1px solid var(--color-border-light);
   }
 
   .companions-table th {
     padding: 0.75rem;
     text-align: left;
     font-weight: 600;
-    color: #374151;
+    color: var(--color-text-primary);
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -272,13 +272,13 @@
 
   .companions-table td {
     padding: 0.875rem;
-    border-bottom: 1px solid #f0f0f0;
-    color: #1f2937;
+    border-bottom: 1px solid var(--color-border-light);
+    color: var(--color-text-primary);
     vertical-align: middle;
   }
 
   .companions-table tbody tr:hover {
-    background-color: #fafafa;
+    background-color: var(--color-bg-secondary);
   }
 
   .companions-table tbody tr:last-child td {
@@ -287,7 +287,7 @@
 
   .name-cell {
     font-weight: 500;
-    color: #1f2937;
+    color: var(--color-text-primary);
     max-width: 140px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -295,7 +295,7 @@
   }
 
   .email-cell {
-    color: #6b7280;
+    color: var(--color-text-secondary);
     font-family: 'Courier New', monospace;
     font-size: 0.85rem;
   }
@@ -310,8 +310,8 @@
     display: inline-flex;
     width: 24px;
     height: 24px;
-    background-color: #d4edda;
-    color: #155724;
+    background-color: var(--color-success-bg);
+    color: var(--color-success-text);
     border-radius: 50%;
     align-items: center;
     justify-content: center;
@@ -320,8 +320,8 @@
   }
 
   .indicator.trusted {
-    background-color: #fef08a;
-    color: #854d0e;
+    background-color: var(--color-warning-light);
+    color: var(--color-warning-text);
     font-size: 0.85rem;
   }
 
@@ -368,21 +368,21 @@
   }
 
   .action-btn.edit {
-    background-color: #e3f2fd;
-    color: #1976d2;
+    background-color: var(--color-info-bg);
+    color: var(--color-primary);
   }
 
   .action-btn.edit:hover:not(:disabled) {
-    background-color: #bbdefb;
+    background-color: var(--color-primary-light);
   }
 
   .action-btn.delete {
-    background-color: #ffebee;
-    color: #c62828;
+    background-color: var(--color-error-bg);
+    color: var(--color-error);
   }
 
   .action-btn.delete:hover:not(:disabled) {
-    background-color: #ffcdd2;
+    background-color: var(--color-error-light);
   }
 
   .action-btn.revoke {
@@ -408,7 +408,7 @@
     padding: 3rem 1rem;
     text-align: center;
     color: #999;
-    background: #fafafa;
+    background: var(--color-bg-secondary);
     border-radius: 8px;
   }
 
