@@ -95,8 +95,9 @@
   --color-text-secondary: #6b7280; /* Secondary text color */
   --color-text-tertiary: #9ca3af; /* Tertiary text color */
 
-  --color-border: #e5e7eb; /* Border color */
-  --color-border-dark: #d1d5db; /* Darker border */
+  --color-border: #d1d5db; /* Standard border (gray-300) */
+  --color-border-light: #e5e7eb; /* Light border (gray-200) */
+  --color-border-dark: #9ca3af; /* Dark border (gray-400) */
 
   --color-bg-primary: #ffffff; /* Primary background */
   --color-bg-secondary: #f9fafb; /* Secondary background */

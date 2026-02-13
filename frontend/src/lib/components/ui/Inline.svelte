@@ -7,27 +7,22 @@
   export let align: Align = 'center';
   export let justify: Justify = 'start';
   export let wrap: boolean = false;
+
+  const justifyMap: Record<Justify, string> = {
+    start: 'flex-start',
+    center: 'center',
+    end: 'flex-end',
+    between: 'space-between',
+    around: 'space-around'
+  };
 </script>
 
 <div
   class="inline"
-  style="--inline-gap: var(--spacing-{gap}); --inline-align: {align}; --inline-justify: {getJustifyValue(justify)}; --inline-wrap: {wrap ? 'wrap' : 'nowrap'}"
+  style="--inline-gap: var(--spacing-{gap}); --inline-align: {align}; --inline-justify: {justifyMap[justify]}; --inline-wrap: {wrap ? 'wrap' : 'nowrap'}"
 >
   <slot />
 </div>
-
-<script lang="ts">
-  function getJustifyValue(justify: Justify): string {
-    const map: Record<Justify, string> = {
-      start: 'flex-start',
-      center: 'center',
-      end: 'flex-end',
-      between: 'space-between',
-      around: 'space-around'
-    };
-    return map[justify];
-  }
-</script>
 
 <style>
   .inline {
