@@ -41,8 +41,8 @@
 <style>
   .sidebar {
     width: 250px;
-    background: #f8f9fa;
-    border-right: 1px solid #e0e0e0;
+    background: var(--color-bg-secondary);
+    border-right: 1px solid var(--color-border-light);
     padding: 1.2rem 1.2rem .2rem;
     max-height: calc(100vh - 64px);
     overflow-y: auto;
@@ -59,21 +59,21 @@
     align-items: center;
     gap: 0.75rem;
     padding: 0.75rem 1.5rem;
-    color: #666;
+    color: var(--color-text-secondary);
     text-decoration: none;
     transition: all 0.2s ease;
     cursor: pointer;
   }
 
   .sidebar-item:hover {
-    background: #e8e9eb;
-    color: #007bff;
+    background: var(--color-bg-tertiary);
+    color: var(--color-primary);
   }
 
   .sidebar-item.active {
-    background: #007bff;
+    background: var(--color-primary);
     color: white;
-    border-left: 4px solid #0056b3;
+    border-left: 4px solid var(--color-primary-active);
     padding-left: calc(1.5rem - 4px);
   }
 

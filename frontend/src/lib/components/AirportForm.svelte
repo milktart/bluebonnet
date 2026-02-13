@@ -219,6 +219,6 @@
   .help-text {
     margin: 0;
     font-size: 0.8rem;
-    color: #6b7280;
+    color: var(--color-text-secondary);
   }
 </style>

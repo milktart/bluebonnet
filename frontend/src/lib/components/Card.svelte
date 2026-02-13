@@ -1,3 +1,4 @@
+<!-- @deprecated Use ui/Card.svelte instead: import { Card } from '$lib/components/ui' -->
 <script lang="ts">
   export let title: string = '';
   export let subtitle: string = '';

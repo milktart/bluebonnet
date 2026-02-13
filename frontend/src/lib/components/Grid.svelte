@@ -1,3 +1,4 @@
+<!-- @deprecated Use ui/GridLayout.svelte instead: import { GridLayout } from '$lib/components/ui' -->
 <script lang="ts">
   export let columns: number = 2;
   export let gap: string = '1rem';

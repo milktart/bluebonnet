@@ -202,8 +202,8 @@
     align-items: center;
     gap: 0.75rem;
     padding: 0.75rem;
-    background: #ffffff;
-    border: 1px solid #e0e0e0;
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border-light);
     border-radius: 0.425rem;
     cursor: pointer;
     transition: all 0.2s;
@@ -211,14 +211,14 @@
   }
 
   .item-card:hover {
-    background: #f9fafb;
-    border-color: #d1d5db;
+    background: var(--color-bg-secondary);
+    border-color: var(--color-border);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   }
 
   .item-card.item-highlighted {
-    background: #f0f9ff;
-    border-color: #3b82f6;
+    background: var(--color-primary-bg);
+    border-color: var(--color-primary);
     box-shadow: 0 2px 6px rgba(59, 130, 246, 0.1);
   }
 
@@ -235,7 +235,7 @@
     margin: 0;
     font-size: 0.6rem;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--color-text-secondary);
     line-height: 1;
     text-align: center;
   }
@@ -252,19 +252,19 @@
   }
 
   .item-icon.blue {
-    background: #3b82f6;
+    background: var(--color-primary);
   }
 
   .item-icon.green {
-    background: #10b981;
+    background: var(--color-success);
   }
 
   .item-icon.red {
-    background: #ef4444;
+    background: var(--color-error);
   }
 
   .item-icon.gray {
-    background: #6b7280;
+    background: var(--color-text-secondary);
   }
 
   .item-icon.purple {
@@ -287,7 +287,7 @@
     margin: 0;
     font-size: 0.8rem;
     font-weight: 700;
-    color: #111827;
+    color: var(--color-text-primary);
     line-height: 1;
     text-align: left;
   }
@@ -296,7 +296,7 @@
     margin: 0;
     font-size: 0.65rem;
     font-weight: 600;
-    color: #4b5563;
+    color: var(--color-text-secondary);
     line-height: 1;
     text-align: left;
   }
@@ -305,7 +305,7 @@
     margin: 0;
     font-size: 0.65rem;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--color-text-secondary);
     line-height: 1;
     text-align: left;
     font-style: italic;
@@ -325,12 +325,12 @@
     align-items: center;
     gap: 0.25rem;
     padding: 0.25rem 0.5rem;
-    background: #f3f4f6;
-    border: 1px solid #d1d5db;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
     border-radius: 0.25rem;
     font-size: 0.65rem;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--color-text-secondary);
     flex-shrink: 0;
     white-space: nowrap;
   }

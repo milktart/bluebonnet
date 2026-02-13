@@ -1,3 +1,4 @@
+<!-- @deprecated Use ui/Button.svelte instead: import { Button } from '$lib/components/ui' -->
 <script lang="ts">
   type ButtonType = 'button' | 'submit' | 'reset';
   type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'success';

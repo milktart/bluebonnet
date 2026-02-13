@@ -1,3 +1,4 @@
+<!-- @deprecated Use ui/Alert.svelte instead: import { Alert } from '$lib/components/ui' -->
 <script lang="ts">
   type AlertType = 'success' | 'error' | 'warning' | 'info';
 

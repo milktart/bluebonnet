@@ -263,19 +263,19 @@
     gap: 0.5rem;
     font-size: 0.65rem;
     font-weight: 500;
-    color: #6b7280;
+    color: var(--color-text-secondary);
   }
 
   .layover-line {
     flex: 1;
     height: 1px;
-    background-color: #d1d5db;
+    background-color: var(--color-border);
     margin: 0 10px;
   }
 
   .layover-duration {
     white-space: nowrap;
-    color: #4b5563;
+    color: var(--color-text-secondary);
     font-weight: 600;
   }
 
@@ -285,7 +285,7 @@
     gap: 0.75rem;
     padding: 0.75rem;
     background: white;
-    border: 2px dashed #d1d5db;
+    border: 2px dashed var(--color-border);
     border-radius: 0.425rem;
     cursor: pointer;
     transition: all 0.2s;
@@ -296,12 +296,12 @@
   }
 
   .accommodation-suggestion-card:hover {
-    border-color: #9ca3af;
-    background: #f9fafb;
+    border-color: var(--color-border-dark);
+    background: var(--color-bg-secondary);
   }
 
   .accommodation-suggestion-card:active {
-    background: #f3f4f6;
+    background: var(--color-bg-tertiary);
   }
 
   .accommodation-icon {
@@ -311,7 +311,7 @@
     width: 2rem;
     height: 2rem;
     border-radius: 0.375rem;
-    background: #10b981;
+    background: var(--color-success);
     color: white;
     flex-shrink: 0;
   }
@@ -332,7 +332,7 @@
     margin: 0;
     font-size: 0.8rem;
     font-weight: 700;
-    color: #111827;
+    color: var(--color-text-primary);
     line-height: 1;
   }
 
@@ -340,7 +340,7 @@
     margin: 0;
     font-size: 0.65rem;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--color-text-secondary);
     line-height: 1;
   }
 </style>

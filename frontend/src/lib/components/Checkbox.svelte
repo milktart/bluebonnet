@@ -1,3 +1,4 @@
+<!-- @deprecated Use ui/FormGroup + native <input type="checkbox"> instead: import { FormGroup } from '$lib/components/ui' -->
 <script lang="ts">
   export let label: string;
   export let checked: boolean = false;
@@ -45,7 +46,7 @@
     width: 1.25rem;
     height: 1.25rem;
     cursor: pointer;
-    accent-color: #007bff;
+    accent-color: var(--color-primary);
   }
 
   input[type="checkbox"]:disabled {
@@ -57,16 +58,16 @@
     display: flex;
     align-items: center;
     gap: 0.25rem;
-    font-size: 0.95rem;
+    font-size: var(--text-md);
     cursor: pointer;
   }
 
   .required {
-    color: #dc3545;
+    color: var(--color-error);
   }
 
   .error {
-    color: #dc3545;
-    font-size: 0.875rem;
+    color: var(--color-error);
+    font-size: var(--text-base);
   }
 </style>

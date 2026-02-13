@@ -1,3 +1,4 @@
+<!-- @deprecated Use ui/FormGroup + native <select> instead: import { FormGroup } from '$lib/components/ui' -->
 <script lang="ts">
   export let label: string;
   export let value: string = '';
@@ -39,11 +40,11 @@
 
   select {
     padding: 0.5rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-md);
     font-family: inherit;
-    background: white;
+    background: var(--color-bg-primary);
     appearance: none;
     background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>');
     background-repeat: no-repeat;
@@ -54,16 +55,16 @@
 
   select:focus {
     outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   }
 
   .required {
-    color: #dc3545;
+    color: var(--color-error);
   }
 
   .error {
-    color: #dc3545;
-    font-size: 0.875rem;
+    color: var(--color-error);
+    font-size: var(--text-base);
   }
 </style>

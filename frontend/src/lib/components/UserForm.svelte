@@ -189,7 +189,7 @@
   .help-text {
     margin: 0;
     font-size: 0.8rem;
-    color: #6b7280;
+    color: var(--color-text-secondary);
   }
 
   .checkbox-wrapper {
@@ -205,7 +205,7 @@
     cursor: pointer;
     font-size: 0.8rem;
     font-weight: 600;
-    color: #374151;
+    color: var(--color-text-primary);
     margin-bottom: 0;
   }
 
@@ -219,6 +219,6 @@
   .checkbox-help-text {
     margin: 0;
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: var(--color-text-tertiary);
   }
 </style>

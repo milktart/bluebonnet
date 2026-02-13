@@ -17,7 +17,7 @@
 .date-badge {
   display: inline-block;
   padding: 0.4rem 0;
-  color: #007bff;
+  color: var(--color-primary);
   font-size: 0.75rem;
   font-weight: 700;
   white-space: nowrap;
@@ -34,7 +34,7 @@
 
 /* Trip Card Styles */
 .trip-card {
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--color-border-light);
   border-radius: 0.425rem;
   background: #ffffff90;
   overflow: hidden;
@@ -44,7 +44,7 @@
 
 .trip-card:hover,
 .trip-card.highlighted {
-  background: #f3f4f6;
+  background: var(--color-bg-tertiary);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
@@ -78,7 +78,7 @@
 }
 
 .trip-header:hover {
-  background: #f9f9f9;
+  background: var(--color-bg-secondary);
 }
 
 .trip-icon-column {
@@ -96,13 +96,13 @@
   width: 2rem;
   height: 2rem;
   border-radius: 0.425rem;
-  background: #f0f0f0;
+  background: var(--color-bg-tertiary);
   flex-shrink: 0;
 }
 
 .trip-icon {
   font-size: 0.875rem !important;
-  color: #28536b;
+  color: var(--color-text-secondary);
 }
 
 .trip-nights {
@@ -110,7 +110,7 @@
   align-items: center;
   gap: 0.25rem;
   font-size: 0.65rem;
-  color: #4b5563;
+  color: var(--color-text-secondary);
   white-space: nowrap;
   margin-right: 0.2rem;
   background-color: #d5d5d590;
@@ -120,12 +120,12 @@
 
 .nights-icon {
   font-size: 0.65rem !important;
-  color: #6b7280;
+  color: var(--color-text-secondary);
 }
 
 .nights-number {
   font-weight: 600;
-  color: #111827;
+  color: var(--color-text-primary);
 }
 
 .trip-info {
@@ -148,7 +148,7 @@
   margin: 0;
   font-size: 0.8rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text-primary);
   line-height: 1;
 }
 
@@ -156,7 +156,7 @@
   margin: 0;
   font-size: 0.65rem;
   font-weight: 600;
-  color: #4b5563;
+  color: var(--color-text-secondary);
   line-height: 1;
   white-space: nowrap;
   letter-spacing: 1;
@@ -166,7 +166,7 @@
   margin: 0;
   font-size: 0.65rem;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   font-style: italic;
   line-height: 1;
 }
@@ -178,7 +178,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: #9ca3af;
+  color: var(--color-text-tertiary);
   opacity: 0;
   transition:
     opacity 0.2s,
@@ -202,7 +202,7 @@
 }
 
 .edit-btn:hover {
-  color: #3b82f6;
+  color: var(--color-primary);
 }
 
 .expand-btn {
@@ -234,7 +234,7 @@
   flex-direction: column;
   gap: 0.5rem;
   padding: 0 0.5rem 0.5rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--color-border-light);
 }
 
 .trip-card.expanded .trip-items {
@@ -250,7 +250,7 @@
 
 .trip-card.expanded .trip-item-date-group {
   padding-left: 0.5rem;
-  border-left: 1px solid #007bff;
+  border-left: 1px solid var(--color-primary);
 }
 
 .trip-item-date-header {
@@ -262,7 +262,7 @@
 .trip-date-badge {
   display: inline-block;
   padding: 0.2rem 0;
-  color: #666;
+  color: var(--color-text-secondary);
   font-size: 0.65rem;
   font-weight: 700;
   white-space: nowrap;
@@ -302,7 +302,7 @@
 
 .header-section {
   padding: 0;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border-light);
   flex-shrink: 0;
 }
 
@@ -326,7 +326,7 @@
 }
 
 .add-btn {
-  background: #007bff;
+  background: var(--color-primary);
   color: white;
   padding: 0;
   width: 2rem;
@@ -343,7 +343,7 @@
 }
 
 .add-btn:hover {
-  background: #0056b3;
+  background: var(--color-primary-hover);
 }
 
 .add-btn :global(.material-symbols-outlined) {
@@ -351,9 +351,9 @@
 }
 
 .icon-btn {
-  background: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
   padding: 0;
   width: 2rem;
   height: 2rem;
@@ -368,8 +368,8 @@
 }
 
 .icon-btn:hover {
-  background: #e5e7eb;
-  border-color: #9ca3af;
+  background: var(--color-border-light);
+  border-color: var(--color-border-dark);
 }
 
 .icon-btn :global(.material-symbols-outlined) {
@@ -395,7 +395,7 @@
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  color: #666;
+  color: var(--color-text-secondary);
   border-bottom: 2px solid transparent;
   transition: all 0.2s;
   display: flex;
@@ -405,18 +405,18 @@
 }
 
 .tab-btn:hover {
-  color: #333;
-  background-color: #e0e0e0;
+  color: var(--color-text-primary);
+  background-color: var(--color-border-light);
 }
 
 .tab-btn.active {
-  color: #007bff;
-  border-bottom-color: #007bff;
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
   background-color: rgba(255, 255, 255, 0.9);
 }
 
 .tab-btn.settings-btn.active {
-  border-bottom-color: #007bff;
+  border-bottom-color: var(--color-primary);
 }
 
 .tab-btn.settings-btn :global(.material-symbols-outlined) {
@@ -446,12 +446,12 @@
   justify-content: center;
   padding: 2rem;
   text-align: center;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .empty-icon {
   font-size: 3rem !important;
-  color: #ccc;
+  color: var(--color-border);
   margin-bottom: 1rem;
 }
 
@@ -471,14 +471,14 @@
 .item-time {
   font-size: 0.7rem;
   font-weight: 500;
-  color: #4b5563;
+  color: var(--color-text-secondary);
   line-height: 1;
   margin: 0;
 }
 
 .item-dates {
   font-size: 0.75rem;
-  color: #666;
+  color: var(--color-text-secondary);
   margin: 0;
   line-height: 1.2;
 }
@@ -499,14 +499,14 @@
 .item-title {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--color-text-primary);
   margin: 0;
   line-height: 1;
 }
 
 .item-route {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   margin: 0;
   line-height: 1;
 }
@@ -518,7 +518,7 @@
 
 .secondary-content {
   padding: 0;
-  color: #666;
+  color: var(--color-text-secondary);
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -535,7 +535,7 @@
 
 .tertiary-content {
   padding: 0;
-  color: #666;
+  color: var(--color-text-secondary);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -551,7 +551,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 0 0.75rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border-light);
   flex-shrink: 0;
   margin: 0 0 0.75rem;
 }
@@ -560,7 +560,7 @@
   margin: 0;
   font-size: 1rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text-primary);
 }
 
 .tertiary-form-container {
@@ -581,7 +581,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 0 0.75rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border-light);
   flex-shrink: 0;
   margin: 0 0 0.75rem;
 }
@@ -599,7 +599,7 @@
   width: 2rem;
   height: 2rem;
   padding: 0;
-  background-color: #007bff;
+  background-color: var(--color-primary);
   color: white;
   border-radius: 4px;
   cursor: pointer;
@@ -609,7 +609,7 @@
 }
 
 .add-companion-btn:hover {
-  background-color: #0056b3;
+  background-color: var(--color-primary-hover);
 }
 
 .add-companion-btn :global(.material-symbols-outlined) {
@@ -630,7 +630,7 @@
   display: flex !important;
   flex-direction: column !important;
   border-radius: 0.425rem !important;
-  border: 1px solid #e5e7eb !important;
+  border: 1px solid var(--color-border-light) !important;
   top: 2.5vh !important;
   bottom: 2.5vh !important;
   padding: 1.2rem 1.2rem 0.2rem !important;

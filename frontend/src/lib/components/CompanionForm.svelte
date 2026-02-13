@@ -292,7 +292,7 @@
   .help-text {
     margin: 0;
     font-size: 0.8rem;
-    color: #6b7280;
+    color: var(--color-text-secondary);
   }
 
   .checkbox-wrapper {
@@ -308,7 +308,7 @@
     cursor: pointer;
     font-size: 0.8rem;
     font-weight: 600;
-    color: #374151;
+    color: var(--color-text-primary);
     margin-bottom: 0;
   }
 
@@ -326,20 +326,20 @@
   .checkbox-help-text {
     margin: 0;
     font-size: 0.75rem;
-    color: #6b7280;
+    color: var(--color-text-secondary);
   }
 
   .info-box {
     padding: 0.75rem;
-    background-color: #eff6ff;
-    border-left: 3px solid #3b82f6;
+    background-color: var(--color-primary-bg);
+    border-left: 3px solid var(--color-primary);
     border-radius: 0.375rem;
   }
 
   .info-text {
     margin: 0;
     font-size: 0.8rem;
-    color: #1e40af;
+    color: var(--color-info-text);
   }
 
   .permissions-section {
@@ -347,8 +347,8 @@
     flex-direction: column;
     gap: 0.75rem;
     padding: 0.75rem;
-    background-color: #f9fafb;
-    border: 1px solid #e5e7eb;
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-border-light);
     border-radius: 0.375rem;
   }
 
@@ -356,7 +356,7 @@
     margin: 0 0 0.5rem 0;
     font-size: 0.85rem;
     font-weight: 700;
-    color: #1f2937;
+    color: var(--color-text-primary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -370,14 +370,14 @@
   .received-permissions {
     margin-top: 0.5rem;
     padding-top: 0.75rem;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--color-border-light);
   }
 
   .received-permissions h4 {
     margin: 0 0 0.5rem 0;
     font-size: 0.75rem;
     font-weight: 600;
-    color: #374151;
+    color: var(--color-text-primary);
     text-transform: uppercase;
   }
 
@@ -392,7 +392,7 @@
 
   .received-permissions li {
     font-size: 0.8rem;
-    color: #4b5563;
+    color: var(--color-text-secondary);
     margin: 0;
     padding: 0;
   }

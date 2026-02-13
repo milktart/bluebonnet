@@ -10,6 +10,7 @@
   import AirportAutocomplete from './AirportAutocomplete.svelte';
   import ItemCompanionsForm from './ItemCompanionsForm.svelte';
   import TripCompanionsForm from './TripCompanionsForm.svelte';
+  import { Button } from '$lib/components/ui';
   import '$lib/styles/form-styles.css';
 
   export let itemType: ItemType;
@@ -1241,24 +1242,24 @@
 
     {#if canEdit}
       <div class="form-buttons">
-        <button type="submit" disabled={loading} class="submit-btn">
+        <Button type="submit" variant="primary" disabled={loading} fullWidth>
           {isEditing ? 'Update' : 'Add'}
-        </button>
-        <button type="button" on:click={onClose} disabled={loading} class="cancel-btn">
+        </Button>
+        <Button type="button" variant="secondary" on:click={onClose} disabled={loading} fullWidth>
           Cancel
-        </button>
+        </Button>
       </div>
 
       {#if isEditing}
-        <button type="button" on:click={handleDelete} disabled={loading} class="delete-btn">
+        <Button type="button" variant="danger" on:click={handleDelete} disabled={loading} fullWidth>
           Delete
-        </button>
+        </Button>
       {/if}
     {:else}
       <div class="form-buttons">
-        <button type="button" on:click={onClose} class="cancel-btn">
+        <Button type="button" variant="secondary" on:click={onClose} fullWidth>
           Close
-        </button>
+        </Button>
       </div>
     {/if}
   </form>
@@ -1336,15 +1337,15 @@
     align-items: center;
     justify-content: space-between;
     padding: 1rem;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--color-border-light);
     flex-shrink: 0;
   }
 
   .modal-title {
     margin: 0;
-    font-size: 1.125rem;
+    font-size: var(--text-lg);
     font-weight: 600;
-    color: #111827;
+    color: var(--color-text-primary);
   }
 
   .modal-close-button {
@@ -1355,7 +1356,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #6b7280;
+    color: var(--color-text-secondary);
     border-radius: 0.375rem;
     transition: all 0.2s ease;
     min-width: 44px;
@@ -1363,8 +1364,8 @@
   }
 
   .modal-close-button:active {
-    background: #f3f4f6;
-    color: #111827;
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
   }
 
   .modal-close-button :global(.material-symbols-outlined) {
@@ -1404,15 +1405,15 @@
     height: 1.2rem;
     padding: 0;
     margin: 0;
-    accent-color: #3b82f6;
+    accent-color: var(--color-primary);
     cursor: pointer;
     -webkit-appearance: checkbox;
     appearance: checkbox;
   }
 
   .checkbox-group span {
-    font-size: 0.85rem;
-    color: #111827;
+    font-size: var(--text-base);
+    color: var(--color-text-primary);
   }
 
   .header-title-wrapper {
@@ -1430,12 +1431,12 @@
     align-items: center;
     gap: 0.25rem;
     padding: 0.25rem 0.5rem;
-    background: #f3f4f6;
-    border: 1px solid #d1d5db;
-    border-radius: 0.25rem;
-    font-size: 0.7rem;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-2xs);
     font-weight: 600;
-    color: #6b7280;
+    color: var(--color-text-secondary);
     white-space: nowrap;
   }
 

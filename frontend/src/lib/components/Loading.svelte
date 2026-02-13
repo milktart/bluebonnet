@@ -32,8 +32,8 @@
   }
 
   .spinner {
-    border: 3px solid #f3f3f3;
-    border-top: 3px solid #007bff;
+    border: 3px solid var(--color-bg-tertiary);
+    border-top: 3px solid var(--color-primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
@@ -64,7 +64,7 @@
 
   .loading-message {
     margin: 0;
-    color: #666;
-    font-size: 0.95rem;
+    color: var(--color-text-secondary);
+    font-size: var(--text-md);
   }
 </style>

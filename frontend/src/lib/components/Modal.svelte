@@ -1,3 +1,4 @@
+<!-- @deprecated Use ui/Modal.svelte instead: import { Modal } from '$lib/components/ui' -->
 <script lang="ts">
   export let open: boolean = false;
   export let title: string = '';
