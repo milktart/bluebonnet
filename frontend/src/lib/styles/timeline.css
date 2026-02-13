@@ -178,6 +178,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  background: none;
+  border: none;
   color: var(--color-text-tertiary);
   opacity: 0;
   transition:
@@ -212,6 +214,9 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
   transition: transform 0.3s;
 }
 
