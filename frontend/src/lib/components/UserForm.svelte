@@ -1,6 +1,7 @@
 <script lang="ts">
   import { dashboardStoreActions } from '$lib/stores/dashboardStore';
   import { settingsApi } from '$lib/services/settings';
+  import { Button, FormGroup, FormRow, Input, Alert } from '$lib/components/ui';
   import '$lib/styles/form-styles.css';
 
   interface User {
@@ -98,39 +99,35 @@
 
 <div class="edit-content">
   {#if error}
-    <div class="error-message">{error}</div>
+    <Alert variant="error" dismissible={false}>{error}</Alert>
   {/if}
 
   <form on:submit|preventDefault={handleSubmit}>
     <div class="form-fields">
-      <div class="form-row cols-2-1">
-        <div class="form-group">
-          <label for="firstName">First Name</label>
-          <input
+      <FormRow columns={2} ratio="2fr 1fr">
+        <FormGroup label="First Name" id="firstName">
+          <Input
             id="firstName"
             type="text"
             bind:value={formData.firstName}
             placeholder="John"
             disabled={submitting}
           />
-        </div>
+        </FormGroup>
 
-        <div class="form-group">
-          <label for="lastName">Last Initial</label>
-          <input
+        <FormGroup label="Last Initial" id="lastName">
+          <Input
             id="lastName"
             type="text"
             bind:value={formData.lastName}
             placeholder="D"
-            maxlength="1"
             disabled={submitting}
           />
-        </div>
-      </div>
+        </FormGroup>
+      </FormRow>
 
-      <div class="form-group">
-        <label for="email">Email Address {#if !isEdit}*{/if}</label>
-        <input
+      <FormGroup label="Email Address {isEdit ? '' : '*'}" id="email">
+        <Input
           id="email"
           type="email"
           bind:value={formData.email}
@@ -141,11 +138,10 @@
         {#if isEdit}
           <p class="help-text">Email cannot be changed</p>
         {/if}
-      </div>
+      </FormGroup>
 
-      <div class="form-group">
-        <label for="password">Password {#if !isEdit}*{/if}</label>
-        <input
+      <FormGroup label="Password {isEdit ? '' : '*'}" id="password">
+        <Input
           id="password"
           type="password"
           bind:value={formData.password}
@@ -156,7 +152,7 @@
         {#if isEdit}
           <p class="help-text">Leave blank to keep the current password</p>
         {/if}
-      </div>
+      </FormGroup>
 
       <div class="checkbox-wrapper">
         <label for="isAdmin" class="checkbox-label">
@@ -175,12 +171,12 @@
     </div>
 
     <div class="form-buttons">
-      <button class="submit-btn" type="submit" disabled={submitting}>
-        {submitting ? 'Saving...' : isEdit ? 'Update User' : 'Create User'}
-      </button>
-      <button class="cancel-btn" type="button" on:click={handleCancel} disabled={submitting}>
+      <Button type="submit" variant="primary" disabled={submitting} loading={submitting}>
+        {isEdit ? 'Update User' : 'Create User'}
+      </Button>
+      <Button type="button" variant="secondary" on:click={handleCancel} disabled={submitting}>
         Cancel
-      </button>
+      </Button>
     </div>
   </form>
 </div>
@@ -199,21 +195,9 @@
   }
 
   .checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
     font-size: 0.8rem;
     font-weight: 600;
     color: var(--color-text-primary);
-    margin-bottom: 0;
-  }
-
-  .checkbox-label input[type='checkbox'] {
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
   }
 
   .checkbox-help-text {

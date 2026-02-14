@@ -1,5 +1,6 @@
 <script lang="ts">
   import { settingsApi } from '$lib/services/settings';
+  import { Button, FormGroup, FormRow, Input, Alert } from '$lib/components/ui';
   import '$lib/styles/form-styles.css';
 
   // Props for edit mode
@@ -25,44 +26,64 @@
   let error: string | null = null;
   let nameFieldsLocked = false;
 
-  let formData = {
-    firstName: '',
-    lastName: '',
-    email: '',
-    canShareTrips: true,
-    theyManageTrips: false
-  };
+  // Form fields as regular let variables (bindable)
+  let firstName = '';
+  let lastName = '';
+  let email = '';
+  let canShareTrips = true;
+  let theyManageTrips = false;
 
-  // Initialize form data if in edit mode
+  // Reactive edit mode detection
+  $: isEditMode = !!companion?.id;
+
+  // Get display name for permissions text
+  $: displayName = companion?.firstName || companion?.linkedUserFirstName || 'this person';
+
+  // Update form fields when companion changes
   $: if (companion) {
     const hasLinkedUser = companion.hasLinkedUser || companion.userId;
     nameFieldsLocked = hasLinkedUser;
 
-    formData = {
-      firstName: hasLinkedUser && companion.linkedUserFirstName
-        ? companion.linkedUserFirstName
-        : (companion.firstName || ''),
-      lastName: hasLinkedUser && companion.linkedUserLastName
-        ? companion.linkedUserLastName
-        : (companion.lastName || ''),
-      email: companion.email || '',
-      canShareTrips: companion.canShareTrips !== undefined ? companion.canShareTrips : true,
-      theyManageTrips: companion.theyManageTrips !== undefined ? companion.theyManageTrips : false
-    };
+    firstName = hasLinkedUser && companion.linkedUserFirstName
+      ? companion.linkedUserFirstName
+      : (companion.firstName || '');
+
+    lastName = hasLinkedUser && companion.linkedUserLastName
+      ? companion.linkedUserLastName
+      : (companion.lastName || '');
+
+    email = companion.email || '';
+    canShareTrips = companion.canShareTrips !== undefined ? companion.canShareTrips : true;
+    theyManageTrips = companion.theyManageTrips !== undefined ? companion.theyManageTrips : false;
+  } else {
+    // Reset to defaults for new companion
+    nameFieldsLocked = false;
+    firstName = '';
+    lastName = '';
+    email = '';
+    canShareTrips = true;
+    theyManageTrips = false;
   }
 
-  const isEditMode = !!companion?.id;
+  // Form data object for submission
+  $: formData = {
+    firstName,
+    lastName,
+    email,
+    canShareTrips,
+    theyManageTrips
+  };
 
   async function checkEmailForExistingUser() {
-    if (!isEditMode && formData.email.trim()) {
+    if (!isEditMode && email.trim()) {
       try {
         // Call the API to check if a user account exists with this email
-        const response = await settingsApi.checkEmailForUser(formData.email);
+        const response = await settingsApi.checkEmailForUser(email);
         if (response.hasUser && response.user) {
           // Found a user account with this email
           nameFieldsLocked = true;
-          formData.firstName = response.user.firstName || '';
-          formData.lastName = response.user.lastName || '';
+          firstName = response.user.firstName || '';
+          lastName = response.user.lastName || '';
         } else {
           // No user account found, unlock fields
           nameFieldsLocked = false;
@@ -178,42 +199,38 @@
 
 <div class="edit-content">
   {#if error}
-    <div class="error-message">{error}</div>
+    <Alert variant="error" dismissible={false}>{error}</Alert>
   {/if}
 
   <form on:submit|preventDefault={handleSubmit}>
     <div class="form-fields">
-      <div class="form-row cols-2-1">
-        <div class="form-group">
-          <label for="firstName">First Name</label>
-          <input
+      <FormRow columns={2} ratio="2fr 1fr">
+        <FormGroup label="First Name" id="firstName">
+          <Input
             id="firstName"
             type="text"
-            bind:value={formData.firstName}
+            bind:value={firstName}
             placeholder="John"
             disabled={loading || nameFieldsLocked}
           />
-        </div>
+        </FormGroup>
 
-        <div class="form-group">
-          <label for="lastName">Last Initial</label>
-          <input
+        <FormGroup label="Last Initial" id="lastName">
+          <Input
             id="lastName"
             type="text"
-            bind:value={formData.lastName}
+            bind:value={lastName}
             placeholder="D"
-            maxlength="1"
             disabled={loading || nameFieldsLocked}
           />
-        </div>
-      </div>
+        </FormGroup>
+      </FormRow>
 
-      <div class="form-group">
-        <label for="email">Email Address *</label>
-        <input
+      <FormGroup label="Email Address *" id="email">
+        <Input
           id="email"
           type="email"
-          bind:value={formData.email}
+          bind:value={email}
           on:blur={checkEmailForExistingUser}
           placeholder="companion@example.com"
           required
@@ -222,68 +239,68 @@
         {#if isEditMode}
           <p class="help-text">Email cannot be changed</p>
         {/if}
-      </div>
+      </FormGroup>
 
       <div class="permissions-section">
         <h3>Permissions</h3>
-        <div class="permission-group">
-          <div class="checkbox-wrapper">
-            <label for="share-trips" class="checkbox-label">
-              <input
-                id="share-trips"
-                type="checkbox"
-                bind:checked={formData.canShareTrips}
-                disabled={loading}
-              />
-              Share my travel with this person
-            </label>
-            <p class="checkbox-help-text">
-              They will see all my trips and the items I've added
-            </p>
-          </div>
 
-          <div class="checkbox-wrapper">
-            <label for="manage-trips" class="checkbox-label">
+        <!-- Permissions I grant to them -->
+        <div class="permission-subsection">
+          <h4 class="subsection-title">Permissions I grant:</h4>
+          <div class="permission-group">
+            <label for="canShareTrips" class="permission-item">
               <input
-                id="manage-trips"
+                id="canShareTrips"
                 type="checkbox"
-                bind:checked={formData.theyManageTrips}
+                bind:checked={canShareTrips}
                 disabled={loading}
               />
-              Allow them to manage my travel
+              <span class="permission-label">Share my travel with {displayName}</span>
             </label>
-            <p class="checkbox-help-text">
-              They can create and edit trips on my account
-            </p>
+
+            <label for="theyManageTrips" class="permission-item">
+              <input
+                id="theyManageTrips"
+                type="checkbox"
+                bind:checked={theyManageTrips}
+                disabled={loading}
+              />
+              <span class="permission-label">Allow {displayName} to manage my travel</span>
+            </label>
           </div>
         </div>
 
-        {#if isEditMode && companion?.userId}
-          <div class="received-permissions">
-            <h4>Permissions they've granted me:</h4>
-            <ul>
-              {#if companion.theyShareTrips}
-                <li>✓ They share their travel with me</li>
-              {/if}
-              {#if companion.theyManageTrips}
-                <li>✓ I can manage their travel</li>
-              {/if}
-              {#if !companion.theyShareTrips && !companion.theyManageTrips}
-                <li>None yet</li>
-              {/if}
-            </ul>
+        <!-- Permissions they grant to me -->
+        {#if isEditMode}
+          <div class="permission-subsection">
+            <h4 class="subsection-title">Permissions {displayName} grants me:</h4>
+            <div class="permission-group">
+              <div class="permission-item">
+                <span class="indicator-icon" class:active={companion?.theyShareTrips}>
+                  {companion?.theyShareTrips ? '✓' : '○'}
+                </span>
+                <span class="permission-label">{displayName} shares their travel with me</span>
+              </div>
+
+              <div class="permission-item">
+                <span class="indicator-icon" class:active={companion?.canManageTrips}>
+                  {companion?.canManageTrips ? '✓' : '○'}
+                </span>
+                <span class="permission-label">I can manage {displayName}'s travel</span>
+              </div>
+            </div>
           </div>
         {/if}
       </div>
     </div>
 
     <div class="form-buttons">
-      <button class="submit-btn" type="submit" disabled={loading}>
+      <Button type="submit" variant="primary" disabled={loading} loading={loading} fullWidth>
         {isEditMode ? 'Update' : 'Add Companion'}
-      </button>
-      <button class="cancel-btn" type="button" on:click={handleCancel} disabled={loading}>
+      </Button>
+      <Button type="button" variant="secondary" on:click={handleCancel} disabled={loading} fullWidth>
         Cancel
-      </button>
+      </Button>
     </div>
   </form>
 </div>
@@ -295,38 +312,27 @@
     color: var(--color-text-secondary);
   }
 
-  .checkbox-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
-  }
-
-  .checkbox-label {
+  /* Unified permission item styling */
+  .permission-item {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    min-height: 1.2rem;
+  }
+
+  .permission-item.permission-item {
+    cursor: default;
+  }
+
+  label.permission-item {
     cursor: pointer;
+  }
+
+  .permission-label {
     font-size: 0.8rem;
     font-weight: 600;
     color: var(--color-text-primary);
-    margin-bottom: 0;
-  }
-
-  .checkbox-label input[type='checkbox'] {
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-  }
-
-  .checkbox-label input[type='checkbox']:disabled {
-    cursor: not-allowed;
-  }
-
-  .checkbox-help-text {
-    margin: 0;
-    font-size: 0.75rem;
-    color: var(--color-text-secondary);
+    line-height: 1.2rem;
   }
 
   .info-box {
@@ -350,10 +356,11 @@
     background-color: var(--color-bg-secondary);
     border: 1px solid var(--color-border-light);
     border-radius: 0.375rem;
+    margin-bottom: 0;
   }
 
   .permissions-section h3 {
-    margin: 0 0 0.5rem 0;
+    margin: 0 0 0.75rem 0;
     font-size: 0.85rem;
     font-weight: 700;
     color: var(--color-text-primary);
@@ -361,39 +368,55 @@
     letter-spacing: 0.5px;
   }
 
-  .permission-group {
+  .permission-subsection {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
   }
 
-  .received-permissions {
-    margin-top: 0.5rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--color-border-light);
+  .permission-subsection:not(:last-child) {
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--color-border-light);
   }
 
-  .received-permissions h4 {
+  .subsection-title {
     margin: 0 0 0.5rem 0;
     font-size: 0.75rem;
     font-weight: 600;
-    color: var(--color-text-primary);
+    color: var(--color-text-secondary);
     text-transform: uppercase;
+    letter-spacing: 0.3px;
   }
 
-  .received-permissions ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+  .permission-group {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.375rem;
   }
 
-  .received-permissions li {
-    font-size: 0.8rem;
-    color: var(--color-text-secondary);
-    margin: 0;
-    padding: 0;
+  /* Indicator icon styling */
+  .indicator-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.2rem;
+    height: 1.2rem;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--color-text-tertiary);
+    border-radius: 50%;
+    background-color: var(--color-bg-tertiary);
+  }
+
+  .indicator-icon.active {
+    color: var(--color-success-text);
+    background-color: var(--color-success-bg);
+  }
+
+  /* Match ItemEditForm button spacing */
+  .edit-content .form-buttons {
+    margin-top: clamp(0.75rem, 2vw, 1rem);
   }
 </style>

@@ -130,11 +130,13 @@
   }
 
   .companion-checkbox input[type='checkbox'] {
-    width: 18px;
-    height: 18px;
+    width: 1.2rem;
+    height: 1.2rem;
     cursor: pointer;
-    accent-color: #3b82f6;
+    accent-color: var(--color-primary);
     flex-shrink: 0;
+    -webkit-appearance: checkbox;
+    appearance: checkbox;
   }
 
   .companion-info {

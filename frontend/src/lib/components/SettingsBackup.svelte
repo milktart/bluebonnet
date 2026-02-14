@@ -714,7 +714,7 @@
   .file-size {
     margin: 0.125rem 0 0 0;
     font-size: 0.7rem;
-    color: #666;
+    color: var(--color-text-secondary);
   }
 
   .preview-section {
@@ -760,14 +760,17 @@
     cursor: pointer;
     font-weight: 600;
     font-size: 0.7rem;
-    color: #666;
+    color: var(--color-text-secondary);
     white-space: nowrap;
   }
 
   .section-select-all input[type='checkbox'] {
-    width: 14px;
-    height: 14px;
+    width: 1.2rem;
+    height: 1.2rem;
     cursor: pointer;
+    accent-color: var(--color-primary);
+    -webkit-appearance: checkbox;
+    appearance: checkbox;
   }
 
   .section-icon {
@@ -872,11 +875,14 @@
   }
 
   .item-checkbox-wrapper input[type='checkbox'] {
-    width: 16px;
-    height: 16px;
+    width: 1.2rem;
+    height: 1.2rem;
     cursor: pointer;
     margin-top: 0.15rem;
     flex-shrink: 0;
+    accent-color: var(--color-primary);
+    -webkit-appearance: checkbox;
+    appearance: checkbox;
   }
 
   .item-label {

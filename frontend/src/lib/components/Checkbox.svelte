@@ -43,15 +43,17 @@
   }
 
   input[type="checkbox"] {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 1.2rem;
+    height: 1.2rem;
     cursor: pointer;
     accent-color: var(--color-primary);
+    -webkit-appearance: checkbox;
+    appearance: checkbox;
   }
 
   input[type="checkbox"]:disabled {
     cursor: not-allowed;
-    opacity: 0.6;
+    opacity: 0.5;
   }
 
   label {

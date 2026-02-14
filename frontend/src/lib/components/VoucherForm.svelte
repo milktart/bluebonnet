@@ -1,5 +1,6 @@
 <script lang="ts">
   import { settingsApi } from '$lib/services/settings';
+  import { Button, FormGroup, FormRow, Input, TextArea, Alert } from '$lib/components/ui';
   import '$lib/styles/form-styles.css';
 
   export let tripId: string;
@@ -105,108 +106,110 @@
   }
 </script>
 
+<style>
+  /* Match ItemEditForm button spacing */
+  .edit-content .form-buttons {
+    margin-top: clamp(0.75rem, 2vw, 1rem);
+  }
+</style>
+
 <div class="edit-content">
   {#if error}
-    <div class="error-message">{error}</div>
+    <Alert variant="error" dismissible={false}>{error}</Alert>
   {/if}
 
   <form on:submit|preventDefault={handleSubmit}>
       <div class="form-fields">
-        <div class="form-group">
-          <label>Voucher Number *</label>
-          <input
+        <FormGroup label="Voucher Number *" id="voucherNumber">
+          <Input
+            id="voucherNumber"
             type="text"
             bind:value={formData.voucherNumber}
             placeholder="e.g., 123456789"
             required
           />
-        </div>
+        </FormGroup>
 
-        <div class="form-row cols-2">
-          <div class="form-group">
-            <label>Type *</label>
-            <select bind:value={formData.type} required>
+        <FormRow columns={2}>
+          <FormGroup label="Type *" id="type">
+            <select id="type" bind:value={formData.type} required>
               {#each voucherTypeOptions as option}
                 <option value={option.value}>{option.label}</option>
               {/each}
             </select>
-          </div>
+          </FormGroup>
 
-          <div class="form-group">
-            <label>Issuer *</label>
-            <input
+          <FormGroup label="Issuer *" id="issuer">
+            <Input
+              id="issuer"
               type="text"
               bind:value={formData.issuer}
               placeholder="e.g., United Airlines"
               required
             />
-          </div>
-        </div>
+          </FormGroup>
+        </FormRow>
 
-        <div class="form-row cols-2">
-          <div class="form-group">
-            <label>Associated Account</label>
-            <input
+        <FormRow columns={2}>
+          <FormGroup label="Associated Account" id="associatedAccount">
+            <Input
+              id="associatedAccount"
               type="text"
               bind:value={formData.associatedAccount}
               placeholder="e.g., Frequent flyer number"
             />
-          </div>
+          </FormGroup>
 
-          <div class="form-group">
-            <label>PIN Code</label>
-            <input
+          <FormGroup label="PIN Code" id="pinCode">
+            <Input
+              id="pinCode"
               type="password"
               bind:value={formData.pinCode}
               placeholder="PIN or security code"
             />
-          </div>
-        </div>
+          </FormGroup>
+        </FormRow>
 
-        <div class="form-row cols-2">
-          <div class="form-group">
-            <label>Currency</label>
-            <select bind:value={formData.currency}>
+        <FormRow columns={2}>
+          <FormGroup label="Currency" id="currency">
+            <select id="currency" bind:value={formData.currency}>
               {#each currencyOptions as option}
                 <option value={option.value}>{option.label}</option>
               {/each}
             </select>
-          </div>
+          </FormGroup>
 
-          <div class="form-group">
-            <label>Total Value</label>
-            <input
+          <FormGroup label="Total Value" id="totalValue">
+            <Input
+              id="totalValue"
               type="number"
               bind:value={formData.totalValue}
-              step="0.01"
-              min="0"
               placeholder="0.00"
             />
-          </div>
-        </div>
+          </FormGroup>
+        </FormRow>
 
-        <div class="form-group">
-          <label>Expiration Date</label>
-          <input type="date" bind:value={formData.expirationDate} />
-        </div>
+        <FormGroup label="Expiration Date" id="expirationDate">
+          <Input id="expirationDate" type="date" bind:value={formData.expirationDate} />
+        </FormGroup>
 
-        <div class="form-group">
-          <label>Notes</label>
-          <textarea
+        <FormGroup label="Notes" id="notes">
+          <TextArea
+            id="notes"
             bind:value={formData.notes}
             placeholder="Any additional information about this voucher..."
-            rows="3"
-          ></textarea>
-        </div>
+            rows={3}
+          />
+        </FormGroup>
       </div>
 
       <div class="form-buttons">
-        <button class="submit-btn" type="submit" disabled={loading}>
-          {voucherId ? 'Update Voucher' : 'Add Voucher'}
-        </button>
-        <button class="cancel-btn" type="button" on:click={handleCancel} disabled={loading}>
+        <Button type="submit" variant="primary" disabled={loading} loading={loading} fullWidth>
+          {voucherId ? 'Update' : 'Add Voucher'}
+        </Button>
+        <Button type="button" variant="secondary" on:click={handleCancel} disabled={loading} fullWidth>
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   </div>
