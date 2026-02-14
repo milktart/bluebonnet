@@ -20,7 +20,7 @@
   on:change
   on:focus
   on:blur
-/>
+></textarea>
 
 <style>
   textarea {

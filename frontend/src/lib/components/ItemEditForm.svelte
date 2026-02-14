@@ -317,7 +317,7 @@
   }
 
   // Re-compute config reactively based on isEditing and itemType
-  $: config = getFormConfigs(isEditing)[itemType];
+  $: config = getFormConfigs(isEditing)[itemType] || { title: '', fields: [] };
 
   async function handleSubmit() {
     loading = true;
@@ -578,7 +578,7 @@
               {/each}
             </select>
           </div>
-          {#if config.fields.some(f => f.name === 'isTentative')}
+          {#if config?.fields?.some(f => f.name === 'isTentative')}
             <div class="form-group" style="display: flex; flex-direction: column; align-items: center;">
               <label for="isTentative" style="text-align: center;">Tentative</label>
               <div class="checkbox-group" style="display: flex; justify-content: center; align-items: center; flex: 1;">
@@ -594,7 +594,7 @@
         <!-- Flight Number & Airline (3-col: 1-2) -->
         <div class="form-row cols-3">
           <div class="form-group">
-            <label for="flightNumber">{config.fields.find(f => f.name === 'flightNumber')?.label}</label>
+            <label for="flightNumber">{config?.fields?.find(f => f.name === 'flightNumber')?.label}</label>
             <input
               type="text"
               id="flightNumber"
@@ -607,7 +607,7 @@
           </div>
           <div class="form-group" style="grid-column: span 2;">
             <label for="airline">
-              {config.fields.find(f => f.name === 'airline')?.label}
+              {config?.fields?.find(f => f.name === 'airline')?.label}
               {#if airlineLookupLoading}
                 <span class="loading-indicator">Looking up...</span>
               {/if}
@@ -740,7 +740,7 @@
           <label for="method">Method</label>
           <select id="method" name="method" bind:value={formData.method} required disabled={!canEdit}>
             <option value="">Select Method</option>
-            {#each config.fields.find(f => f.name === 'method')?.options || [] as option}
+            {#each config?.fields?.find(f => f.name === 'method')?.options || [] as option}
               {#if typeof option === 'object' && option.value}
                 <option value={option.value}>{option.label}</option>
               {:else}
@@ -921,233 +921,53 @@
           <textarea id="description" name="description" bind:value={formData.description} placeholder="Event details" disabled={!canEdit} />
         </div>
 
-      {:else}
-        <!-- Generic form layout fallback -->
-        <!-- Special layout for trip departure and return dates -->
-        {#if itemType === 'trip' && config.fields.some(f => f.name === 'departureDate')}
-          {#each config.fields as field}
-            {#if field.name === 'name'}
-              <!-- Trip Name & Tentative (3-col: 2-1) -->
-              <div class="form-row cols-3">
-                <div class="form-group" style="grid-column: span 2;">
-                  <label for={field.name}>{field.label}</label>
-                  <input
-                    type="text"
-                    id={field.name}
-                    name={field.name}
-                    bind:value={formData[field.name]}
-                    placeholder={field.placeholder}
-                    required={field.required}
-                    disabled={!canEdit}
-                  />
-                </div>
-                {#if config.fields.some(f => f.name === 'isTentative')}
-                  <div class="form-group" style="display: flex; flex-direction: column; align-items: center;">
-                    <label for="isTentative" style="text-align: center;">Tentative</label>
-                    <div class="checkbox-group" style="display: flex; justify-content: center; align-items: center; flex: 1;">
-                      <label for="isTentative">
-                        <input type="checkbox" id="isTentative" name="isTentative" checked={formData.isTentative} on:change={(e) => formData.isTentative = e.target.checked} disabled={!canEdit} />
-                      </label>
-                    </div>
-                  </div>
-                {/if}
-              </div>
-            {:else if field.name === 'departureDate'}
-              <div class="form-row cols-2">
-                <div class="form-group">
-                  <label for={field.name}>{field.label}</label>
-                  <input
-                    type="date"
-                    id={field.name}
-                    name={field.name}
-                    bind:value={formData[field.name]}
-                    required={field.required}
-                    disabled={!canEdit}
-                  />
-                </div>
-                {#if config.fields.some(f => f.name === 'returnDate')}
-                  {#each config.fields as returnField}
-                    {#if returnField.name === 'returnDate'}
-                      <div class="form-group">
-                        <label for={returnField.name}>{returnField.label}</label>
-                        <input
-                          type="date"
-                          id={returnField.name}
-                          name={returnField.name}
-                          bind:value={formData[returnField.name]}
-                          required={returnField.required}
-                          disabled={!canEdit}
-                        />
-                      </div>
-                    {/if}
-                  {/each}
-                {/if}
-              </div>
-            {:else if field.name !== 'returnDate' && field.name !== 'isTentative'}
-              <div class="form-group">
-                <label for={field.name}>{field.label}</label>
-
-                {#if field.type === 'text'}
-                  <input
-                    type="text"
-                    id={field.name}
-                    name={field.name}
-                    bind:value={formData[field.name]}
-                    placeholder={field.placeholder}
-                    required={field.required}
-                    readonly={field.readonly}
-                    disabled={!canEdit}
-                    class={field.readonly ? 'readonly' : ''}
-                  />
-                {:else if field.type === 'date'}
-                  <input
-                    type="date"
-                    id={field.name}
-                    name={field.name}
-                    bind:value={formData[field.name]}
-                    required={field.required}
-                    disabled={!canEdit}
-                  />
-                {:else if field.type === 'time'}
-                  <input
-                    type="text"
-                    id={field.name}
-                    name={field.name}
-                    bind:value={formData[field.name]}
-                    placeholder={field.placeholder}
-                    maxlength="5"
-                    on:keyup={formatTimeInput}
-                    disabled={!canEdit}
-                  />
-                {:else if field.type === 'select'}
-                  <select
-                    id={field.name}
-                    name={field.name}
-                    bind:value={formData[field.name]}
-                    required={field.required}
-                    disabled={!canEdit}
-                  >
-                    <option value="">Select {field.label}</option>
-                    {#each field.options as option}
-                      {#if typeof option === 'object' && option.value}
-                        <option value={option.value}>{option.label}</option>
-                      {:else}
-                        <option value={option}>{option}</option>
-                      {/if}
-                    {/each}
-                  </select>
-                {:else if field.type === 'textarea'}
-                  <textarea
-                    id={field.name}
-                    name={field.name}
-                    bind:value={formData[field.name]}
-                    placeholder={field.placeholder}
-                    disabled={!canEdit}
-                  />
-                {:else if field.type === 'checkbox'}
-                  <div class="checkbox-group">
-                    <label for={field.name}>
-                      <input type="checkbox" id={field.name} name={field.name} bind:checked={formData[field.name]} disabled={!canEdit} />
-                      <span>{field.label}</span>
-                    </label>
-                  </div>
-                {/if}
-              </div>
-            {/if}
-          {/each}
-        {:else}
-          <!-- Default field rendering for all other item types -->
-          {#each config.fields as field}
-            {#if field.name === 'name' && itemType !== 'trip'}
-              <!-- Name & Tentative on same row for items -->
-              <div class="form-row cols-2">
-                <div class="form-group">
-                  <label for={field.name}>{field.label}</label>
-
-                  {#if field.type === 'text'}
-                    <input
-                      type="text"
-                      id={field.name}
-                      name={field.name}
-                      bind:value={formData[field.name]}
-                      placeholder={field.placeholder}
-                      required={field.required}
-                      readonly={field.readonly}
-                      disabled={!canEdit}
-                      class={field.readonly ? 'readonly' : ''}
-                    />
-                  {/if}
-                </div>
-              </div>
-            {:else if field.name !== 'isTentative'}
-              <div class="form-group">
-                <label for={field.name}>{field.label}</label>
-
-                {#if field.type === 'text'}
-                <input
-                  type="text"
-                  id={field.name}
-                  name={field.name}
-                  bind:value={formData[field.name]}
-                  placeholder={field.placeholder}
-                  required={field.required}
-                  readonly={field.readonly}
-                  disabled={!canEdit}
-                  class={field.readonly ? 'readonly' : ''}
-                />
-              {:else if field.type === 'date'}
-                <input
-                  type="date"
-                  id={field.name}
-                  name={field.name}
-                  bind:value={formData[field.name]}
-                  required={field.required}
-                  disabled={!canEdit}
-                />
-              {:else if field.type === 'time'}
-                <input
-                  type="text"
-                  id={field.name}
-                  name={field.name}
-                  bind:value={formData[field.name]}
-                  placeholder={field.placeholder}
-                  maxlength="5"
-                  on:keyup={formatTimeInput}
-                  disabled={!canEdit}
-                />
-              {:else if field.type === 'select'}
-                <select
-                  id={field.name}
-                  name={field.name}
-                  bind:value={formData[field.name]}
-                  required={field.required}
-                  disabled={!canEdit}
-                >
-                  <option value="">Select {field.label}</option>
-                  {#each field.options as option}
-                    <option value={option}>{option}</option>
-                  {/each}
-                </select>
-              {:else if field.type === 'textarea'}
-                <textarea
-                  id={field.name}
-                  name={field.name}
-                  bind:value={formData[field.name]}
-                  placeholder={field.placeholder}
-                  disabled={!canEdit}
-                />
-              {:else if field.type === 'checkbox'}
-                <div class="checkbox-group">
-                  <label for={field.name}>
-                    <input type="checkbox" id={field.name} name={field.name} bind:checked={formData[field.name]} disabled={!canEdit} />
-                    <span>{field.label}</span>
-                  </label>
-                </div>
-              {/if}
+      {:else if itemType === 'trip'}
+        <!-- Trip Name & Tentative (3-col: 2-1) -->
+        <div class="form-row cols-3">
+          <div class="form-group" style="grid-column: span 2;">
+            <label for="name">Trip Name</label>
+            <input type="text" id="name" name="name" bind:value={formData.name} placeholder="Summer Vacation" required disabled={!canEdit} />
+          </div>
+          <div class="form-group" style="display: flex; flex-direction: column; align-items: center;">
+            <label for="isTentative" style="text-align: center;">Tentative</label>
+            <div class="checkbox-group" style="display: flex; justify-content: center; align-items: center; flex: 1;">
+              <label for="isTentative">
+                <input type="checkbox" id="isTentative" name="isTentative" checked={formData.isTentative} on:change={(e) => formData.isTentative = e.target.checked} disabled={!canEdit} />
+              </label>
             </div>
-            {/if}
-          {/each}
-        {/if}
+          </div>
+        </div>
+
+        <!-- Purpose (full-width) -->
+        <div class="form-group">
+          <label for="purpose">Purpose</label>
+          <select id="purpose" name="purpose" bind:value={formData.purpose} required disabled={!canEdit}>
+            <option value="">Select Purpose</option>
+            <option value="leisure">Leisure</option>
+            <option value="business">Business</option>
+            <option value="family">Family</option>
+            <option value="romantic">Romantic</option>
+            <option value="adventure">Adventure</option>
+          </select>
+        </div>
+
+        <!-- Departure & Return Dates (2-col) -->
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label for="departureDate">Departure Date</label>
+            <input type="date" id="departureDate" name="departureDate" bind:value={formData.departureDate} required disabled={!canEdit} />
+          </div>
+          <div class="form-group">
+            <label for="returnDate">Return Date</label>
+            <input type="date" id="returnDate" name="returnDate" bind:value={formData.returnDate} required disabled={!canEdit} />
+          </div>
+        </div>
+
+        <!-- Notes (full-width) -->
+        <div class="form-group">
+          <label for="notes">Notes</label>
+          <textarea id="notes" name="notes" bind:value={formData.notes} disabled={!canEdit} />
+        </div>
       {/if}
     </div>
 

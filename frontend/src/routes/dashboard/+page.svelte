@@ -1557,9 +1557,9 @@
   }
 
   .settings-item:hover {
-    border-color: #007bff;
-    background-color: #eff6ff;
-    color: #007bff;
+    border-color: var(--color-primary);
+    background-color: var(--color-primary-bg);
+    color: var(--color-primary);
   }
 
   .settings-item.logout {

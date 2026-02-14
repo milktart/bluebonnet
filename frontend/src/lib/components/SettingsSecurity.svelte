@@ -173,7 +173,7 @@
   .info-text {
     margin: 0;
     font-size: 0.75rem;
-    color: #666;
+    color: var(--color-text-secondary);
     display: flex;
     align-items: center;
     gap: 0.5rem;

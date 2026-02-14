@@ -132,7 +132,7 @@
   }
 
   .nav-link:hover {
-    color: #007bff;
+    color: var(--color-primary);
   }
 
   .user-info {

@@ -234,7 +234,7 @@
 
   .users-table td {
     padding: 0.875rem;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--color-border-light);
     color: #1f2937;
     vertical-align: middle;
   }

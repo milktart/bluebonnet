@@ -1,6 +1,7 @@
 <script lang="ts">
   import { dashboardStoreActions } from '$lib/stores/dashboardStore';
   import { settingsApi } from '$lib/services/settings';
+  import { Button, FormGroup, FormRow, Input, Alert } from '$lib/components/ui';
   import '$lib/styles/form-styles.css';
 
   interface Airport {
@@ -95,44 +96,39 @@
 
 <div class="edit-content">
   {#if error}
-    <div class="error-message">{error}</div>
+    <Alert variant="error" dismissible={false}>{error}</Alert>
   {/if}
 
   <form on:submit|preventDefault={handleSubmit}>
     <div class="form-fields">
-      <div class="form-row cols-2-1">
-        <div class="form-group">
-          <label for="iata">IATA Code *</label>
-          <input
+      <FormRow columns={2} ratio="2fr 1fr">
+        <FormGroup label="IATA Code *" id="iata">
+          <Input
             id="iata"
             type="text"
             bind:value={formData.iata}
             placeholder="JFK"
-            maxlength="3"
             disabled={submitting || isEdit}
             required
           />
           {#if isEdit}
             <p class="help-text">IATA code cannot be changed</p>
           {/if}
-        </div>
+        </FormGroup>
 
-        <div class="form-group">
-          <label for="icao">ICAO Code</label>
-          <input
+        <FormGroup label="ICAO Code" id="icao">
+          <Input
             id="icao"
             type="text"
             bind:value={formData.icao}
             placeholder="KJFK"
-            maxlength="4"
             disabled={submitting}
           />
-        </div>
-      </div>
+        </FormGroup>
+      </FormRow>
 
-      <div class="form-group">
-        <label for="name">Airport Name *</label>
-        <input
+      <FormGroup label="Airport Name *" id="name">
+        <Input
           id="name"
           type="text"
           bind:value={formData.name}
@@ -140,12 +136,11 @@
           disabled={submitting}
           required
         />
-      </div>
+      </FormGroup>
 
-      <div class="form-row cols-2">
-        <div class="form-group">
-          <label for="city">City *</label>
-          <input
+      <FormRow columns={2}>
+        <FormGroup label="City *" id="city">
+          <Input
             id="city"
             type="text"
             bind:value={formData.city}
@@ -153,11 +148,10 @@
             disabled={submitting}
             required
           />
-        </div>
+        </FormGroup>
 
-        <div class="form-group">
-          <label for="country">Country *</label>
-          <input
+        <FormGroup label="Country *" id="country">
+          <Input
             id="country"
             type="text"
             bind:value={formData.country}
@@ -165,52 +159,49 @@
             disabled={submitting}
             required
           />
-        </div>
-      </div>
+        </FormGroup>
+      </FormRow>
 
-      <div class="form-row cols-2">
-        <div class="form-group">
-          <label for="latitude">Latitude</label>
-          <input
+      <FormRow columns={2}>
+        <FormGroup label="Latitude" id="latitude">
+          <Input
             id="latitude"
             type="text"
             bind:value={formData.latitude}
             placeholder="40.6413"
             disabled={submitting}
           />
-        </div>
+        </FormGroup>
 
-        <div class="form-group">
-          <label for="longitude">Longitude</label>
-          <input
+        <FormGroup label="Longitude" id="longitude">
+          <Input
             id="longitude"
             type="text"
             bind:value={formData.longitude}
             placeholder="-73.7781"
             disabled={submitting}
           />
-        </div>
-      </div>
+        </FormGroup>
+      </FormRow>
 
-      <div class="form-group">
-        <label for="timezone">Timezone</label>
-        <input
+      <FormGroup label="Timezone" id="timezone">
+        <Input
           id="timezone"
           type="text"
           bind:value={formData.timezone}
           placeholder="America/New_York"
           disabled={submitting}
         />
-      </div>
+      </FormGroup>
     </div>
 
     <div class="form-buttons">
-      <button class="submit-btn" type="submit" disabled={submitting}>
-        {submitting ? 'Saving...' : 'Update Airport'}
-      </button>
-      <button class="cancel-btn" type="button" on:click={handleCancel} disabled={submitting}>
+      <Button type="submit" variant="primary" disabled={submitting} loading={submitting}>
+        Update Airport
+      </Button>
+      <Button type="button" variant="secondary" on:click={handleCancel} disabled={submitting}>
         Cancel
-      </button>
+      </Button>
     </div>
   </form>
 </div>
